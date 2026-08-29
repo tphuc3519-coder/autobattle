@@ -129,7 +129,7 @@
     <button id="rec">⏺ Ghi hình sàn đấu</button>
     <button id="testGoku" title="Gọi Goku ngay để thử">🧪 Test Goku</button>
     <button id="testGohan" title="Gọi Gohan ngay để thử">🧪 Test Gohan</button>
-    <button id="testTwin" title="Nạp đủ 18 goal để xem Victory Twin Shot">🧪 Test Twin Shot</button>
+    <button id="testTwin" title="Nạp đủ goal để xem Victory Twin Shot">🧪 Test Twin Shot</button>
     <button id="testEagle" title="Ép Tsubasa vào trạng thái Wings of the Eagle">🧪 Test Eagle</button>
   </div>
 
@@ -236,6 +236,7 @@ const SLOT={};
 
 /* ---------- bảng nhân vật chơi được ---------- */
 const PICK={a:'kono',b:'chichi'};
+const GOAL_MAX=8;                 // số goal cần để mở Victory Twin Shot
 const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · đánh xa', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
@@ -265,17 +266,17 @@ const CHARS={
   tsubasa:{
     name:'Ozora Tsubasa', short:'Tsubasa', tag:'Tiền đạo · sút bóng', emoji:'⚽', color:'#2ED573', alt:'#7DEBAB',
     role:'ranged', want:235, speed:100, dodge:.8, male:true,
-    skills:['<b>1</b> Basic shot 25 dmg, hay đá hụt (10% Bicycle kick 40 + choáng)','<b>2</b> Drive shot 80 + thiêu đốt 5×3','<b>18 goal</b> Victory Twin Shot 150 + choáng 2s','<b>Dưới 15% máu</b> Wings of the Eagle'],
+    skills:['<b>1</b> Basic shot 25 dmg, hay đá hụt (10% Bicycle kick 40 + choáng)','<b>2</b> Drive shot 80 + thiêu đốt 5×3',`<b>${GOAL_MAX} goal</b> Victory Twin Shot 150 + choáng 2s`,'<b>Dưới 15% máu</b> Wings of the Eagle'],
     init(f){ f.cds={s1:cm(1),s2:cm(3)}; f.goals=0; },
     think(f,e,d,auto){
       const sp=f.eagle?.5:1;
       if(f.cds.s1<=0&&(auto?d<520:keys['j'])){ f.cds.s1=cm(1.35)*sp; basicShot(f,e); }
       if(f.cds.s2<=0&&(auto?d<560:keys['k'])){ f.cds.s2=cm(6.5)*sp; driveShot(f,e); }
-      if(!f.eagle&&f.goals>=18&&(auto||keys['l'])) twinShot(f,e);
+      if(!f.eagle&&f.goals>=GOAL_MAX&&(auto||keys['l'])) twinShot(f,e);
     },
     gauge:f=>f.eagle
       ? {pct:1, fill:'#FFF3C4', txt:'EAGLE WINGS'}
-      : {pct:f.goals/18, fill:'#FFE100', txt:`Goal: ${f.goals}/18`}
+      : {pct:f.goals/GOAL_MAX, fill:'#FFE100', txt:`Goal: ${f.goals}/${GOAL_MAX}`}
   }
 };
 const CKEYS=Object.keys(CHARS);
@@ -1078,9 +1079,13 @@ function scold(c,e){
     if(crit) say('Câu mắng chí mạng — 30 dmg!','c');
   });
 }
-/* đồ vật lý — sóng âm của ChiChi hất ngược được.
-   kame / masenko là năng lượng, drive & twin là chiêu đặc biệt: không hất được. */
+/* Sóng âm của ChiChi chỉ hất ngược được đồ vật lý: phi tiêu, kunai và trái bóng
+   (cả basic shot lẫn bicycle kick — cùng là type 'ball').
+   Kame / masenko là tia và cầu năng lượng nên không hất được.
+   Drive shot và twin shot tuy là bóng nhưng cố ý miễn nhiễm với đòn phản:
+   vừa không nằm trong tập này, vừa mang cờ noReflect ngay lúc tạo. */
 const PHYSICAL=new Set(['shuriken','kunai','ball']);
+const canReflect=p=>PHYSICAL.has(p.type)&&!p.noReflect;
 
 /* ---------- Ozora Tsubasa ---------- */
 function knock(f,vx,vy,power){
@@ -1090,11 +1095,11 @@ function knock(f,vx,vy,power){
 }
 function addGoal(f){
   if(!f||f.key!=='tsubasa'||f.summon||f.eagle||G.over)return;
-  if(f.goals>=18)return;
+  if(f.goals>=GOAL_MAX)return;
   f.goals++;
-  G.floats.push({x:f.x+rnd(-10,10),y:f.y-64,txt:`GOAL ${f.goals}/18`,color:'#FFE100',life:.9,ml:.9,sc:.62});
+  G.floats.push({x:f.x+rnd(-10,10),y:f.y-64,txt:`GOAL ${f.goals}/${GOAL_MAX}`,color:'#FFE100',life:.9,ml:.9,sc:.62});
   sfx('goal');
-  if(f.goals===18) say('Tsubasa đủ 18 GOAL — VICTORY SHOT sẵn sàng!','g');
+  if(f.goals===GOAL_MAX) say(`Tsubasa đủ ${GOAL_MAX} GOAL — VICTORY SHOT sẵn sàng!`,'g');
 }
 function tsuBanner(t,txt){
   G.floats.push({x:t.x,y:t.y-104,txt,color:t.color,life:1.6,ml:1.6,
@@ -1138,7 +1143,7 @@ function driveShot(t,e){
     G.proj.push({type:'drive',team:t.team,owner:t,tgt:e,
       x:t.x+Math.cos(up)*22, y:t.y-16,
       vx:Math.cos(up)*310, vy:Math.sin(up)*310,
-      r:14, dmg:80, life:7, spin:0, rise:cm(.6), homing:false, turn:4.6, wing:0});
+      r:14, dmg:80, life:7, spin:0, rise:cm(.6), homing:false, turn:4.6, wing:0, noReflect:true});
   });
 }
 /* Skill 3 — Victory Shot: Twin Shot cùng Hyuga hoặc Misaki */
@@ -1173,7 +1178,7 @@ function twinShot(t,e){
     const a=Math.atan2(e.y-src.y,e.x-src.x)+(chance(.5)?1:-1)*rnd(.8,1.25);
     G.proj.push({type:'twin',team:t.team,owner:t,tgt:e,
       x:src.x, y:src.y, vx:Math.cos(a)*360, vy:Math.sin(a)*360,
-      r:16, dmg:150, life:5, spin:0, wig:0, homing:true, turn:5.2});
+      r:16, dmg:150, life:5, spin:0, wig:0, homing:true, turn:5.2, noReflect:true});
     G.flashScreen=Math.max(G.flashScreen,.12);
     ring(src.x,src.y,130,'#FFF3C4',.5);
   });
@@ -1640,9 +1645,7 @@ function step(dt){
     }
     for(const p of G.proj){
       if(p.team===w.team||p.bounced)continue;
-      // chỉ hất ngược được đồ vật lý: phi tiêu, kunai, trái bóng.
-      // tia / cầu năng lượng (kamehameha, masenko) và đòn tay chân thì không.
-      if(!PHYSICAL.has(p.type))continue;
+      if(!canReflect(p))continue;
       if(dist(p,w)<w.r+p.r){
         const a=Math.atan2(p.y-w.y,p.x-w.x)+rnd(-.25,.25), sp=Math.hypot(p.vx,p.vy);
         p.vx=Math.cos(a)*sp*1.15; p.vy=Math.sin(a)*sp*1.15;
@@ -2669,8 +2672,8 @@ function testTwin(){
   if(t.eagle){ say('Đang trong Wings of the Eagle — Twin Shot bị vô hiệu.','m'); return; }
   ac(); if(MUSIC.on) startMusic();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
-  t.goals=18;
-  say('[Thử nghiệm] Nạp đủ 18 goal cho Tsubasa.','m');
+  t.goals=GOAL_MAX;
+  say(`[Thử nghiệm] Nạp đủ ${GOAL_MAX} goal cho Tsubasa.`,'m');
 }
 el('testGoku').addEventListener('click',()=>testSummon('goku'));
 el('testGohan').addEventListener('click',()=>testSummon('gohan'));
