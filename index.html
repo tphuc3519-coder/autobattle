@@ -435,7 +435,7 @@ const SFX_EVENTS=[
   ['throw','Ném phi tiêu'],['hit','Trúng phi tiêu'],['clone','Phân thân'],['sexy','Sexy Jutsu'],
   ['rasengan','Rasengan'],['punch','ChiChi đấm'],['crit','Chí mạng'],['scold','Mắng'],
   ['stun','Choáng'],['summon','Viện binh tới'],['kame','Kamehameha'],['masenko','Masenko'],['callgoku','ChiChi gọi Goku'],['callgohan','ChiChi gọi Gohan'],['boom','Kunai nổ'],['ko','Kết thúc'],['win','Nhạc thắng trận'],['cheer','Khán giả hò reo'],
-  ['kick','Tsubasa sút bóng'],['bicycle','Overhead kick'],['bounce','Bóng dội tường'],['drive','Drive shot'],['twin','Twin shot'],['goal','Ghi goal'],['wings','Đôi cánh đại bàng'],
+  ['kick','Tsubasa sút bóng'],['bicycle','Overhead kick'],['bounce','Bóng dội tường'],['drive','Drive shot'],['twin_hyuga','Twin shot với Hyuga'],['twin_misaki','Twin shot với Misaki'],['goal','Ghi goal'],['wings','Đôi cánh đại bàng'],
   ['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt']
 ];
 const SFXBUF={};
@@ -511,9 +511,20 @@ function synth(name,c,g){
                     noise(c,g,{dur:.06,f0:1800,vol:.12}); break;
     case 'drive':   tone(c,g,{type:'sawtooth',f0:180,f1:900,dur:.6,vol:.24});
                     noise(c,g,{dur:.6,f0:600,f1:2800,vol:.2,q:1.6}); break;
-    case 'twin':    [0,.1].forEach(d=>tone(c,g,{type:'triangle',f0:300,f1:90,dur:.16,vol:.26,delay:d}));
-                    tone(c,g,{type:'sawtooth',f0:200,f1:1200,dur:.8,vol:.22,delay:.16});
-                    noise(c,g,{dur:.8,f0:800,f1:3000,vol:.18,delay:.16,q:1.4}); break;
+    case 'twin_hyuga': {     // Hyuga sức mạnh: cú nện nặng, trầm và dày
+      [0,.09].forEach(d=>tone(c,g,{type:'triangle',f0:260,f1:70,dur:.2,vol:.3,delay:d}));
+      tone(c,g,{type:'square',f0:120,f1:52,dur:.5,vol:.2,delay:.06});
+      tone(c,g,{type:'sawtooth',f0:170,f1:900,dur:.9,vol:.24,delay:.18});
+      noise(c,g,{dur:.9,f0:600,f1:2200,vol:.2,delay:.18,q:1.1,type:'lowpass'});
+      break;
+    }
+    case 'twin_misaki': {    // Misaki kỹ thuật: gọn, sáng, rít lên rồi vút đi
+      [0,.07].forEach(d=>tone(c,g,{type:'triangle',f0:420,f1:150,dur:.12,vol:.24,delay:d}));
+      tone(c,g,{type:'sine',f0:700,f1:1900,dur:.75,vol:.18,delay:.14});
+      noise(c,g,{dur:.75,f0:1600,f1:4200,vol:.16,delay:.14,q:2.2});
+      [.3,.45].forEach(d=>tone(c,g,{type:'square',f0:1600,f1:2400,dur:.1,vol:.07,delay:d}));
+      break;
+    }
     case 'goal':    [0,.08,.16].forEach((d,i)=>tone(c,g,{type:'square',f0:660+i*220,f1:660+i*220,dur:.12,vol:.13,delay:d})); break;
     case 'charm': {          // mê hoặc: chuông ngân uốn lượn, lâng lâng
       [0,.12,.24].forEach((d,i)=>{
@@ -579,7 +590,7 @@ function synth(name,c,g){
     default:        noise(c,g,{dur:.1,f0:1200,vol:.2});
   }
 }
-const SFX_FULL=new Set(['ko','win','cheer','callgoku','callgohan','summon','wings','twin']);
+const SFX_FULL=new Set(['ko','win','cheer','callgoku','callgohan','summon','wings','twin_hyuga','twin_misaki']);
 // các tiếng chiêu lớn: luôn phát từ đầu, cho phép dài tới 5 giây
 const SFX_MAXLEN={kame:5,masenko:5};
 const SFX_POS={}, SFX_ACTIVE={};
@@ -782,6 +793,21 @@ async function decodeInto(name,dataUrl){
       if(!src)continue;
       if(await decodeInto(nm,src)){ refs[nm].el.classList.add('set'); refs[nm].cap.textContent='♪ '+label+' ✓'; n++; }
     }
+    // file 'twin' nạp từ trước khi tách Hyuga / Misaki: chuyển sang cả hai ô mới
+    try{
+      const legacy=await Store.get('sfx_twin');
+      if(legacy){
+        for(const [nm,label] of SFX_EVENTS){
+          if(nm!=='twin_hyuga'&&nm!=='twin_misaki')continue;
+          if(SFXBUF[nm])continue;
+          if(await decodeInto(nm,legacy)){
+            Store.set('sfx_'+nm,legacy).catch(()=>{});
+            refs[nm].el.classList.add('set'); refs[nm].cap.textContent='♪ '+label+' ✓'; n++;
+          }
+        }
+        Store.del('sfx_twin');
+      }
+    }catch(e){}
     if(n) sfxStatus(`Đã khôi phục ${n} tiếng đã nạp.`);
   })();
 })();
@@ -1242,7 +1268,7 @@ function twinShot(t,e){
   later(1.5,()=>{
     if(G.over)return;
     for(const m of G.mates) m.pose='atk1';
-    sfx('twin');
+    sfx(mateKey==='hyuga'?'twin_hyuga':'twin_misaki');
     const src={x:(t.x+mx)/2, y:(t.y+my)/2-14};
     const a=Math.atan2(e.y-src.y,e.x-src.x)+(chance(.5)?1:-1)*rnd(.8,1.25);
     G.proj.push({type:'twin',team:t.team,owner:t,tgt:e,
