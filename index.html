@@ -239,6 +239,7 @@ const SLOT={};
 const PICK={a:'kono',b:'chichi'};
 const GOAL_MAX=8;                 // số goal cần để mở Victory Twin Shot
 const EAGLE_BURN=5;               // Wings of the Eagle cháy hết máu trong bấy nhiêu giây
+const MASENKO_SPD=330;            // Masenko bay nhanh hơn hẳn mức cũ 205
 const EAGLE_CD=.4;                // +150% tốc độ ra chiêu: hồi chiêu chỉ còn 40%
 const CHARS={
   kono:{
@@ -1235,7 +1236,7 @@ function releaseTwin(t){
   t.twinBusy=false;
   t.lock=0;
   if(t.pose==='skill'){ t.pose='idle'; t.poseT=0; }
-  for(const m of G.mates) m.life=Math.min(m.life,.3);
+  for(const m of G.mates) m.life=Math.min(m.life,.18);
   if(t.cds){                                   // hồi chiêu mới bắt đầu tính từ đây
     t.cds.s1=Math.max(t.cds.s1||0,cm(.5));
     t.cds.s2=Math.max(t.cds.s2||0,cm(1.2));
@@ -1249,10 +1250,16 @@ function twinShot(t,e){
   G.freeze=1.5; G.freezeAt=t;
   G.proj.length=0; G.waves.length=0; G.floats.length=0; G.callBanner=null;
   for(const f of G.fighters){ f.flash=0; f.recoil=0; f.lunge=0; }
+  // dọn đồng đội của cú sút trước, tránh hai người cùng đứng trên sân
+  for(const m of G.mates) G.fx.push({type:'poof',x:m.x,y:m.y-18,life:.4,ml:.4});
+  G.mates.length=0;
   const mateKey=chance(.5)?'hyuga':'misaki';
   const mateName=mateKey==='hyuga'?'Hyuga':'Misaki';
-  const side=(t.x>W/2)?-1:1;
-  let mx=clamp(t.x+side*96,PAD+30,W-PAD-30);
+  // đứng hẳn sang một bên: chọn phía nào còn chỗ rộng hơn sau khi kẹp vào sàn,
+  // vì đồng đội mặc áo giống hệt Tsubasa, đứng chồng lên là nhìn thành hai Tsubasa
+  const GAP=124;
+  const cand=[t.x+GAP,t.x-GAP].map(v=>clamp(v,PAD+34,W-PAD-34));
+  let mx=Math.abs(cand[1]-t.x)>Math.abs(cand[0]-t.x)?cand[1]:cand[0];
   const my=clamp(t.y+rnd(-10,18),PAD+60,H-PAD-24);
   setPose(t,'skill',9);
   aim(t,e,1.2);
@@ -1451,12 +1458,19 @@ function summonFire(s,e){
     say('MASENKO! 5 đợt, mỗi đợt 100 dmg.','g');
     for(let i=0;i<5;i++) later(i*cm(.36),()=>{
       if(G.over)return;
-      const tgt=e, aa=(tgt&&tgt.alive)?Math.atan2(tgt.y-s.y,tgt.x-s.x):a;
-      const a2=aa+(i-2)*.15;
+      // ngắm đón đầu: chấm nơi địch sẽ tới sau quãng thời gian đạn bay
+      const tgt=e;
+      let aa=a;
+      if(tgt&&tgt.alive){
+        const d=Math.hypot(tgt.x-s.x,tgt.y-s.y);
+        const lead=Math.min(.55,d/MASENKO_SPD);
+        aa=Math.atan2(tgt.y+(tgt.vy||0)*lead-s.y, tgt.x+(tgt.vx||0)*lead-s.x);
+      }
+      const a2=aa+(i-2)*.05;
       if(Math.abs(Math.cos(aa))>.12) s.face=Math.cos(aa)>=0?1:-1;
       s.ax=Math.cos(aa); s.ay=Math.sin(aa); s.lunge=Math.max(s.lunge,.6);
       G.proj.push({type:'masenko',team:s.team,owner:s,x:s.x+Math.cos(a2)*30,y:s.y+Math.sin(a2)*30,
-        vx:Math.cos(a2)*205,vy:Math.sin(a2)*205,r:18,dmg:100,life:3.4,ang:a2,wob:rnd(0,9)});
+        vx:Math.cos(a2)*MASENKO_SPD,vy:Math.sin(a2)*MASENKO_SPD,r:20,dmg:100,life:3.4,ang:a2,wob:rnd(0,9)});
       ring(s.x+Math.cos(a2)*26,s.y+Math.sin(a2)*26,46,'#FFF3B0',.26);
       G.fx.push({type:'bolt',x:s.x+Math.cos(a2)*26,y:s.y+Math.sin(a2)*26,ang:a2,life:.22,ml:.22,seed:rnd(0,9)});
       G.flashScreen=Math.max(G.flashScreen,.05);
@@ -1884,7 +1898,7 @@ function step(dt){
       }
     }
     if(p.gone) dead=true;
-    if(dead&&p.type==='twin'&&p.owner) later(.5,()=>releaseTwin(p.owner));
+    if(dead&&p.type==='twin'&&p.owner) later(.25,()=>releaseTwin(p.owner));
     if(dead)G.proj.splice(i,1);
   }
   for(let i=G.fx.length-1;i>=0;i--){ const e=G.fx[i]; if(!e) continue; e.life-=dt; if(e.type==='ring')e.r+=(e.max-e.r)*dt*7; if(e.life<=0)G.fx.splice(i,1); }
