@@ -146,6 +146,11 @@
         </label>
         <button id="sprClear">🗑 Xoá ảnh đã lưu</button>
       </div>
+      <div class="bar" style="margin:6px 0 0">
+        <label class="chk" title="Bật khi ảnh Twin shot của bạn đã vẽ sẵn cả Tsubasa lẫn đồng đội">
+          <input type="checkbox" id="twinSolo"> Ảnh Twin shot đã có sẵn đồng đội — đừng gọi thêm mô hình
+        </label>
+      </div>
       <div class="help" id="sprStatus">Ảnh bạn nạp sẽ được lưu lại, mở lại trang là có sẵn.</div>
       <div class="help"><b>Chọn nhiều ảnh cùng lúc cho một ô</b> (Ctrl/Cmd + click) thì game sẽ chạy chúng thành hoạt ảnh — 2–4 khung mỗi động tác là đủ mượt. Ảnh được thu về cao 480px trước khi lưu — đủ nét mà không quá nặng.</div>
     </details>
@@ -237,6 +242,7 @@ const SLOT={};
 
 /* ---------- bảng nhân vật chơi được ---------- */
 const PICK={a:'kono',b:'chichi'};
+let TWIN_SOLO=false;               // ảnh Twin shot đã vẽ sẵn đồng đội thì thôi gọi mô hình riêng
 const GOAL_MAX=8;                 // số goal cần để mở Victory Twin Shot
 const EAGLE_BURN=5;               // Wings of the Eagle cháy hết máu trong bấy nhiêu giây
 const MASENKO_SPD=330;            // Masenko bay nhanh hơn hẳn mức cũ 205
@@ -336,6 +342,11 @@ async function saveChar(ck){
 async function loadSaved(){
   try{
     let dirty=false;
+    const rawSolo=await Store.get('cfg_twinsolo');
+    if(rawSolo!==null&&rawSolo!==undefined){
+      TWIN_SOLO=String(rawSolo)==='1';
+      const cb=document.getElementById('twinSolo'); if(cb)cb.checked=TWIN_SOLO;
+    }
     const rawPick=await Store.get('cfg_picks');
     if(rawPick){ const p=JSON.parse(rawPick);
       if(CHARS[p.a])PICK.a=p.a; if(CHARS[p.b])PICK.b=p.b; dirty=true; }
@@ -1267,16 +1278,20 @@ function twinShot(t,e){
   later(.35,()=>{
     if(G.over)return;
     sfx('summon');
+    G.callBanner={txt:'TWIN SHOT!!',color:t.color,life:2,ml:2};
+    if(TWIN_SOLO){                               // ảnh đã có sẵn đồng đội, chỉ cần hào quang
+      ring(t.x,t.y,120,t.color,.5);
+      return;
+    }
     G.fx.push({type:'poof',x:mx,y:my-18,life:.7,ml:.7});
     G.mates.push({key:mateKey,name:mateName,x:mx,y:my,face:t.x>mx?1:-1,pose:'idle',life:9,ml:9});
-    G.callBanner={txt:'TWIN SHOT!!',color:t.color,life:2,ml:2};
     ring(mx,my,110,t.color,.5);
   });
   later(1.5,()=>{
     if(G.over)return;
     for(const m of G.mates) m.pose='atk1';
     sfx(mateKey==='hyuga'?'twin_hyuga':'twin_misaki');
-    const src={x:(t.x+mx)/2, y:(t.y+my)/2-14};
+    const src=TWIN_SOLO?{x:t.x+(t.face<0?-18:18), y:t.y-24}:{x:(t.x+mx)/2, y:(t.y+my)/2-14};
     const a=Math.atan2(e.y-src.y,e.x-src.x)+(chance(.5)?1:-1)*rnd(.8,1.25);
     G.proj.push({type:'twin',team:t.team,owner:t,tgt:e,
       x:src.x, y:src.y, vx:Math.cos(a)*360, vy:Math.sin(a)*360,
@@ -3182,6 +3197,11 @@ function startPicked(){
   newGame(); running=false; el('play').textContent='Bắt đầu';
   closeCsel();
 }
+el('twinSolo').addEventListener('change',e=>{
+  TWIN_SOLO=e.target.checked;
+  Store.set('cfg_twinsolo',TWIN_SOLO?'1':'0').catch(()=>{});
+  status(TWIN_SOLO?'Twin shot sẽ không gọi thêm mô hình đồng đội nữa.':'Twin shot sẽ gọi mô hình đồng đội như cũ.');
+});
 el('pick').addEventListener('click',openCsel);
 el('cselGo').addEventListener('click',startPicked);
 el('cselCancel').addEventListener('click',closeCsel);
