@@ -254,7 +254,7 @@ const CHARS={
   chichi:{
     name:'ChiChi', short:'ChiChi', tag:'Nội trợ · cận chiến', emoji:'🍳', color:'#FF4D6D', alt:'#FF93A8',
     role:'melee', speed:106, dodge:.55, male:false,
-    skills:['<b>1</b> Đấm đá (chí mạng 25)','<b>2</b> Mắng — 5 đợt sóng 360°','<b>Nội tại</b> 5 đòn +5% chí mạng','<b>Dưới 20% máu</b> gọi Goku / Gohan'],
+    skills:['<b>1</b> Đấm đá (chí mạng 25)','<b>2</b> Mắng — 5 đợt sóng 360°, hất ngược phi tiêu / kunai / bóng','<b>Nội tại</b> 5 đòn +5% chí mạng','<b>Dưới 20% máu</b> gọi Goku / Gohan'],
     init(f){ f.cds={s1:0,s2:cm(3)}; f.hits=0; f.critBonus=0; },
     think(f,e,d,auto){
       if(f.cds.s1<=0&&d<f.r+e.r+16&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
@@ -265,7 +265,7 @@ const CHARS={
   tsubasa:{
     name:'Ozora Tsubasa', short:'Tsubasa', tag:'Tiền đạo · sút bóng', emoji:'⚽', color:'#2ED573', alt:'#7DEBAB',
     role:'ranged', want:235, speed:100, dodge:.8, male:true,
-    skills:['<b>1</b> Basic shot 25 dmg (10% Bicycle kick 40)','<b>2</b> Drive shot 80 + thiêu đốt 5×3','<b>18 goal</b> Victory Twin Shot 150 + choáng 2s','<b>Dưới 15% máu</b> Wings of the Eagle'],
+    skills:['<b>1</b> Basic shot 25 dmg, hay đá hụt (10% Bicycle kick 40 + choáng)','<b>2</b> Drive shot 80 + thiêu đốt 5×3','<b>18 goal</b> Victory Twin Shot 150 + choáng 2s','<b>Dưới 15% máu</b> Wings of the Eagle'],
     init(f){ f.cds={s1:cm(1),s2:cm(3)}; f.goals=0; },
     think(f,e,d,auto){
       const sp=f.eagle?.5:1;
@@ -1078,6 +1078,10 @@ function scold(c,e){
     if(crit) say('Câu mắng chí mạng — 30 dmg!','c');
   });
 }
+/* đồ vật lý — sóng âm của ChiChi hất ngược được.
+   kame / masenko là năng lượng, drive & twin là chiêu đặc biệt: không hất được. */
+const PHYSICAL=new Set(['shuriken','kunai','ball']);
+
 /* ---------- Ozora Tsubasa ---------- */
 function knock(f,vx,vy,power){
   if(!f||f.summon)return;
@@ -1110,16 +1114,17 @@ function basicShot(t,e){
   });
 }
 function kickBall(t,e,bic){
-  // luôn sút về phía địch, nhưng lệch trái / phải / trúng ngay tâm — random
-  const side=[-1,0,1][Math.floor(Math.random()*3)];
-  const spread=side===0?rnd(-.03,.03):side*rnd(.10,.24);
+  // luôn sút về phía địch, nhưng lệch trái / phải / trúng ngay tâm — random.
+  // tỉ lệ vào giữa thấp và độ lệch rộng, nên đá hụt là chuyện thường.
+  const side=chance(.2)?0:(chance(.5)?1:-1);
+  const spread=side===0?rnd(-.05,.05):side*rnd(.17,.36);
   const a=Math.atan2(e.y-t.y,e.x-t.x)+spread;
-  const spd=bic?335:300;
+  const spd=bic?345:305;                      // nhanh hơn phi tiêu (285) một chút
   G.proj.push({type:'ball',bic:!!bic,team:t.team,owner:t,
     x:t.x+Math.cos(a)*26, y:t.y+Math.sin(a)*26-8,
     vx:Math.cos(a)*spd, vy:Math.sin(a)*spd,
     r:bic?13:11, dmg:bic?40:25, kb:bic?330:180,
-    life:4.5, spin:0, bounce:0, maxBounce:2});
+    life:4.5, spin:0, bounce:0, maxBounce:1});
 }
 /* Skill 2 — Drive shot: vọt lên trời rồi ngoặt xuống bổ vào địch */
 function driveShot(t,e){
@@ -1245,11 +1250,12 @@ function ballHit(p,f){
     hurt(f,p.dmg,o,p.bic?'BICYCLE KICK!':false);
     sfx('hit');
     if(f.alive&&f.invuln<=0){
-      f.stun=Math.max(f.stun,.25);
+      if(p.bic) f.stun=Math.max(f.stun,.25);    // chỉ bicycle kick mới gây choáng
       knock(f,p.vx,p.vy,p.kb||180);
     }
     ring(p.x,p.y,p.bic?70:46,p.bic?'#FFB03A':'#FFFFFF',.3);
     if(p.bic) say('Bicycle kick nổ tung — 40 dmg, hất văng và choáng 0.25 giây.','g');
+    else say('Cú sút trúng đích — 25 dmg và hất lùi.','g');
   }
   addGoal(o);
 }
@@ -1634,13 +1640,19 @@ function step(dt){
     }
     for(const p of G.proj){
       if(p.team===w.team||p.bounced)continue;
-      if(p.type!=='shuriken'&&p.type!=='kunai')continue;
+      // chỉ hất ngược được đồ vật lý: phi tiêu, kunai, trái bóng.
+      // tia / cầu năng lượng (kamehameha, masenko) và đòn tay chân thì không.
+      if(!PHYSICAL.has(p.type))continue;
       if(dist(p,w)<w.r+p.r){
         const a=Math.atan2(p.y-w.y,p.x-w.x)+rnd(-.25,.25), sp=Math.hypot(p.vx,p.vy);
         p.vx=Math.cos(a)*sp*1.15; p.vy=Math.sin(a)*sp*1.15;
         p.team=w.team; p.owner=w.owner; p.bounced=true; p.life=Math.max(p.life,2);
+        if(p.type==='ball'){ p.bounce=0; p.spin=0; }   // bóng bị hất ngược thì được nảy lại từ đầu
         G.fx.push({type:'ring',x:p.x,y:p.y,r:4,max:26,color:'#FFE100',life:.25,ml:.25});
-        say(p.type==='kunai'?'Sóng âm hất ngược kunai nổ về phía Konohamaru!':'Sóng âm hất ngược phi tiêu về phía Konohamaru!','c');
+        const back=w.owner?foeOf(w.owner):null;
+        const who=back?back.name:'đối thủ';
+        const what=p.type==='kunai'?'kunai nổ':(p.type==='ball'?'trái bóng':'phi tiêu');
+        say(`Sóng âm hất ngược ${what} về phía ${who}!`,'c');
       }
     }
     if(w.r>=w.max)G.waves.splice(i,1);
@@ -1710,11 +1722,11 @@ function step(dt){
         if(p.bounce>p.maxBounce){
           dead=true;
           G.fx.push({type:'dust',x:p.x,y:p.y,r:7,life:.4,ml:.4});
-          say(p.bic?'Bicycle kick dội tường lần thứ 3 — bóng tan biến.':'Cú sút trượt, bóng dội tường lần thứ 3 rồi tan biến.','m');
+          say('Bóng chạm tường lần nữa — tan biến.','m');
         }else{
           sfx('bounce'); ring(p.x,p.y,34,'#FFFFFF',.24);
           p.vx*=.94; p.vy*=.94;
-          say(`Bóng dội tường lần ${p.bounce} — còn ${p.maxBounce-p.bounce+1} lần nữa là tan.`,'m');
+          say(p.bic?'Bicycle kick trượt — bóng nảy tường một lần rồi mới tan.':'Cú sút trượt — bóng nảy tường một lần rồi mới tan.','m');
         }
       }
     }else if(!dead && (p.type==='drive'||p.type==='twin')){
