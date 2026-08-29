@@ -266,7 +266,7 @@ const CHARS={
   tsubasa:{
     name:'Ozora Tsubasa', short:'Tsubasa', tag:'Striker · Long shots', emoji:'⚽', color:'#2ED573', alt:'#7DEBAB',
     role:'ranged', want:235, speed:100, dodge:.8, male:true,
-    skills:['<b>1</b> Basic Shot 25 dmg, often misses (10% Bicycle Kick 40 + stun)','<b>2</b> Drive Shot 80 + burn 5×3',`<b>${GOAL_MAX} goals</b> Victory Twin Shot 150 + stun 2s`,'<b>Below 15% HP</b> Wings of the Eagle'],
+    skills:['<b>1</b> Basic Shot 25 dmg, often misses (10% Bicycle Kick 40 + stun)','<b>2</b> Drive Shot 80 + burn 5×3',`<b>${GOAL_MAX} goals</b> Victory Twin Shot 150 + stun 2s`,'<b>Below 15% HP</b> Wings of the Eagle — 2× attack speed, 80% resist, CC immune'],
     init(f){ f.cds={s1:cm(1),s2:cm(3)}; f.goals=0; },
     think(f,e,d,auto){
       const sp=f.eagle?.5:1;
@@ -908,8 +908,14 @@ function hitsBody(p,f){
 }
 /* choáng kèm loại hiệu ứng để vẽ cho đúng: điện giật, sao xoay, trái tim… */
 function stunFx(f,dur,kind){
+  if(f.eagle){                                   // bảo hộ: lên đồng thì miễn khống chế
+    G.floats.push({x:f.x,y:f.y-104,txt:'CC IMMUNE',color:'#FFE9A8',
+      life:.9,ml:.9,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
+    return false;
+  }
   if(dur>=f.stun||!f.stunKind) f.stunKind=kind||null;
   f.stun=Math.max(f.stun,dur);
+  return true;
 }
 function aim(f,e,power){
   const d=dist(f,e)||1;
@@ -1049,7 +1055,10 @@ function sexy(k,e){
     if(f===k||!f.alive||dist(f,k)>R+f.r)continue;
     if(f.summon){ say(`${f.name} đang dồn khí, không hề nao núng.`,'m'); continue; }
     f.dots.push({dps:20,left:2,acc:0,src:k,tint:'pink'});   // dính khói hồng: hồng
-    if(f.male){ stunFx(f,2,'heart'); sfx('stun'); say(`${f.name} đứng hình 2 giây.`,'g'); }
+    if(f.male){
+      if(stunFx(f,2,'heart')){ sfx('stun'); say(`${f.name} đứng hình 2 giây.`,'g'); }
+      else say(`${f.name} miễn nhiễm khống chế — không hề đứng hình.`,'g');
+    }
     else say(`${f.name} là nữ — không choáng, chỉ tức nổ máu.`,'c');
   }
 }
@@ -1105,7 +1114,7 @@ const canReflect=p=>PHYSICAL.has(p.type)&&!p.noReflect;
 
 /* ---------- Ozora Tsubasa ---------- */
 function knock(f,vx,vy,power){
-  if(!f||f.summon)return;
+  if(!f||f.summon||f.eagle)return;               // lên đồng thì không bị hất văng
   const m=Math.hypot(vx,vy)||1;
   f.kbx=vx/m*power; f.kby=vy/m*power;
 }
@@ -1223,12 +1232,13 @@ function eagleAwaken(t){
   later(2.5,()=>{
     if(G.over||!t.alive)return;
     t.eagle=true; t.eagleAcc=0; t.goals=0;
+    t.stun=0; t.stunKind=null; t.kbx=0; t.kby=0;   // gỡ sạch khống chế đang dính
     setPose(t,'wings',1.4);
     ring(t.x,t.y,150,'#FFF3C4',.7);
     ring(t.x,t.y,90,'#FFFFFF',.5);
     G.flashScreen=Math.max(G.flashScreen,.18);
     G.callBanner={txt:'WINGS OF THE EAGLE',color:'#FFF3C4',life:2.2,ml:2.2};
-    say('WINGS OF THE EAGLE! Tốc độ ra chiêu ×2, miễn 80% sát thương.','g');
+    say('WINGS OF THE EAGLE! Tốc độ ra chiêu ×2, miễn 80% sát thương, miễn nhiễm khống chế.','g');
     say('Cái giá: mỗi giây tự mất 15% máu hiện có, và không còn tính goal — Twin Shot vô hiệu.','m');
   });
 }
@@ -1239,8 +1249,10 @@ function eagleTick(t,dt){
     t.eagleAcc-=1;
     const loss=Math.max(1,t.hp*.15);
     t.hp=Math.max(1,t.hp-loss);          // tự bào máu, nhưng không tự chết
+    // sát thương tự đốt lúc lên đồng: người trong suốt xám
+    t.flash=Math.max(t.flash,.34); t.flashCol='gray';
     G.floats.push({x:t.x+(t.dotSide=(t.dotSide||1)*-1)*40,y:t.y-18,
-      txt:'-'+Math.round(loss),color:'#FFD27A',life:.85,ml:.85,sc:.5});
+      txt:'-'+Math.round(loss),color:'#C9CBD6',life:.85,ml:.85,sc:.5});
   }
 }
 /* va chạm bóng */
@@ -1251,13 +1263,13 @@ function ballHit(p,f){
     ring(f.x,f.y,170,'#FFF3C4',.6);
     hurt(f,p.dmg,o,'TWIN SHOT!');
     if(f.alive&&f.invuln<=0){
-      stunFx(f,2,'shock'); sfx('stun');                  // choáng Twin Shot: điện giật
+      const st=stunFx(f,2,'shock'); if(st) sfx('stun');   // choáng Twin Shot: điện giật
       f.vuln=Math.max(f.vuln,3);
       knock(f,p.vx,p.vy,260);
-      G.floats.push({x:f.x,y:f.y-118,txt:'STUNNED 2s · +50% DMG TAKEN 3s',color:'#FFF3C4',
+      G.floats.push({x:f.x,y:f.y-118,txt:st?'STUNNED 2s · +50% DMG TAKEN 3s':'+50% DMG TAKEN 3s',color:'#FFF3C4',
         life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
     }
-    say('VICTORY SHOT xuyên thẳng — 150 dmg, choáng 2 giây, thủng giáp 50% trong 3 giây!','g');
+    say('VICTORY SHOT xuyên thẳng — 150 dmg, thủng giáp 50% trong 3 giây!','g');
   }else if(p.type==='drive'){
     ring(f.x,f.y,120,'#FF8A2B',.5);
     hurt(f,p.dmg,o,'DRIVE SHOT!',null,'red');            // cú nổ lửa: đỏ
@@ -1590,9 +1602,10 @@ function step(dt){
     if(f.ghostT<=0){ f.ghostT=.06; G.fx.push({type:'ghost',x:f.x,y:f.y,face:f.face,key:f.key,pose:'ulti',h:f.spriteH,life:.34,ml:.34}); }
     if(dd<f.r+e.r+6&&!f.dash.hit){
       f.dash.hit=true; f.dash=null; f.pose='idle';
-      hurt(e,150,f,'RASENGAN!'); stunFx(e,3,'spin');
+      hurt(e,150,f,'RASENGAN!');
+      const st=stunFx(e,3,'spin');
       G.flashScreen=.18; ring(e.x,e.y,140,'#63B4FF',.55);
-      say('Rasengan trúng! 150 dmg + choáng 3 giây.','g');
+      say(st?'Rasengan trúng! 150 dmg + choáng 3 giây.':'Rasengan trúng! 150 dmg — nhưng đối thủ miễn nhiễm khống chế.','g');
     }else if(f.dash&&f.dash.t<=0){ f.dash=null; f.pose='idle'; say(`Rasengan tan — ${e.name} né kịp.`,'m'); }
   }
 
@@ -1991,21 +2004,71 @@ function drawFighter(f){
   ctx.save(); ctx.globalAlpha=.25*clamp(1-hop/26,.3,1); ctx.fillStyle='#000';
   ctx.beginPath(); ctx.ellipse(f.x+ox,f.y+22,20-hop*.35,6,0,0,7); ctx.fill(); ctx.restore();
 
-  // Wings of the Eagle: đôi cánh thiên thần sau lưng
+  // Wings of the Eagle: đôi cánh thiên thần mọc ngang lưng, kèm hào quang
   if(f.eagle){
     const flap=Math.sin(G.t*4.4);
+    const cx=f.x+ox;
+    const foot=f.y+20-hop;                       // gót chân trên hình
+    const wy=foot-f.spriteH*.74;                 // ngang lưng, ngay dưới vai
+    const gy=foot-f.spriteH*.55;                 // tâm hào quang
+    const hy=foot-f.spriteH-10;                  // vòng sáng trên đỉnh đầu
+
+    // vũng sáng dưới chân
     ctx.save();
-    ctx.globalAlpha=.3+Math.sin(G.t*3)*.08;
-    ctx.fillStyle='#FFF3C4';
-    ctx.beginPath(); ctx.ellipse(f.x+ox,f.y-30-hop,42,52,0,0,7); ctx.fill();
+    ctx.globalAlpha=.3+Math.sin(G.t*3)*.06;
+    const gp=ctx.createRadialGradient(cx,f.y+18,3,cx,f.y+18,62);
+    gp.addColorStop(0,'rgba(255,246,205,.95)'); gp.addColorStop(1,'rgba(255,246,205,0)');
+    ctx.fillStyle=gp;
+    ctx.beginPath(); ctx.ellipse(cx,f.y+18,62,19,0,0,7); ctx.fill();
     ctx.restore();
-    drawWings(f.x+ox, f.y-30-hop, 1.32+flap*.05, flap, '#FFFDF0', .92);
+
+    // hào quang toả quanh người
     ctx.save();
-    ctx.globalAlpha=.5;
-    for(let i=0;i<3;i++){
-      const a=G.t*1.6+i*2.1;
-      ctx.fillStyle='#FFF3C4';
-      ctx.beginPath(); ctx.arc(f.x+Math.cos(a)*46, f.y-30-hop+Math.sin(a*1.3)*24, 2.6, 0, 7); ctx.fill();
+    const pulse=1+Math.sin(G.t*2.6)*.07;
+    ctx.globalAlpha=.62+Math.sin(G.t*2.6)*.12;
+    const g2=ctx.createRadialGradient(cx,gy,6,cx,gy,112*pulse);
+    g2.addColorStop(0,'rgba(255,252,232,.8)');
+    g2.addColorStop(.42,'rgba(255,228,146,.3)');
+    g2.addColorStop(1,'rgba(255,214,110,0)');
+    ctx.fillStyle=g2;
+    ctx.beginPath(); ctx.arc(cx,gy,112*pulse,0,7); ctx.fill();
+    ctx.restore();
+
+    // tia sáng xoay chậm phía sau
+    ctx.save();
+    ctx.globalAlpha=.16+Math.sin(G.t*4)*.05;
+    ctx.strokeStyle='#FFF3C4'; ctx.lineWidth=7; ctx.lineCap='round';
+    for(let i=0;i<8;i++){
+      const a=G.t*.5+i*.785;
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(a)*34, gy+Math.sin(a)*34);
+      ctx.lineTo(cx+Math.cos(a)*(88+Math.sin(G.t*3+i)*10), gy+Math.sin(a)*(88+Math.sin(G.t*3+i)*10));
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    drawWings(cx, wy, 1.46+flap*.06, flap, '#FFFDF0', .95);
+
+    // vòng hào quang thiên thần trên đầu
+    ctx.save();
+    ctx.globalAlpha=.9;
+    ctx.shadowColor='rgba(255,220,120,.95)'; ctx.shadowBlur=18;
+    ctx.strokeStyle='#FFE9A8'; ctx.lineWidth=4.5;
+    ctx.beginPath(); ctx.ellipse(cx,hy,21,6.5,0,0,7); ctx.stroke();
+    ctx.shadowBlur=0;
+    ctx.strokeStyle='#FFFDF0'; ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.ellipse(cx,hy,21,6.5,0,0,7); ctx.stroke();
+    ctx.restore();
+
+    // hạt sáng bay lên
+    ctx.save();
+    for(let i=0;i<8;i++){
+      const t=(G.t*.45+i*.125)%1;
+      const px=cx+Math.sin(i*2.3+G.t*1.2)*44;
+      const py=f.y+16-t*(f.spriteH+30);
+      ctx.globalAlpha=(1-t)*.85*(i%2?.7:1);
+      ctx.fillStyle=i%3?'#FFF3C4':'#FFFFFF';
+      ctx.beginPath(); ctx.arc(px,py,2.4-t*1.2,0,7); ctx.fill();
     }
     ctx.restore();
   }
@@ -2050,7 +2113,9 @@ const TINT={
   red: {filter:'grayscale(1) sepia(1) saturate(30) hue-rotate(-40deg) brightness(.68) contrast(1.4)',
         glow:'#CE0020', alpha:.74, glowA:.6},
   pink:{filter:'sepia(1) saturate(5) hue-rotate(-62deg) brightness(1.3)',
-        glow:'#FF6EC7', alpha:.62, glowA:.34}
+        glow:'#FF6EC7', alpha:.62, glowA:.34},
+  gray:{filter:'grayscale(1) brightness(1.1) contrast(.9)',
+        glow:'#B9BCC8', alpha:.46, glowA:.36}
 };
 function heartPath(x,y,s){
   ctx.beginPath();
@@ -2185,12 +2250,21 @@ function drawBars(f){
   bar(x,y,w,h,f.hp/f.maxHp,f.color,String(Math.ceil(f.hp)));
   const C=CHARS[f.key];
   if(C&&C.gauge){ const gg=C.gauge(f); bar(x,y+h+2,w,20,gg.pct,gg.fill||'#FFE100',gg.txt); }
-  if(f.vuln>0){
-    ctx.font='900 11px "Space Mono",monospace'; ctx.textAlign='center';
-    ctx.lineWidth=3; ctx.strokeStyle='#000';
-    ctx.strokeText(`VULNERABLE +50% (${f.vuln.toFixed(1)}s)`,x+w/2,y+h+40);
-    ctx.fillStyle='#FFF3C4'; ctx.fillText(`VULNERABLE +50% (${f.vuln.toFixed(1)}s)`,x+w/2,y+h+40);
+  // dòng trạng thái: tên hiệu ứng đang mang và chỉ số của nó
+  const lines=[];
+  if(f.eagle){
+    lines.push({t:'WINGS OF THE EAGLE', c:'#FFE9A8', s:11.5});
+    lines.push({t:'+100% ATK SPEED · 80% RESIST · CC IMMUNE · -15% HP/s', c:'#FFF3C4', s:9});
   }
+  if(f.vuln>0) lines.push({t:`VULNERABLE +50% (${f.vuln.toFixed(1)}s)`, c:'#FFF3C4', s:11});
+  if(f.invuln>0) lines.push({t:`IMMUNE (${f.invuln.toFixed(1)}s)`, c:'#FF9AD5', s:11});
+  ctx.textAlign='center'; ctx.lineWidth=3; ctx.strokeStyle='#000';
+  lines.forEach((L,i)=>{
+    const ly=y+h+40+i*13;
+    ctx.font=`900 ${L.s}px "Space Mono",monospace`;
+    ctx.strokeText(L.t,x+w/2,ly);
+    ctx.fillStyle=L.c; ctx.fillText(L.t,x+w/2,ly);
+  });
 }
 function drawProj(p){
   ctx.save();
