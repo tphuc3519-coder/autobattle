@@ -146,11 +146,6 @@
         </label>
         <button id="sprClear">🗑 Xoá ảnh đã lưu</button>
       </div>
-      <div class="bar" style="margin:6px 0 0">
-        <label class="chk" title="Bật khi ảnh Twin shot của bạn đã vẽ sẵn cả Tsubasa lẫn đồng đội">
-          <input type="checkbox" id="twinSolo"> Ảnh Twin shot đã có sẵn đồng đội — đừng gọi thêm mô hình
-        </label>
-      </div>
       <div class="help" id="sprStatus">Ảnh bạn nạp sẽ được lưu lại, mở lại trang là có sẵn.</div>
       <div class="help"><b>Chọn nhiều ảnh cùng lúc cho một ô</b> (Ctrl/Cmd + click) thì game sẽ chạy chúng thành hoạt ảnh — 2–4 khung mỗi động tác là đủ mượt. Ảnh được thu về cao 480px trước khi lưu — đủ nét mà không quá nặng.</div>
     </details>
@@ -230,11 +225,11 @@ const cm=v=>v*CAST.mul;
 const SETS=[
   {key:'kono', name:'Konohamaru', poses:[['idle','Thủ thế'],['atk1','Phi tiêu'],['atk2','Kết ấn phân thân'],['clone','Phân thân (bay ra)'],['skill','Sexy Jutsu'],['ulti','Rasengan'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
   {key:'chichi', name:'ChiChi', poses:[['idle','Thủ thế'],['atk1','Đấm đá'],['atk2','Mắng'],['skill','Hăng máu'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc gọi)'],['call','Dáng gọi viện binh']]},
-  {key:'tsubasa', name:'Ozora Tsubasa', poses:[['idle','Thủ thế'],['atk1','Sút bóng'],['bicycle','Overhead kick'],['atk2','Drive shot'],['skill','Twin shot'],['wings','Đôi cánh đại bàng'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc kích hoạt nội tại)']]},
+  {key:'tsubasa', name:'Ozora Tsubasa', poses:[['idle','Thủ thế'],['atk1','Sút bóng'],['bicycle','Overhead kick'],['atk2','Drive shot'],['wings','Đôi cánh đại bàng'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc kích hoạt nội tại)']]},
   {key:'goku', name:'Son Goku', poses:[['idle','Đứng'],['skill','Dồn khí'],['atk1','Kamehameha']]},
   {key:'gohan', name:'Son Gohan', poses:[['idle','Đứng'],['skill','Dồn khí'],['atk1','Masenko']]},
-  {key:'hyuga', name:'Hyuga (đồng đội Tsubasa)', poses:[['idle','Đứng'],['atk1','Sút đôi']]},
-  {key:'misaki', name:'Misaki (đồng đội Tsubasa)', poses:[['idle','Đứng'],['atk1','Sút đôi']]},
+  {key:'hyuga', name:'Hyuga (đồng đội Tsubasa)', poses:[['idle','Đứng'],['atk1','Twin shot: Tsubasa + Hyuga']]},
+  {key:'misaki', name:'Misaki (đồng đội Tsubasa)', poses:[['idle','Đứng'],['atk1','Twin shot: Tsubasa + Misaki']]},
   {key:'wakabayashi', name:'Wakabayashi (hồi tưởng)', poses:[['idle','Đứng']]},
   {key:'ishizaki', name:'Ishizaki (hồi tưởng)', poses:[['idle','Đứng']]},
 ];
@@ -242,7 +237,6 @@ const SLOT={};
 
 /* ---------- bảng nhân vật chơi được ---------- */
 const PICK={a:'kono',b:'chichi'};
-let TWIN_SOLO=false;               // ảnh Twin shot đã vẽ sẵn đồng đội thì thôi gọi mô hình riêng
 const GOAL_MAX=8;                 // số goal cần để mở Victory Twin Shot
 const EAGLE_BURN=5;               // Wings of the Eagle cháy hết máu trong bấy nhiêu giây
 const MASENKO_SPD=330;            // Masenko bay nhanh hơn hẳn mức cũ 205
@@ -342,11 +336,6 @@ async function saveChar(ck){
 async function loadSaved(){
   try{
     let dirty=false;
-    const rawSolo=await Store.get('cfg_twinsolo');
-    if(rawSolo!==null&&rawSolo!==undefined){
-      TWIN_SOLO=String(rawSolo)==='1';
-      const cb=document.getElementById('twinSolo'); if(cb)cb.checked=TWIN_SOLO;
-    }
     const rawPick=await Store.get('cfg_picks');
     if(rawPick){ const p=JSON.parse(rawPick);
       if(CHARS[p.a])PICK.a=p.a; if(CHARS[p.b])PICK.b=p.b; dirty=true; }
@@ -928,7 +917,7 @@ function mk(o){
     vx:0, vy:0, recoil:0, rdx:0, rdy:0, dustT:0, ghostT:0,
     ax:1, ay:0, lunge:0, invuln:0, dvx:0, dvy:0, moveAmt:0, leanS:0,
     wx:W/2, wy:H/2, wt:0, engage:true, engT:2,
-    goals:0, vuln:0, kbx:0, kby:0, driveAura:0, lock:0, twinBusy:false, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
+    goals:0, vuln:0, kbx:0, kby:0, driveAura:0, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
 }
 function mkChar(key,team,x,y){
@@ -1038,6 +1027,7 @@ function finish(w){
   G.over=win.name.toUpperCase();
   G.winner=win; G.endT=0; G.announced=false;
   G.mates.length=0; G.flashback=null;
+  for(const f of G.fighters){ f.hidden=false; f.unhideT=0; }
   const loser = (win===G.k)?G.c:G.k;
   if(loser){
     loser.pose='hurt'; loser.poseT=0; loser.flash=0; loser.recoil=0; loser.lunge=0;
@@ -1245,14 +1235,20 @@ function driveShot(t,e){
 function releaseTwin(t){
   if(!t||!t.twinBusy)return;
   t.twinBusy=false;
-  t.lock=0;
-  if(t.pose==='skill'){ t.pose='idle'; t.poseT=0; }
-  for(const m of G.mates) m.life=Math.min(m.life,.18);
+  // nhịp 3: mô hình sút đôi tan hẳn rồi Tsubasa mới hiện lại, không chồng lên nhau
+  const fade=.18;
+  for(const m of G.mates) m.life=Math.min(m.life,fade);
+  t.unhideT=fade+.02;                          // đếm ngược riêng, không dùng hẹn giờ chung
+  t.pose='idle'; t.poseT=0;
   if(t.cds){                                   // hồi chiêu mới bắt đầu tính từ đây
     t.cds.s1=Math.max(t.cds.s1||0,cm(.5));
     t.cds.s2=Math.max(t.cds.s2||0,cm(1.2));
   }
 }
+/* Màn Twin Shot chạy ba nhịp:
+   1. Tsubasa đứng bên phải với mô hình thường, đồng đội hiện ra bên trái
+   2. Cả hai được thay bằng một mô hình sút đôi riêng của từng viện binh
+   3. Mô hình đó tan, Tsubasa trở lại như cũ                                  */
 function twinShot(t,e){
   t.goals=0;
   t.twinBusy=true; t.lock=99;                  // mở khoá khi bóng kết thúc, xem releaseTwin
@@ -1261,37 +1257,35 @@ function twinShot(t,e){
   G.freeze=1.5; G.freezeAt=t;
   G.proj.length=0; G.waves.length=0; G.floats.length=0; G.callBanner=null;
   for(const f of G.fighters){ f.flash=0; f.recoil=0; f.lunge=0; }
-  // dọn đồng đội của cú sút trước, tránh hai người cùng đứng trên sân
   for(const m of G.mates) G.fx.push({type:'poof',x:m.x,y:m.y-18,life:.4,ml:.4});
   G.mates.length=0;
   const mateKey=chance(.5)?'hyuga':'misaki';
   const mateName=mateKey==='hyuga'?'Hyuga':'Misaki';
-  // đứng hẳn sang một bên: chọn phía nào còn chỗ rộng hơn sau khi kẹp vào sàn,
-  // vì đồng đội mặc áo giống hệt Tsubasa, đứng chồng lên là nhìn thành hai Tsubasa
-  const GAP=124;
-  const cand=[t.x+GAP,t.x-GAP].map(v=>clamp(v,PAD+34,W-PAD-34));
-  let mx=Math.abs(cand[1]-t.x)>Math.abs(cand[0]-t.x)?cand[1]:cand[0];
-  const my=clamp(t.y+rnd(-10,18),PAD+60,H-PAD-24);
-  setPose(t,'skill',9);
+  // nhịp 1: dọn chỗ để Tsubasa đứng bên phải, đồng đội bên trái
+  const GAP=126;
+  t.x=clamp(t.x,PAD+34+GAP,W-PAD-34);
+  t.y=clamp(t.y,PAD+70,H-PAD-30);
+  const mx=clamp(t.x-GAP,PAD+34,W-PAD-34), my=t.y;
+  const cx=(t.x+mx)/2;
+  setPose(t,'idle',0);
   aim(t,e,1.2);
   say(`${mateName} băng vào — VICTORY SHOT, TWIN SHOT!`,'g');
   later(.35,()=>{
     if(G.over)return;
     sfx('summon');
     G.callBanner={txt:'TWIN SHOT!!',color:t.color,life:2,ml:2};
-    if(TWIN_SOLO){                               // ảnh đã có sẵn đồng đội, chỉ cần hào quang
-      ring(t.x,t.y,120,t.color,.5);
-      return;
-    }
     G.fx.push({type:'poof',x:mx,y:my-18,life:.7,ml:.7});
-    G.mates.push({key:mateKey,name:mateName,x:mx,y:my,face:t.x>mx?1:-1,pose:'idle',life:9,ml:9});
+    G.mates.push({key:mateKey,name:mateName,x:mx,y:my,face:1,pose:'idle',h:118,life:9,ml:9});
     ring(mx,my,110,t.color,.5);
   });
   later(1.5,()=>{
     if(G.over)return;
-    for(const m of G.mates) m.pose='atk1';
+    // nhịp 2: hai người nhường chỗ cho mô hình sút đôi của đúng viện binh đó
+    t.hidden=true;
+    G.fx.push({type:'poof',x:cx,y:my-20,life:.5,ml:.5});
+    for(const m of G.mates){ m.pose='atk1'; m.x=cx; m.y=my; m.h=150; m.face=1; m.quiet=true; }
     sfx(mateKey==='hyuga'?'twin_hyuga':'twin_misaki');
-    const src=TWIN_SOLO?{x:t.x+(t.face<0?-18:18), y:t.y-24}:{x:(t.x+mx)/2, y:(t.y+my)/2-14};
+    const src={x:cx, y:my-34};
     const a=Math.atan2(e.y-src.y,e.x-src.x)+(chance(.5)?1:-1)*rnd(.8,1.25);
     G.proj.push({type:'twin',team:t.team,owner:t,tgt:e,
       x:src.x, y:src.y, vx:Math.cos(a)*360, vy:Math.sin(a)*360,
@@ -1592,7 +1586,7 @@ function step(dt){
   for(const f of G.fighters){
     if(f.stun>0)f.stun-=dt;
     if(f.flash>0)f.flash-=dt;
-    if(f.poseT>0){ f.poseT-=dt; if(f.poseT<=0&&!f.dash) f.pose = f.summon&&f.fired?'atk1':((f.summon||f.twinBusy)?'skill':'idle'); }
+    if(f.poseT>0){ f.poseT-=dt; if(f.poseT<=0&&!f.dash) f.pose = f.summon&&f.fired?'atk1':(f.summon?'skill':'idle'); }
     f.strafeT-=dt; if(f.strafeT<=0){ f.strafe=chance(.5)?1:-1; f.strafeT=rnd(.9,2.2); }
     if(f.recoil>0) f.recoil=Math.max(0,f.recoil-dt*4);
     if(f.lunge>0) f.lunge=Math.max(0,f.lunge-dt*3.2);
@@ -1600,6 +1594,7 @@ function step(dt){
     if(f.vuln>0) f.vuln=Math.max(0,f.vuln-dt);
     if(f.driveAura>0) f.driveAura=Math.max(0,f.driveAura-dt);
     if(f.lock>0) f.lock=Math.max(0,f.lock-dt);
+    if(f.unhideT>0){ f.unhideT-=dt; if(f.unhideT<=0){ f.hidden=false; f.lock=0; } }
     if(f.eagle) eagleTick(f,dt);
     if(!f.summon && f.hp<=f.maxHp*.20) f.injured=true;   // đã tơi tả là giữ luôn
     if(!f.summon){
@@ -2108,6 +2103,7 @@ function sprite(f){
   return arr[Math.floor(G.t*fps)%arr.length];
 }
 function drawFighter(f){
+  if(f.hidden)return;                          // đang thay bằng mô hình sút đôi
   const img=sprite(f);
   const mv=f.moveAmt!==undefined?clamp(f.moveAmt,0,1):(f.moving?1:0);
   const hop = Math.abs(Math.sin(G.t*7.5))*7*mv + Math.sin(G.t*2.4)*2.5*(1-mv);
@@ -2851,15 +2847,17 @@ function drawMate(m){
   ctx.globalAlpha=al;
   ctx.translate(m.x,m.y+20);
   ctx.scale(m.face<0?-1:1,1);
-  if(img){ const h=118,w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
+  if(img){ const h=m.h||118,w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
   else vector({key:m.key,face:1,moving:false,pose:m.pose,poseT:m.pose==='atk1'?.5:0});
   ctx.restore();
-  ctx.save();
-  ctx.globalAlpha=al;
-  ctx.font='900 11px "Space Mono",monospace'; ctx.textAlign='center';
-  ctx.lineWidth=3; ctx.strokeStyle='#000'; ctx.strokeText(m.name.toUpperCase(),m.x,m.y+40);
-  ctx.fillStyle='#FFF3C4'; ctx.fillText(m.name.toUpperCase(),m.x,m.y+40);
-  ctx.restore();
+  if(!m.quiet){
+    ctx.save();
+    ctx.globalAlpha=al;
+    ctx.font='900 11px "Space Mono",monospace'; ctx.textAlign='center';
+    ctx.lineWidth=3; ctx.strokeStyle='#000'; ctx.strokeText(m.name.toUpperCase(),m.x,m.y+40);
+    ctx.fillStyle='#FFF3C4'; ctx.fillText(m.name.toUpperCase(),m.x,m.y+40);
+    ctx.restore();
+  }
 }
 /* Vẽ sẵn hình vector của một nhân vật ra canvas phụ và giữ lại dùng nhiều lần.
    Cần vì lớp nhoè của flashback áp lên từng lệnh vẽ: hình vector có hàng chục
@@ -3197,11 +3195,6 @@ function startPicked(){
   newGame(); running=false; el('play').textContent='Bắt đầu';
   closeCsel();
 }
-el('twinSolo').addEventListener('change',e=>{
-  TWIN_SOLO=e.target.checked;
-  Store.set('cfg_twinsolo',TWIN_SOLO?'1':'0').catch(()=>{});
-  status(TWIN_SOLO?'Twin shot sẽ không gọi thêm mô hình đồng đội nữa.':'Twin shot sẽ gọi mô hình đồng đội như cũ.');
-});
 el('pick').addEventListener('click',openCsel);
 el('cselGo').addEventListener('click',startPicked);
 el('cselCancel').addEventListener('click',closeCsel);
