@@ -130,7 +130,7 @@
     <button id="testGoku" title="Gọi Goku ngay để thử">🧪 Test Goku</button>
     <button id="testGohan" title="Gọi Gohan ngay để thử">🧪 Test Gohan</button>
     <button id="testTwin" title="Nạp đủ goal để xem Victory Twin Shot">🧪 Test Twin Shot</button>
-    <button id="testChaos" title="Ép Tsubasa hoá Chaos ngay">🧪 Test Chaos</button>
+    <button id="testEagle" title="Ép Tsubasa vào trạng thái Wings of the Eagle">🧪 Test Eagle</button>
   </div>
 
   <div class="stage"><canvas id="arena" width="620" height="620"></canvas></div>
@@ -225,7 +225,7 @@ const cm=v=>v*CAST.mul;
 const SETS=[
   {key:'kono', name:'Konohamaru', poses:[['idle','Thủ thế'],['atk1','Phi tiêu'],['atk2','Kết ấn phân thân'],['clone','Phân thân (bay ra)'],['skill','Sexy Jutsu'],['ulti','Rasengan'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
   {key:'chichi', name:'ChiChi', poses:[['idle','Thủ thế'],['atk1','Đấm đá'],['atk2','Mắng'],['skill','Hăng máu'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc gọi)'],['call','Dáng gọi viện binh']]},
-  {key:'tsubasa', name:'Ozora Tsubasa', poses:[['idle','Thủ thế'],['atk1','Sút bóng'],['bicycle','Bicycle kick'],['atk2','Drive shot'],['skill','Twin shot'],['wings','Chaos (đôi cánh)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc hoá Chaos)']]},
+  {key:'tsubasa', name:'Ozora Tsubasa', poses:[['idle','Thủ thế'],['atk1','Sút bóng'],['bicycle','Overhead kick'],['atk2','Drive shot'],['skill','Twin shot'],['wings','Đôi cánh đại bàng'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc kích hoạt nội tại)']]},
   {key:'goku', name:'Son Goku', poses:[['idle','Đứng'],['skill','Dồn khí'],['atk1','Kamehameha']]},
   {key:'gohan', name:'Son Gohan', poses:[['idle','Đứng'],['skill','Dồn khí'],['atk1','Masenko']]},
   {key:'hyuga', name:'Hyuga (đồng đội Tsubasa)', poses:[['idle','Đứng'],['atk1','Sút đôi']]},
@@ -238,8 +238,8 @@ const SLOT={};
 /* ---------- bảng nhân vật chơi được ---------- */
 const PICK={a:'kono',b:'chichi'};
 const GOAL_MAX=8;                 // số goal cần để mở Victory Twin Shot
-const CHAOS_BURN=5;               // trạng thái Chaos cháy hết máu trong bấy nhiêu giây
-const CHAOS_CD=.4;                // +150% tốc độ ra chiêu: hồi chiêu chỉ còn 40%
+const EAGLE_BURN=5;               // Wings of the Eagle cháy hết máu trong bấy nhiêu giây
+const EAGLE_CD=.4;                // +150% tốc độ ra chiêu: hồi chiêu chỉ còn 40%
 const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
@@ -269,16 +269,16 @@ const CHARS={
   tsubasa:{
     name:'Ozora Tsubasa', short:'Tsubasa', tag:'Striker · Long shots', emoji:'⚽', color:'#2ED573', alt:'#7DEBAB',
     role:'ranged', want:235, speed:100, dodge:.8, male:true,
-    skills:['<b>1</b> Basic Shot 25 dmg, often misses (10% Bicycle Kick 40 + stun)','<b>2</b> Drive Shot 80 + burn 5×3',`<b>${GOAL_MAX} goals</b> Victory Twin Shot 150 + stun 2s`,`<b>Below 8% HP</b> Chaos — +150% attack speed, 70% resist, CC immune, burns out in ${CHAOS_BURN}s`],
+    skills:['<b>1</b> Basic Shot 25 dmg, often misses (10% Overhead Kick 40 + stun)','<b>2</b> Drive Shot 80 + burn 5×3',`<b>${GOAL_MAX} goals</b> Victory Twin Shot 150 + stun 2s`,`<b>Below 8% HP</b> Wings of the Eagle — +150% attack speed, 70% resist, CC immune, burns out in ${EAGLE_BURN}s`],
     init(f){ f.cds={s1:cm(1),s2:cm(3)}; f.goals=0; },
     think(f,e,d,auto){
-      const sp=f.chaos?CHAOS_CD:1;
+      const sp=f.eagle?EAGLE_CD:1;
       if(f.cds.s1<=0&&(auto?d<520:keys['j'])){ f.cds.s1=cm(1.35)*sp; basicShot(f,e); }
       if(f.cds.s2<=0&&(auto?d<560:keys['k'])){ f.cds.s2=cm(6.5)*sp; driveShot(f,e); }
-      if(!f.chaos&&f.goals>=GOAL_MAX&&(auto||keys['l'])) twinShot(f,e);
+      if(!f.eagle&&f.goals>=GOAL_MAX&&(auto||keys['l'])) twinShot(f,e);
     },
-    gauge:f=>f.chaos
-      ? {pct:clamp(1-f.chaosT/CHAOS_BURN,0,1), fill:'#FFF3C4', txt:`CHAOS ${Math.max(0,CHAOS_BURN-f.chaosT).toFixed(1)}s`}
+    gauge:f=>f.eagle
+      ? {pct:clamp(1-f.eagleT/EAGLE_BURN,0,1), fill:'#FFF3C4', txt:`EAGLE ${Math.max(0,EAGLE_BURN-f.eagleT).toFixed(1)}s`}
       : {pct:f.goals/GOAL_MAX, fill:'#FFE100', txt:`Goal: ${f.goals}/${GOAL_MAX}`}
   }
 };
@@ -435,7 +435,7 @@ const SFX_EVENTS=[
   ['throw','Ném phi tiêu'],['hit','Trúng phi tiêu'],['clone','Phân thân'],['sexy','Sexy Jutsu'],
   ['rasengan','Rasengan'],['punch','ChiChi đấm'],['crit','Chí mạng'],['scold','Mắng'],
   ['stun','Choáng'],['summon','Viện binh tới'],['kame','Kamehameha'],['masenko','Masenko'],['callgoku','ChiChi gọi Goku'],['callgohan','ChiChi gọi Gohan'],['boom','Kunai nổ'],['ko','Kết thúc'],['win','Nhạc thắng trận'],['cheer','Khán giả hò reo'],
-  ['kick','Tsubasa sút bóng'],['bicycle','Bicycle kick'],['bounce','Bóng dội tường'],['drive','Drive shot'],['twin','Twin shot'],['goal','Ghi goal'],['wings','Chaos (đôi cánh)'],
+  ['kick','Tsubasa sút bóng'],['bicycle','Overhead kick'],['bounce','Bóng dội tường'],['drive','Drive shot'],['twin','Twin shot'],['goal','Ghi goal'],['wings','Đôi cánh đại bàng'],
   ['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt']
 ];
 const SFXBUF={};
@@ -890,7 +890,7 @@ function mk(o){
     vx:0, vy:0, recoil:0, rdx:0, rdy:0, dustT:0, ghostT:0,
     ax:1, ay:0, lunge:0, invuln:0, dvx:0, dvy:0, moveAmt:0, leanS:0,
     wx:W/2, wy:H/2, wt:0, engage:true, engT:2,
-    goals:0, vuln:0, kbx:0, kby:0, driveAura:0, chaos:false, chaosAcc:0, chaosT:0, chaosBurn:0, chaosDone:false, summonDone:false
+    goals:0, vuln:0, kbx:0, kby:0, driveAura:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
 }
 function mkChar(key,team,x,y){
@@ -937,7 +937,7 @@ function hitsBody(p,f){
 }
 /* choáng kèm loại hiệu ứng để vẽ cho đúng: điện giật, sao xoay, trái tim… */
 function stunFx(f,dur,kind){
-  if(f.chaos){                                   // bảo hộ: hoá Chaos thì miễn khống chế
+  if(f.eagle){                                   // bảo hộ: lúc này miễn khống chế
     G.floats.push({x:f.x,y:f.y-104,txt:'CC IMMUNE',color:'#FFE9A8',
       life:.9,ml:.9,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
     return false;
@@ -962,7 +962,7 @@ function hurt(t,amt,src,crit,kind,tint){
     return;
   }
   if(t.vuln>0) amt*=1.5;                    // dính Twin Shot: nhận thêm 50% sát thương
-  if(t.chaos) amt*=.3;                      // Chaos: miễn 70% sát thương
+  if(t.eagle) amt*=.3;                      // Wings of the Eagle: miễn 70% sát thương
   t.hp=Math.max(0,t.hp-amt);
   t.flash=crit?.2:.12; t.recoil=crit?1.4:1;
   t.flashCol=tint||null;                    // đỏ: nổ / thiêu đốt · hồng: Sexy no Jutsu
@@ -1134,7 +1134,7 @@ function scold(c,e){
   });
 }
 /* Sóng âm của ChiChi chỉ hất ngược được đồ vật lý: phi tiêu, kunai và trái bóng
-   (cả basic shot lẫn bicycle kick — cùng là type 'ball').
+   (cả basic shot lẫn overhead kick — cùng là type 'ball').
    Kame / masenko là tia và cầu năng lượng nên không hất được.
    Drive shot và twin shot tuy là bóng nhưng cố ý miễn nhiễm với đòn phản:
    vừa không nằm trong tập này, vừa mang cờ noReflect ngay lúc tạo. */
@@ -1143,12 +1143,12 @@ const canReflect=p=>PHYSICAL.has(p.type)&&!p.noReflect;
 
 /* ---------- Ozora Tsubasa ---------- */
 function knock(f,vx,vy,power){
-  if(!f||f.summon||f.chaos)return;               // hoá Chaos thì không bị hất văng
+  if(!f||f.summon||f.eagle)return;               // lúc này không bị hất văng
   const m=Math.hypot(vx,vy)||1;
   f.kbx=vx/m*power; f.kby=vy/m*power;
 }
 function addGoal(f){
-  if(!f||f.key!=='tsubasa'||f.summon||f.chaos||G.over)return;
+  if(!f||f.key!=='tsubasa'||f.summon||f.eagle||G.over)return;
   if(f.goals>=GOAL_MAX)return;
   f.goals++;
   G.floats.push({x:f.x+rnd(-10,10),y:f.y-64,txt:`GOAL ${f.goals}/${GOAL_MAX}`,color:'#FFE100',life:.9,ml:.9,sc:.62});
@@ -1159,13 +1159,13 @@ function tsuBanner(t,txt){
   G.floats.push({x:t.x,y:t.y-104,txt,color:t.color,life:1.6,ml:1.6,
     banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.07,.07)});
 }
-/* Skill 1 — Basic shot (10% thành Bicycle kick) */
+/* Skill 1 — Basic shot (10% thành Overhead kick) */
 function basicShot(t,e){
-  const sp=t.chaos?CHAOS_CD:1;
+  const sp=t.eagle?EAGLE_CD:1;
   const bic=chance(.10);
   setPose(t,bic?'bicycle':'atk1',cm(bic?.62:.5)*sp);
   aim(t,e,bic?1.5:1);
-  if(bic){ tsuBanner(t,'BICYCLE KICK!'); say('Tsubasa bật người — BICYCLE KICK!','g'); }
+  if(bic){ tsuBanner(t,'OVERHEAD KICK!'); say('Tsubasa bật người — OVERHEAD KICK!','g'); }
   later(cm(bic?.3:.22)*sp,()=>{
     if(!t.alive||G.over||G.freeze>0)return;
     sfx(bic?'bicycle':'kick');
@@ -1187,7 +1187,7 @@ function kickBall(t,e,bic){
 }
 /* Skill 2 — Drive shot: vọt lên trời rồi ngoặt xuống bổ vào địch */
 function driveShot(t,e){
-  const sp=t.chaos?CHAOS_CD:1;
+  const sp=t.eagle?EAGLE_CD:1;
   setPose(t,'atk2',cm(.9)*sp); aim(t,e,1.2); sfx('drive');
   t.driveAura=cm(2.4)*sp;                     // hào quang đại bàng phủ lên người
   tsuBanner(t,'DRIVE SHOT!');
@@ -1238,9 +1238,9 @@ function twinShot(t,e){
     ring(src.x,src.y,130,'#FFF3C4',.5);
   });
 }
-/* Nội tại — CHAOS: 5 giây cuối đời, mạnh nhất và cũng là hạn chót */
-function chaosAwaken(t){
-  t.chaosDone=true;
+/* Nội tại — Wings of the Eagle: 5 giây cuối đời, mạnh nhất và cũng là hạn chót */
+function eagleAwaken(t){
+  t.eagleDone=true;
   t.injured=true;
   setPose(t,'wounded',1);
   G.freeze=3; G.freezeAt=t;
@@ -1261,32 +1261,32 @@ function chaosAwaken(t){
   later(.5,()=>{ if(!G.over) sfx('wings'); });
   later(2.5,()=>{
     if(G.over||!t.alive)return;
-    t.chaos=true; t.chaosAcc=0; t.chaosT=0; t.chaosBurn=t.hp/CHAOS_BURN; t.goals=0;
+    t.eagle=true; t.eagleAcc=0; t.eagleT=0; t.eagleBurn=t.hp/EAGLE_BURN; t.goals=0;
     t.stun=0; t.stunKind=null; t.kbx=0; t.kby=0;   // gỡ sạch khống chế đang dính
     setPose(t,'wings',1.4);
     ring(t.x,t.y,150,'#FFF3C4',.7);
     ring(t.x,t.y,90,'#FFFFFF',.5);
     G.flashScreen=Math.max(G.flashScreen,.18);
-    G.callBanner={txt:'CHAOS',color:'#FFF3C4',life:2.2,ml:2.2};
-    say('CHAOS! Tốc độ ra chiêu +150%, miễn 70% sát thương, miễn nhiễm khống chế.','g');
-    say(`Cái giá: cháy sạch máu trong ${CHAOS_BURN}s là gục, và không còn tính goal — Twin Shot vô hiệu.`,'m');
+    G.callBanner={txt:'WINGS OF THE EAGLE',color:'#FFF3C4',life:2.2,ml:2.2};
+    say('WINGS OF THE EAGLE! Tốc độ ra chiêu +150%, miễn 70% sát thương, miễn nhiễm khống chế.','g');
+    say(`Cái giá: cháy sạch máu trong ${EAGLE_BURN}s là gục, và không còn tính goal — Twin Shot vô hiệu.`,'m');
   });
 }
-/* Đốt máu lúc hoá Chaos: chia đều số máu còn lại vào CHAOS_BURN giây, nên dù
+/* Đốt máu lúc kích hoạt nội tại: chia đều số máu còn lại vào EAGLE_BURN giây, nên dù
    đối thủ không đánh thêm đòn nào thì hết ngần ấy giây Tsubasa cũng gục. */
-function chaosTick(t,dt){
-  if(!t.chaos||!t.alive||G.over)return;
-  t.chaosT+=dt;
-  t.hp=Math.max(0,t.hp-t.chaosBurn*dt);
-  t.chaosAcc+=dt;
-  if(t.chaosAcc>=1){                     // mỗi giây hiện một con số cho dễ theo dõi
-    t.chaosAcc-=1;
+function eagleTick(t,dt){
+  if(!t.eagle||!t.alive||G.over)return;
+  t.eagleT+=dt;
+  t.hp=Math.max(0,t.hp-t.eagleBurn*dt);
+  t.eagleAcc+=dt;
+  if(t.eagleAcc>=1){                     // mỗi giây hiện một con số cho dễ theo dõi
+    t.eagleAcc-=1;
     t.flash=Math.max(t.flash,.34); t.flashCol='gray';
     sfx('burn');
     G.floats.push({x:t.x+(t.dotSide=(t.dotSide||1)*-1)*40,y:t.y-18,
-      txt:'-'+Math.round(t.chaosBurn),color:'#C9CBD6',life:.85,ml:.85,sc:.5});
+      txt:'-'+Math.round(t.eagleBurn),color:'#C9CBD6',life:.85,ml:.85,sc:.5});
   }
-  if(t.chaosT>=CHAOS_BURN||t.hp<=0){
+  if(t.eagleT>=EAGLE_BURN||t.hp<=0){
     t.hp=0; t.alive=false;
     ring(t.x,t.y,170,'#FFF3C4',.7);
     G.flashScreen=Math.max(G.flashScreen,.14);
@@ -1319,14 +1319,14 @@ function ballHit(p,f){
     }
     say('DRIVE SHOT trúng đích — 80 dmg kèm thiêu đốt 5 dmg × 3 đợt.','g');
   }else{
-    hurt(f,p.dmg,o,p.bic?'BICYCLE KICK!':false);
+    hurt(f,p.dmg,o,p.bic?'OVERHEAD KICK!':false);
     sfx('hit');
     if(f.alive&&f.invuln<=0){
-      if(p.bic) stunFx(f,.25,'spark');          // chỉ bicycle kick mới gây choáng
+      if(p.bic) stunFx(f,.25,'spark');          // chỉ overhead kick mới gây choáng
       knock(f,p.vx,p.vy,p.kb||180);
     }
     ring(p.x,p.y,p.bic?70:46,p.bic?'#FFB03A':'#FFFFFF',.3);
-    if(p.bic) say('Bicycle kick nổ tung — 40 dmg, hất văng và choáng 0.25 giây.','g');
+    if(p.bic) say('Overhead kick nổ tung — 40 dmg, hất văng và choáng 0.25 giây.','g');
     else say('Cú sút trúng đích — 25 dmg và hất lùi.','g');
   }
   addGoal(o);
@@ -1527,7 +1527,7 @@ function step(dt){
     if(f.invuln>0) f.invuln=Math.max(0,f.invuln-dt);
     if(f.vuln>0) f.vuln=Math.max(0,f.vuln-dt);
     if(f.driveAura>0) f.driveAura=Math.max(0,f.driveAura-dt);
-    if(f.chaos) chaosTick(f,dt);
+    if(f.eagle) eagleTick(f,dt);
     if(!f.summon && f.hp<=f.maxHp*.20) f.injured=true;   // đã tơi tả là giữ luôn
     if(!f.summon){
       f.wt-=dt;
@@ -1668,10 +1668,10 @@ function step(dt){
       G.flashScreen=Math.max(G.flashScreen,.07);
       summonHelp(f);
     }
-    if(f.key==='tsubasa' && !f.chaosDone && f.hp<=f.maxHp*.08){
+    if(f.key==='tsubasa' && !f.eagleDone && f.hp<=f.maxHp*.08){
       ring(f.x,f.y,130,'#FFF3C4',.5);
       G.flashScreen=Math.max(G.flashScreen,.08);
-      chaosAwaken(f);
+      eagleAwaken(f);
     }
   }
 
@@ -1799,7 +1799,7 @@ function step(dt){
         }else{
           sfx('bounce'); ring(p.x,p.y,34,'#FFFFFF',.24);
           p.vx*=.94; p.vy*=.94;
-          say(p.bic?'Bicycle kick trượt — bóng nảy tường một lần rồi mới tan.':'Cú sút trượt — bóng nảy tường một lần rồi mới tan.','m');
+          say(p.bic?'Overhead kick trượt — bóng nảy tường một lần rồi mới tan.':'Cú sút trượt — bóng nảy tường một lần rồi mới tan.','m');
         }
       }
     }else if(!dead && (p.type==='drive'||p.type==='twin')){
@@ -1935,7 +1935,7 @@ function vector(f){
     ctx.beginPath(); ctx.arc(-7,y-24,5,0,7); ctx.fill();
     ctx.beginPath(); ctx.arc(6,y-25,4.4,0,7); ctx.fill();
     ctx.fillStyle='#1B1428'; ctx.fillRect(-2,y-19,3,4); ctx.fillRect(5,y-19,3,4);
-    if(f.injured&&!f.chaos){
+    if(f.injured&&!f.eagle){
       ctx.strokeStyle='#8E1023'; ctx.lineWidth=2.4; ctx.lineCap='round';
       ctx.beginPath(); ctx.moveTo(-8,y+1); ctx.lineTo(-1,y+8); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(3,y-3); ctx.lineTo(9,y+3); ctx.stroke();
@@ -2016,8 +2016,8 @@ function sprite(f){
   const inj = f.injured && set.injured && set.injured.length;
   // tơi tả: chỉ thay ảnh đứng / trúng đòn, còn ra chiêu vẫn chạy ảnh riêng
   if(inj && (pk==='idle'||pk==='hurt')) pk='injured';
-  // hoá Chaos: ảnh đứng đổi sang dáng có cánh
-  if(f.chaos && set.wings && set.wings.length && (pk==='idle'||pk==='hurt'||pk==='injured')) pk='wings';
+  // lúc này: ảnh đứng đổi sang dáng có cánh
+  if(f.eagle && set.wings && set.wings.length && (pk==='idle'||pk==='hurt'||pk==='injured')) pk='wings';
   let arr=set[pk];
   if(!arr||!arr.length){
     if(pk==='bicycle') arr=set.atk1||set.idle;
@@ -2059,7 +2059,7 @@ function drawFighter(f){
   ctx.beginPath(); ctx.ellipse(f.x+ox,f.y+22,20-hop*.35,6,0,0,7); ctx.fill(); ctx.restore();
 
   // Drive Shot: hào quang chim đại bàng phủ lên người lúc tung chiêu
-  if(f.driveAura>0&&!f.chaos){
+  if(f.driveAura>0&&!f.eagle){
     const al=clamp(f.driveAura,0,1);
     const cx=f.x+ox, foot=f.y+20-hop;
     const wy=foot-f.spriteH*.72, gy=foot-f.spriteH*.5;
@@ -2083,8 +2083,8 @@ function drawFighter(f){
     ctx.restore();
   }
 
-  // Chaos: đôi cánh mọc ngang lưng, kèm hào quang
-  if(f.chaos){
+  // Wings of the Eagle: đôi cánh mọc ngang lưng, kèm hào quang
+  if(f.eagle){
     const flap=Math.sin(G.t*4.4);
     const cx=f.x+ox;
     const foot=f.y+20-hop;                       // gót chân trên hình
@@ -2314,7 +2314,7 @@ function bar(x,y,w,h,pct,fill,text,textCol){
   ctx.fillText(text,x+w/2,y+h/2+1);
   ctx.textBaseline='alphabetic';
 }
-/* Chữ rực lửa: dùng cho tên và tên hiệu ứng lúc hoá Chaos.
+/* Chữ rực lửa: dùng cho tên và tên hiệu ứng lúc Wings of the Eagle.
    Chữ nằm hẳn ngoài khung thanh máu, có quầng lửa và lưỡi lửa bốc lên. */
 function fireText(txt,cx,y,size,seed){
   const fl=.82+Math.sin(G.t*17+seed)*.11+Math.sin(G.t*31+seed*2.3)*.07;
@@ -2351,8 +2351,8 @@ function drawBars(f){
   if(f.summon)return;
   const w=112,h=24,x=clamp(f.x-w/2,12,W-w-12),y=f.y+30;
   ctx.textAlign='center';
-  if(f.chaos){
-    // hoá Chaos: tên tách hẳn khỏi khung thanh máu và bốc lửa
+  if(f.eagle){
+    // lúc này: tên tách hẳn khỏi khung thanh máu và bốc lửa
     fireText(f.name.toUpperCase(), x+w/2, y-12, 13, 0);
   }else{
     ctx.font='900 11px "Space Mono",monospace';
@@ -2365,12 +2365,12 @@ function drawBars(f){
   if(C&&C.gauge){ const gg=C.gauge(f); bar(x,y+h+2,w,20,gg.pct,gg.fill||'#FFE100',gg.txt); }
   // dòng trạng thái: tên hiệu ứng đang mang và chỉ số của nó
   let ly=y+h+42;
-  if(f.chaos){
-    fireText('CHAOS', x+w/2, ly, 13, 3.1);
+  if(f.eagle){
+    fireText('WINGS OF THE EAGLE', x+w/2, ly, 12, 3.1);
     ly+=15;
     ctx.font='900 9px "Space Mono",monospace';
     ctx.lineWidth=3; ctx.strokeStyle='#000';
-    const sub=`+150% ATK SPEED · 70% RESIST · CC IMMUNE · BURNS OUT IN ${CHAOS_BURN}s`;
+    const sub=`+150% ATK SPEED · 70% RESIST · CC IMMUNE · BURNS OUT IN ${EAGLE_BURN}s`;
     ctx.strokeText(sub,x+w/2,ly); ctx.fillStyle='#FFD9A0'; ctx.fillText(sub,x+w/2,ly);
     ly+=14;
   }
@@ -3054,22 +3054,22 @@ function testSummon(kind){
   summonHelp(c,kind);
   say(`[Thử nghiệm] Ép gọi ${kind==='goku'?'Son Goku':'Son Gohan'}.`,'m');
 }
-function testChaos(){
+function testEagle(){
   if(G.over){ newGame(); }
   const t=findFighter('tsubasa');
-  if(!t){ say('Cần có Tsubasa trong trận mới thử được Chaos.','m'); return; }
-  if(t.chaosDone){ say('Tsubasa đã kích hoạt nội tại rồi.','m'); return; }
+  if(!t){ say('Cần có Tsubasa trong trận mới thử được Wings of the Eagle.','m'); return; }
+  if(t.eagleDone){ say('Tsubasa đã kích hoạt nội tại rồi.','m'); return; }
   ac(); if(MUSIC.on) startMusic();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
   t.hp=Math.min(t.hp,Math.round(t.maxHp*.07));
-  chaosAwaken(t);
-  say('[Thử nghiệm] Ép Tsubasa hoá Chaos.','m');
+  eagleAwaken(t);
+  say('[Thử nghiệm] Ép Tsubasa vào trạng thái Wings of the Eagle.','m');
 }
 function testTwin(){
   if(G.over){ newGame(); }
   const t=findFighter('tsubasa');
   if(!t){ say('Cần có Tsubasa trong trận mới thử được Twin Shot.','m'); return; }
-  if(t.chaos){ say('Đang hoá Chaos — Twin Shot bị vô hiệu.','m'); return; }
+  if(t.eagle){ say('Đang trong Wings of the Eagle — Twin Shot bị vô hiệu.','m'); return; }
   ac(); if(MUSIC.on) startMusic();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
   t.goals=GOAL_MAX;
@@ -3078,7 +3078,7 @@ function testTwin(){
 el('testGoku').addEventListener('click',()=>testSummon('goku'));
 el('testGohan').addEventListener('click',()=>testSummon('gohan'));
 el('testTwin').addEventListener('click',testTwin);
-el('testChaos').addEventListener('click',testChaos);
+el('testEagle').addEventListener('click',testEagle);
 
 /* ---------- màn chọn nhân vật ---------- */
 const TMP={a:PICK.a,b:PICK.b};
