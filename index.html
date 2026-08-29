@@ -897,6 +897,20 @@ function later(t,fn){ G.timers.push({t,fn}); }
 function pop(x,y,txt,color,big,sc){ if(G.over)return; G.floats.push({x:x+rnd(-14,14),y:y-40,txt,color,life:big?1.3:1,ml:big?1.3:1,big:!!big,sc:sc||1}); }
 function ring(x,y,max,color,life){ G.fx.push({type:'ring',x,y,r:6,max,color,life,ml:life}); }
 function setPose(f,p,t){ if(f.dash&&p!=='ulti')return; f.pose=p; f.poseT=t; }
+/* Vùng dính đòn: ảnh nhân vật cao khoảng 120px (từ f.y-100 tới f.y+20) trong khi
+   f.r chỉ 26, nên nếu đo bằng vòng tròn quanh f.y thì đạn bay ngang ngực hay đầu
+   sẽ xuyên qua người mà không ăn đòn. Dùng hình bầu dục ôm theo thân. */
+const bodyCY=f=>f.y-24, bodyRY=f=>f.summon?54:46;
+function hitsBody(p,f){
+  const dx=p.x-f.x, dy=p.y-bodyCY(f);
+  const rx=f.r+p.r, ry=bodyRY(f)+p.r;
+  return (dx*dx)/(rx*rx)+(dy*dy)/(ry*ry)<=1;
+}
+/* choáng kèm loại hiệu ứng để vẽ cho đúng: điện giật, sao xoay, trái tim… */
+function stunFx(f,dur,kind){
+  if(dur>=f.stun||!f.stunKind) f.stunKind=kind||null;
+  f.stun=Math.max(f.stun,dur);
+}
 function aim(f,e,power){
   const d=dist(f,e)||1;
   f.ax=(e.x-f.x)/d; f.ay=(e.y-f.y)/d;
@@ -905,7 +919,7 @@ function aim(f,e,power){
 }
 
 /* ---------- damage ---------- */
-function hurt(t,amt,src,crit,kind){
+function hurt(t,amt,src,crit,kind,tint){
   if(!t.alive||G.over)return;
   if(t.invuln>0){
     pop(t.x,t.y,'IMMUNE',t.color||'#FFF3C4',false);
@@ -916,14 +930,16 @@ function hurt(t,amt,src,crit,kind){
   if(t.eagle) amt*=.2;                      // Wings of the Eagle: miễn 80% sát thương
   t.hp=Math.max(0,t.hp-amt);
   t.flash=crit?.2:.12; t.recoil=crit?1.4:1;
+  t.flashCol=tint||null;                    // đỏ: nổ / thiêu đốt · hồng: Sexy no Jutsu
+  if(tint) t.flash=Math.max(t.flash,kind==='dot'?.34:.28);
   if(src){ const dx=t.x-src.x, dy=t.y-src.y, m=Math.hypot(dx,dy)||1; t.rdx=dx/m; t.rdy=dy/m; }
   setPose(t,'hurt',.22);
   const dc=(src&&src.color)||'#FFE100';
   const sc=(src&&src.summon)?1:.72;
   if(kind==='dot'){
-    // sát thương duy trì: chữ nhỏ, màu hồng, dạt sang bên để không che số đòn đánh
+    // sát thương duy trì: chữ nhỏ, dạt sang bên để không che số đòn đánh
     G.floats.push({x:t.x+(t.dotSide=(t.dotSide||1)*-1)*40, y:t.y-18, txt:'-'+Math.round(amt),
-      color:'#FF9AD5', life:.85, ml:.85, sc:.5});
+      color:tint==='red'?'#FF6B6B':'#FF9AD5', life:.85, ml:.85, sc:.5});
   }else{
     pop(t.x,t.y,'-'+Math.round(amt),dc,!!crit,sc);
   }
@@ -994,8 +1010,8 @@ function explode(p){
     if(f.team===p.team||!f.alive||f.summon)continue;
     if(dist(f,p)<R+f.r){
       landed=true;
-      hurt(f,p.dmg,p.owner,'BOOM!');
-      if(f.invuln<=0) f.stun=Math.max(f.stun,.5);
+      hurt(f,p.dmg,p.owner,'BOOM!',null,'red');          // dính đòn nổ: đỏ
+      if(f.invuln<=0) stunFx(f,.5,'spark');
     }
   }
   sfx('boom');
@@ -1032,8 +1048,8 @@ function sexy(k,e){
   for(const f of G.fighters){
     if(f===k||!f.alive||dist(f,k)>R+f.r)continue;
     if(f.summon){ say(`${f.name} đang dồn khí, không hề nao núng.`,'m'); continue; }
-    f.dots.push({dps:20,left:2,acc:0,src:k});
-    if(f.male){ f.stun=Math.max(f.stun,2); sfx('stun'); say(`${f.name} đứng hình 2 giây.`,'g'); }
+    f.dots.push({dps:20,left:2,acc:0,src:k,tint:'pink'});   // dính khói hồng: hồng
+    if(f.male){ stunFx(f,2,'heart'); sfx('stun'); say(`${f.name} đứng hình 2 giây.`,'g'); }
     else say(`${f.name} là nữ — không choáng, chỉ tức nổ máu.`,'c');
   }
 }
@@ -1235,7 +1251,7 @@ function ballHit(p,f){
     ring(f.x,f.y,170,'#FFF3C4',.6);
     hurt(f,p.dmg,o,'TWIN SHOT!');
     if(f.alive&&f.invuln<=0){
-      f.stun=Math.max(f.stun,2); sfx('stun');
+      stunFx(f,2,'shock'); sfx('stun');                  // choáng Twin Shot: điện giật
       f.vuln=Math.max(f.vuln,3);
       knock(f,p.vx,p.vy,260);
       G.floats.push({x:f.x,y:f.y-118,txt:'CHOÁNG 2s · NHẬN +50% DMG 3s',color:'#FFF3C4',
@@ -1244,9 +1260,9 @@ function ballHit(p,f){
     say('VICTORY SHOT xuyên thẳng — 150 dmg, choáng 2 giây, thủng giáp 50% trong 3 giây!','g');
   }else if(p.type==='drive'){
     ring(f.x,f.y,120,'#FF8A2B',.5);
-    hurt(f,p.dmg,o,'DRIVE SHOT!');
+    hurt(f,p.dmg,o,'DRIVE SHOT!',null,'red');            // cú nổ lửa: đỏ
     if(f.alive){
-      f.dots.push({dps:10,left:1.5,acc:0,src:o});   // 5 dmg × 3 đợt
+      f.dots.push({dps:10,left:1.5,acc:0,src:o,tint:'red'});   // thiêu đốt 5 dmg × 3 đợt
       knock(f,p.vx,p.vy,200);
       for(let i=0;i<8;i++) G.fx.push({type:'dust',x:f.x+rnd(-16,16),y:f.y+rnd(-24,10),r:5,life:.45,ml:.45});
     }
@@ -1255,7 +1271,7 @@ function ballHit(p,f){
     hurt(f,p.dmg,o,p.bic?'BICYCLE KICK!':false);
     sfx('hit');
     if(f.alive&&f.invuln<=0){
-      if(p.bic) f.stun=Math.max(f.stun,.25);    // chỉ bicycle kick mới gây choáng
+      if(p.bic) stunFx(f,.25,'spark');          // chỉ bicycle kick mới gây choáng
       knock(f,p.vx,p.vy,p.kb||180);
     }
     ring(p.x,p.y,p.bic?70:46,p.bic?'#FFB03A':'#FFFFFF',.3);
@@ -1470,7 +1486,7 @@ function step(dt){
     for(let i=f.dots.length-1;i>=0;i--){
       const d=f.dots[i];
       if(!d) continue; d.left-=dt; d.acc+=dt;
-      if(d.acc>=.5){ d.acc-=.5; hurt(f,d.dps*.5,d.src,false,'dot'); }
+      if(d.acc>=.5){ d.acc-=.5; hurt(f,d.dps*.5,d.src,false,'dot',d.tint); }
       if(d.left<=0)f.dots.splice(i,1);
     }
   }
@@ -1574,7 +1590,7 @@ function step(dt){
     if(f.ghostT<=0){ f.ghostT=.06; G.fx.push({type:'ghost',x:f.x,y:f.y,face:f.face,key:f.key,pose:'ulti',h:f.spriteH,life:.34,ml:.34}); }
     if(dd<f.r+e.r+6&&!f.dash.hit){
       f.dash.hit=true; f.dash=null; f.pose='idle';
-      hurt(e,150,f,'RASENGAN!'); e.stun=Math.max(e.stun,3);
+      hurt(e,150,f,'RASENGAN!'); stunFx(e,3,'spin');
       G.flashScreen=.18; ring(e.x,e.y,140,'#63B4FF',.55);
       say('Rasengan trúng! 150 dmg + choáng 3 giây.','g');
     }else if(f.dash&&f.dash.t<=0){ f.dash=null; f.pose='idle'; say(`Rasengan tan — ${e.name} né kịp.`,'m'); }
@@ -1640,7 +1656,7 @@ function step(dt){
         w.hit.push(f);
         if(f.invuln>0){ hurt(f,w.dmg,w.owner,w.crit); continue; }
         hurt(f,w.dmg,w.owner,w.crit);
-        f.stun=Math.max(f.stun,.5); sfx('stun');
+        stunFx(f,.5,'spark'); sfx('stun');
       }
     }
     for(const p of G.proj){
@@ -1723,7 +1739,8 @@ function step(dt){
       if(hitWall){
         p.bounce++;
         if(p.bounce>p.maxBounce){
-          dead=true;
+          // đánh dấu tan chứ chưa xoá ngay, để cú chạm người sát tường vẫn tính đòn
+          p.gone=true;
           G.fx.push({type:'dust',x:p.x,y:p.y,r:7,life:.4,ml:.4});
           say('Bóng chạm tường lần nữa — tan biến.','m');
         }else{
@@ -1755,13 +1772,13 @@ function step(dt){
     }
     if(!dead && !(p.dmg<=0)) for(const f of G.fighters){
       if(f.team===p.team||!f.alive||f.summon)continue;
-      if(p.type==='kunai'&&dist(f,p)<f.r+p.r){ explode(p); dead=true; break; }
-      if((p.type==='ball'||p.type==='drive'||p.type==='twin')&&dist(f,p)<f.r+p.r){ ballHit(p,f); dead=true; break; }
-      if(dist(f,p)<f.r+p.r){
+      if(p.type==='kunai'&&hitsBody(p,f)){ explode(p); dead=true; break; }
+      if((p.type==='ball'||p.type==='drive'||p.type==='twin')&&hitsBody(p,f)){ ballHit(p,f); dead=true; break; }
+      if(hitsBody(p,f)){
         hurt(f,p.dmg,p.owner,p.type==='kame'?'KAMEHAMEHA!':!!p.crit);
         sfx('hit');
         if(p.type==='clone'){
-          if(f.invuln<=0) f.stun=Math.max(f.stun,.5);
+          if(f.invuln<=0) stunFx(f,.5,'spark');
           sfx('stun');
           say('Phân thân đấm trúng — 40 dmg và choáng 0.5 giây.','k');
         }
@@ -1769,6 +1786,7 @@ function step(dt){
         dead=true;break;
       }
     }
+    if(p.gone) dead=true;
     if(dead)G.proj.splice(i,1);
   }
   for(let i=G.fx.length-1;i>=0;i--){ const e=G.fx[i]; if(!e) continue; e.life-=dt; if(e.type==='ring')e.r+=(e.max-e.r)*dt*7; if(e.life<=0)G.fx.splice(i,1); }
@@ -1996,10 +2014,24 @@ function drawFighter(f){
   ctx.translate(f.x+ox, f.y+20+oy*.4-hop);
   ctx.rotate(lean + aimTilt - fs*rec*.12);
   ctx.scale(fs*sx, sy);
-  if(f.flash>0) ctx.globalAlpha=.4;
+  if(f.flash>0){
+    const tn=TINT[f.flashCol];
+    ctx.globalAlpha=tn?.62:.4;
+    // trong suốt kèm ám màu: đỏ khi trúng đòn nổ / thiêu đốt, hồng khi dính khói Sexy Jutsu
+    if(tn) try{ ctx.filter=tn.filter; }catch(e){}
+  }
   if(img){ const h=f.spriteH, w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
   else vector(f);
   ctx.restore();
+
+  if(f.flash>0&&TINT[f.flashCol]){
+    const tn=TINT[f.flashCol];
+    ctx.save();
+    ctx.globalAlpha=clamp(f.flash*1.6,0,1)*.34;
+    ctx.fillStyle=tn.glow;
+    ctx.beginPath(); ctx.ellipse(f.x+ox,bodyCY(f)-hop*.6,f.r+8,bodyRY(f)+6,0,0,7); ctx.fill();
+    ctx.restore();
+  }
 
   if(f.invuln>0){
     ctx.save();
@@ -2011,12 +2043,88 @@ function drawFighter(f){
     ctx.setLineDash([]);
     ctx.restore();
   }
-  if(f.stun>0){
-    ctx.save(); ctx.fillStyle='#FFC542';
+  if(f.stun>0) drawStun(f,f.y+16-(img?f.spriteH:56));
+}
+/* ám màu lúc dính đòn */
+const TINT={
+  red: {filter:'sepia(1) saturate(7) hue-rotate(-32deg) brightness(1.05)', glow:'#FF3B30'},
+  pink:{filter:'sepia(1) saturate(5) hue-rotate(-62deg) brightness(1.3)',  glow:'#FF6EC7'}
+};
+function heartPath(x,y,s){
+  ctx.beginPath();
+  ctx.moveTo(x,y+s*.9);
+  ctx.bezierCurveTo(x-s*1.5,y-s*.2, x-s*.55,y-s*1.1, x,y-s*.3);
+  ctx.bezierCurveTo(x+s*.55,y-s*1.1, x+s*1.5,y-s*.2, x,y+s*.9);
+  ctx.closePath();
+}
+/* hiệu ứng choáng, mỗi nguồn choáng một kiểu riêng */
+function drawStun(f,hy){
+  const k=f.stunKind, cy=bodyCY(f);
+  ctx.save();
+  if(k==='shock'){
+    // Twin Shot: điện giật giật quanh người
+    ctx.shadowColor='rgba(180,240,255,.95)'; ctx.shadowBlur=12;
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    for(let b=0;b<4;b++){
+      const seed=b*2.7, t=G.t*22+seed;
+      ctx.strokeStyle=b%2?'#BFEFFF':'#FFF3C4';
+      ctx.lineWidth=b%2?2.4:1.6;
+      ctx.beginPath();
+      const side=b<2?-1:1;
+      let px=f.x+side*(f.r+4), py=cy-30+b*17;
+      ctx.moveTo(px,py);
+      for(let i=0;i<4;i++){
+        px+=side*(5+Math.sin(t+i*1.7)*7);
+        py+=8+Math.cos(t*1.3+i)*4;
+        ctx.lineTo(px,py);
+      }
+      ctx.stroke();
+    }
+    ctx.shadowBlur=0;
+    for(let i=0;i<3;i++){
+      const a=G.t*17+i*2.1;
+      ctx.globalAlpha=.5+Math.sin(G.t*30+i)*.5;
+      ctx.fillStyle='#FFFFFF';
+      ctx.beginPath(); ctx.arc(f.x+Math.cos(a)*(f.r+12),cy+Math.sin(a)*34,2.2,0,7); ctx.fill();
+    }
+  }else if(k==='spin'){
+    // Rasengan: sao xoay vòng vòng quanh người
+    ctx.globalAlpha=.55; ctx.strokeStyle='#8FD0FF'; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.ellipse(f.x,cy,f.r+16,17,0,0,7); ctx.stroke();
+    ctx.globalAlpha=1;
+    for(let i=0;i<4;i++){
+      const a=G.t*4.6+i*1.571;
+      const x=f.x+Math.cos(a)*(f.r+16), y=cy+Math.sin(a)*17;
+      const front=Math.sin(a)>0;
+      ctx.globalAlpha=front?1:.45;
+      ctx.fillStyle=front?'#FFC542':'#7FA8D8';
+      ctx.save(); ctx.translate(x,y); ctx.rotate(G.t*5);
+      ctx.beginPath();
+      for(let s=0;s<8;s++){
+        const r=s%2?2.2:6.2, aa=s*.785;
+        ctx.lineTo(Math.cos(aa)*r,Math.sin(aa)*r);
+      }
+      ctx.closePath(); ctx.fill(); ctx.restore();
+    }
+  }else if(k==='heart'){
+    // Sexy no Jutsu: trái tim xoay quanh đầu
+    for(let i=0;i<4;i++){
+      const a=G.t*2.6+i*1.571;
+      const x=f.x+Math.cos(a)*24, y=hy+6+Math.sin(a)*8+Math.sin(G.t*3+i)*3;
+      const front=Math.sin(a)>0;
+      ctx.globalAlpha=front?.95:.5;
+      ctx.fillStyle=front?'#FF6EC7':'#FFB3DF';
+      ctx.strokeStyle='#9B2C6F'; ctx.lineWidth=1.2;
+      heartPath(x,y,5.4+Math.sin(G.t*6+i)*.7);
+      ctx.fill(); ctx.stroke();
+    }
+  }else{
+    // choáng thường: mấy chấm vàng quay trên đầu
+    ctx.fillStyle='#FFC542';
     for(let i=0;i<3;i++){ const a=G.t*6+i*2.1;
-      ctx.beginPath(); ctx.arc(f.x+Math.cos(a)*18,f.y+16-(img?f.spriteH:56)+Math.sin(a)*5,3.5,0,7); ctx.fill(); }
-    ctx.restore();
+      ctx.beginPath(); ctx.arc(f.x+Math.cos(a)*18,hy+Math.sin(a)*5,3.5,0,7); ctx.fill(); }
   }
+  ctx.restore();
 }
 function bar(x,y,w,h,pct,fill,text,textCol){
   ctx.fillStyle='#fff'; ctx.fillRect(x,y,w,h);
