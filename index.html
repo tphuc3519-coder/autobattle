@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Đấu Trường — Konohamaru vs ChiChi</title>
+<title>Đấu Trường — Konohamaru · ChiChi · Tsubasa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -11,6 +11,7 @@
   :root{
     --ink:#0B0918; --panel:#161230; --panel2:#1F1943; --line:#332A5E;
     --paper:#EFE9FF; --mute:#9A8FC4; --kono:#63B4FF; --chichi:#FF4D6D; --gold:#FFC542;
+    --tsubasa:#2ED573;
   }
   *{box-sizing:border-box}
   body{
@@ -58,6 +59,38 @@
   details summary::-webkit-details-marker{display:none}
   .help{font-size:12px;color:var(--mute);line-height:1.6;margin-top:8px}
   kbd{font-family:"Space Mono",monospace;background:#0C0920;border:1px solid #2A2350;border-radius:4px;padding:1px 5px;font-size:10.5px}
+
+  /* ---- màn chọn nhân vật ---- */
+  .csel{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+    padding:14px;overflow:auto;background:rgba(6,4,18,.88)}
+  .csel.off{display:none}
+  .cselBox{width:100%;max-width:680px;background:var(--panel);border:1px solid var(--line);
+    border-radius:16px;padding:15px 15px 13px;box-shadow:0 18px 60px rgba(0,0,0,.6)}
+  .cselBox h2{margin:0;font-size:clamp(17px,4.6vw,22px);font-weight:900;letter-spacing:-.01em}
+  .cselBox h2 span{color:var(--gold)}
+  .cselSub{font-family:"Space Mono",monospace;font-size:10.5px;color:var(--mute);
+    letter-spacing:.14em;text-transform:uppercase;margin:4px 0 12px}
+  .cselCols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:520px){.cselCols{grid-template-columns:1fr}}
+  .cselCol{background:#120F28;border:1px solid var(--line);border-radius:12px;padding:9px}
+  .cselHead{font-size:11px;font-family:"Space Mono",monospace;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--mute);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .cselHead b{color:var(--paper);font-family:"Be Vietnam Pro",sans-serif;letter-spacing:0;font-size:12.5px}
+  .cCard{display:flex;gap:9px;align-items:flex-start;width:100%;text-align:left;padding:8px 9px;margin-bottom:7px;
+    background:#191436;border:1px solid #2E2758;border-radius:10px;cursor:pointer;transition:.14s;font-weight:400}
+  .cCard:last-child{margin-bottom:0}
+  .cCard:hover{background:#241D4C;border-color:#4A3F8C}
+  .cCard.on{border-color:var(--gold);background:#2A2149;box-shadow:0 0 0 1px var(--gold) inset}
+  .cAva{width:38px;height:38px;flex:0 0 38px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    font-size:19px;background:#0C0920;border:2px solid currentColor}
+  .cCard>span:last-child{flex:1;min-width:0}
+  .cName{display:block;font-weight:800;font-size:13.5px;line-height:1.25}
+  .cTag{display:block;font-family:"Space Mono",monospace;font-size:9.5px;color:var(--mute);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+  .cSkills{display:block;font-size:11px;color:#C3B9E6;line-height:1.5;margin-top:5px}
+  .cSkills i{color:var(--mute);font-style:normal}
+  .cselBar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  .cselVs{font-family:"Space Mono",monospace;font-size:11.5px;color:var(--mute);margin-left:auto;text-align:right}
+  .cselVs b{color:var(--paper)}
 </style>
 </head>
 <body>
@@ -68,10 +101,11 @@
   </header>
 
   <div class="bar">
+    <button id="pick">⚔ Chọn nhân vật</button>
     <select id="mode">
       <option value="auto">Máy vs Máy</option>
-      <option value="p1">Điều khiển Konohamaru</option>
-      <option value="p2">Điều khiển ChiChi</option>
+      <option value="p1" id="modeP1">Điều khiển bên trái</option>
+      <option value="p2" id="modeP2">Điều khiển bên phải</option>
     </select>
     <select id="speed">
       <option value="0.35">Rất chậm 0.35x</option>
@@ -86,15 +120,17 @@
       <option value="1.8" selected>Ra chiêu chậm</option>
       <option value="2.4">Ra chiêu rất chậm</option>
     </select>
-    <label class="chk" title="Máu khởi đầu của Konohamaru">Máu K <input type="number" id="hpK" value="1000" min="100" max="9999" step="50"></label>
-    <label class="chk" title="Máu khởi đầu của ChiChi">Máu C <input type="number" id="hpC" value="1000" min="100" max="9999" step="50"></label>
-    <label class="chk" title="Màu tên và số damage của Konohamaru">K <input type="color" id="colK" value="#63B4FF"></label>
-    <label class="chk" title="Màu tên và số damage của ChiChi">C <input type="color" id="colC" value="#FF4D6D"></label>
+    <label class="chk" title="Máu khởi đầu của nhân vật bên trái">Máu <b id="hpNameA">K</b> <input type="number" id="hpK" value="1000" min="100" max="9999" step="50"></label>
+    <label class="chk" title="Máu khởi đầu của nhân vật bên phải">Máu <b id="hpNameB">C</b> <input type="number" id="hpC" value="1000" min="100" max="9999" step="50"></label>
+    <label class="chk" title="Màu tên và số damage bên trái"><b id="colNameA">K</b> <input type="color" id="colK" value="#63B4FF"></label>
+    <label class="chk" title="Màu tên và số damage bên phải"><b id="colNameB">C</b> <input type="color" id="colC" value="#FF4D6D"></label>
     <button id="play" class="primary">Bắt đầu</button>
     <button id="reset">Đánh lại</button>
     <button id="rec">⏺ Ghi hình sàn đấu</button>
     <button id="testGoku" title="Gọi Goku ngay để thử">🧪 Test Goku</button>
     <button id="testGohan" title="Gọi Gohan ngay để thử">🧪 Test Gohan</button>
+    <button id="testTwin" title="Nạp đủ 18 goal để xem Victory Twin Shot">🧪 Test Twin Shot</button>
+    <button id="testEagle" title="Ép Tsubasa vào trạng thái Wings of the Eagle">🧪 Test Eagle</button>
   </div>
 
   <div class="stage"><canvas id="arena" width="620" height="620"></canvas></div>
@@ -149,6 +185,22 @@
   </div>
 </div>
 
+<div class="csel off" id="charSelect">
+  <div class="cselBox">
+    <h2>CHỌN <span>NHÂN VẬT</span></h2>
+    <div class="cselSub">Chọn một nhân vật cho mỗi bên · 3 nhân vật</div>
+    <div class="cselCols">
+      <div class="cselCol"><div class="cselHead">Bên trái <b id="pickNameA"></b></div><div id="listA"></div></div>
+      <div class="cselCol"><div class="cselHead">Bên phải <b id="pickNameB"></b></div><div id="listB"></div></div>
+    </div>
+    <div class="cselBar">
+      <button id="cselGo" class="primary">⚔ Vào trận</button>
+      <button id="cselCancel">Đóng</button>
+      <div class="cselVs" id="cselVs"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 (() => {
 const CV=document.getElementById('arena'), ctx=CV.getContext('2d');
@@ -164,18 +216,69 @@ let G=null, running=false, speedMul=0.5, mode='auto', autoSkill=true;
 const keys={};
 
 /* ---------- sprite slots ---------- */
-const SPR={kono:{},chichi:{},goku:{},gohan:{}};
-const COLORS={kono:'#63B4FF',chichi:'#FF4D6D'};
-const HP={kono:1000,chichi:1000};
+const SPR={kono:{},chichi:{},tsubasa:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
+const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573'};
+const HP={kono:1000,chichi:1000,tsubasa:1000};
 const CAST={mul:1.8};
 const cm=v=>v*CAST.mul;
 const SETS=[
   {key:'kono', name:'Konohamaru', poses:[['idle','Thủ thế'],['atk1','Phi tiêu'],['atk2','Kết ấn phân thân'],['clone','Phân thân (bay ra)'],['skill','Sexy Jutsu'],['ulti','Rasengan'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
   {key:'chichi', name:'ChiChi', poses:[['idle','Thủ thế'],['atk1','Đấm đá'],['atk2','Mắng'],['skill','Hăng máu'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc gọi)'],['call','Dáng gọi viện binh']]},
+  {key:'tsubasa', name:'Ozora Tsubasa', poses:[['idle','Thủ thế'],['atk1','Sút bóng'],['bicycle','Bicycle kick'],['atk2','Drive shot'],['skill','Twin shot'],['wings','Đôi cánh đại bàng'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc lên đồng)']]},
   {key:'goku', name:'Son Goku', poses:[['idle','Đứng'],['skill','Dồn khí'],['atk1','Kamehameha']]},
   {key:'gohan', name:'Son Gohan', poses:[['idle','Đứng'],['skill','Dồn khí'],['atk1','Masenko']]},
+  {key:'hyuga', name:'Hyuga (đồng đội Tsubasa)', poses:[['idle','Đứng'],['atk1','Sút đôi']]},
+  {key:'misaki', name:'Misaki (đồng đội Tsubasa)', poses:[['idle','Đứng'],['atk1','Sút đôi']]},
+  {key:'wakabayashi', name:'Wakabayashi (hồi tưởng)', poses:[['idle','Đứng']]},
+  {key:'ishizaki', name:'Ishizaki (hồi tưởng)', poses:[['idle','Đứng']]},
 ];
 const SLOT={};
+
+/* ---------- bảng nhân vật chơi được ---------- */
+const PICK={a:'kono',b:'chichi'};
+const CHARS={
+  kono:{
+    name:'Konohamaru', short:'Kono', tag:'Ninja · đánh xa', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
+    role:'ranged', want:215, speed:92, dodge:1, male:true,
+    skills:['<b>1</b> Phi tiêu / kunai nổ','<b>2</b> Kage Bunshin bám đuổi','<b>3</b> Sexy no Jutsu','<b>Nộ 20</b> Rasengan lao tới'],
+    init(f){ f.cds={s1:cm(1),s2:cm(3),s3:cm(6)}; f.rage=0; },
+    think(f,e,d,auto){
+      if(f.dash)return;
+      if(f.cds.s1<=0&&(auto?d<460:keys['j'])){ f.cds.s1=cm(1.35); shuriken(f,e); }
+      if(f.cds.s2<=0&&(auto?d<420:keys['k'])){ f.cds.s2=cm(6.5); bunshin(f,e); }
+      if(f.cds.s3<=0&&(auto?true:keys['l'])){ f.cds.s3=cm(18); sexy(f,e); }
+      if(f.rage>=20&&(auto||keys['u'])) rasengan(f,e);
+    },
+    gauge:f=>({pct:f.rage/20, fill:'#FFE100', txt:`Rage: ${f.rage}`})
+  },
+  chichi:{
+    name:'ChiChi', short:'ChiChi', tag:'Nội trợ · cận chiến', emoji:'🍳', color:'#FF4D6D', alt:'#FF93A8',
+    role:'melee', speed:106, dodge:.55, male:false,
+    skills:['<b>1</b> Đấm đá (chí mạng 25)','<b>2</b> Mắng — 5 đợt sóng 360°','<b>Nội tại</b> 5 đòn +5% chí mạng','<b>Dưới 20% máu</b> gọi Goku / Gohan'],
+    init(f){ f.cds={s1:0,s2:cm(3)}; f.hits=0; f.critBonus=0; },
+    think(f,e,d,auto){
+      if(f.cds.s1<=0&&d<f.r+e.r+16&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
+      if(f.cds.s2<=0&&(auto?d<460:keys['k'])){ f.cds.s2=cm(7); scold(f,e); }
+    },
+    gauge:f=>({pct:clamp((.10+f.critBonus)*3,0,1), fill:'#FFE100', txt:`Crit: ${Math.round((.10+f.critBonus)*100)}%`})
+  },
+  tsubasa:{
+    name:'Ozora Tsubasa', short:'Tsubasa', tag:'Tiền đạo · sút bóng', emoji:'⚽', color:'#2ED573', alt:'#7DEBAB',
+    role:'ranged', want:235, speed:100, dodge:.8, male:true,
+    skills:['<b>1</b> Basic shot 25 dmg (10% Bicycle kick 40)','<b>2</b> Drive shot 80 + thiêu đốt 5×3','<b>18 goal</b> Victory Twin Shot 150 + choáng 2s','<b>Dưới 15% máu</b> Wings of the Eagle'],
+    init(f){ f.cds={s1:cm(1),s2:cm(3)}; f.goals=0; },
+    think(f,e,d,auto){
+      const sp=f.eagle?.5:1;
+      if(f.cds.s1<=0&&(auto?d<520:keys['j'])){ f.cds.s1=cm(1.35)*sp; basicShot(f,e); }
+      if(f.cds.s2<=0&&(auto?d<560:keys['k'])){ f.cds.s2=cm(6.5)*sp; driveShot(f,e); }
+      if(!f.eagle&&f.goals>=18&&(auto||keys['l'])) twinShot(f,e);
+    },
+    gauge:f=>f.eagle
+      ? {pct:1, fill:'#FFF3C4', txt:'EAGLE WINGS'}
+      : {pct:f.goals/18, fill:'#FFE100', txt:`Goal: ${f.goals}/18`}
+  }
+};
+const CKEYS=Object.keys(CHARS);
 
 /* lưu ảnh: dùng kho của Claude nếu có, không thì IndexedDB của trình duyệt */
 const Store=(()=>{
@@ -227,15 +330,19 @@ async function saveChar(ck){
 }
 async function loadSaved(){
   try{
+    let dirty=false;
+    const rawPick=await Store.get('cfg_picks');
+    if(rawPick){ const p=JSON.parse(rawPick);
+      if(CHARS[p.a])PICK.a=p.a; if(CHARS[p.b])PICK.b=p.b; dirty=true; }
     const raw=await Store.get('cfg_colors');
-    if(raw){ const c=JSON.parse(raw); if(c.kono)COLORS.kono=c.kono; if(c.chichi)COLORS.chichi=c.chichi; applyColors(); }
+    if(raw){ const c=JSON.parse(raw); for(const k of CKEYS) if(c[k])COLORS[k]=c[k]; }
     const rawCast=await Store.get('cfg_cast');
     if(rawCast){ CAST.mul=parseFloat(rawCast)||1.8; const sel=document.getElementById('cast'); if(sel)sel.value=String(CAST.mul); }
     const rawHp=await Store.get('cfg_hp');
-    if(rawHp){ const h=JSON.parse(rawHp);
-      if(h.kono)HP.kono=h.kono; if(h.chichi)HP.chichi=h.chichi;
-      applyHp(); if(typeof newGame==='function'){ newGame(); running=false; document.getElementById('play').textContent='Bắt đầu'; }
-    }
+    if(rawHp){ const h=JSON.parse(rawHp); for(const k of CKEYS) if(h[k])HP[k]=h[k]; dirty=true; }
+    applyColors(); applyHp();
+    if(typeof cselRefresh==='function'){ TMP.a=PICK.a; TMP.b=PICK.b; cselRefresh(); }
+    if(dirty&&typeof newGame==='function'){ newGame(); running=false; document.getElementById('play').textContent='Bắt đầu'; }
   }catch(e){}
   let n=0;
   for(const s of SETS){
@@ -323,7 +430,8 @@ async function loadSaved(){
 const SFX_EVENTS=[
   ['throw','Ném phi tiêu'],['hit','Trúng phi tiêu'],['clone','Phân thân'],['sexy','Sexy Jutsu'],
   ['rasengan','Rasengan'],['punch','ChiChi đấm'],['crit','Chí mạng'],['scold','Mắng'],
-  ['stun','Choáng'],['summon','Viện binh tới'],['kame','Kamehameha'],['masenko','Masenko'],['callgoku','ChiChi gọi Goku'],['callgohan','ChiChi gọi Gohan'],['boom','Kunai nổ'],['ko','Kết thúc'],['win','Nhạc thắng trận'],['cheer','Khán giả hò reo']
+  ['stun','Choáng'],['summon','Viện binh tới'],['kame','Kamehameha'],['masenko','Masenko'],['callgoku','ChiChi gọi Goku'],['callgohan','ChiChi gọi Gohan'],['boom','Kunai nổ'],['ko','Kết thúc'],['win','Nhạc thắng trận'],['cheer','Khán giả hò reo'],
+  ['kick','Tsubasa sút bóng'],['bicycle','Bicycle kick'],['bounce','Bóng dội tường'],['drive','Drive shot'],['twin','Twin shot'],['goal','Ghi goal'],['wings','Đôi cánh đại bàng']
 ];
 const SFXBUF={};
 let AC=null, volume=.6, muted=false, lastSfx={};
@@ -389,6 +497,26 @@ function synth(name,c,g){
                     noise(c,g,{dur:.24,f0:1400,f1:400,vol:.18,delay:d}); }); break;
     case 'stun':    [0,.1,.2].forEach((d,i)=>tone(c,g,{type:'triangle',f0:1200-i*200,f1:900-i*200,dur:.12,vol:.12,delay:d})); break;
     case 'summon':  tone(c,g,{type:'sawtooth',f0:160,f1:820,dur:.7,vol:.24}); noise(c,g,{dur:.7,f0:300,f1:2400,vol:.16}); break;
+    case 'kick':    tone(c,g,{type:'triangle',f0:260,f1:80,dur:.12,vol:.3});
+                    noise(c,g,{dur:.09,f0:2600,f1:600,vol:.24}); break;
+    case 'bicycle': noise(c,g,{dur:.22,f0:900,f1:180,vol:.3,type:'lowpass'});
+                    tone(c,g,{type:'triangle',f0:320,f1:70,dur:.24,vol:.3});
+                    tone(c,g,{type:'square',f0:140,f1:60,dur:.3,vol:.16,delay:.05}); break;
+    case 'bounce':  tone(c,g,{type:'sine',f0:520,f1:180,dur:.1,vol:.2});
+                    noise(c,g,{dur:.06,f0:1800,vol:.12}); break;
+    case 'drive':   tone(c,g,{type:'sawtooth',f0:180,f1:900,dur:.6,vol:.24});
+                    noise(c,g,{dur:.6,f0:600,f1:2800,vol:.2,q:1.6}); break;
+    case 'twin':    [0,.1].forEach(d=>tone(c,g,{type:'triangle',f0:300,f1:90,dur:.16,vol:.26,delay:d}));
+                    tone(c,g,{type:'sawtooth',f0:200,f1:1200,dur:.8,vol:.22,delay:.16});
+                    noise(c,g,{dur:.8,f0:800,f1:3000,vol:.18,delay:.16,q:1.4}); break;
+    case 'goal':    [0,.08,.16].forEach((d,i)=>tone(c,g,{type:'square',f0:660+i*220,f1:660+i*220,dur:.12,vol:.13,delay:d})); break;
+    case 'wings': {
+      const notes=[392,523.25,659.25,880];
+      notes.forEach((f,i)=>tone(c,g,{type:'triangle',f0:f,f1:f*1.01,dur:i===3?1.1:.3,vol:.15,delay:i*.16}));
+      noise(c,g,{dur:1.4,f0:400,f1:2600,vol:.12,q:.8});
+      [0,.35,.7].forEach(d=>noise(c,g,{dur:.3,f0:1200,f1:300,vol:.1,delay:d,type:'lowpass'}));
+      break;
+    }
     case 'kame':    tone(c,g,{type:'sawtooth',f0:120,f1:1000,dur:.85,vol:.3});
                     noise(c,g,{dur:.85,f0:500,f1:3200,vol:.24,q:1.5}); break;
     case 'masenko': tone(c,g,{type:'square',f0:380,f1:760,dur:.3,vol:.2}); noise(c,g,{dur:.3,f0:1800,f1:700,vol:.15}); break;
@@ -421,7 +549,7 @@ function synth(name,c,g){
     default:        noise(c,g,{dur:.1,f0:1200,vol:.2});
   }
 }
-const SFX_FULL=new Set(['ko','win','cheer','callgoku','callgohan','summon']);
+const SFX_FULL=new Set(['ko','win','cheer','callgoku','callgohan','summon','wings','twin']);
 // các tiếng chiêu lớn: luôn phát từ đầu, cho phép dài tới 5 giây
 const SFX_MAXLEN={kame:5,masenko:5};
 const SFX_POS={}, SFX_ACTIVE={};
@@ -731,17 +859,36 @@ function mk(o){
     pose:'idle', poseT:0, flash:0, cds:{}, summon:false, dash:null, spriteH:120,
     vx:0, vy:0, recoil:0, rdx:0, rdy:0, dustT:0, ghostT:0,
     ax:1, ay:0, lunge:0, invuln:0, dvx:0, dvy:0, moveAmt:0, leanS:0,
-    wx:W/2, wy:H/2, wt:0, engage:true, engT:2
+    wx:W/2, wy:H/2, wt:0, engage:true, engT:2,
+    goals:0, vuln:0, kbx:0, kby:0, eagle:false, eagleAcc:0, eagleDone:false, summonDone:false
   },o);
 }
+function mkChar(key,team,x,y){
+  const C=CHARS[key];
+  const mirror=PICK.a===PICK.b;
+  const f=mk({
+    key, name:C.name+(mirror&&team===1?' II':''), team, male:C.male, role:C.role, want:C.want,
+    x, y, speed:C.speed, dodge:C.dodge, spriteH:C.spriteH||120,
+    color:(mirror&&team===1)?C.alt:(COLORS[key]||C.color),
+    hp:HP[key]||1000, maxHp:HP[key]||1000
+  });
+  C.init(f);
+  return f;
+}
+/* đối thủ của một đấu thủ: hai ô A/B, viện binh tính theo phe */
+function foeOf(f){
+  if(!f||!G)return null;
+  if(f===G.k)return G.c;
+  if(f===G.c)return G.k;
+  return f.team===0?G.c:G.k;
+}
 function newGame(){
-  G={t:0,proj:[],waves:[],fx:[],floats:[],conf:[],timers:[],logs:[],over:null,winner:null,endT:0,announced:false,cam:{x:W/2,y:H/2,z:1},freeze:0,freezeAt:null,callBanner:null,loserFx:null,summonDone:false,fighters:[],flashScreen:0};
-  G.k=mk({key:'kono',name:'Konohamaru',team:0,male:true,role:'ranged',x:W/2,y:PAD+120,speed:92,dodge:1,color:COLORS.kono,hp:HP.kono,maxHp:HP.kono});
-  G.c=mk({key:'chichi',name:'ChiChi',team:1,male:false,role:'melee',x:W/2,y:H-PAD-120,speed:106,dodge:.55,color:COLORS.chichi,hp:HP.chichi,maxHp:HP.chichi});
-  G.k.cds={s1:cm(1),s2:cm(3),s3:cm(6)}; G.c.cds={s1:0,s2:cm(3)};
+  G={t:0,proj:[],waves:[],fx:[],floats:[],conf:[],timers:[],logs:[],over:null,winner:null,endT:0,announced:false,cam:{x:W/2,y:H/2,z:1},freeze:0,freezeAt:null,callBanner:null,loserFx:null,fighters:[],mates:[],flashback:null,flashScreen:0};
+  G.k=mkChar(PICK.a,0,W/2,PAD+120);
+  G.c=mkChar(PICK.b,1,W/2,H-PAD-120);
   G.fighters=[G.k,G.c];
   if(typeof resetSfxPos==='function') resetSfxPos();
-  say('Trận đấu sẵn sàng. Konohamaru vs ChiChi.','g');
+  say(`Trận đấu sẵn sàng. ${G.k.name} vs ${G.c.name}.`,'g');
   paintLog(); draw();
 }
 function say(m,c){ G.logs.unshift({m,c:c||'m'}); if(G.logs.length>50)G.logs.pop(); paintLog(); }
@@ -764,6 +911,8 @@ function hurt(t,amt,src,crit,kind){
     ring(t.x,t.y,52,'#FF9AD5',.3);
     return;
   }
+  if(t.vuln>0) amt*=1.5;                    // dính Twin Shot: nhận thêm 50% sát thương
+  if(t.eagle) amt*=.2;                      // Wings of the Eagle: miễn 80% sát thương
   t.hp=Math.max(0,t.hp-amt);
   t.flash=crit?.2:.12; t.recoil=crit?1.4:1;
   if(src){ const dx=t.x-src.x, dy=t.y-src.y, m=Math.hypot(dx,dy)||1; t.rdx=dx/m; t.rdy=dy/m; }
@@ -796,8 +945,9 @@ function counters(src,tgt){
 }
 function finish(w){
   const win=(w&&!w.summon)?w:(G.k.hp>0?G.k:G.c);
-  G.over=win.key==='kono'?'KONOHAMARU':'CHICHI';
+  G.over=win.name.toUpperCase();
   G.winner=win; G.endT=0; G.announced=false;
+  G.mates.length=0; G.flashback=null;
   const loser = (win===G.k)?G.c:G.k;
   if(loser){
     loser.pose='hurt'; loser.poseT=0; loser.flash=0; loser.recoil=0; loser.lunge=0;
@@ -821,11 +971,11 @@ function throwNow(k,e){
   if(both&&chance(.3)) sp+=(chance(.5)?1:-1)*rnd(.16,.26);
   const a=Math.atan2(e.y-k.y,e.x-k.x)+sp;
   if(chance(.15)){
-    G.proj.push({type:'kunai',team:0,owner:k,x:k.x+Math.cos(a)*24,y:k.y+Math.sin(a)*24,
+    G.proj.push({type:'kunai',team:k.team,owner:k,x:k.x+Math.cos(a)*24,y:k.y+Math.sin(a)*24,
       vx:Math.cos(a)*250,vy:Math.sin(a)*250,r:11,dmg:45,life:3,ang:a,wob:0});
     say('Kunai gắn bùa nổ đang bay tới!','k');
   }else{
-    G.proj.push({type:'shuriken',team:0,owner:k,x:k.x+Math.cos(a)*24,y:k.y+Math.sin(a)*24,
+    G.proj.push({type:'shuriken',team:k.team,owner:k,x:k.x+Math.cos(a)*24,y:k.y+Math.sin(a)*24,
       vx:Math.cos(a)*285,vy:Math.sin(a)*285,r:9,dmg:20,life:2.6,spin:0});
   }
 }
@@ -860,14 +1010,14 @@ function bunshin(k,e){
     if(!k.alive||G.over||G.freeze>0)return;
     const a=Math.atan2(e.y-k.y,e.x-k.x);
     G.fx.push({type:'poof',x:k.x+Math.cos(a)*28,y:k.y+Math.sin(a)*28-16,life:.5,ml:.5});
-    G.proj.push({type:'clone',team:0,owner:k,x:k.x+Math.cos(a)*28,y:k.y+Math.sin(a)*28,
+    G.proj.push({type:'clone',team:k.team,owner:k,tgt:e,x:k.x+Math.cos(a)*28,y:k.y+Math.sin(a)*28,
       vx:Math.cos(a)*280,vy:Math.sin(a)*280,r:20,dmg:40,life:3.4,bob:0,homing:true,
       face:Math.sign(Math.cos(a))||1});
-    say('Phân thân bám sát ChiChi!','k');
+    say(`Phân thân bám sát ${e.name}!`,'k');
   });
 }
-function sexy(k){
-  setPose(k,'skill',cm(1.5)); if(G.c) aim(k,G.c,.6); sfx('sexy');
+function sexy(k,e){
+  setPose(k,'skill',cm(1.5)); if(e) aim(k,e,.6); sfx('sexy');
   G.floats.push({x:k.x,y:k.y-104,txt:'SEXY NO JUTSU!',color:k.color,life:1.6,ml:1.6,banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.07,.07)});
   const R=920;                       // phủ toàn bộ sàn đấu
   ring(k.x,k.y,760,'#FF9AD5',.85);
@@ -883,11 +1033,11 @@ function sexy(k){
     if(f.summon){ say(`${f.name} đang dồn khí, không hề nao núng.`,'m'); continue; }
     f.dots.push({dps:20,left:2,acc:0,src:k});
     if(f.male){ f.stun=Math.max(f.stun,2); sfx('stun'); say(`${f.name} đứng hình 2 giây.`,'g'); }
-    else say('ChiChi là nữ — không choáng, chỉ tức nổ máu.','c');
+    else say(`${f.name} là nữ — không choáng, chỉ tức nổ máu.`,'c');
   }
 }
-function rasengan(k){
-  k.rage=0; k.dash={t:1.9,hit:false}; setPose(k,'ulti',2); if(G.c) aim(k,G.c,1.6); sfx('rasengan');
+function rasengan(k,e){
+  k.rage=0; k.dash={t:1.9,hit:false,tgt:e}; setPose(k,'ulti',2); if(e) aim(k,e,1.6); sfx('rasengan');
   G.floats.push({x:k.x,y:k.y-104,txt:'RASENGAN!',color:k.color,life:1.6,ml:1.6,banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.07,.07)});
   ring(k.x,k.y,70,'#63B4FF',.5);
   say('RASENGAN! Konohamaru lao tới.','g');
@@ -928,8 +1078,184 @@ function scold(c,e){
     if(crit) say('Câu mắng chí mạng — 30 dmg!','c');
   });
 }
+/* ---------- Ozora Tsubasa ---------- */
+function knock(f,vx,vy,power){
+  if(!f||f.summon)return;
+  const m=Math.hypot(vx,vy)||1;
+  f.kbx=vx/m*power; f.kby=vy/m*power;
+}
+function addGoal(f){
+  if(!f||f.key!=='tsubasa'||f.summon||f.eagle||G.over)return;
+  if(f.goals>=18)return;
+  f.goals++;
+  G.floats.push({x:f.x+rnd(-10,10),y:f.y-64,txt:`GOAL ${f.goals}/18`,color:'#FFE100',life:.9,ml:.9,sc:.62});
+  sfx('goal');
+  if(f.goals===18) say('Tsubasa đủ 18 GOAL — VICTORY SHOT sẵn sàng!','g');
+}
+function tsuBanner(t,txt){
+  G.floats.push({x:t.x,y:t.y-104,txt,color:t.color,life:1.6,ml:1.6,
+    banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.07,.07)});
+}
+/* Skill 1 — Basic shot (10% thành Bicycle kick) */
+function basicShot(t,e){
+  const sp=t.eagle?.5:1;
+  const bic=chance(.10);
+  setPose(t,bic?'bicycle':'atk1',cm(bic?.62:.5)*sp);
+  aim(t,e,bic?1.5:1);
+  if(bic){ tsuBanner(t,'BICYCLE KICK!'); say('Tsubasa bật người — BICYCLE KICK!','g'); }
+  later(cm(bic?.3:.22)*sp,()=>{
+    if(!t.alive||G.over||G.freeze>0)return;
+    sfx(bic?'bicycle':'kick');
+    kickBall(t,e,bic);
+  });
+}
+function kickBall(t,e,bic){
+  // luôn sút về phía địch, nhưng lệch trái / phải / trúng ngay tâm — random
+  const side=[-1,0,1][Math.floor(Math.random()*3)];
+  const spread=side===0?rnd(-.03,.03):side*rnd(.10,.24);
+  const a=Math.atan2(e.y-t.y,e.x-t.x)+spread;
+  const spd=bic?335:300;
+  G.proj.push({type:'ball',bic:!!bic,team:t.team,owner:t,
+    x:t.x+Math.cos(a)*26, y:t.y+Math.sin(a)*26-8,
+    vx:Math.cos(a)*spd, vy:Math.sin(a)*spd,
+    r:bic?13:11, dmg:bic?40:25, kb:bic?330:180,
+    life:4.5, spin:0, bounce:0, maxBounce:2});
+}
+/* Skill 2 — Drive shot: vọt lên trời rồi ngoặt xuống bổ vào địch */
+function driveShot(t,e){
+  const sp=t.eagle?.5:1;
+  setPose(t,'atk2',cm(.9)*sp); aim(t,e,1.2); sfx('drive');
+  tsuBanner(t,'DRIVE SHOT!');
+  say('DRIVE SHOT! Quả bóng bốc lửa vọt thẳng lên trời…','g');
+  later(cm(.42)*sp,()=>{
+    if(!t.alive||G.over||G.freeze>0)return;
+    const up=-Math.PI/2+rnd(-.95,.95);          // hướng bốc lên ngẫu nhiên
+    G.proj.push({type:'drive',team:t.team,owner:t,tgt:e,
+      x:t.x+Math.cos(up)*22, y:t.y-16,
+      vx:Math.cos(up)*310, vy:Math.sin(up)*310,
+      r:14, dmg:80, life:7, spin:0, rise:cm(.6), homing:false, turn:4.6, wing:0});
+  });
+}
+/* Skill 3 — Victory Shot: Twin Shot cùng Hyuga hoặc Misaki */
+function twinShot(t,e){
+  t.goals=0;
+  t.cds.s1=Math.max(t.cds.s1,cm(.8));
+  t.cds.s2=Math.max(t.cds.s2,cm(1.6));
+  G.freeze=1.5; G.freezeAt=t;
+  G.proj.length=0; G.waves.length=0; G.floats.length=0; G.callBanner=null;
+  for(const f of G.fighters){ f.flash=0; f.recoil=0; f.lunge=0; }
+  const mateKey=chance(.5)?'hyuga':'misaki';
+  const mateName=mateKey==='hyuga'?'Hyuga':'Misaki';
+  const side=(t.x>W/2)?-1:1;
+  let mx=clamp(t.x+side*96,PAD+30,W-PAD-30);
+  const my=clamp(t.y+rnd(-10,18),PAD+60,H-PAD-24);
+  setPose(t,'skill',3.4);
+  aim(t,e,1.2);
+  say(`${mateName} băng vào — VICTORY SHOT, TWIN SHOT!`,'g');
+  later(.35,()=>{
+    if(G.over)return;
+    sfx('summon');
+    G.fx.push({type:'poof',x:mx,y:my-18,life:.7,ml:.7});
+    G.mates.push({key:mateKey,name:mateName,x:mx,y:my,face:t.x>mx?1:-1,pose:'idle',life:3.2,ml:3.2});
+    G.callBanner={txt:'TWIN SHOT!!',color:t.color,life:2,ml:2};
+    ring(mx,my,110,t.color,.5);
+  });
+  later(1.5,()=>{
+    if(G.over)return;
+    for(const m of G.mates) m.pose='atk1';
+    sfx('twin');
+    const src={x:(t.x+mx)/2, y:(t.y+my)/2-14};
+    const a=Math.atan2(e.y-src.y,e.x-src.x)+(chance(.5)?1:-1)*rnd(.8,1.25);
+    G.proj.push({type:'twin',team:t.team,owner:t,tgt:e,
+      x:src.x, y:src.y, vx:Math.cos(a)*360, vy:Math.sin(a)*360,
+      r:16, dmg:150, life:5, spin:0, wig:0, homing:true, turn:5.2});
+    G.flashScreen=Math.max(G.flashScreen,.12);
+    ring(src.x,src.y,130,'#FFF3C4',.5);
+  });
+}
+/* Nội tại — Wings of the Eagle (Đôi cánh đại bàng) */
+function eagleAwaken(t){
+  t.eagleDone=true;
+  t.injured=true;
+  setPose(t,'wounded',1);
+  G.freeze=3; G.freezeAt=t;
+  G.timers.length=0;
+  G.proj.length=0; G.waves.length=0; G.floats.length=0; G.callBanner=null; G.flashScreen=0;
+  for(const f of G.fighters){
+    f.flash=0; f.recoil=0; f.lunge=0; f.dots.length=0;
+    if(f!==t&&(f.pose==='hurt'||f.pose==='atk1'||f.pose==='atk2')){ f.pose='idle'; f.poseT=0; }
+  }
+  const e=foeOf(t);
+  if(e){ e.cds.s1=Math.max(e.cds.s1||0,cm(.6)); if(e.cds.s2!==undefined) e.cds.s2=Math.max(e.cds.s2,cm(2)); }
+  t.cds.s1=cm(.5); t.cds.s2=cm(2);
+  G.flashback={t:0, life:2.9, list:[
+    {key:'hyuga',name:'HYUGA'},{key:'wakabayashi',name:'WAKABAYASHI'},
+    {key:'ishizaki',name:'ISHIZAKI'},{key:'misaki',name:'MISAKI'}
+  ]};
+  say('Tsubasa gục xuống, chấn thương nặng… ký ức về các đồng đội ùa về.','g');
+  later(.5,()=>{ if(!G.over) sfx('wings'); });
+  later(2.5,()=>{
+    if(G.over||!t.alive)return;
+    t.eagle=true; t.eagleAcc=0; t.goals=0;
+    setPose(t,'wings',1.4);
+    ring(t.x,t.y,150,'#FFF3C4',.7);
+    ring(t.x,t.y,90,'#FFFFFF',.5);
+    G.flashScreen=Math.max(G.flashScreen,.18);
+    G.callBanner={txt:'WINGS OF THE EAGLE',color:'#FFF3C4',life:2.2,ml:2.2};
+    say('WINGS OF THE EAGLE! Tốc độ ra chiêu ×2, miễn 80% sát thương.','g');
+    say('Cái giá: mỗi giây tự mất 15% máu hiện có, và không còn tính goal — Twin Shot vô hiệu.','m');
+  });
+}
+function eagleTick(t,dt){
+  if(!t.eagle||!t.alive||G.over)return;
+  t.eagleAcc+=dt;
+  while(t.eagleAcc>=1){
+    t.eagleAcc-=1;
+    const loss=Math.max(1,t.hp*.15);
+    t.hp=Math.max(1,t.hp-loss);          // tự bào máu, nhưng không tự chết
+    G.floats.push({x:t.x+(t.dotSide=(t.dotSide||1)*-1)*40,y:t.y-18,
+      txt:'-'+Math.round(loss),color:'#FFD27A',life:.85,ml:.85,sc:.5});
+  }
+}
+/* va chạm bóng */
+function ballHit(p,f){
+  const o=p.owner;
+  if(p.type==='twin'){
+    G.flashScreen=Math.max(G.flashScreen,.2);
+    ring(f.x,f.y,170,'#FFF3C4',.6);
+    hurt(f,p.dmg,o,'TWIN SHOT!');
+    if(f.alive&&f.invuln<=0){
+      f.stun=Math.max(f.stun,2); sfx('stun');
+      f.vuln=Math.max(f.vuln,3);
+      knock(f,p.vx,p.vy,260);
+      G.floats.push({x:f.x,y:f.y-118,txt:'CHOÁNG 2s · NHẬN +50% DMG 3s',color:'#FFF3C4',
+        life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
+    }
+    say('VICTORY SHOT xuyên thẳng — 150 dmg, choáng 2 giây, thủng giáp 50% trong 3 giây!','g');
+  }else if(p.type==='drive'){
+    ring(f.x,f.y,120,'#FF8A2B',.5);
+    hurt(f,p.dmg,o,'DRIVE SHOT!');
+    if(f.alive){
+      f.dots.push({dps:10,left:1.5,acc:0,src:o});   // 5 dmg × 3 đợt
+      knock(f,p.vx,p.vy,200);
+      for(let i=0;i<8;i++) G.fx.push({type:'dust',x:f.x+rnd(-16,16),y:f.y+rnd(-24,10),r:5,life:.45,ml:.45});
+    }
+    say('DRIVE SHOT trúng đích — 80 dmg kèm thiêu đốt 5 dmg × 3 đợt.','g');
+  }else{
+    hurt(f,p.dmg,o,p.bic?'BICYCLE KICK!':false);
+    sfx('hit');
+    if(f.alive&&f.invuln<=0){
+      f.stun=Math.max(f.stun,.25);
+      knock(f,p.vx,p.vy,p.kb||180);
+    }
+    ring(p.x,p.y,p.bic?70:46,p.bic?'#FFB03A':'#FFFFFF',.3);
+    if(p.bic) say('Bicycle kick nổ tung — 40 dmg, hất văng và choáng 0.25 giây.','g');
+  }
+  addGoal(o);
+}
+
 function summonHelp(c,force){
-  G.summonDone=true;
+  c.summonDone=true;
   c.injured=true;
   setPose(c,'wounded',.6);
   G.freeze=1.6; G.freezeAt=c;
@@ -945,10 +1271,10 @@ function summonHelp(c,force){
   }
   // đặt lại hồi chiêu để không ai tung tiếp ngay khi trận chạy lại
   c.cds.s1=cm(.6); c.cds.s2=cm(3.5);
-  if(G.k){ G.k.cds.s1=Math.max(G.k.cds.s1,cm(.6)); G.k.cds.s2=Math.max(G.k.cds.s2,cm(2)); }
+  const k=foeOf(c);
+  if(k&&k.cds){ if(k.cds.s1!==undefined)k.cds.s1=Math.max(k.cds.s1,cm(.6)); if(k.cds.s2!==undefined)k.cds.s2=Math.max(k.cds.s2,cm(2)); }
 
   // ChiChi thoát ra góc xa nhất so với đối phương
-  const k=G.k;
   if(k){
     const corners=[[PAD+40,PAD+90],[W-PAD-40,PAD+90],[PAD+40,H-PAD-50],[W-PAD-40,H-PAD-50]];
     let best=corners[0], bd=-1;
@@ -997,18 +1323,18 @@ function summonFire(s,e){
   setPose(s,'atk1',3); aim(s,e,1.4);
   const a=Math.atan2(e.y-s.y,e.x-s.x);
   if(s.key==='goku'){
-    G.proj.push({type:'kame',team:1,owner:s,x:s.x+Math.cos(a)*32,y:s.y+Math.sin(a)*32,
+    G.proj.push({type:'kame',team:s.team,owner:s,x:s.x+Math.cos(a)*32,y:s.y+Math.sin(a)*32,
       vx:Math.cos(a)*520,vy:Math.sin(a)*520,r:26,dmg:300,life:7,ang:a,bounce:0});
     say('KA-ME-HA-ME-HAAA! Tia 300 dmg, nảy tường và yếu dần 10% mỗi lần.','g');
   }else{
     say('MASENKO! 5 đợt, mỗi đợt 100 dmg.','g');
     for(let i=0;i<5;i++) later(i*cm(.36),()=>{
       if(G.over)return;
-      const tgt=G.k, aa=(tgt&&tgt.alive)?Math.atan2(tgt.y-s.y,tgt.x-s.x):a;
+      const tgt=e, aa=(tgt&&tgt.alive)?Math.atan2(tgt.y-s.y,tgt.x-s.x):a;
       const a2=aa+(i-2)*.15;
       if(Math.abs(Math.cos(aa))>.12) s.face=Math.cos(aa)>=0?1:-1;
       s.ax=Math.cos(aa); s.ay=Math.sin(aa); s.lunge=Math.max(s.lunge,.6);
-      G.proj.push({type:'masenko',team:1,owner:s,x:s.x+Math.cos(a2)*30,y:s.y+Math.sin(a2)*30,
+      G.proj.push({type:'masenko',team:s.team,owner:s,x:s.x+Math.cos(a2)*30,y:s.y+Math.sin(a2)*30,
         vx:Math.cos(a2)*205,vy:Math.sin(a2)*205,r:18,dmg:100,life:3.4,ang:a2,wob:rnd(0,9)});
       ring(s.x+Math.cos(a2)*26,s.y+Math.sin(a2)*26,46,'#FFF3B0',.26);
       G.fx.push({type:'bolt',x:s.x+Math.cos(a2)*26,y:s.y+Math.sin(a2)*26,ang:a2,life:.22,ml:.22,seed:rnd(0,9)});
@@ -1019,7 +1345,7 @@ function summonFire(s,e){
 }
 
 /* ---------- AI ---------- */
-const isPlayer=f=>(mode==='p1'&&f.key==='kono')||(mode==='p2'&&f.key==='chichi');
+const isPlayer=f=>!!G&&((mode==='p1'&&f===G.k)||(mode==='p2'&&f===G.c));
 function playerVec(){
   let x=0,y=0;
   if(keys['a']||keys['arrowleft'])x--; if(keys['d']||keys['arrowright'])x++;
@@ -1033,7 +1359,8 @@ function dodgeVec(f){
     const d=dist(p,f); if(d>200)continue;
     const sp=Math.hypot(p.vx,p.vy)||1;
     if(((f.x-p.x)*p.vx+(f.y-p.y)*p.vy)/(sp*(d||1))<.6)continue;
-    const w=(1-d/200)*(p.type==='kame'?1.7:1)*f.dodge;
+    const PW={kame:1.7,twin:1.5,drive:1.3,ball:1.1};
+    const w=(1-d/200)*(PW[p.type]||1)*f.dodge;
     dx+=-p.vy/sp*w*f.strafe + (f.x-p.x)/(d||1)*w*.5;
     dy+= p.vx/sp*w*f.strafe + (f.y-p.y)/(d||1)*w*.5;
   }
@@ -1052,7 +1379,7 @@ function aiVec(f,e){
   const wd=Math.hypot(f.wx-f.x,f.wy-f.y)||1, wxu=(f.wx-f.x)/wd, wyu=(f.wy-f.y)/wd;
   let x=0,y=0;
   if(f.role==='ranged'){
-    const want=215;
+    const want=f.want||215;
     if(d<want-45){ x-=ux*1.15; y-=uy*1.15; }
     else if(d>want+65){ x+=ux*.75; y+=uy*.75; }
     x+=wxu*.85 - uy*f.strafe*.4;
@@ -1078,6 +1405,12 @@ function step(dt){
     const tm=G.timers[i]; if(!tm) continue;
     tm.t-=dt;
     if(tm.t<=0){ G.timers.splice(i,1); try{ tm.fn(); }catch(err){ console.error(err); } }
+  }
+  if(G.flashback){ G.flashback.t+=dt; if(G.flashback.t>=G.flashback.life) G.flashback=null; }
+  for(let i=G.mates.length-1;i>=0;i--){
+    const m=G.mates[i]; if(!m){ G.mates.splice(i,1); continue; }
+    m.life-=dt;
+    if(m.life<=0){ G.fx.push({type:'poof',x:m.x,y:m.y-18,life:.5,ml:.5}); G.mates.splice(i,1); }
   }
 
   const k=G.k,c=G.c;
@@ -1114,6 +1447,8 @@ function step(dt){
     if(f.recoil>0) f.recoil=Math.max(0,f.recoil-dt*4);
     if(f.lunge>0) f.lunge=Math.max(0,f.lunge-dt*3.2);
     if(f.invuln>0) f.invuln=Math.max(0,f.invuln-dt);
+    if(f.vuln>0) f.vuln=Math.max(0,f.vuln-dt);
+    if(f.eagle) eagleTick(f,dt);
     if(!f.summon && f.hp<=f.maxHp*.20) f.injured=true;   // đã tơi tả là giữ luôn
     if(!f.summon){
       f.wt-=dt;
@@ -1200,6 +1535,15 @@ function step(dt){
         G.fx.push({type:'dust',x:f.x-f.vx/spNow*10,y:f.y+20,r:3,life:.45,ml:.45});
       }
     }
+    // lực đẩy lùi từ cú sút của Tsubasa
+    if(f.kbx||f.kby){
+      f.x=clamp(f.x+f.kbx*dt,PAD,W-PAD);
+      f.y=clamp(f.y+f.kby*dt,PAD+50,H-PAD-10);
+      const dec=Math.exp(-dt*6);
+      f.kbx*=dec; f.kby*=dec;
+      if(Math.hypot(f.kbx,f.kby)<8){ f.kbx=0; f.kby=0; }
+      else if(chance(dt*14)) G.fx.push({type:'dust',x:f.x,y:f.y+18,r:4,life:.35,ml:.35});
+    }
     // mức độ "đang chạy" chuyển dần, để nhịp nhún không bật tắt giật cục
     const want=clamp(spNow/(f.speed*.7),0,1);
     f.moveAmt+=(want-f.moveAmt)*Math.min(1,dt*4);
@@ -1207,55 +1551,63 @@ function step(dt){
     { const dx=e.x-f.x; if(Math.abs(dx)>18) f.face = dx>=0?1:-1; }
   }
 
-  if(k.dash&&k.alive){
-    k.dash.t-=dt;
-    const d=dist(k,c)||1;
-    k.x=clamp(k.x+(c.x-k.x)/d*340*dt,PAD,W-PAD);
-    k.y=clamp(k.y+(c.y-k.y)/d*340*dt,PAD+50,H-PAD-10);
-    k.moving=true;
-    k.ghostT-=dt;
-    if(k.ghostT<=0){ k.ghostT=.06; G.fx.push({type:'ghost',x:k.x,y:k.y,face:k.face,key:'kono',pose:'ulti',h:k.spriteH,life:.34,ml:.34}); }
-    if(d<k.r+c.r+6&&!k.dash.hit){
-      k.dash.hit=true; k.dash=null; k.pose='idle';
-      hurt(c,150,k,'RASENGAN!'); c.stun=Math.max(c.stun,3);
-      G.flashScreen=.18; ring(c.x,c.y,140,'#63B4FF',.55);
+  for(const f of [k,c]){
+    if(!f.dash||!f.alive)continue;
+    const e=foeOf(f);
+    f.dash.t-=dt;
+    const dd=dist(f,e)||1;
+    f.x=clamp(f.x+(e.x-f.x)/dd*340*dt,PAD,W-PAD);
+    f.y=clamp(f.y+(e.y-f.y)/dd*340*dt,PAD+50,H-PAD-10);
+    f.moving=true;
+    f.ghostT-=dt;
+    if(f.ghostT<=0){ f.ghostT=.06; G.fx.push({type:'ghost',x:f.x,y:f.y,face:f.face,key:f.key,pose:'ulti',h:f.spriteH,life:.34,ml:.34}); }
+    if(dd<f.r+e.r+6&&!f.dash.hit){
+      f.dash.hit=true; f.dash=null; f.pose='idle';
+      hurt(e,150,f,'RASENGAN!'); e.stun=Math.max(e.stun,3);
+      G.flashScreen=.18; ring(e.x,e.y,140,'#63B4FF',.55);
       say('Rasengan trúng! 150 dmg + choáng 3 giây.','g');
-    }else if(k.dash&&k.dash.t<=0){ k.dash=null; k.pose='idle'; say('Rasengan tan — ChiChi né kịp.','m'); }
+    }else if(f.dash&&f.dash.t<=0){ f.dash=null; f.pose='idle'; say(`Rasengan tan — ${e.name} né kịp.`,'m'); }
   }
 
   for(const key in k.cds) k.cds[key]=Math.max(0,k.cds[key]-dt);
   for(const key in c.cds) c.cds[key]=Math.max(0,c.cds[key]-dt);
-  const kA=!isPlayer(k)||autoSkill, cA=!isPlayer(c)||autoSkill, d=dist(k,c);
+  const d=dist(k,c);
 
-  if(k.alive&&k.stun<=0&&!k.dash){
-    if(k.cds.s1<=0&&(kA?d<460:keys['j'])){k.cds.s1=cm(1.35);shuriken(k,c);}
-    if(k.cds.s2<=0&&(kA?d<420:keys['k'])){k.cds.s2=cm(6.5);bunshin(k,c);}
-    if(k.cds.s3<=0&&(kA?true:keys['l'])){k.cds.s3=cm(18);sexy(k);}
-    if(k.rage>=20&&(kA||keys['u'])) rasengan(k);
-  }
-  if(c.alive&&c.stun<=0){
-    if(c.cds.s1<=0&&d<k.r+c.r+16&&(cA||keys['j'])){c.cds.s1=cm(.25);melee(c,k);}
-    if(c.cds.s2<=0&&(cA?d<460:keys['k'])){c.cds.s2=cm(7);scold(c,k);}
+  for(const f of [k,c]){
+    if(!f.alive||f.stun>0)continue;
+    const auto=!isPlayer(f)||autoSkill;
+    const C=CHARS[f.key];
+    if(C&&C.think) C.think(f,foeOf(f),d,auto);
   }
 
-  if(c.alive && !G.summonDone && c.hp>0 && c.hp<=c.maxHp*.20){
-    ring(c.x,c.y,120,'#FFD400',.45);
-    G.flashScreen=Math.max(G.flashScreen,.07);
-    summonHelp(c);
+  // nội tại kích hoạt theo ngưỡng máu
+  for(const f of [k,c]){
+    if(!f.alive||f.hp<=0)continue;
+    if(f.key==='chichi' && !f.summonDone && f.hp<=f.maxHp*.20){
+      ring(f.x,f.y,120,'#FFD400',.45);
+      G.flashScreen=Math.max(G.flashScreen,.07);
+      summonHelp(f);
+    }
+    if(f.key==='tsubasa' && !f.eagleDone && f.hp<=f.maxHp*.15){
+      ring(f.x,f.y,130,'#FFF3C4',.5);
+      G.flashScreen=Math.max(G.flashScreen,.08);
+      eagleAwaken(f);
+    }
   }
 
   for(let i=G.fighters.length-1;i>=0;i--){
     const s=G.fighters[i];
     if(!s||!s.summon)continue;
-    // luôn xoay người về phía Konohamaru
-    if(k&&k.alive){
-      const dd=Math.hypot(k.x-s.x,k.y-s.y)||1;
-      s.ax=(k.x-s.x)/dd; s.ay=(k.y-s.y)/dd;
-      if(Math.abs(k.x-s.x)>18) s.face=s.ax>=0?1:-1;
+    // luôn xoay người về phía đối thủ
+    const tg=foeOf(s);
+    if(tg&&tg.alive){
+      const dd=Math.hypot(tg.x-s.x,tg.y-s.y)||1;
+      s.ax=(tg.x-s.x)/dd; s.ay=(tg.y-s.y)/dd;
+      if(Math.abs(tg.x-s.x)>18) s.face=s.ax>=0?1:-1;
       if(!s.fired) s.lunge=Math.max(s.lunge,.35);
     }
     if(s.stun>0)continue;
-    if(!s.fired){ s.charge-=dt; if(s.charge<=0){ s.fired=true; summonFire(s,k);} }
+    if(!s.fired){ s.charge-=dt; if(s.charge<=0){ s.fired=true; summonFire(s,tg);} }
     else {
       // chưởng xong là biến mất ngay
       s.leave-=dt;
@@ -1297,14 +1649,30 @@ function step(dt){
   for(let i=G.proj.length-1;i>=0;i--){
     const p=G.proj[i];
     if(!p) continue;
+    if(p.type==='drive'&&p.rise>0){
+      p.rise-=dt;
+      p.wing=(p.wing||0)+dt;
+      if(p.rise<=0){                       // bóng ngoặt lại: đại bàng đáp cánh
+        p.homing=true;
+        ring(p.x,p.y,90,'#FF8A2B',.45);
+        G.fx.push({type:'eagle',x:p.x,y:p.y,life:.7,ml:.7});
+        sfx('drive');
+        say('Bóng ngoặt lại như đại bàng chao cánh — lao thẳng vào mục tiêu!','g');
+      }
+    }
     if(p.homing){
-      const tg=G.c;
+      const tg=(p.tgt&&p.tgt.alive)?p.tgt:foeOf(p.owner);
       if(tg&&tg.alive){
         const sp=Math.hypot(p.vx,p.vy)||1;
-        const want=Math.atan2(tg.y-p.y,tg.x-p.x);
+        let want=Math.atan2(tg.y-p.y,tg.x-p.x);
+        if(p.type==='twin'){                // đường bóng ảo diệu: bẻ cong liên tục
+          p.wig=(p.wig||0)+dt;
+          const far=clamp(dist(p,tg)/220,0,1);
+          want+=Math.sin(p.wig*5.4)*1.15*far;
+        }
         let cur=Math.atan2(p.vy,p.vx);
         let diff=Math.atan2(Math.sin(want-cur),Math.cos(want-cur));
-        const turn=Math.min(Math.abs(diff),5.5*dt)*(diff<0?-1:1);
+        const turn=Math.min(Math.abs(diff),(p.turn||5.5)*dt)*(diff<0?-1:1);
         cur+=turn;
         p.vx=Math.cos(cur)*sp; p.vy=Math.sin(cur)*sp;
         p.face=Math.cos(cur)>=0?1:-1;
@@ -1329,6 +1697,33 @@ function step(dt){
         say(`Tia Kamehameha dội tường lần ${p.bounce} — còn ${p.dmg} dmg.`,'m');
         if(p.bounce>=8) dead=true;
       }
+    }else if(!dead && p.type==='ball'){
+      // sút trượt: bóng dội tường tối đa 2 lần rồi tan biến
+      const lo=24, hiX=W-24, hiY=H-24;
+      let hitWall=false;
+      if(p.x<lo){ p.x=lo; p.vx=Math.abs(p.vx); hitWall=true; }
+      else if(p.x>hiX){ p.x=hiX; p.vx=-Math.abs(p.vx); hitWall=true; }
+      if(p.y<lo){ p.y=lo; p.vy=Math.abs(p.vy); hitWall=true; }
+      else if(p.y>hiY){ p.y=hiY; p.vy=-Math.abs(p.vy); hitWall=true; }
+      if(hitWall){
+        p.bounce++;
+        if(p.bounce>p.maxBounce){
+          dead=true;
+          G.fx.push({type:'dust',x:p.x,y:p.y,r:7,life:.4,ml:.4});
+          say(p.bic?'Bicycle kick dội tường lần thứ 3 — bóng tan biến.':'Cú sút trượt, bóng dội tường lần thứ 3 rồi tan biến.','m');
+        }else{
+          sfx('bounce'); ring(p.x,p.y,34,'#FFFFFF',.24);
+          p.vx*=.94; p.vy*=.94;
+          say(`Bóng dội tường lần ${p.bounce} — còn ${p.maxBounce-p.bounce+1} lần nữa là tan.`,'m');
+        }
+      }
+    }else if(!dead && (p.type==='drive'||p.type==='twin')){
+      // giữ trong sàn: chạm biên thì lượn lại, không tan
+      const lo=22, hiX=W-22, hiY=H-22;
+      if(p.x<lo){ p.x=lo; p.vx=Math.abs(p.vx); }
+      else if(p.x>hiX){ p.x=hiX; p.vx=-Math.abs(p.vx); }
+      if(p.y<lo){ p.y=lo; p.vy=Math.abs(p.vy); }
+      else if(p.y>hiY){ p.y=hiY; p.vy=-Math.abs(p.vy); }
     }else if(!dead && p.type==='kunai'){
       if(p.x<26||p.x>W-26||p.y<26||p.y>H-26){ explode(p); dead=true; }
     }else if(!dead && p.type==='masenko'){
@@ -1346,6 +1741,7 @@ function step(dt){
     if(!dead && !(p.dmg<=0)) for(const f of G.fighters){
       if(f.team===p.team||!f.alive||f.summon)continue;
       if(p.type==='kunai'&&dist(f,p)<f.r+p.r){ explode(p); dead=true; break; }
+      if((p.type==='ball'||p.type==='drive'||p.type==='twin')&&dist(f,p)<f.r+p.r){ ballHit(p,f); dead=true; break; }
       if(dist(f,p)<f.r+p.r){
         hurt(f,p.dmg,p.owner,p.type==='kame'?'KAMEHAMEHA!':!!p.crit);
         sfx('hit');
@@ -1435,6 +1831,30 @@ function vector(f){
       ctx.beginPath(); ctx.moveTo(3,y+19); ctx.lineTo(8,y+13); ctx.lineTo(13,y+19); ctx.closePath(); ctx.fill();
       ctx.fillStyle='#E8E2F0'; ctx.fillRect(6,y-6,4,12);
     }
+  }else if(f.key==='tsubasa'||FRIEND_KIT[f.key]){
+    const kit=FRIEND_KIT[f.key]||{shirt:'#2B6BE4',short:'#F2F4FA',hair:'#171326',sock:'#2B6BE4'};
+    const kicking=(f.pose==='atk1'||f.pose==='atk2'||f.pose==='bicycle');
+    const kk=kicking?Math.sin(clamp(f.poseT||0,0,1)*Math.PI):0;
+    // chân
+    ctx.fillStyle=kit.sock;
+    ctx.fillRect(-9,y+12,7,9+sw);
+    ctx.save(); ctx.translate(6,y+12); ctx.rotate(-kk*.9); ctx.fillRect(-3,0,7,9-sw); ctx.restore();
+    ctx.fillStyle='#F2F4FA'; ctx.fillRect(-11,y+8,22,6);           // quần
+    torso(0,y-6,22,16,kit.shirt);
+    ctx.fillStyle='#F5CFA8';                                        // tay
+    ctx.fillRect(11,y-4+sw*1.5,7,12); ctx.fillRect(-18,y-4-sw*1.5,7,12);
+    head(0,y-18,12);
+    ctx.fillStyle=kit.hair;
+    ctx.beginPath(); ctx.arc(0,y-21,12.6,Math.PI,2*Math.PI); ctx.fill();
+    ctx.beginPath(); ctx.arc(-7,y-24,5,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(6,y-25,4.4,0,7); ctx.fill();
+    ctx.fillStyle='#1B1428'; ctx.fillRect(-2,y-19,3,4); ctx.fillRect(5,y-19,3,4);
+    if(f.injured&&!f.eagle){
+      ctx.strokeStyle='#8E1023'; ctx.lineWidth=2.4; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-8,y+1); ctx.lineTo(-1,y+8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(3,y-3); ctx.lineTo(9,y+3); ctx.stroke();
+      ctx.fillStyle='#E8E2F0'; ctx.fillRect(-11,y-16,8,3);
+    }
   }else{
     torso(0,y-8,26,30,f.key==='goku'?'#F2802A':'#8E5BE0');
     ctx.fillStyle='#2C50B0'; ctx.fillRect(-14,y+4,28,6);
@@ -1446,15 +1866,63 @@ function vector(f){
       ctx.beginPath(); ctx.arc(16,y-8,6+p*14+Math.sin(G.t*14)*2,0,7); ctx.fill(); ctx.restore(); }
   }
 }
+/* bộ đồ của Tsubasa và các đồng đội trong hồi tưởng */
+const FRIEND_KIT={
+  tsubasa:     {shirt:'#2B6BE4',short:'#F2F4FA',hair:'#171326',sock:'#2B6BE4'},
+  hyuga:       {shirt:'#E8412F',short:'#1B1428',hair:'#0E0B18',sock:'#E8412F'},
+  misaki:      {shirt:'#2B6BE4',short:'#F2F4FA',hair:'#4A2E1C',sock:'#2B6BE4'},
+  wakabayashi: {shirt:'#2BC48A',short:'#1B1428',hair:'#2A2030',sock:'#2BC48A'},
+  ishizaki:    {shirt:'#2B6BE4',short:'#F2F4FA',hair:'#3A2A18',sock:'#2B6BE4'}
+};
+/* quả bóng */
+function ballShape(r,spin){
+  ctx.save(); ctx.rotate(spin);
+  ctx.fillStyle='#FFFFFF'; ctx.strokeStyle='#000'; ctx.lineWidth=2.2;
+  ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#14121F';
+  ctx.beginPath();
+  for(let i=0;i<5;i++){ const a=i*1.2566-Math.PI/2; ctx.lineTo(Math.cos(a)*r*.42,Math.sin(a)*r*.42); }
+  ctx.closePath(); ctx.fill();
+  for(let i=0;i<5;i++){
+    const a=i*1.2566-Math.PI/2+.628;
+    ctx.beginPath();
+    ctx.arc(Math.cos(a)*r*.82,Math.sin(a)*r*.82,r*.26,0,7);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+/* đôi cánh: dùng cho Drive shot, Twin shot và nội tại đại bàng */
+function drawWings(x,y,scale,flap,col,alpha){
+  ctx.save();
+  ctx.translate(x,y); ctx.globalAlpha=alpha;
+  ctx.fillStyle=col; ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=1.4;
+  for(const s of [-1,1]){
+    ctx.save(); ctx.scale(s*scale,scale); ctx.rotate(-flap*.28);
+    for(let i=0;i<5;i++){
+      const L=34-i*4.4, a=-.62+i*.30;
+      ctx.beginPath();
+      ctx.moveTo(4,0);
+      ctx.quadraticCurveTo(Math.cos(a)*L*.7+10, Math.sin(a)*L*.7-8, Math.cos(a)*L+12, Math.sin(a)*L);
+      ctx.quadraticCurveTo(Math.cos(a)*L*.6+8, Math.sin(a)*L*.6+7, 4, 6);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+}
 function sprite(f){
   const set=SPR[f.key]||{};
   let pk=f.pose;
   const inj = f.injured && set.injured && set.injured.length;
   // tơi tả: chỉ thay ảnh đứng / trúng đòn, còn ra chiêu vẫn chạy ảnh riêng
   if(inj && (pk==='idle'||pk==='hurt')) pk='injured';
+  // lên đồng đại bàng: ảnh đứng đổi sang dáng có cánh
+  if(f.eagle && set.wings && set.wings.length && (pk==='idle'||pk==='hurt'||pk==='injured')) pk='wings';
   let arr=set[pk];
   if(!arr||!arr.length){
-    if(pk==='call') arr=set.wounded||set.injured||set.skill||set.idle;
+    if(pk==='bicycle') arr=set.atk1||set.idle;
+    else if(pk==='wings') arr=set.injured||set.idle;
+    else if(pk==='call') arr=set.wounded||set.injured||set.skill||set.idle;
     else if(pk==='wounded') arr=set.injured||set.hurt||set.idle;
     else if(pk==='injured') arr=set.hurt||set.idle;
     // thiếu ảnh cho tư thế nào thì lùi về ảnh tơi tả, không lùi về ảnh nguyên vẹn
@@ -1489,6 +1957,25 @@ function drawFighter(f){
 
   ctx.save(); ctx.globalAlpha=.25*clamp(1-hop/26,.3,1); ctx.fillStyle='#000';
   ctx.beginPath(); ctx.ellipse(f.x+ox,f.y+22,20-hop*.35,6,0,0,7); ctx.fill(); ctx.restore();
+
+  // Wings of the Eagle: đôi cánh thiên thần sau lưng
+  if(f.eagle){
+    const flap=Math.sin(G.t*4.4);
+    ctx.save();
+    ctx.globalAlpha=.3+Math.sin(G.t*3)*.08;
+    ctx.fillStyle='#FFF3C4';
+    ctx.beginPath(); ctx.ellipse(f.x+ox,f.y-30-hop,42,52,0,0,7); ctx.fill();
+    ctx.restore();
+    drawWings(f.x+ox, f.y-30-hop, 1.32+flap*.05, flap, '#FFFDF0', .92);
+    ctx.save();
+    ctx.globalAlpha=.5;
+    for(let i=0;i<3;i++){
+      const a=G.t*1.6+i*2.1;
+      ctx.fillStyle='#FFF3C4';
+      ctx.beginPath(); ctx.arc(f.x+Math.cos(a)*46, f.y-30-hop+Math.sin(a*1.3)*24, 2.6, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+  }
 
   ctx.save();
   ctx.translate(f.x+ox, f.y+20+oy*.4-hop);
@@ -1533,8 +2020,14 @@ function drawBars(f){
   ctx.strokeText(f.name.toUpperCase(),x+w/2,y-4);
   ctx.fillStyle=f.color; ctx.fillText(f.name.toUpperCase(),x+w/2,y-4);
   bar(x,y,w,h,f.hp/f.maxHp,f.color,String(Math.ceil(f.hp)));
-  if(f.key==='kono') bar(x,y+h+2,w,20,f.rage/20,'#FFE100',`Rage: ${f.rage}`);
-  else bar(x,y+h+2,w,20,clamp((.10+f.critBonus)*3,0,1),'#FFE100',`Crit: ${Math.round((.10+f.critBonus)*100)}%`);
+  const C=CHARS[f.key];
+  if(C&&C.gauge){ const gg=C.gauge(f); bar(x,y+h+2,w,20,gg.pct,gg.fill||'#FFE100',gg.txt); }
+  if(f.vuln>0){
+    ctx.font='900 11px "Space Mono",monospace'; ctx.textAlign='center';
+    ctx.lineWidth=3; ctx.strokeStyle='#000';
+    ctx.strokeText(`THỦNG GIÁP +50% (${f.vuln.toFixed(1)}s)`,x+w/2,y+h+40);
+    ctx.fillStyle='#FFF3C4'; ctx.fillText(`THỦNG GIÁP +50% (${f.vuln.toFixed(1)}s)`,x+w/2,y+h+40);
+  }
 }
 function drawProj(p){
   ctx.save();
@@ -1566,6 +2059,66 @@ function drawProj(p){
       ctx.beginPath(); ctx.ellipse(0,-26,24,34,0,0,7); ctx.fill(); ctx.restore();
       vector({key:'kono',face:1,moving:true});
     }
+  }else if(p.type==='ball'){
+    ctx.translate(p.x,p.y);
+    const sp=Math.hypot(p.vx,p.vy)||1, ang=Math.atan2(p.vy,p.vx);
+    // vệt gió phía sau
+    ctx.save(); ctx.rotate(ang); ctx.globalAlpha=.35;
+    ctx.strokeStyle=p.bic?'#FFB03A':'#FFFFFF'; ctx.lineWidth=p.bic?4:3; ctx.lineCap='round';
+    for(let i=-1;i<=1;i++){
+      ctx.beginPath(); ctx.moveTo(-p.r-6,i*p.r*.55); ctx.lineTo(-p.r-24-p.bounce*6,i*p.r*.75); ctx.stroke();
+    }
+    ctx.restore();
+    if(p.bic){
+      ctx.save(); ctx.globalAlpha=.55+Math.sin(G.t*20)*.2;
+      ctx.fillStyle='#FF8A2B';
+      ctx.beginPath(); ctx.arc(0,0,p.r+7,0,7); ctx.fill(); ctx.restore();
+    }
+    ballShape(p.r,p.spin*(sp/300));
+  }else if(p.type==='drive'){
+    ctx.translate(p.x,p.y);
+    const rising=p.rise>0;
+    // lửa cuộn quanh bóng
+    ctx.save();
+    for(let i=0;i<7;i++){
+      const a=G.t*7+i*.9, rr=p.r+7+Math.sin(G.t*11+i)*3;
+      ctx.globalAlpha=.5-i*.045;
+      ctx.fillStyle=i%2?'#FF6A2B':'#FFC542';
+      ctx.beginPath();
+      ctx.arc(Math.cos(a)*rr*.5-p.vx*.018, Math.sin(a)*rr*.5-p.vy*.018, rr*.62, 0, 7);
+      ctx.fill();
+    }
+    ctx.restore();
+    if(!rising){       // đại bàng chao cánh
+      const flap=Math.sin(G.t*13);
+      ctx.save(); ctx.rotate(Math.atan2(p.vy,p.vx)+Math.PI/2);
+      drawWings(0,-2,.92+flap*.08,flap,'#FFD9A0',.85);
+      ctx.restore();
+    }
+    ballShape(p.r,p.spin*1.4);
+  }else if(p.type==='twin'){
+    ctx.translate(p.x,p.y);
+    ctx.save();
+    const t=G.t*16;
+    for(let i=0;i<9;i++){
+      ctx.globalAlpha=.45-i*.04;
+      ctx.fillStyle=i%2?'#FFF3C4':'#FFE100';
+      ctx.beginPath();
+      ctx.arc(-p.vx*.02*i, -p.vy*.02*i, p.r*(1-i*.07), 0, 7);
+      ctx.fill();
+    }
+    ctx.restore();
+    ctx.save();
+    ctx.shadowColor='rgba(255,230,120,.95)'; ctx.shadowBlur=22;
+    ctx.strokeStyle='#FFF9D9'; ctx.lineWidth=2.4; ctx.lineCap='round';
+    for(let b=-1;b<=1;b+=2){
+      ctx.beginPath(); ctx.moveTo(0,0);
+      let px=0;
+      for(let i=0;i<4;i++){ px-=15; ctx.lineTo(px, b*(6+Math.sin(t+i*2.1)*11)); }
+      ctx.stroke();
+    }
+    ctx.restore();
+    ballShape(p.r,p.spin*2.2);
   }else if(p.type==='shout'){
     ctx.translate(p.x,p.y); ctx.rotate(Math.atan2(p.vy,p.vx));
     ctx.fillStyle=p.crit?'#FFD400':'#FF7A95'; ctx.strokeStyle='#000'; ctx.lineWidth=2;
@@ -1742,6 +2295,9 @@ function draw(){
         ctx.stroke();
       }
     }
+    else if(e.type==='eagle'){
+      drawWings(e.x,e.y,1.1+(1-a)*1.6,Math.sin(G.t*12),'#FFD9A0',a*.9);
+    }
     else if(e.type==='punch'){ ctx.globalAlpha=a; ctx.strokeStyle='#fff'; ctx.lineWidth=3;
       for(let i=0;i<4;i++){ const g=i*1.57+.4; ctx.beginPath(); ctx.moveTo(e.x+Math.cos(g)*9,e.y+Math.sin(g)*9); ctx.lineTo(e.x+Math.cos(g)*22,e.y+Math.sin(g)*22); ctx.stroke(); } }
     ctx.restore();
@@ -1779,6 +2335,7 @@ function draw(){
     else vector(f);
     ctx.restore();
   }
+  for(const m of G.mates) drawMate(m);
   const order=[...G.fighters].filter(f=>f.alive).sort((a,b)=>a.y-b.y);
   for(const f of order) drawFighter(f);
   for(const f of order) drawBars(f);
@@ -1844,11 +2401,84 @@ function draw(){
   ctx.restore();
 
   arenaFrame();
+  if(G.flashback) drawFlashback();
   if(G.callBanner) drawCallBanner();
 
   if(G.flashScreen>0){ ctx.save(); ctx.globalAlpha=clamp(G.flashScreen*4,0,.85); ctx.fillStyle='#fff'; ctx.fillRect(10,10,W-20,H-20); ctx.restore(); }
   if(!running&&!G.over) overlay('PRESS START','Space: pause  ·  R: restart');
   if(G.over&&G.announced) winnerBanner();
+}
+function drawMate(m){
+  const set=SPR[m.key]||{};
+  let arr=set[m.pose]&&set[m.pose].length?set[m.pose]:null;
+  if(!arr&&set.idle&&set.idle.length) arr=set.idle;
+  const img=arr?arr[Math.floor(G.t*8)%arr.length]:null;
+  const app=clamp((m.ml-m.life)*4,0,1), out=clamp(m.life*2.5,0,1);
+  const al=Math.min(app,out);
+  ctx.save(); ctx.globalAlpha=.22*al; ctx.fillStyle='#000';
+  ctx.beginPath(); ctx.ellipse(m.x,m.y+22,19,6,0,0,7); ctx.fill(); ctx.restore();
+  ctx.save();
+  ctx.globalAlpha=al;
+  ctx.translate(m.x,m.y+20);
+  ctx.scale(m.face<0?-1:1,1);
+  if(img){ const h=118,w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
+  else vector({key:m.key,face:1,moving:false,pose:m.pose,poseT:m.pose==='atk1'?.5:0});
+  ctx.restore();
+  ctx.save();
+  ctx.globalAlpha=al;
+  ctx.font='900 11px "Space Mono",monospace'; ctx.textAlign='center';
+  ctx.lineWidth=3; ctx.strokeStyle='#000'; ctx.strokeText(m.name.toUpperCase(),m.x,m.y+40);
+  ctx.fillStyle='#FFF3C4'; ctx.fillText(m.name.toUpperCase(),m.x,m.y+40);
+  ctx.restore();
+}
+function drawFlashback(){
+  const F=G.flashback, n=F.list.length, seg=F.life/n;
+  const idx=clamp(Math.floor(F.t/seg),0,n-1);
+  const lp=clamp((F.t-idx*seg)/seg,0,1);
+  const it=F.list[idx];
+  const fade=clamp(Math.min(lp*6,(1-lp)*6),0,1);
+  ctx.save();
+  ctx.globalAlpha=.84*clamp(F.t*4,0,1)*clamp((F.life-F.t)*3,0,1);
+  ctx.fillStyle='#07050F'; ctx.fillRect(10,10,W-20,H-20);
+  ctx.restore();
+
+  const bw=206, bh=252;
+  const bx=W/2-bw/2+(idx%2?1:-1)*26, by=H*.20+Math.sin(lp*Math.PI)*-8;
+  ctx.save();
+  ctx.globalAlpha=fade;
+  ctx.translate(bx+bw/2, by+bh/2);
+  ctx.rotate((idx%2?1:-1)*.035);
+  // khung ảnh kỷ niệm
+  ctx.fillStyle='#F6EFE2'; ctx.strokeStyle='#000'; ctx.lineWidth=5;
+  if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(-bw/2,-bh/2,bw,bh,10); ctx.fill(); ctx.stroke(); }
+  else { ctx.fillRect(-bw/2,-bh/2,bw,bh); ctx.strokeRect(-bw/2,-bh/2,bw,bh); }
+  ctx.fillStyle='#D9C9AC'; ctx.fillRect(-bw/2+11,-bh/2+11,bw-22,bh-64);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(-bw/2+11,-bh/2+11,bw-22,bh-64); ctx.clip();
+  const set=SPR[it.key]||{};
+  const arr=set.idle&&set.idle.length?set.idle:null;
+  const img=arr?arr[0]:null;
+  ctx.translate(0,bh/2-72);
+  const sc=1.35+Math.sin(lp*Math.PI)*.06;
+  ctx.scale(sc,sc);
+  if(img){ const h=126,w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
+  else vector({key:it.key,face:1,moving:false,pose:'idle',poseT:0});
+  ctx.restore();
+  ctx.textAlign='center';
+  ctx.font='900 20px "Be Vietnam Pro",sans-serif';
+  ctx.fillStyle='#1B1428'; ctx.fillText(it.name, 0, bh/2-24);
+  ctx.font='900 10px "Space Mono",monospace';
+  ctx.fillStyle='#8A7C64'; ctx.fillText('NANKATSU · KÝ ỨC', 0, bh/2-9);
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalAlpha=clamp(F.t*2,0,1)*clamp((F.life-F.t)*2.4,0,1);
+  ctx.textAlign='center';
+  ctx.font='900 16px "Space Mono",monospace';
+  ctx.lineWidth=6; ctx.strokeStyle='#000';
+  ctx.strokeText('"CÒN CÁC CẬU ĐANG ĐỢI MÌNH…"', W/2, H*.88);
+  ctx.fillStyle='#FFF3C4'; ctx.fillText('"CÒN CÁC CẬU ĐANG ĐỢI MÌNH…"', W/2, H*.88);
+  ctx.restore();
 }
 function drawCallBanner(){
   const b=G.callBanner, age=(b.ml-b.life), pop=1+Math.max(0,.4-age*3);
@@ -1959,43 +2589,129 @@ addEventListener('keydown',e=>{
   if(['arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
 });
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+const shortName=k=>CHARS[k].short||CHARS[k].name;
 function applyColors(){
-  const a=document.getElementById('colK'), b=document.getElementById('colC');
-  if(a)a.value=COLORS.kono; if(b)b.value=COLORS.chichi;
-  if(G&&G.k){ G.k.color=COLORS.kono; G.c.color=COLORS.chichi; }
+  const a=el('colK'), b=el('colC'), mirror=PICK.a===PICK.b;
+  if(a) a.value=COLORS[PICK.a]||CHARS[PICK.a].color;
+  if(b){ b.value=mirror?CHARS[PICK.b].alt:(COLORS[PICK.b]||CHARS[PICK.b].color); b.disabled=mirror; }
+  const na=el('colNameA'), nb=el('colNameB');
+  if(na)na.textContent=shortName(PICK.a);
+  if(nb)nb.textContent=shortName(PICK.b)+(mirror?' II':'');
+  if(G&&G.k&&a&&b){ G.k.color=a.value; G.c.color=b.value; }
 }
 function onColor(){
-  COLORS.kono=document.getElementById('colK').value;
-  COLORS.chichi=document.getElementById('colC').value;
-  if(G&&G.k){ G.k.color=COLORS.kono; G.c.color=COLORS.chichi; }
+  COLORS[PICK.a]=el('colK').value;
+  if(PICK.a!==PICK.b) COLORS[PICK.b]=el('colC').value;
+  applyColors();
   Store.set('cfg_colors',JSON.stringify(COLORS)).catch(()=>{});
 }
 function applyHp(){
-  const a=el('hpK'), b=el('hpC');
-  if(a)a.value=HP.kono; if(b)b.value=HP.chichi;
+  const a=el('hpK'), b=el('hpC'), mirror=PICK.a===PICK.b;
+  if(a)a.value=HP[PICK.a]; if(b){ b.value=HP[PICK.b]; b.disabled=mirror; }
+  const na=el('hpNameA'), nb=el('hpNameB');
+  if(na)na.textContent=shortName(PICK.a);
+  if(nb)nb.textContent=shortName(PICK.b)+(mirror?' II':'');
+  const m1=el('modeP1'), m2=el('modeP2');
+  if(m1)m1.textContent='Điều khiển '+CHARS[PICK.a].name;
+  if(m2)m2.textContent='Điều khiển '+CHARS[PICK.b].name+(mirror?' II':'');
   const sub=document.querySelector('.sub');
-  if(sub) sub.textContent = HP.kono===HP.chichi
-    ? `Konohamaru vs ChiChi · ${HP.kono} HP`
-    : `Konohamaru ${HP.kono} HP · ChiChi ${HP.chichi} HP`;
+  if(sub) sub.textContent = HP[PICK.a]===HP[PICK.b]
+    ? `${CHARS[PICK.a].name} vs ${CHARS[PICK.b].name} · ${HP[PICK.a]} HP`
+    : `${CHARS[PICK.a].name} ${HP[PICK.a]} HP · ${CHARS[PICK.b].name} ${HP[PICK.b]} HP`;
 }
 function onHp(){
   const v=x=>clamp(Math.round(parseInt(x,10)||1000),100,9999);
-  HP.kono=v(el('hpK').value); HP.chichi=v(el('hpC').value);
+  HP[PICK.a]=v(el('hpK').value);
+  if(PICK.a!==PICK.b) HP[PICK.b]=v(el('hpC').value);
   applyHp();
   Store.set('cfg_hp',JSON.stringify(HP)).catch(()=>{});
   newGame(); running=false; el('play').textContent='Bắt đầu';
 }
+function findFighter(key){ return G.fighters.find(f=>f.key===key&&!f.summon); }
 function testSummon(kind){
   if(G.over){ newGame(); }
+  const c=findFighter('chichi');
+  if(!c){ say('Cần có ChiChi trong trận mới thử được viện binh.','m'); return; }
   ac(); if(MUSIC.on) startMusic();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
-  G.summonDone=false;
-  G.c.injured=true;
-  summonHelp(G.c,kind);
+  c.summonDone=false;
+  c.injured=true;
+  summonHelp(c,kind);
   say(`[Thử nghiệm] Ép gọi ${kind==='goku'?'Son Goku':'Son Gohan'}.`,'m');
+}
+function testEagle(){
+  if(G.over){ newGame(); }
+  const t=findFighter('tsubasa');
+  if(!t){ say('Cần có Tsubasa trong trận mới thử được Wings of the Eagle.','m'); return; }
+  if(t.eagleDone){ say('Tsubasa đã kích hoạt nội tại rồi.','m'); return; }
+  ac(); if(MUSIC.on) startMusic();
+  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  t.hp=Math.min(t.hp,Math.round(t.maxHp*.14));
+  eagleAwaken(t);
+  say('[Thử nghiệm] Ép Tsubasa vào trạng thái Wings of the Eagle.','m');
+}
+function testTwin(){
+  if(G.over){ newGame(); }
+  const t=findFighter('tsubasa');
+  if(!t){ say('Cần có Tsubasa trong trận mới thử được Twin Shot.','m'); return; }
+  if(t.eagle){ say('Đang trong Wings of the Eagle — Twin Shot bị vô hiệu.','m'); return; }
+  ac(); if(MUSIC.on) startMusic();
+  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  t.goals=18;
+  say('[Thử nghiệm] Nạp đủ 18 goal cho Tsubasa.','m');
 }
 el('testGoku').addEventListener('click',()=>testSummon('goku'));
 el('testGohan').addEventListener('click',()=>testSummon('gohan'));
+el('testTwin').addEventListener('click',testTwin);
+el('testEagle').addEventListener('click',testEagle);
+
+/* ---------- màn chọn nhân vật ---------- */
+const TMP={a:PICK.a,b:PICK.b};
+function cselRefresh(){
+  for(const slot of ['a','b']){
+    const list=el(slot==='a'?'listA':'listB');
+    [...list.children].forEach(card=>card.classList.toggle('on',card.dataset.key===TMP[slot]));
+    el(slot==='a'?'pickNameA':'pickNameB').textContent='· '+CHARS[TMP[slot]].name;
+  }
+  el('cselVs').innerHTML=`<b>${CHARS[TMP.a].name}</b> vs <b>${CHARS[TMP.b].name}</b>`;
+}
+function buildCsel(){
+  for(const slot of ['a','b']){
+    const list=el(slot==='a'?'listA':'listB');
+    list.innerHTML='';
+    for(const key of CKEYS){
+      const C=CHARS[key];
+      const card=document.createElement('button');
+      card.className='cCard'; card.dataset.key=key; card.type='button';
+      card.innerHTML=
+        `<span class="cAva" style="color:${C.color}">${C.emoji}</span>`+
+        `<span><span class="cName" style="color:${C.color}">${C.name}</span>`+
+        `<span class="cTag">${C.tag}</span>`+
+        `<span class="cSkills">${C.skills.map(s=>'<i>·</i> '+s).join('<br>')}</span></span>`;
+      card.addEventListener('click',()=>{ TMP[slot]=key; cselRefresh(); });
+      list.appendChild(card);
+    }
+  }
+  cselRefresh();
+}
+function openCsel(){
+  TMP.a=PICK.a; TMP.b=PICK.b;
+  cselRefresh();
+  el('charSelect').classList.remove('off');
+  running=false; el('play').textContent='Bắt đầu';
+}
+function closeCsel(){ el('charSelect').classList.add('off'); }
+function startPicked(){
+  PICK.a=TMP.a; PICK.b=TMP.b;
+  Store.set('cfg_picks',JSON.stringify({a:PICK.a,b:PICK.b})).catch(()=>{});
+  applyColors(); applyHp();
+  newGame(); running=false; el('play').textContent='Bắt đầu';
+  closeCsel();
+}
+el('pick').addEventListener('click',openCsel);
+el('cselGo').addEventListener('click',startPicked);
+el('cselCancel').addEventListener('click',closeCsel);
+buildCsel();
 el('cast').addEventListener('change',e=>{
   CAST.mul=parseFloat(e.target.value)||1.8;
   Store.set('cfg_cast',String(CAST.mul)).catch(()=>{});
@@ -2006,7 +2722,9 @@ el('hpC').addEventListener('change',onHp);
 el('rec').addEventListener('click',toggleRec);
 el('colK').addEventListener('input',onColor);
 el('colC').addEventListener('input',onColor);
+applyColors(); applyHp();
 newGame(); requestAnimationFrame(loop);
+openCsel();                       // mở màn chọn nhân vật ngay khi vào
 })();
 </script>
 </body>
