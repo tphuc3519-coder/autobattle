@@ -239,9 +239,9 @@ const PICK={a:'kono',b:'chichi'};
 const GOAL_MAX=8;                 // số goal cần để mở Victory Twin Shot
 const CHARS={
   kono:{
-    name:'Konohamaru', short:'Kono', tag:'Ninja · đánh xa', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
+    name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
     role:'ranged', want:215, speed:92, dodge:1, male:true,
-    skills:['<b>1</b> Phi tiêu / kunai nổ','<b>2</b> Kage Bunshin bám đuổi','<b>3</b> Sexy no Jutsu','<b>Nộ 20</b> Rasengan lao tới'],
+    skills:['<b>1</b> Shuriken / Explosive Kunai','<b>2</b> Kage Bunshin — homing clone','<b>3</b> Sexy no Jutsu','<b>Rage 20</b> Rasengan Dash'],
     init(f){ f.cds={s1:cm(1),s2:cm(3),s3:cm(6)}; f.rage=0; },
     think(f,e,d,auto){
       if(f.dash)return;
@@ -253,9 +253,9 @@ const CHARS={
     gauge:f=>({pct:f.rage/20, fill:'#FFE100', txt:`Rage: ${f.rage}`})
   },
   chichi:{
-    name:'ChiChi', short:'ChiChi', tag:'Nội trợ · cận chiến', emoji:'🍳', color:'#FF4D6D', alt:'#FF93A8',
+    name:'ChiChi', short:'ChiChi', tag:'Housewife · Melee', emoji:'🍳', color:'#FF4D6D', alt:'#FF93A8',
     role:'melee', speed:106, dodge:.55, male:false,
-    skills:['<b>1</b> Đấm đá (chí mạng 25)','<b>2</b> Mắng — 5 đợt sóng 360°, hất ngược phi tiêu / kunai / bóng','<b>Nội tại</b> 5 đòn +5% chí mạng','<b>Dưới 20% máu</b> gọi Goku / Gohan'],
+    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball','<b>Passive</b> every 5 hits +5% crit','<b>Below 20% HP</b> calls Goku / Gohan'],
     init(f){ f.cds={s1:0,s2:cm(3)}; f.hits=0; f.critBonus=0; },
     think(f,e,d,auto){
       if(f.cds.s1<=0&&d<f.r+e.r+16&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
@@ -264,9 +264,9 @@ const CHARS={
     gauge:f=>({pct:clamp((.10+f.critBonus)*3,0,1), fill:'#FFE100', txt:`Crit: ${Math.round((.10+f.critBonus)*100)}%`})
   },
   tsubasa:{
-    name:'Ozora Tsubasa', short:'Tsubasa', tag:'Tiền đạo · sút bóng', emoji:'⚽', color:'#2ED573', alt:'#7DEBAB',
+    name:'Ozora Tsubasa', short:'Tsubasa', tag:'Striker · Long shots', emoji:'⚽', color:'#2ED573', alt:'#7DEBAB',
     role:'ranged', want:235, speed:100, dodge:.8, male:true,
-    skills:['<b>1</b> Basic shot 25 dmg, hay đá hụt (10% Bicycle kick 40 + choáng)','<b>2</b> Drive shot 80 + thiêu đốt 5×3',`<b>${GOAL_MAX} goal</b> Victory Twin Shot 150 + choáng 2s`,'<b>Dưới 15% máu</b> Wings of the Eagle'],
+    skills:['<b>1</b> Basic Shot 25 dmg, often misses (10% Bicycle Kick 40 + stun)','<b>2</b> Drive Shot 80 + burn 5×3',`<b>${GOAL_MAX} goals</b> Victory Twin Shot 150 + stun 2s`,'<b>Below 15% HP</b> Wings of the Eagle'],
     init(f){ f.cds={s1:cm(1),s2:cm(3)}; f.goals=0; },
     think(f,e,d,auto){
       const sp=f.eagle?.5:1;
@@ -939,7 +939,7 @@ function hurt(t,amt,src,crit,kind,tint){
   if(kind==='dot'){
     // sát thương duy trì: chữ nhỏ, dạt sang bên để không che số đòn đánh
     G.floats.push({x:t.x+(t.dotSide=(t.dotSide||1)*-1)*40, y:t.y-18, txt:'-'+Math.round(amt),
-      color:tint==='red'?'#FF6B6B':'#FF9AD5', life:.85, ml:.85, sc:.5});
+      color:tint==='red'?'#E1121F':'#FF9AD5', life:.85, ml:.85, sc:.5});
   }else{
     pop(t.x,t.y,'-'+Math.round(amt),dc,!!crit,sc);
   }
@@ -1254,7 +1254,7 @@ function ballHit(p,f){
       stunFx(f,2,'shock'); sfx('stun');                  // choáng Twin Shot: điện giật
       f.vuln=Math.max(f.vuln,3);
       knock(f,p.vx,p.vy,260);
-      G.floats.push({x:f.x,y:f.y-118,txt:'CHOÁNG 2s · NHẬN +50% DMG 3s',color:'#FFF3C4',
+      G.floats.push({x:f.x,y:f.y-118,txt:'STUNNED 2s · +50% DMG TAKEN 3s',color:'#FFF3C4',
         life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
     }
     say('VICTORY SHOT xuyên thẳng — 150 dmg, choáng 2 giây, thủng giáp 50% trong 3 giây!','g');
@@ -2016,7 +2016,7 @@ function drawFighter(f){
   ctx.scale(fs*sx, sy);
   if(f.flash>0){
     const tn=TINT[f.flashCol];
-    ctx.globalAlpha=tn?.62:.4;
+    ctx.globalAlpha=tn?tn.alpha:.4;
     // trong suốt kèm ám màu: đỏ khi trúng đòn nổ / thiêu đốt, hồng khi dính khói Sexy Jutsu
     if(tn) try{ ctx.filter=tn.filter; }catch(e){}
   }
@@ -2027,7 +2027,7 @@ function drawFighter(f){
   if(f.flash>0&&TINT[f.flashCol]){
     const tn=TINT[f.flashCol];
     ctx.save();
-    ctx.globalAlpha=clamp(f.flash*1.6,0,1)*.34;
+    ctx.globalAlpha=clamp(f.flash*1.6,0,1)*tn.glowA;
     ctx.fillStyle=tn.glow;
     ctx.beginPath(); ctx.ellipse(f.x+ox,bodyCY(f)-hop*.6,f.r+8,bodyRY(f)+6,0,0,7); ctx.fill();
     ctx.restore();
@@ -2047,8 +2047,10 @@ function drawFighter(f){
 }
 /* ám màu lúc dính đòn */
 const TINT={
-  red: {filter:'sepia(1) saturate(7) hue-rotate(-32deg) brightness(1.05)', glow:'#FF3B30'},
-  pink:{filter:'sepia(1) saturate(5) hue-rotate(-62deg) brightness(1.3)',  glow:'#FF6EC7'}
+  red: {filter:'grayscale(1) sepia(1) saturate(30) hue-rotate(-40deg) brightness(.68) contrast(1.4)',
+        glow:'#CE0020', alpha:.74, glowA:.6},
+  pink:{filter:'sepia(1) saturate(5) hue-rotate(-62deg) brightness(1.3)',
+        glow:'#FF6EC7', alpha:.62, glowA:.34}
 };
 function heartPath(x,y,s){
   ctx.beginPath();
@@ -2057,74 +2059,112 @@ function heartPath(x,y,s){
   ctx.bezierCurveTo(x+s*.55,y-s*1.1, x+s*1.5,y-s*.2, x,y+s*.9);
   ctx.closePath();
 }
-/* hiệu ứng choáng, mỗi nguồn choáng một kiểu riêng */
-function drawStun(f,hy){
-  const k=f.stunKind, cy=bodyCY(f);
+/* Hiệu ứng choáng: kiểu nào cũng có vòng xoay trên đầu, chỉ khác vật thể
+   quay và hiệu ứng phụ trên người. */
+const STUN_STYLE={
+  spark:{n:3, spd:6,   rx:19, ry:5.5, ring:'#FFC542', ringA:.22},
+  spin: {n:4, spd:7.4, rx:23, ry:7,   ring:'#8FD0FF', ringA:.42},
+  shock:{n:4, spd:5.4, rx:21, ry:6.5, ring:'#9EE7FF', ringA:.34},
+  heart:{n:4, spd:2.8, rx:23, ry:7.5, ring:'#FF9AD5', ringA:.3}
+};
+const hash1=n=>{ const v=Math.sin(n*127.1)*43758.5453; return v-Math.floor(v); };
+function starPath(x,y,r,pts){
+  ctx.beginPath();
+  for(let s=0;s<pts*2;s++){
+    const rr=s%2?r*.38:r, aa=s*Math.PI/pts;
+    ctx.lineTo(x+Math.cos(aa)*rr, y+Math.sin(aa)*rr);
+  }
+  ctx.closePath();
+}
+function boltPath(x,y,s){
+  ctx.beginPath();
+  ctx.moveTo(x+s*.35,y-s);
+  ctx.lineTo(x-s*.45,y+s*.15);
+  ctx.lineTo(x+s*.05,y+s*.15);
+  ctx.lineTo(x-s*.35,y+s);
+  ctx.lineTo(x+s*.5,y-s*.2);
+  ctx.lineTo(x-s*.02,y-s*.2);
+  ctx.closePath();
+}
+/* điện giật: tia ngắn chớp tắt bám theo hai bên người, đổi chỗ liên tục */
+function bodySparks(f){
+  const cy=bodyCY(f);
   ctx.save();
-  if(k==='shock'){
-    // Twin Shot: điện giật giật quanh người
-    ctx.shadowColor='rgba(180,240,255,.95)'; ctx.shadowBlur=12;
-    ctx.lineCap='round'; ctx.lineJoin='round';
-    for(let b=0;b<4;b++){
-      const seed=b*2.7, t=G.t*22+seed;
-      ctx.strokeStyle=b%2?'#BFEFFF':'#FFF3C4';
-      ctx.lineWidth=b%2?2.4:1.6;
-      ctx.beginPath();
-      const side=b<2?-1:1;
-      let px=f.x+side*(f.r+4), py=cy-30+b*17;
-      ctx.moveTo(px,py);
-      for(let i=0;i<4;i++){
-        px+=side*(5+Math.sin(t+i*1.7)*7);
-        py+=8+Math.cos(t*1.3+i)*4;
-        ctx.lineTo(px,py);
-      }
-      ctx.stroke();
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.shadowColor='rgba(150,230,255,.95)'; ctx.shadowBlur=9;
+  for(let i=0;i<4;i++){
+    const beat=Math.floor(G.t*13)+i*17;          // mỗi nhịp một vị trí mới
+    const ph=(G.t*13)%1;
+    const on=hash1(beat*1.7)>.22;
+    if(!on) continue;
+    const side=hash1(beat)>.5?1:-1;
+    const py=cy-34+hash1(beat*2.3)*72;
+    const px=f.x+side*(f.r-2+hash1(beat*3.1)*10);
+    const len=7+hash1(beat*4.7)*9;
+    ctx.globalAlpha=.35+Math.sin(ph*Math.PI)*.65;
+    ctx.strokeStyle=i%2?'#EAFBFF':'#BFEFFF';
+    ctx.lineWidth=i%2?1.4:2.2;
+    ctx.beginPath();
+    let x=px, y=py;
+    ctx.moveTo(x,y);
+    for(let s=0;s<3;s++){
+      x+=side*len*.5*(.6+hash1(beat+s)*.8);
+      y+=(hash1(beat*5+s)-.5)*len*1.4;
+      ctx.lineTo(x,y);
     }
-    ctx.shadowBlur=0;
-    for(let i=0;i<3;i++){
-      const a=G.t*17+i*2.1;
-      ctx.globalAlpha=.5+Math.sin(G.t*30+i)*.5;
-      ctx.fillStyle='#FFFFFF';
-      ctx.beginPath(); ctx.arc(f.x+Math.cos(a)*(f.r+12),cy+Math.sin(a)*34,2.2,0,7); ctx.fill();
-    }
-  }else if(k==='spin'){
-    // Rasengan: sao xoay vòng vòng quanh người
-    ctx.globalAlpha=.55; ctx.strokeStyle='#8FD0FF'; ctx.lineWidth=2.5;
-    ctx.beginPath(); ctx.ellipse(f.x,cy,f.r+16,17,0,0,7); ctx.stroke();
-    ctx.globalAlpha=1;
-    for(let i=0;i<4;i++){
-      const a=G.t*4.6+i*1.571;
-      const x=f.x+Math.cos(a)*(f.r+16), y=cy+Math.sin(a)*17;
-      const front=Math.sin(a)>0;
-      ctx.globalAlpha=front?1:.45;
-      ctx.fillStyle=front?'#FFC542':'#7FA8D8';
-      ctx.save(); ctx.translate(x,y); ctx.rotate(G.t*5);
-      ctx.beginPath();
-      for(let s=0;s<8;s++){
-        const r=s%2?2.2:6.2, aa=s*.785;
-        ctx.lineTo(Math.cos(aa)*r,Math.sin(aa)*r);
-      }
-      ctx.closePath(); ctx.fill(); ctx.restore();
-    }
-  }else if(k==='heart'){
-    // Sexy no Jutsu: trái tim xoay quanh đầu
-    for(let i=0;i<4;i++){
-      const a=G.t*2.6+i*1.571;
-      const x=f.x+Math.cos(a)*24, y=hy+6+Math.sin(a)*8+Math.sin(G.t*3+i)*3;
-      const front=Math.sin(a)>0;
-      ctx.globalAlpha=front?.95:.5;
+    ctx.stroke();
+  }
+  ctx.shadowBlur=0;
+  ctx.restore();
+}
+function drawStun(f,hy){
+  const k=STUN_STYLE[f.stunKind]?f.stunKind:'spark';
+  const st=STUN_STYLE[k];
+  const oy=hy-4;                                  // vòng quay ngay trên đỉnh đầu
+  ctx.save();
+  // quỹ đạo
+  ctx.globalAlpha=st.ringA*(k==='shock'?(.6+Math.abs(Math.sin(G.t*15))*.4):1);
+  ctx.strokeStyle=st.ring; ctx.lineWidth=k==='spin'?2.4:1.6;
+  ctx.beginPath(); ctx.ellipse(f.x,oy,st.rx,st.ry,0,0,7); ctx.stroke();
+  // vật thể xoay
+  for(let i=0;i<st.n;i++){
+    const a=G.t*st.spd+i*(6.283/st.n);
+    const x=f.x+Math.cos(a)*st.rx, y=oy+Math.sin(a)*st.ry;
+    const front=Math.sin(a)>0;
+    ctx.globalAlpha=front?1:.42;
+    if(k==='heart'){
+      const bob=Math.sin(G.t*3+i)*2.5;
       ctx.fillStyle=front?'#FF6EC7':'#FFB3DF';
       ctx.strokeStyle='#9B2C6F'; ctx.lineWidth=1.2;
-      heartPath(x,y,5.4+Math.sin(G.t*6+i)*.7);
+      heartPath(x,y+bob,5.4+Math.sin(G.t*6+i)*.7);
       ctx.fill(); ctx.stroke();
+    }else if(k==='spin'){
+      ctx.fillStyle=front?'#FFC542':'#7FA8D8';
+      ctx.strokeStyle='#7A5400'; ctx.lineWidth=1;
+      ctx.save(); ctx.translate(x,y); ctx.rotate(G.t*6);
+      starPath(0,0,6.4,4); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }else if(k==='shock'){
+      const flick=.45+Math.abs(Math.sin(G.t*19+i*1.3))*.55;
+      ctx.globalAlpha*=flick;
+      ctx.shadowColor='rgba(150,230,255,.95)'; ctx.shadowBlur=8;
+      ctx.fillStyle=i%2?'#EAFBFF':'#9EE7FF';
+      boltPath(x,y,5.6); ctx.fill();
+      ctx.shadowBlur=0;
+    }else{
+      ctx.fillStyle='#FFC542'; ctx.strokeStyle='#7A5400'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(x,y,3.6,0,7); ctx.fill(); ctx.stroke();
     }
-  }else{
-    // choáng thường: mấy chấm vàng quay trên đầu
-    ctx.fillStyle='#FFC542';
-    for(let i=0;i<3;i++){ const a=G.t*6+i*2.1;
-      ctx.beginPath(); ctx.arc(f.x+Math.cos(a)*18,hy+Math.sin(a)*5,3.5,0,7); ctx.fill(); }
   }
   ctx.restore();
+  if(k==='shock') bodySparks(f);
+  if(k==='spin'){                                  // vệt xoáy mờ quanh người
+    ctx.save();
+    ctx.globalAlpha=.16+Math.sin(G.t*7)*.05;
+    ctx.strokeStyle='#8FD0FF'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.ellipse(f.x,bodyCY(f),f.r+13,bodyRY(f)*.75,Math.sin(G.t*3)*.25,0,7); ctx.stroke();
+    ctx.restore();
+  }
 }
 function bar(x,y,w,h,pct,fill,text,textCol){
   ctx.fillStyle='#fff'; ctx.fillRect(x,y,w,h);
@@ -2148,8 +2188,8 @@ function drawBars(f){
   if(f.vuln>0){
     ctx.font='900 11px "Space Mono",monospace'; ctx.textAlign='center';
     ctx.lineWidth=3; ctx.strokeStyle='#000';
-    ctx.strokeText(`THỦNG GIÁP +50% (${f.vuln.toFixed(1)}s)`,x+w/2,y+h+40);
-    ctx.fillStyle='#FFF3C4'; ctx.fillText(`THỦNG GIÁP +50% (${f.vuln.toFixed(1)}s)`,x+w/2,y+h+40);
+    ctx.strokeText(`VULNERABLE +50% (${f.vuln.toFixed(1)}s)`,x+w/2,y+h+40);
+    ctx.fillStyle='#FFF3C4'; ctx.fillText(`VULNERABLE +50% (${f.vuln.toFixed(1)}s)`,x+w/2,y+h+40);
   }
 }
 function drawProj(p){
@@ -2461,7 +2501,7 @@ function draw(){
   for(const m of G.mates) drawMate(m);
   const order=[...G.fighters].filter(f=>f.alive).sort((a,b)=>a.y-b.y);
   for(const f of order) drawFighter(f);
-  for(const f of order) drawBars(f);
+  if(!G.flashback) for(const f of order) drawBars(f);   // hồi tưởng thì giấu thanh máu cho sạch hình
 
   for(const f of G.floats){
     const age=(f.ml||1)-f.life;
@@ -2561,46 +2601,58 @@ function drawFlashback(){
   const it=F.list[idx];
   const fade=clamp(Math.min(lp*6,(1-lp)*6),0,1);
   ctx.save();
-  ctx.globalAlpha=.84*clamp(F.t*4,0,1)*clamp((F.life-F.t)*3,0,1);
+  ctx.globalAlpha=.93*clamp(F.t*4,0,1)*clamp((F.life-F.t)*3,0,1);
   ctx.fillStyle='#07050F'; ctx.fillRect(10,10,W-20,H-20);
   ctx.restore();
 
-  const bw=206, bh=252;
-  const bx=W/2-bw/2+(idx%2?1:-1)*26, by=H*.20+Math.sin(lp*Math.PI)*-8;
-  ctx.save();
-  ctx.globalAlpha=fade;
-  ctx.translate(bx+bw/2, by+bh/2);
-  ctx.rotate((idx%2?1:-1)*.035);
-  // khung ảnh kỷ niệm
-  ctx.fillStyle='#F6EFE2'; ctx.strokeStyle='#000'; ctx.lineWidth=5;
-  if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(-bw/2,-bh/2,bw,bh,10); ctx.fill(); ctx.stroke(); }
-  else { ctx.fillRect(-bw/2,-bh/2,bw,bh); ctx.strokeRect(-bw/2,-bh/2,bw,bh); }
-  ctx.fillStyle='#D9C9AC'; ctx.fillRect(-bw/2+11,-bh/2+11,bw-22,bh-64);
-  ctx.save();
-  ctx.beginPath(); ctx.rect(-bw/2+11,-bh/2+11,bw-22,bh-64); ctx.clip();
   const set=SPR[it.key]||{};
   const arr=set.idle&&set.idle.length?set.idle:null;
   const img=arr?arr[0]:null;
-  ctx.translate(0,bh/2-72);
-  const sc=1.35+Math.sin(lp*Math.PI)*.06;
-  ctx.scale(sc,sc);
-  if(img){ const h=126,w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
-  else vector({key:it.key,face:1,moving:false,pose:'idle',poseT:0});
+  const baseY=H*.56-lp*20;                      // bóng người trôi lên chầm chậm
+
+  // quầng sáng mờ sau lưng
+  ctx.save();
+  ctx.globalAlpha=fade*.3;
+  const gl=ctx.createRadialGradient(W/2,baseY-95,10,W/2,baseY-95,215);
+  gl.addColorStop(0,'rgba(255,247,214,.85)');
+  gl.addColorStop(1,'rgba(255,247,214,0)');
+  ctx.fillStyle=gl;
+  ctx.beginPath(); ctx.arc(W/2,baseY-95,215,0,7); ctx.fill();
   ctx.restore();
+
+  // bóng người: một lớp nhoè phía sau, một lớp rõ hơn đè lên — kiểu ký ức chợt hiện
+  for(const layer of [{a:.34,blur:7,s:1.06},{a:.5,blur:2,s:1}]){
+    ctx.save();
+    ctx.globalAlpha=fade*layer.a;
+    try{ ctx.filter=`blur(${layer.blur}px)`; }catch(e){}
+    ctx.translate(W/2,baseY);
+    const sc=layer.s*(1+Math.sin(lp*Math.PI)*.03);
+    ctx.scale(sc,sc);
+    if(img){ const h=232,w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
+    else{ ctx.scale(3.1,3.1); vector({key:it.key,face:1,moving:false,pose:'idle',poseT:0}); }
+    ctx.restore();
+  }
+
+  // tên ở dưới, giãn chữ cho ra chất hồi tưởng
+  ctx.save();
+  ctx.globalAlpha=fade;
   ctx.textAlign='center';
-  ctx.font='900 20px "Be Vietnam Pro",sans-serif';
-  ctx.fillStyle='#1B1428'; ctx.fillText(it.name, 0, bh/2-24);
-  ctx.font='900 10px "Space Mono",monospace';
-  ctx.fillStyle='#8A7C64'; ctx.fillText('NANKATSU · KÝ ỨC', 0, bh/2-9);
+  ctx.font='900 21px "Be Vietnam Pro",sans-serif';
+  const spaced=it.name.split('').join(' ');
+  ctx.shadowColor='rgba(255,243,196,.75)'; ctx.shadowBlur=18;
+  ctx.fillStyle='#FFF7E4'; ctx.fillText(spaced, W/2, baseY+40);
+  ctx.shadowBlur=0;
+  ctx.globalAlpha=fade*.5;
+  ctx.strokeStyle='#FFF3C4'; ctx.lineWidth=1;
+  const tw=ctx.measureText(spaced).width;
+  ctx.beginPath(); ctx.moveTo(W/2-tw/2,baseY+50); ctx.lineTo(W/2+tw/2,baseY+50); ctx.stroke();
   ctx.restore();
 
   ctx.save();
-  ctx.globalAlpha=clamp(F.t*2,0,1)*clamp((F.life-F.t)*2.4,0,1);
+  ctx.globalAlpha=clamp(F.t*2,0,1)*clamp((F.life-F.t)*2.4,0,1)*.9;
   ctx.textAlign='center';
-  ctx.font='900 16px "Space Mono",monospace';
-  ctx.lineWidth=6; ctx.strokeStyle='#000';
-  ctx.strokeText('"CÒN CÁC CẬU ĐANG ĐỢI MÌNH…"', W/2, H*.88);
-  ctx.fillStyle='#FFF3C4'; ctx.fillText('"CÒN CÁC CẬU ĐANG ĐỢI MÌNH…"', W/2, H*.88);
+  ctx.font='400 15px "Space Mono",monospace';
+  ctx.fillStyle='#E8DFC4'; ctx.fillText('"THEY ARE ALL STILL WAITING FOR ME…"', W/2, H*.88);
   ctx.restore();
 }
 function drawCallBanner(){
