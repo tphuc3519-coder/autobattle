@@ -171,7 +171,7 @@
       </div>
       <div class="slots" id="sfxArea" style="margin-top:8px"></div>
       <div class="help" id="sfxStatus">Đang dùng tiếng tự tạo sẵn có. Nạp file để thay thế từng loại.</div>
-      <div class="help">File dài (trên 2.6 giây) sẽ được đọc <b>nối tiếp từng đoạn ~2 giây</b>, lần sau nói tiếp chỗ cũ chứ không quay lại đầu — hợp cho một tràng ChiChi chửi dài. Riêng <b>Kamehameha và Masenko phát từ đầu, dài tối đa 5 giây</b> (tia bắn ra ở giây thứ 2.8 và 2.2 khi tốc độ 0.5x). Tiếng kết thúc, nhạc thắng, hò reo và tiếng gọi viện binh thì phát trọn vẹn.</div>
+      <div class="help">File dài (trên 2.6 giây) sẽ được đọc <b>nối tiếp từng đoạn ~2 giây</b>, lần sau nói tiếp chỗ cũ chứ không quay lại đầu — hợp cho một tràng ChiChi chửi dài. Riêng <b>Kamehameha, Masenko và Đôi cánh đại bàng phát từ đầu, dài tối đa 5 giây</b> (tia bắn ra ở giây thứ 2.8 và 2.2 khi tốc độ 0.5x). Tiếng kết thúc, nhạc thắng, hò reo và tiếng gọi viện binh thì phát trọn vẹn.</div>
     </details>
   </div>
 
@@ -591,9 +591,9 @@ function synth(name,c,g){
     default:        noise(c,g,{dur:.1,f0:1200,vol:.2});
   }
 }
-const SFX_FULL=new Set(['ko','win','cheer','callgoku','callgohan','summon','wings','twin_hyuga','twin_misaki']);
+const SFX_FULL=new Set(['ko','win','cheer','callgoku','callgohan','summon','twin_hyuga','twin_misaki']);
 // các tiếng chiêu lớn: luôn phát từ đầu, cho phép dài tới 5 giây
-const SFX_MAXLEN={kame:5,masenko:5};
+const SFX_MAXLEN={kame:5,masenko:5,wings:5};
 const SFX_POS={}, SFX_ACTIVE={};
 function resetSfxPos(){ for(const k in SFX_POS) delete SFX_POS[k]; }
 function playBuffer(name,buf,c,g){
