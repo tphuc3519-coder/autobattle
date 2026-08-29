@@ -435,7 +435,7 @@ const SFX_EVENTS=[
   ['throw','Ném phi tiêu'],['hit','Trúng phi tiêu'],['clone','Phân thân'],['sexy','Sexy Jutsu'],
   ['rasengan','Rasengan'],['punch','ChiChi đấm'],['crit','Chí mạng'],['scold','Mắng'],
   ['stun','Choáng'],['summon','Viện binh tới'],['kame','Kamehameha'],['masenko','Masenko'],['callgoku','ChiChi gọi Goku'],['callgohan','ChiChi gọi Gohan'],['boom','Kunai nổ'],['ko','Kết thúc'],['win','Nhạc thắng trận'],['cheer','Khán giả hò reo'],
-  ['kick','Tsubasa sút bóng'],['bicycle','Overhead kick'],['bounce','Bóng dội tường'],['drive','Drive shot'],['twin','Twin shot'],['goal','Ghi goal'],['wings','Đôi cánh đại bàng'],
+  ['kick','Tsubasa sút bóng'],['bicycle','Overhead kick'],['bounce','Bóng dội tường'],['drive','Drive shot'],['twin_hyuga','Twin shot với Hyuga'],['twin_misaki','Twin shot với Misaki'],['goal','Ghi goal'],['wings','Đôi cánh đại bàng'],
   ['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt']
 ];
 const SFXBUF={};
@@ -511,9 +511,20 @@ function synth(name,c,g){
                     noise(c,g,{dur:.06,f0:1800,vol:.12}); break;
     case 'drive':   tone(c,g,{type:'sawtooth',f0:180,f1:900,dur:.6,vol:.24});
                     noise(c,g,{dur:.6,f0:600,f1:2800,vol:.2,q:1.6}); break;
-    case 'twin':    [0,.1].forEach(d=>tone(c,g,{type:'triangle',f0:300,f1:90,dur:.16,vol:.26,delay:d}));
-                    tone(c,g,{type:'sawtooth',f0:200,f1:1200,dur:.8,vol:.22,delay:.16});
-                    noise(c,g,{dur:.8,f0:800,f1:3000,vol:.18,delay:.16,q:1.4}); break;
+    case 'twin_hyuga': {     // Hyuga sức mạnh: cú nện nặng, trầm và dày
+      [0,.09].forEach(d=>tone(c,g,{type:'triangle',f0:260,f1:70,dur:.2,vol:.3,delay:d}));
+      tone(c,g,{type:'square',f0:120,f1:52,dur:.5,vol:.2,delay:.06});
+      tone(c,g,{type:'sawtooth',f0:170,f1:900,dur:.9,vol:.24,delay:.18});
+      noise(c,g,{dur:.9,f0:600,f1:2200,vol:.2,delay:.18,q:1.1,type:'lowpass'});
+      break;
+    }
+    case 'twin_misaki': {    // Misaki kỹ thuật: gọn, sáng, rít lên rồi vút đi
+      [0,.07].forEach(d=>tone(c,g,{type:'triangle',f0:420,f1:150,dur:.12,vol:.24,delay:d}));
+      tone(c,g,{type:'sine',f0:700,f1:1900,dur:.75,vol:.18,delay:.14});
+      noise(c,g,{dur:.75,f0:1600,f1:4200,vol:.16,delay:.14,q:2.2});
+      [.3,.45].forEach(d=>tone(c,g,{type:'square',f0:1600,f1:2400,dur:.1,vol:.07,delay:d}));
+      break;
+    }
     case 'goal':    [0,.08,.16].forEach((d,i)=>tone(c,g,{type:'square',f0:660+i*220,f1:660+i*220,dur:.12,vol:.13,delay:d})); break;
     case 'charm': {          // mê hoặc: chuông ngân uốn lượn, lâng lâng
       [0,.12,.24].forEach((d,i)=>{
@@ -579,7 +590,7 @@ function synth(name,c,g){
     default:        noise(c,g,{dur:.1,f0:1200,vol:.2});
   }
 }
-const SFX_FULL=new Set(['ko','win','cheer','callgoku','callgohan','summon','wings','twin']);
+const SFX_FULL=new Set(['ko','win','cheer','callgoku','callgohan','summon','wings','twin_hyuga','twin_misaki']);
 // các tiếng chiêu lớn: luôn phát từ đầu, cho phép dài tới 5 giây
 const SFX_MAXLEN={kame:5,masenko:5};
 const SFX_POS={}, SFX_ACTIVE={};
@@ -782,6 +793,21 @@ async function decodeInto(name,dataUrl){
       if(!src)continue;
       if(await decodeInto(nm,src)){ refs[nm].el.classList.add('set'); refs[nm].cap.textContent='♪ '+label+' ✓'; n++; }
     }
+    // file 'twin' nạp từ trước khi tách Hyuga / Misaki: chuyển sang cả hai ô mới
+    try{
+      const legacy=await Store.get('sfx_twin');
+      if(legacy){
+        for(const [nm,label] of SFX_EVENTS){
+          if(nm!=='twin_hyuga'&&nm!=='twin_misaki')continue;
+          if(SFXBUF[nm])continue;
+          if(await decodeInto(nm,legacy)){
+            Store.set('sfx_'+nm,legacy).catch(()=>{});
+            refs[nm].el.classList.add('set'); refs[nm].cap.textContent='♪ '+label+' ✓'; n++;
+          }
+        }
+        Store.del('sfx_twin');
+      }
+    }catch(e){}
     if(n) sfxStatus(`Đã khôi phục ${n} tiếng đã nạp.`);
   })();
 })();
@@ -890,7 +916,7 @@ function mk(o){
     vx:0, vy:0, recoil:0, rdx:0, rdy:0, dustT:0, ghostT:0,
     ax:1, ay:0, lunge:0, invuln:0, dvx:0, dvy:0, moveAmt:0, leanS:0,
     wx:W/2, wy:H/2, wt:0, engage:true, engT:2,
-    goals:0, vuln:0, kbx:0, kby:0, driveAura:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
+    goals:0, vuln:0, kbx:0, kby:0, driveAura:0, lock:0, twinBusy:false, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
 }
 function mkChar(key,team,x,y){
@@ -1202,8 +1228,22 @@ function driveShot(t,e){
   });
 }
 /* Skill 3 — Victory Shot: Twin Shot cùng Hyuga hoặc Misaki */
+/* Twin Shot khoá Tsubasa lại cho tới khi hoạt ảnh dứt hẳn: đứng nguyên tư thế
+   theo bóng, không đá tiếp, đồng đội chỉ tan sau khi cú sút kết thúc. */
+function releaseTwin(t){
+  if(!t||!t.twinBusy)return;
+  t.twinBusy=false;
+  t.lock=0;
+  if(t.pose==='skill'){ t.pose='idle'; t.poseT=0; }
+  for(const m of G.mates) m.life=Math.min(m.life,.3);
+  if(t.cds){                                   // hồi chiêu mới bắt đầu tính từ đây
+    t.cds.s1=Math.max(t.cds.s1||0,cm(.5));
+    t.cds.s2=Math.max(t.cds.s2||0,cm(1.2));
+  }
+}
 function twinShot(t,e){
   t.goals=0;
+  t.twinBusy=true; t.lock=99;                  // mở khoá khi bóng kết thúc, xem releaseTwin
   t.cds.s1=Math.max(t.cds.s1,cm(.8));
   t.cds.s2=Math.max(t.cds.s2,cm(1.6));
   G.freeze=1.5; G.freezeAt=t;
@@ -1214,21 +1254,21 @@ function twinShot(t,e){
   const side=(t.x>W/2)?-1:1;
   let mx=clamp(t.x+side*96,PAD+30,W-PAD-30);
   const my=clamp(t.y+rnd(-10,18),PAD+60,H-PAD-24);
-  setPose(t,'skill',3.4);
+  setPose(t,'skill',9);
   aim(t,e,1.2);
   say(`${mateName} băng vào — VICTORY SHOT, TWIN SHOT!`,'g');
   later(.35,()=>{
     if(G.over)return;
     sfx('summon');
     G.fx.push({type:'poof',x:mx,y:my-18,life:.7,ml:.7});
-    G.mates.push({key:mateKey,name:mateName,x:mx,y:my,face:t.x>mx?1:-1,pose:'idle',life:3.2,ml:3.2});
+    G.mates.push({key:mateKey,name:mateName,x:mx,y:my,face:t.x>mx?1:-1,pose:'idle',life:9,ml:9});
     G.callBanner={txt:'TWIN SHOT!!',color:t.color,life:2,ml:2};
     ring(mx,my,110,t.color,.5);
   });
   later(1.5,()=>{
     if(G.over)return;
     for(const m of G.mates) m.pose='atk1';
-    sfx('twin');
+    sfx(mateKey==='hyuga'?'twin_hyuga':'twin_misaki');
     const src={x:(t.x+mx)/2, y:(t.y+my)/2-14};
     const a=Math.atan2(e.y-src.y,e.x-src.x)+(chance(.5)?1:-1)*rnd(.8,1.25);
     G.proj.push({type:'twin',team:t.team,owner:t,tgt:e,
@@ -1237,9 +1277,11 @@ function twinShot(t,e){
     G.flashScreen=Math.max(G.flashScreen,.12);
     ring(src.x,src.y,130,'#FFF3C4',.5);
   });
+  later(cm(6),()=>releaseTwin(t));             // lưới an toàn
 }
 /* Nội tại — Wings of the Eagle: 5 giây cuối đời, mạnh nhất và cũng là hạn chót */
 function eagleAwaken(t){
+  for(const f of G.fighters) releaseTwin(f);
   t.eagleDone=true;
   t.injured=true;
   setPose(t,'wounded',1);
@@ -1333,6 +1375,7 @@ function ballHit(p,f){
 }
 
 function summonHelp(c,force){
+  for(const f of G.fighters) releaseTwin(f);
   c.summonDone=true;
   c.injured=true;
   setPose(c,'wounded',.6);
@@ -1520,13 +1563,14 @@ function step(dt){
   for(const f of G.fighters){
     if(f.stun>0)f.stun-=dt;
     if(f.flash>0)f.flash-=dt;
-    if(f.poseT>0){ f.poseT-=dt; if(f.poseT<=0&&!f.dash) f.pose = f.summon&&f.fired?'atk1':(f.summon?'skill':'idle'); }
+    if(f.poseT>0){ f.poseT-=dt; if(f.poseT<=0&&!f.dash) f.pose = f.summon&&f.fired?'atk1':((f.summon||f.twinBusy)?'skill':'idle'); }
     f.strafeT-=dt; if(f.strafeT<=0){ f.strafe=chance(.5)?1:-1; f.strafeT=rnd(.9,2.2); }
     if(f.recoil>0) f.recoil=Math.max(0,f.recoil-dt*4);
     if(f.lunge>0) f.lunge=Math.max(0,f.lunge-dt*3.2);
     if(f.invuln>0) f.invuln=Math.max(0,f.invuln-dt);
     if(f.vuln>0) f.vuln=Math.max(0,f.vuln-dt);
     if(f.driveAura>0) f.driveAura=Math.max(0,f.driveAura-dt);
+    if(f.lock>0) f.lock=Math.max(0,f.lock-dt);
     if(f.eagle) eagleTick(f,dt);
     if(!f.summon && f.hp<=f.maxHp*.20) f.injured=true;   // đã tơi tả là giữ luôn
     if(!f.summon){
@@ -1587,7 +1631,7 @@ function step(dt){
     if(!f.alive)continue;
     const e=f===k?c:k;
     let v={x:0,y:0};
-    if(f.stun>0||(f===k&&k.dash)) v={x:0,y:0};
+    if(f.stun>0||f.lock>0||(f===k&&k.dash)) v={x:0,y:0};
     else if(isPlayer(f)) v=playerVec();
     else v=aiVec(f,e);
     if(f.lunge>.35 && !isPlayer(f)){ v.x=f.ax; v.y=f.ay; }
@@ -1654,7 +1698,7 @@ function step(dt){
   const d=dist(k,c);
 
   for(const f of [k,c]){
-    if(!f.alive||f.stun>0)continue;
+    if(!f.alive||f.stun>0||f.lock>0)continue;
     const auto=!isPlayer(f)||autoSkill;
     const C=CHARS[f.key];
     if(C&&C.think) C.think(f,foeOf(f),d,auto);
@@ -1840,6 +1884,7 @@ function step(dt){
       }
     }
     if(p.gone) dead=true;
+    if(dead&&p.type==='twin'&&p.owner) later(.5,()=>releaseTwin(p.owner));
     if(dead)G.proj.splice(i,1);
   }
   for(let i=G.fx.length-1;i>=0;i--){ const e=G.fx[i]; if(!e) continue; e.life-=dt; if(e.type==='ring')e.r+=(e.max-e.r)*dt*7; if(e.life<=0)G.fx.splice(i,1); }
