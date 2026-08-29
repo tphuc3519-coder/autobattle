@@ -203,7 +203,8 @@
 
 <script>
 (() => {
-const CV=document.getElementById('arena'), ctx=CV.getContext('2d');
+const CV=document.getElementById('arena');
+let ctx=CV.getContext('2d');      // let: có lúc mượn tạm để vẽ vào canvas phụ
 const W=620,H=620,PAD=54;
 const S=Math.min(3,Math.max(2,Math.round(window.devicePixelRatio||1)));
 const HEADER=74;                       // dải riêng phía trên sàn đấu
@@ -237,6 +238,7 @@ const SLOT={};
 /* ---------- bảng nhân vật chơi được ---------- */
 const PICK={a:'kono',b:'chichi'};
 const GOAL_MAX=8;                 // số goal cần để mở Victory Twin Shot
+const EAGLE_BURN=5;               // Wings of the Eagle cháy hết máu trong bấy nhiêu giây
 const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
@@ -266,7 +268,7 @@ const CHARS={
   tsubasa:{
     name:'Ozora Tsubasa', short:'Tsubasa', tag:'Striker · Long shots', emoji:'⚽', color:'#2ED573', alt:'#7DEBAB',
     role:'ranged', want:235, speed:100, dodge:.8, male:true,
-    skills:['<b>1</b> Basic Shot 25 dmg, often misses (10% Bicycle Kick 40 + stun)','<b>2</b> Drive Shot 80 + burn 5×3',`<b>${GOAL_MAX} goals</b> Victory Twin Shot 150 + stun 2s`,'<b>Below 15% HP</b> Wings of the Eagle — 2× attack speed, 80% resist, CC immune'],
+    skills:['<b>1</b> Basic Shot 25 dmg, often misses (10% Bicycle Kick 40 + stun)','<b>2</b> Drive Shot 80 + burn 5×3',`<b>${GOAL_MAX} goals</b> Victory Twin Shot 150 + stun 2s`,`<b>Below 15% HP</b> Wings of the Eagle — 2× attack speed, 70% resist, CC immune, burns out in ${EAGLE_BURN}s`],
     init(f){ f.cds={s1:cm(1),s2:cm(3)}; f.goals=0; },
     think(f,e,d,auto){
       const sp=f.eagle?.5:1;
@@ -275,7 +277,7 @@ const CHARS={
       if(!f.eagle&&f.goals>=GOAL_MAX&&(auto||keys['l'])) twinShot(f,e);
     },
     gauge:f=>f.eagle
-      ? {pct:1, fill:'#FFF3C4', txt:'EAGLE WINGS'}
+      ? {pct:clamp(1-f.eagleT/EAGLE_BURN,0,1), fill:'#FFF3C4', txt:`EAGLE ${Math.max(0,EAGLE_BURN-f.eagleT).toFixed(1)}s`}
       : {pct:f.goals/GOAL_MAX, fill:'#FFE100', txt:`Goal: ${f.goals}/${GOAL_MAX}`}
   }
 };
@@ -432,7 +434,8 @@ const SFX_EVENTS=[
   ['throw','Ném phi tiêu'],['hit','Trúng phi tiêu'],['clone','Phân thân'],['sexy','Sexy Jutsu'],
   ['rasengan','Rasengan'],['punch','ChiChi đấm'],['crit','Chí mạng'],['scold','Mắng'],
   ['stun','Choáng'],['summon','Viện binh tới'],['kame','Kamehameha'],['masenko','Masenko'],['callgoku','ChiChi gọi Goku'],['callgohan','ChiChi gọi Gohan'],['boom','Kunai nổ'],['ko','Kết thúc'],['win','Nhạc thắng trận'],['cheer','Khán giả hò reo'],
-  ['kick','Tsubasa sút bóng'],['bicycle','Bicycle kick'],['bounce','Bóng dội tường'],['drive','Drive shot'],['twin','Twin shot'],['goal','Ghi goal'],['wings','Đôi cánh đại bàng']
+  ['kick','Tsubasa sút bóng'],['bicycle','Bicycle kick'],['bounce','Bóng dội tường'],['drive','Drive shot'],['twin','Twin shot'],['goal','Ghi goal'],['wings','Đôi cánh đại bàng'],
+  ['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt']
 ];
 const SFXBUF={};
 let AC=null, volume=.6, muted=false, lastSfx={};
@@ -511,6 +514,31 @@ function synth(name,c,g){
                     tone(c,g,{type:'sawtooth',f0:200,f1:1200,dur:.8,vol:.22,delay:.16});
                     noise(c,g,{dur:.8,f0:800,f1:3000,vol:.18,delay:.16,q:1.4}); break;
     case 'goal':    [0,.08,.16].forEach((d,i)=>tone(c,g,{type:'square',f0:660+i*220,f1:660+i*220,dur:.12,vol:.13,delay:d})); break;
+    case 'charm': {          // mê hoặc: chuông ngân uốn lượn, lâng lâng
+      [0,.12,.24].forEach((d,i)=>{
+        tone(c,g,{type:'sine',f0:520+i*180,f1:900+i*260,dur:.7,vol:.14,delay:d});
+        tone(c,g,{type:'triangle',f0:(520+i*180)/2,f1:(900+i*260)/2,dur:.7,vol:.07,delay:d});
+      });
+      noise(c,g,{dur:.9,f0:1800,f1:3600,vol:.05,q:2});
+      tone(c,g,{type:'sine',f0:1400,f1:700,dur:.5,vol:.06,delay:.3});
+      break;
+    }
+    case 'shock': {          // điện giật: tách tách liên hồi
+      for(let i=0;i<7;i++){
+        const d=i*.055+Math.random()*.02;
+        noise(c,g,{dur:.05,f0:5200-i*300,f1:1400,vol:.16,q:1.6,delay:d});
+        if(i%2===0) tone(c,g,{type:'square',f0:1500-i*90,f1:400,dur:.05,vol:.1,delay:d});
+      }
+      tone(c,g,{type:'sawtooth',f0:70,f1:40,dur:.4,vol:.12});
+      break;
+    }
+    case 'burn': {           // thiêu đốt: xèo xèo trầm, lép bép nhỏ
+      noise(c,g,{dur:.55,f0:900,f1:220,vol:.16,type:'lowpass',q:.7});
+      noise(c,g,{dur:.5,f0:2600,f1:900,vol:.07,q:1.2,delay:.04});
+      for(let i=0;i<4;i++) noise(c,g,{dur:.035,f0:2000+Math.random()*1500,vol:.06,delay:.05+Math.random()*.4});
+      tone(c,g,{type:'sine',f0:150,f1:70,dur:.45,vol:.09});
+      break;
+    }
     case 'wings': {
       const notes=[392,523.25,659.25,880];
       notes.forEach((f,i)=>tone(c,g,{type:'triangle',f0:f,f1:f*1.01,dur:i===3?1.1:.3,vol:.15,delay:i*.16}));
@@ -861,7 +889,7 @@ function mk(o){
     vx:0, vy:0, recoil:0, rdx:0, rdy:0, dustT:0, ghostT:0,
     ax:1, ay:0, lunge:0, invuln:0, dvx:0, dvy:0, moveAmt:0, leanS:0,
     wx:W/2, wy:H/2, wt:0, engage:true, engT:2,
-    goals:0, vuln:0, kbx:0, kby:0, eagle:false, eagleAcc:0, eagleDone:false, summonDone:false
+    goals:0, vuln:0, kbx:0, kby:0, driveAura:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
 }
 function mkChar(key,team,x,y){
@@ -933,7 +961,7 @@ function hurt(t,amt,src,crit,kind,tint){
     return;
   }
   if(t.vuln>0) amt*=1.5;                    // dính Twin Shot: nhận thêm 50% sát thương
-  if(t.eagle) amt*=.2;                      // Wings of the Eagle: miễn 80% sát thương
+  if(t.eagle) amt*=.3;                      // Wings of the Eagle: miễn 70% sát thương
   t.hp=Math.max(0,t.hp-amt);
   t.flash=crit?.2:.12; t.recoil=crit?1.4:1;
   t.flashCol=tint||null;                    // đỏ: nổ / thiêu đốt · hồng: Sexy no Jutsu
@@ -1056,7 +1084,7 @@ function sexy(k,e){
     if(f.summon){ say(`${f.name} đang dồn khí, không hề nao núng.`,'m'); continue; }
     f.dots.push({dps:20,left:2,acc:0,src:k,tint:'pink'});   // dính khói hồng: hồng
     if(f.male){
-      if(stunFx(f,2,'heart')){ sfx('stun'); say(`${f.name} đứng hình 2 giây.`,'g'); }
+      if(stunFx(f,2,'heart')){ sfx('charm'); say(`${f.name} đứng hình 2 giây.`,'g'); }
       else say(`${f.name} miễn nhiễm khống chế — không hề đứng hình.`,'g');
     }
     else say(`${f.name} là nữ — không choáng, chỉ tức nổ máu.`,'c');
@@ -1160,6 +1188,7 @@ function kickBall(t,e,bic){
 function driveShot(t,e){
   const sp=t.eagle?.5:1;
   setPose(t,'atk2',cm(.9)*sp); aim(t,e,1.2); sfx('drive');
+  t.driveAura=cm(2.4)*sp;                     // hào quang đại bàng phủ lên người
   tsuBanner(t,'DRIVE SHOT!');
   say('DRIVE SHOT! Quả bóng bốc lửa vọt thẳng lên trời…','g');
   later(cm(.42)*sp,()=>{
@@ -1231,28 +1260,37 @@ function eagleAwaken(t){
   later(.5,()=>{ if(!G.over) sfx('wings'); });
   later(2.5,()=>{
     if(G.over||!t.alive)return;
-    t.eagle=true; t.eagleAcc=0; t.goals=0;
+    t.eagle=true; t.eagleAcc=0; t.eagleT=0; t.eagleBurn=t.hp/EAGLE_BURN; t.goals=0;
     t.stun=0; t.stunKind=null; t.kbx=0; t.kby=0;   // gỡ sạch khống chế đang dính
     setPose(t,'wings',1.4);
     ring(t.x,t.y,150,'#FFF3C4',.7);
     ring(t.x,t.y,90,'#FFFFFF',.5);
     G.flashScreen=Math.max(G.flashScreen,.18);
     G.callBanner={txt:'WINGS OF THE EAGLE',color:'#FFF3C4',life:2.2,ml:2.2};
-    say('WINGS OF THE EAGLE! Tốc độ ra chiêu ×2, miễn 80% sát thương, miễn nhiễm khống chế.','g');
-    say('Cái giá: mỗi giây tự mất 15% máu hiện có, và không còn tính goal — Twin Shot vô hiệu.','m');
+    say('WINGS OF THE EAGLE! Tốc độ ra chiêu ×2, miễn 70% sát thương, miễn nhiễm khống chế.','g');
+    say(`Cái giá: cháy sạch máu trong ${EAGLE_BURN}s là gục, và không còn tính goal — Twin Shot vô hiệu.`,'m');
   });
 }
+/* Đốt máu lúc lên đồng: chia đều số máu còn lại vào EAGLE_BURN giây, nên dù
+   đối thủ không đánh thêm đòn nào thì hết ngần ấy giây Tsubasa cũng gục. */
 function eagleTick(t,dt){
   if(!t.eagle||!t.alive||G.over)return;
+  t.eagleT+=dt;
+  t.hp=Math.max(0,t.hp-t.eagleBurn*dt);
   t.eagleAcc+=dt;
-  while(t.eagleAcc>=1){
+  if(t.eagleAcc>=1){                     // mỗi giây hiện một con số cho dễ theo dõi
     t.eagleAcc-=1;
-    const loss=Math.max(1,t.hp*.15);
-    t.hp=Math.max(1,t.hp-loss);          // tự bào máu, nhưng không tự chết
-    // sát thương tự đốt lúc lên đồng: người trong suốt xám
     t.flash=Math.max(t.flash,.34); t.flashCol='gray';
+    sfx('burn');
     G.floats.push({x:t.x+(t.dotSide=(t.dotSide||1)*-1)*40,y:t.y-18,
-      txt:'-'+Math.round(loss),color:'#C9CBD6',life:.85,ml:.85,sc:.5});
+      txt:'-'+Math.round(t.eagleBurn),color:'#C9CBD6',life:.85,ml:.85,sc:.5});
+  }
+  if(t.eagleT>=EAGLE_BURN||t.hp<=0){
+    t.hp=0; t.alive=false;
+    ring(t.x,t.y,170,'#FFF3C4',.7);
+    G.flashScreen=Math.max(G.flashScreen,.14);
+    say(`${t.name} cháy hết mình — đôi cánh tan biến.`,'g');
+    finish(foeOf(t));
   }
 }
 /* va chạm bóng */
@@ -1263,7 +1301,7 @@ function ballHit(p,f){
     ring(f.x,f.y,170,'#FFF3C4',.6);
     hurt(f,p.dmg,o,'TWIN SHOT!');
     if(f.alive&&f.invuln<=0){
-      const st=stunFx(f,2,'shock'); if(st) sfx('stun');   // choáng Twin Shot: điện giật
+      const st=stunFx(f,2,'shock'); if(st) sfx('shock');  // choáng Twin Shot: điện giật
       f.vuln=Math.max(f.vuln,3);
       knock(f,p.vx,p.vy,260);
       G.floats.push({x:f.x,y:f.y-118,txt:st?'STUNNED 2s · +50% DMG TAKEN 3s':'+50% DMG TAKEN 3s',color:'#FFF3C4',
@@ -1487,6 +1525,7 @@ function step(dt){
     if(f.lunge>0) f.lunge=Math.max(0,f.lunge-dt*3.2);
     if(f.invuln>0) f.invuln=Math.max(0,f.invuln-dt);
     if(f.vuln>0) f.vuln=Math.max(0,f.vuln-dt);
+    if(f.driveAura>0) f.driveAura=Math.max(0,f.driveAura-dt);
     if(f.eagle) eagleTick(f,dt);
     if(!f.summon && f.hp<=f.maxHp*.20) f.injured=true;   // đã tơi tả là giữ luôn
     if(!f.summon){
@@ -1498,7 +1537,7 @@ function step(dt){
     for(let i=f.dots.length-1;i>=0;i--){
       const d=f.dots[i];
       if(!d) continue; d.left-=dt; d.acc+=dt;
-      if(d.acc>=.5){ d.acc-=.5; hurt(f,d.dps*.5,d.src,false,'dot',d.tint); }
+      if(d.acc>=.5){ d.acc-=.5; hurt(f,d.dps*.5,d.src,false,'dot',d.tint); if(d.tint==='red') sfx('burn'); }
       if(d.left<=0)f.dots.splice(i,1);
     }
   }
@@ -1937,21 +1976,35 @@ function ballShape(r,spin){
   }
   ctx.restore();
 }
-/* đôi cánh: dùng cho Drive shot, Twin shot và nội tại đại bàng */
+/* Đôi cánh: hình cánh được nướng sẵn ra canvas phụ theo từng màu, mỗi khung
+   hình chỉ còn hai lệnh drawImage thay vì mười đường cong có viền. */
+const WING_CACHE=new Map();
+const WING_OX=8, WING_OY=26;
+function wingSprite(col){
+  let c=WING_CACHE.get(col);
+  if(c) return c;
+  c=document.createElement('canvas'); c.width=58; c.height=46;
+  const g=c.getContext('2d');
+  g.translate(WING_OX,WING_OY);
+  g.fillStyle=col; g.strokeStyle='rgba(255,255,255,.85)'; g.lineWidth=1.4;
+  for(let i=0;i<5;i++){
+    const L=34-i*4.4, a=-.62+i*.30;
+    g.beginPath();
+    g.moveTo(4,0);
+    g.quadraticCurveTo(Math.cos(a)*L*.7+10, Math.sin(a)*L*.7-8, Math.cos(a)*L+12, Math.sin(a)*L);
+    g.quadraticCurveTo(Math.cos(a)*L*.6+8, Math.sin(a)*L*.6+7, 4, 6);
+    g.closePath(); g.fill(); g.stroke();
+  }
+  WING_CACHE.set(col,c);
+  return c;
+}
 function drawWings(x,y,scale,flap,col,alpha){
+  const w=wingSprite(col);
   ctx.save();
   ctx.translate(x,y); ctx.globalAlpha=alpha;
-  ctx.fillStyle=col; ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=1.4;
   for(const s of [-1,1]){
     ctx.save(); ctx.scale(s*scale,scale); ctx.rotate(-flap*.28);
-    for(let i=0;i<5;i++){
-      const L=34-i*4.4, a=-.62+i*.30;
-      ctx.beginPath();
-      ctx.moveTo(4,0);
-      ctx.quadraticCurveTo(Math.cos(a)*L*.7+10, Math.sin(a)*L*.7-8, Math.cos(a)*L+12, Math.sin(a)*L);
-      ctx.quadraticCurveTo(Math.cos(a)*L*.6+8, Math.sin(a)*L*.6+7, 4, 6);
-      ctx.closePath(); ctx.fill(); ctx.stroke();
-    }
+    ctx.drawImage(w,-WING_OX,-WING_OY);
     ctx.restore();
   }
   ctx.restore();
@@ -2004,6 +2057,31 @@ function drawFighter(f){
   ctx.save(); ctx.globalAlpha=.25*clamp(1-hop/26,.3,1); ctx.fillStyle='#000';
   ctx.beginPath(); ctx.ellipse(f.x+ox,f.y+22,20-hop*.35,6,0,0,7); ctx.fill(); ctx.restore();
 
+  // Drive Shot: hào quang chim đại bàng phủ lên người lúc tung chiêu
+  if(f.driveAura>0&&!f.eagle){
+    const al=clamp(f.driveAura,0,1);
+    const cx=f.x+ox, foot=f.y+20-hop;
+    const wy=foot-f.spriteH*.72, gy=foot-f.spriteH*.5;
+    const flap=Math.sin(G.t*9);
+    ctx.save();
+    ctx.globalAlpha=al*.55;
+    const gr=88+flap*5;
+    ctx.drawImage(glowSprite(),cx-gr,gy-gr,gr*2,gr*2);
+    ctx.restore();
+    drawWings(cx, wy, 1.3+flap*.12, flap, '#FFD9A0', al*.85);
+    ctx.save();
+    ctx.globalAlpha=al*.5;
+    ctx.strokeStyle='#FF8A2B'; ctx.lineWidth=3; ctx.lineCap='round';
+    for(let i=0;i<5;i++){
+      const a=G.t*3+i*1.257, L=52+Math.sin(G.t*7+i)*10;
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(a)*26, gy+Math.sin(a)*26);
+      ctx.lineTo(cx+Math.cos(a)*L, gy+Math.sin(a)*L);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   // Wings of the Eagle: đôi cánh thiên thần mọc ngang lưng, kèm hào quang
   if(f.eagle){
     const flap=Math.sin(G.t*4.4);
@@ -2015,34 +2093,28 @@ function drawFighter(f){
 
     // vũng sáng dưới chân
     ctx.save();
-    ctx.globalAlpha=.3+Math.sin(G.t*3)*.06;
-    const gp=ctx.createRadialGradient(cx,f.y+18,3,cx,f.y+18,62);
-    gp.addColorStop(0,'rgba(255,246,205,.95)'); gp.addColorStop(1,'rgba(255,246,205,0)');
-    ctx.fillStyle=gp;
-    ctx.beginPath(); ctx.ellipse(cx,f.y+18,62,19,0,0,7); ctx.fill();
+    ctx.globalAlpha=.34+Math.sin(G.t*3)*.06;
+    ctx.drawImage(glowSprite(),cx-64,f.y+18-22,128,44);
     ctx.restore();
 
     // hào quang toả quanh người
     ctx.save();
     const pulse=1+Math.sin(G.t*2.6)*.07;
-    ctx.globalAlpha=.62+Math.sin(G.t*2.6)*.12;
-    const g2=ctx.createRadialGradient(cx,gy,6,cx,gy,112*pulse);
-    g2.addColorStop(0,'rgba(255,252,232,.8)');
-    g2.addColorStop(.42,'rgba(255,228,146,.3)');
-    g2.addColorStop(1,'rgba(255,214,110,0)');
-    ctx.fillStyle=g2;
-    ctx.beginPath(); ctx.arc(cx,gy,112*pulse,0,7); ctx.fill();
+    const gr=112*pulse;
+    ctx.globalAlpha=.72+Math.sin(G.t*2.6)*.12;
+    ctx.drawImage(glowSprite(),cx-gr,gy-gr,gr*2,gr*2);
     ctx.restore();
 
     // tia sáng xoay chậm phía sau
     ctx.save();
     ctx.globalAlpha=.16+Math.sin(G.t*4)*.05;
     ctx.strokeStyle='#FFF3C4'; ctx.lineWidth=7; ctx.lineCap='round';
-    for(let i=0;i<8;i++){
-      const a=G.t*.5+i*.785;
+    for(let i=0;i<6;i++){
+      const a=G.t*.5+i*1.047;
+      const L=88+Math.sin(G.t*3+i)*10;
       ctx.beginPath();
       ctx.moveTo(cx+Math.cos(a)*34, gy+Math.sin(a)*34);
-      ctx.lineTo(cx+Math.cos(a)*(88+Math.sin(G.t*3+i)*10), gy+Math.sin(a)*(88+Math.sin(G.t*3+i)*10));
+      ctx.lineTo(cx+Math.cos(a)*L, gy+Math.sin(a)*L);
       ctx.stroke();
     }
     ctx.restore();
@@ -2051,11 +2123,11 @@ function drawFighter(f){
 
     // vòng hào quang thiên thần trên đầu
     ctx.save();
-    ctx.globalAlpha=.9;
-    ctx.shadowColor='rgba(255,220,120,.95)'; ctx.shadowBlur=18;
+    ctx.globalAlpha=.5;
+    ctx.drawImage(glowSprite(),cx-34,hy-20,68,40);
+    ctx.globalAlpha=.95;
     ctx.strokeStyle='#FFE9A8'; ctx.lineWidth=4.5;
     ctx.beginPath(); ctx.ellipse(cx,hy,21,6.5,0,0,7); ctx.stroke();
-    ctx.shadowBlur=0;
     ctx.strokeStyle='#FFFDF0'; ctx.lineWidth=1.6;
     ctx.beginPath(); ctx.ellipse(cx,hy,21,6.5,0,0,7); ctx.stroke();
     ctx.restore();
@@ -2080,8 +2152,9 @@ function drawFighter(f){
   if(f.flash>0){
     const tn=TINT[f.flashCol];
     ctx.globalAlpha=tn?tn.alpha:.4;
-    // trong suốt kèm ám màu: đỏ khi trúng đòn nổ / thiêu đốt, hồng khi dính khói Sexy Jutsu
-    if(tn) try{ ctx.filter=tn.filter; }catch(e){}
+    // trong suốt kèm ám màu: đỏ khi trúng đòn nổ / thiêu đốt, hồng khi dính khói Sexy Jutsu.
+    // chỉ lọc màu khi vẽ bằng ảnh — hình vector gồm hàng chục lệnh vẽ, lọc từng lệnh sẽ tụt khung hình
+    if(tn&&img) try{ ctx.filter=tn.filter; }catch(e){}
   }
   if(img){ const h=f.spriteH, w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
   else vector(f);
@@ -2090,7 +2163,7 @@ function drawFighter(f){
   if(f.flash>0&&TINT[f.flashCol]){
     const tn=TINT[f.flashCol];
     ctx.save();
-    ctx.globalAlpha=clamp(f.flash*1.6,0,1)*tn.glowA;
+    ctx.globalAlpha=clamp(f.flash*1.6,0,1)*tn.glowA*(img?1:1.6);
     ctx.fillStyle=tn.glow;
     ctx.beginPath(); ctx.ellipse(f.x+ox,bodyCY(f)-hop*.6,f.r+8,bodyRY(f)+6,0,0,7); ctx.fill();
     ctx.restore();
@@ -2240,30 +2313,75 @@ function bar(x,y,w,h,pct,fill,text,textCol){
   ctx.fillText(text,x+w/2,y+h/2+1);
   ctx.textBaseline='alphabetic';
 }
+/* Chữ rực lửa: dùng cho tên và tên hiệu ứng lúc Wings of the Eagle.
+   Chữ nằm hẳn ngoài khung thanh máu, có quầng lửa và lưỡi lửa bốc lên. */
+function fireText(txt,cx,y,size,seed){
+  const fl=.82+Math.sin(G.t*17+seed)*.11+Math.sin(G.t*31+seed*2.3)*.07;
+  ctx.save();
+  ctx.textAlign='center';
+  ctx.font=`900 ${size}px "Space Mono",monospace`;
+  const tw=ctx.measureText(txt).width;
+  // quầng lửa sau chữ
+  ctx.globalAlpha=.5*fl;
+  ctx.drawImage(glowSprite(), cx-tw*.72, y-size*1.75, tw*1.44, size*2.5);
+  ctx.globalAlpha=1;
+  // lưỡi lửa liếm lên từ thân chữ
+  ctx.globalAlpha=.75;
+  for(let i=0;i<5;i++){
+    const fx=cx-tw/2+tw*(i+.5)/5+Math.sin(G.t*6+i*2.1)*2.5;
+    const fh=(7+Math.abs(Math.sin(G.t*9+i*1.7))*9)*fl;
+    ctx.fillStyle=i%2?'#FF8A2B':'#FFC542';
+    ctx.beginPath();
+    ctx.moveTo(fx-3.4,y-size*.78);
+    ctx.quadraticCurveTo(fx-1.6,y-size*.78-fh*.6, fx,y-size*.78-fh);
+    ctx.quadraticCurveTo(fx+1.6,y-size*.78-fh*.6, fx+3.4,y-size*.78);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  // thân chữ: viền tối rồi tô chuyển sắc lửa
+  ctx.lineWidth=4.5; ctx.strokeStyle='#2A0700'; ctx.strokeText(txt,cx,y);
+  const g=ctx.createLinearGradient(0,y-size*.95,0,y+size*.2);
+  g.addColorStop(0,'#FFF6C0'); g.addColorStop(.4,'#FFC542');
+  g.addColorStop(.75,'#FF6A2B'); g.addColorStop(1,'#C4001A');
+  ctx.fillStyle=g; ctx.fillText(txt,cx,y);
+  ctx.restore();
+}
 function drawBars(f){
   if(f.summon)return;
   const w=112,h=24,x=clamp(f.x-w/2,12,W-w-12),y=f.y+30;
-  ctx.font='900 11px "Space Mono",monospace'; ctx.textAlign='center';
-  ctx.lineWidth=3; ctx.strokeStyle='#000';
-  ctx.strokeText(f.name.toUpperCase(),x+w/2,y-4);
-  ctx.fillStyle=f.color; ctx.fillText(f.name.toUpperCase(),x+w/2,y-4);
+  ctx.textAlign='center';
+  if(f.eagle){
+    // lên đồng: tên tách hẳn khỏi khung thanh máu và bốc lửa
+    fireText(f.name.toUpperCase(), x+w/2, y-12, 13, 0);
+  }else{
+    ctx.font='900 11px "Space Mono",monospace';
+    ctx.lineWidth=3; ctx.strokeStyle='#000';
+    ctx.strokeText(f.name.toUpperCase(),x+w/2,y-4);
+    ctx.fillStyle=f.color; ctx.fillText(f.name.toUpperCase(),x+w/2,y-4);
+  }
   bar(x,y,w,h,f.hp/f.maxHp,f.color,String(Math.ceil(f.hp)));
   const C=CHARS[f.key];
   if(C&&C.gauge){ const gg=C.gauge(f); bar(x,y+h+2,w,20,gg.pct,gg.fill||'#FFE100',gg.txt); }
   // dòng trạng thái: tên hiệu ứng đang mang và chỉ số của nó
-  const lines=[];
+  let ly=y+h+42;
   if(f.eagle){
-    lines.push({t:'WINGS OF THE EAGLE', c:'#FFE9A8', s:11.5});
-    lines.push({t:'+100% ATK SPEED · 80% RESIST · CC IMMUNE · -15% HP/s', c:'#FFF3C4', s:9});
+    fireText('WINGS OF THE EAGLE', x+w/2, ly, 12, 3.1);
+    ly+=15;
+    ctx.font='900 9px "Space Mono",monospace';
+    ctx.lineWidth=3; ctx.strokeStyle='#000';
+    const sub=`+100% ATK SPEED · 70% RESIST · CC IMMUNE · BURNS OUT IN ${EAGLE_BURN}s`;
+    ctx.strokeText(sub,x+w/2,ly); ctx.fillStyle='#FFD9A0'; ctx.fillText(sub,x+w/2,ly);
+    ly+=14;
   }
+  const lines=[];
   if(f.vuln>0) lines.push({t:`VULNERABLE +50% (${f.vuln.toFixed(1)}s)`, c:'#FFF3C4', s:11});
   if(f.invuln>0) lines.push({t:`IMMUNE (${f.invuln.toFixed(1)}s)`, c:'#FF9AD5', s:11});
-  ctx.textAlign='center'; ctx.lineWidth=3; ctx.strokeStyle='#000';
-  lines.forEach((L,i)=>{
-    const ly=y+h+40+i*13;
+  ctx.lineWidth=3; ctx.strokeStyle='#000';
+  lines.forEach(L=>{
     ctx.font=`900 ${L.s}px "Space Mono",monospace`;
     ctx.strokeText(L.t,x+w/2,ly);
     ctx.fillStyle=L.c; ctx.fillText(L.t,x+w/2,ly);
+    ly+=13;
   });
 }
 function drawProj(p){
@@ -2668,6 +2786,52 @@ function drawMate(m){
   ctx.fillStyle='#FFF3C4'; ctx.fillText(m.name.toUpperCase(),m.x,m.y+40);
   ctx.restore();
 }
+/* Vẽ sẵn hình vector của một nhân vật ra canvas phụ và giữ lại dùng nhiều lần.
+   Cần vì lớp nhoè của flashback áp lên từng lệnh vẽ: hình vector có hàng chục
+   lệnh nên blur từng lệnh làm tụt hẳn khung hình, còn ảnh thì chỉ một lệnh. */
+const GHOST_CACHE=new Map();
+function ghostCanvas(key){
+  let c=GHOST_CACHE.get(key);
+  if(c) return c;
+  c=document.createElement('canvas'); c.width=100; c.height=104;
+  const g=c.getContext('2d');
+  const main=ctx;
+  ctx=g;
+  g.save(); g.translate(50,100); g.scale(1.7,1.7);
+  try{ vector({key,face:1,moving:false,pose:'idle',poseT:0}); }catch(e){}
+  g.restore();
+  ctx=main;
+  GHOST_CACHE.set(key,c);
+  return c;
+}
+/* bản nhoè nướng sẵn: blur một lần rồi dùng lại, thay vì blur mỗi khung hình */
+const BLUR_CACHE=new Map();
+const BLUR_PAD=18;
+function blurredCopy(src,key,rad){
+  const k=key+'|'+rad;
+  let c=BLUR_CACHE.get(k);
+  if(c) return c;
+  c=document.createElement('canvas');
+  c.width=src.width+BLUR_PAD*2; c.height=src.height+BLUR_PAD*2;
+  const g=c.getContext('2d');
+  try{ g.filter=`blur(${rad}px)`; }catch(e){}
+  g.drawImage(src,BLUR_PAD,BLUR_PAD);
+  BLUR_CACHE.set(k,c);
+  return c;
+}
+/* quầng sáng nướng sẵn, dùng lại cho hào quang và vũng sáng dưới chân */
+let GLOW=null;
+function glowSprite(){
+  if(GLOW) return GLOW;
+  GLOW=document.createElement('canvas'); GLOW.width=GLOW.height=256;
+  const g=GLOW.getContext('2d');
+  const gr=g.createRadialGradient(128,128,4,128,128,128);
+  gr.addColorStop(0,'rgba(255,252,232,.88)');
+  gr.addColorStop(.42,'rgba(255,228,146,.34)');
+  gr.addColorStop(1,'rgba(255,214,110,0)');
+  g.fillStyle=gr; g.fillRect(0,0,256,256);
+  return GLOW;
+}
 function drawFlashback(){
   const F=G.flashback, n=F.list.length, seg=F.life/n;
   const idx=clamp(Math.floor(F.t/seg),0,n-1);
@@ -2681,31 +2845,29 @@ function drawFlashback(){
 
   const set=SPR[it.key]||{};
   const arr=set.idle&&set.idle.length?set.idle:null;
-  const img=arr?arr[0]:null;
+  const img=arr?arr[0]:null||ghostCanvas(it.key);   // chưa nạp ảnh thì dùng hình vẽ sẵn
   const baseY=H*.56-lp*20;                      // bóng người trôi lên chầm chậm
 
   // quầng sáng mờ sau lưng
   ctx.save();
-  ctx.globalAlpha=fade*.3;
-  const gl=ctx.createRadialGradient(W/2,baseY-95,10,W/2,baseY-95,215);
-  gl.addColorStop(0,'rgba(255,247,214,.85)');
-  gl.addColorStop(1,'rgba(255,247,214,0)');
-  ctx.fillStyle=gl;
-  ctx.beginPath(); ctx.arc(W/2,baseY-95,215,0,7); ctx.fill();
+  ctx.globalAlpha=fade*.5;
+  ctx.drawImage(glowSprite(),W/2-165,baseY-95-165,330,330);
   ctx.restore();
 
-  // bóng người: một lớp nhoè phía sau, một lớp rõ hơn đè lên — kiểu ký ức chợt hiện
-  for(const layer of [{a:.34,blur:7,s:1.06},{a:.5,blur:2,s:1}]){
-    ctx.save();
-    ctx.globalAlpha=fade*layer.a;
-    try{ ctx.filter=`blur(${layer.blur}px)`; }catch(e){}
-    ctx.translate(W/2,baseY);
-    const sc=layer.s*(1+Math.sin(lp*Math.PI)*.03);
-    ctx.scale(sc,sc);
-    if(img){ const h=232,w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
-    else{ ctx.scale(3.1,3.1); vector({key:it.key,face:1,moving:false,pose:'idle',poseT:0}); }
-    ctx.restore();
-  }
+  // bóng người: lớp nhoè nướng sẵn phía sau, lớp rõ đè lên — kiểu ký ức chợt hiện
+  const soft=blurredCopy(img,'fb_'+it.key,7);
+  const pulse=1+Math.sin(lp*Math.PI)*.03;
+  const h=232, w=img.width/img.height*h, k=h/img.height;
+  ctx.save();
+  ctx.globalAlpha=fade*.4;
+  ctx.translate(W/2,baseY); ctx.scale(pulse*1.05,pulse*1.05);
+  ctx.drawImage(soft,-w/2-BLUR_PAD*k,-h-BLUR_PAD*k,w+BLUR_PAD*2*k,h+BLUR_PAD*2*k);
+  ctx.restore();
+  ctx.save();
+  ctx.globalAlpha=fade*.52;
+  ctx.translate(W/2,baseY); ctx.scale(pulse,pulse);
+  ctx.drawImage(img,-w/2,-h,w,h);
+  ctx.restore();
 
   // tên ở dưới, giãn chữ cho ra chất hồi tưởng
   ctx.save();
@@ -2713,9 +2875,12 @@ function drawFlashback(){
   ctx.textAlign='center';
   ctx.font='900 21px "Be Vietnam Pro",sans-serif';
   const spaced=it.name.split('').join(' ');
-  ctx.shadowColor='rgba(255,243,196,.75)'; ctx.shadowBlur=18;
+  const tw0=ctx.measureText(spaced).width;
+  ctx.save();
+  ctx.globalAlpha=fade*.5;
+  ctx.drawImage(glowSprite(),W/2-tw0*.7,baseY+8,tw0*1.4,64);
+  ctx.restore();
   ctx.fillStyle='#FFF7E4'; ctx.fillText(spaced, W/2, baseY+40);
-  ctx.shadowBlur=0;
   ctx.globalAlpha=fade*.5;
   ctx.strokeStyle='#FFF3C4'; ctx.lineWidth=1;
   const tw=ctx.measureText(spaced).width;
