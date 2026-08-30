@@ -42,7 +42,7 @@
   .card h3{margin:0 0 8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
   #log{height:120px;overflow-y:auto;font-size:12.5px;line-height:1.5}
   #log div{padding:2px 0;border-bottom:1px dashed #241E48}
-  .k{color:var(--kono)}.c{color:var(--chichi)}.g{color:var(--gold)}.m{color:var(--mute)}
+  .k{color:var(--kono)}.c{color:var(--chichi)}.g{color:var(--gold)}.m{color:var(--mute)}.s{color:#9B8CFF}
 
   .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:7px}
   .slot{position:relative;border:1px dashed #3B3170;border-radius:9px;padding:7px 5px;text-align:center;cursor:pointer;
@@ -189,7 +189,7 @@
 <div class="csel off" id="charSelect">
   <div class="cselBox">
     <h2>CHỌN <span>NHÂN VẬT</span></h2>
-    <div class="cselSub">Chọn một nhân vật cho mỗi bên · 3 nhân vật</div>
+    <div class="cselSub" id="cselCount">Chọn một nhân vật cho mỗi bên</div>
     <div class="cselCols">
       <div class="cselCol"><div class="cselHead">Bên trái <b id="pickNameA"></b></div><div id="listA"></div></div>
       <div class="cselCol"><div class="cselHead">Bên phải <b id="pickNameB"></b></div><div id="listB"></div></div>
@@ -224,15 +224,16 @@ let G=null, running=false, speedMul=BASE_SPEED, mode='auto', autoSkill=true;
 const keys={};
 
 /* ---------- sprite slots ---------- */
-const SPR={kono:{},chichi:{},tsubasa:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
-const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573'};
-const HP={kono:1000,chichi:1000,tsubasa:1000};
+const SPR={kono:{},chichi:{},tsubasa:{},shika:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
+const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF'};
+const HP={kono:1000,chichi:1000,tsubasa:1000,shika:1000};
 const CAST={mul:1.8};
 const cm=v=>v*CAST.mul;
 const SETS=[
   {key:'kono', name:'Konohamaru', poses:[['idle','Thủ thế'],['atk1','Phi tiêu'],['atk2','Kết ấn phân thân'],['clone','Phân thân (bay ra)'],['skill','Sexy Jutsu'],['ulti','Rasengan'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
   {key:'chichi', name:'ChiChi', poses:[['idle','Thủ thế'],['atk1','Đấm đá'],['atk2','Mắng'],['skill','Hăng máu'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc gọi)'],['call','Dáng gọi viện binh']]},
   {key:'tsubasa', name:'Ozora Tsubasa', poses:[['idle','Thủ thế'],['atk1','Sút bóng'],['bicycle','Overhead kick'],['atk2','Drive shot'],['wings','Đôi cánh đại bàng'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc kích hoạt nội tại)']]},
+  {key:'shika', name:'Shikamaru', poses:[['idle','Thủ thế'],['lazy','Nằm lười (đầu trận)'],['atk1','Phóng shuriken'],['stab','Đâm sau lưng'],['atk2','Kết ấn trói bóng'],['ulti','Mở lãnh địa'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
   {key:'goku', name:'Son Goku', poses:[['idle','Đứng'],['skill','Dồn khí'],['atk1','Kamehameha']]},
   {key:'gohan', name:'Son Gohan', poses:[['idle','Đứng'],['skill','Dồn khí'],['atk1','Masenko']]},
   {key:'hyuga', name:'Hyuga (đồng đội Tsubasa)', poses:[['idle','Đứng'],['atk1','Twin shot: Tsubasa + Hyuga']]},
@@ -256,6 +257,28 @@ const EAGLE_CD=1/4;               // tốc độ ra chiêu gấp 4: hồi chiêu
 const EAGLE_DRIVE=.5;             // riêng Drive Shot còn ra nhanh gấp đôi nữa
 const EAGLE_QUOTA={drive:2,bic:2}; // trong quãng cháy phải tung đủ chừng này
 const CHICHI_DASH_CD=5;           // ChiChi lao tới mỗi 5 giây trong trận, tức 10 giây người chơi thấy
+
+/* ---------- Shikamaru ----------
+   Mọi con số dưới đây viết theo giây người chơi rồi đổi sang giây trong trận bằng gs(),
+   còn sát thương duy trì thì nhân RT vì bảng dots tính theo giây trong trận. */
+const gs=sec=>sec/RT;             // giây người chơi -> giây trong trận
+const SHIKA={
+  lazyRate:25*RT,                 // nằm lười: 25 chakra mỗi giây người chơi
+  fightRate:8*RT,                 // đã vào trận: 8 chakra mỗi giây người chơi
+  wakeHp:.80,                     // tụt xuống mức này thì bật dậy đánh
+  evadeBase:.10, evadeStep:.05, evadeMax:.70,
+  atkCd:2.7,                      // đánh chậm gấp đôi Konohamaru (1.35)
+  shurikenDmg:30, shurikenSpd:300,
+  bleedDps:5*RT, bleedT:gs(3),    // chảy máu 5 dmg/s trong 3 giây người chơi
+  stabDmg:50, stabSpd:680,        // lao nhanh gấp đôi cú lao Rasengan (340)
+  stabStun:gs(1), stabCd:gs(15), stabRange:190, stabCut:.5,
+  bindDps:45*RT, bindT:gs(3),     // trói bóng 45 dmg/s trong 3 giây người chơi
+  bindStun:gs(1.5), bindCd:gs(9), bindRetry:gs(7), bindSpd:380,
+  domainHp:.20, domainLo:35*RT, domainHi:215*RT,
+  domainOutCut:.5,                // địch trong lãnh địa chỉ gây một nửa sát thương
+  chakraPerSec:100,               // 100 chakra đổi được 1 giây người chơi
+  weakMul:.7                      // hết lãnh địa: chiêu 1 yếu đi 30%
+};
 const CHICHI_CALL_LOCK=1.5;       // khoá ChiChi bấy nhiêu giây sau phân cảnh gọi viện binh
 const CHICHI_DASH_RES=.7;         // lúc lao tới chỉ nhận 70% sát thương
 const EXHAUST_T=4;                // phân thân gây kiệt sức bấy nhiêu giây trong trận
@@ -314,6 +337,36 @@ const CHARS={
     gauge:f=>f.eagle
       ? {pct:clamp(1-f.eagleT/EAGLE_BURN,0,1), fill:'#FFF3C4', txt:`EAGLE ${(Math.max(0,EAGLE_BURN-f.eagleT)*RT).toFixed(1)}s`}
       : {pct:f.goals/GOAL_MAX, fill:'#FFE100', txt:`Goal: ${f.goals}/${GOAL_MAX}`}
+  }
+  ,shika:{
+    name:'Shikamaru', short:'Shika', tag:'Ninja · Bóng', emoji:'🦌', color:'#9B8CFF', alt:'#C6BDFF',
+    role:'ranged', want:230, speed:88, dodge:.9, male:true,
+    skills:[
+      `<b>1</b> Twin Shuriken ${SHIKA.shurikenDmg} + bleed 5/s · half Konohamaru's attack speed, far better aim`,
+      `<b>1+</b> Shadow Stab — blink behind for ${SHIKA.stabDmg} + bleed, stun ${rts(SHIKA.stabStun)}s · every ${rts(SHIKA.stabCd)}s`,
+      `<b>2</b> Shadow-Neck Bind — 45 dmg/s for ${rts(SHIKA.bindT)}s, then stun ${rts(SHIKA.bindStun)}s`,
+      `<b>Passive</b> Lazy start: ${SHIKA.lazyRate/RT} chakra/s lying down, ${SHIKA.fightRate/RT}/s once hurt to ${Math.round(SHIKA.wakeHp*100)}%`,
+      `<b>Passive</b> Evasion ${Math.round(SHIKA.evadeBase*100)}%, +${Math.round(SHIKA.evadeStep*100)}% per hit taken, up to ${Math.round(SHIKA.evadeMax*100)}%`,
+      `<b>Below ${Math.round(SHIKA.domainHp*100)}% HP</b> Nara Shadow Garden — chakra spent as duration`],
+    init(f){
+      f.cds={s1:cm(1),s2:cm(2)};
+      f.dashCd=SHIKA.stabCd;
+      f.chakra=0; f.lazy=true; f.awake=false;
+      f.evade=SHIKA.evadeBase;
+    },
+    think(f,e,d,auto){
+      if(f.dash||f.bind||f.domain)return;
+      if(f.lazy)return;                                  // còn nằm lười thì chưa đánh
+      // lao ra sau lưng địch: chỉ khi đã đủ gần, và không dùng trong lãnh địa
+      if(f.dashCd<=0&&d<SHIKA.stabRange&&(auto||keys['u'])){ f.dashCd=SHIKA.stabCd; shikaStab(f,e); return; }
+      if(!f.weak&&f.cds.s2<=0&&(auto?d<520:keys['k'])){ f.cds.s2=cm(SHIKA.bindCd*RT); shadowBind(f,e); return; }
+      if(f.cds.s1<=0&&(auto?d<500:keys['j'])){ f.cds.s1=cm(SHIKA.atkCd); shikaThrow(f,e); }
+    },
+    gauge:f=>f.domain
+      ? {pct:clamp(f.domain.t/f.domain.max,0,1), fill:'#B7A6FF',
+         txt:`GARDEN ${(f.domain.t*RT).toFixed(1)}s`}
+      : {pct:clamp(f.chakra/600,0,1), fill:'#8E7BFF',
+         txt:f.weak?'Chakra: cạn':`Chakra: ${Math.round(f.chakra)}`}
   }
 };
 const CKEYS=Object.keys(CHARS);
@@ -950,7 +1003,9 @@ function mk(o){
     vx:0, vy:0, recoil:0, rdx:0, rdy:0, dustT:0, ghostT:0,
     ax:1, ay:0, lunge:0, invuln:0, dvx:0, dvy:0, moveAmt:0, leanS:0,
     wx:W/2, wy:H/2, wt:0, engage:true, engT:2,
-    goals:0, vuln:0, exhaust:0, prewing:false, prewingDone:false, prewingA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
+    goals:0, vuln:0, exhaust:0, prewing:false, prewingDone:false, prewingA:0,
+    chakra:0, lazy:false, awake:false, evade:0, outCut:0, weak:false,
+    bind:null, bindGuard:false, bindPending:false, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
 }
 function mkChar(key,team,x,y){
@@ -1012,8 +1067,14 @@ function stunFx(f,dur,kind){
     return false;
   }
   if(f.prewing) dur*=PREWING_STUN;               // Pre-Wings: gồng được, choáng ngắn lại
+  if(f.key==='shika'&&f.bind&&f.bind.guard){     // lần bù: đứng vững, không cắt được
+    G.floats.push({x:f.x,y:f.y-104,txt:'UNBREAKABLE',color:'#CFC6FF',
+      life:.9,ml:.9,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
+    return false;
+  }
   if(dur>=f.stun||!f.stunKind) f.stunKind=kind||null;
   f.stun=Math.max(f.stun,dur);
+  if(f.key==='shika') shikaInterrupt(f);
   return true;
 }
 function aim(f,e,power){
@@ -1031,6 +1092,16 @@ function hurt(t,amt,src,crit,kind,tint){
     ring(t.x,t.y,52,'#FF9AD5',.3);
     return;
   }
+  // Nội tại 2 của Shikamaru: né đòn đánh thường, mỗi lần ăn đòn lại nhạy hơn một chút.
+  // Đòn duy trì, lãnh địa và các chiêu lớn không tính là đòn thường nên không né được.
+  if(kind==='basic'&&t.evade>0){
+    if(chance(t.evade)){
+      G.floats.push({x:t.x,y:t.y-88,txt:'DODGE',color:'#CFC6FF',life:.9,ml:.9,banner:true,sc:.62});
+      return;
+    }
+    t.evade=Math.min(SHIKA.evadeMax,t.evade+SHIKA.evadeStep);
+  }
+  if(src&&src.outCut>0) amt*=(1-src.outCut);   // đứng trong lãnh địa thì đánh yếu hẳn
   if(t.vuln>0) amt*=1.5;                    // dính Twin Shot: nhận thêm 50% sát thương
   if(t.eagle) amt*=.3;                      // Wings of the Eagle: miễn 70% sát thương
   else if(t.prewing) amt*=PREWING_RES;      // Pre-Wings: miễn 35% sát thương
@@ -1118,7 +1189,7 @@ function explode(p){
     if(f.team===p.team||!f.alive||f.summon)continue;
     if(dist(f,p)<R+f.r){
       landed=true;
-      hurt(f,p.dmg,p.owner,'BOOM!',null,'red');          // dính đòn nổ: đỏ
+      hurt(f,p.dmg,p.owner,'BOOM!','basic','red');       // dính đòn nổ: đỏ
       if(f.invuln<=0) stunFx(f,.5,'spark');
     }
   }
@@ -1175,10 +1246,191 @@ function rasengan(k,e){
 function melee(c,e,forceCrit){
   setPose(c,'atk1',cm(.26)); aim(c,e,.85); sfx('punch');
   const crit=forceCrit||chance(.10+c.critBonus);
-  hurt(e,crit?25:5,c,crit);
+  hurt(e,crit?25:5,c,crit,'basic');
   if(crit&&!forceCrit) say('Cú đá chí mạng 25 dmg!','c');
   G.fx.push({type:'punch',x:(c.x+e.x)/2,y:(c.y+e.y)/2,life:.16,ml:.16});
 }
+/* ================= Shikamaru ================= */
+
+/* Chiêu 1 — hai shuriken một lượt. Đánh chậm gấp đôi Konohamaru nhưng ngắm sát hơn
+   hẳn: độ lệch chỉ bằng khoảng một phần ba, và không có cú văng hẳn ra ngoài. */
+function shikaThrow(k,e){
+  setPose(k,'atk1',cm(.5)); aim(k,e,1);
+  for(let i=0;i<2;i++) later(cm(.18)+i*cm(.12),()=>{
+    if(!k.alive||G.over||G.freeze>0)return;
+    sfx('throw');
+    const both=k.moving&&e.moving;
+    const a=Math.atan2(e.y-k.y,e.x-k.x)+(both?rnd(-.05,.05):rnd(-.012,.012))+(i?.045:-.045);
+    G.proj.push({type:'shuriken',team:k.team,owner:k,shadow:true,
+      x:k.x+Math.cos(a)*24,y:k.y+Math.sin(a)*24,
+      vx:Math.cos(a)*SHIKA.shurikenSpd,vy:Math.sin(a)*SHIKA.shurikenSpd,
+      r:9,dmg:SHIKA.shurikenDmg*(k.weak?SHIKA.weakMul:1),life:2.6,spin:0,bleed:true});
+  });
+  say(k.weak?'Hai shuriken — tay đã mỏi, sát thương giảm 30%.':'Hai shuriken bay thẳng, kèm vết cắt rỉ máu.','s');
+}
+
+/* Chiêu 1+ — chớp ra sau lưng địch rồi đâm. Dùng chung vòng lặp lao tới, chỉ khác
+   là nhắm vào một điểm sau lưng địch chứ không phải vào người địch. */
+function shikaStab(k,e){
+  setPose(k,'stab',1.1); aim(k,e,1.4); sfx('throw');
+  const d=dist(k,e)||1;
+  const bx=clamp(e.x+(e.x-k.x)/d*(k.r+e.r+16),PAD,W-PAD);
+  const by=clamp(e.y+(e.y-k.y)/d*(k.r+e.r+16),PAD+50,H-PAD-10);
+  k.dash={t:.9,hit:false,kind:'stab',spd:SHIKA.stabSpd,pose:'stab',tx:bx,ty:by};
+  G.floats.push({x:k.x,y:k.y-104,txt:'SHADOW STAB!',color:k.color,life:1.3,ml:1.3,
+    banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.06,.06)});
+  ring(k.x,k.y,84,k.color,.4);
+}
+function shikaStabHit(k,e){
+  ring(e.x,e.y,110,'#8E7BFF',.5);
+  G.flashScreen=Math.max(G.flashScreen,.09);
+  hurt(e,SHIKA.stabDmg*(k.weak?SHIKA.weakMul:1),k,'SHADOW STAB!');
+  bleedOn(e,k);
+  const st=stunFx(e,SHIKA.stabStun,'spark');
+  sfx('hit');
+  say(st?`Đâm sau lưng — ${Math.round(SHIKA.stabDmg*(k.weak?SHIKA.weakMul:1))} dmg, chảy máu và choáng ${rts(SHIKA.stabStun)} giây.`
+       :`Đâm sau lưng — ${Math.round(SHIKA.stabDmg*(k.weak?SHIKA.weakMul:1))} dmg, nhưng đối thủ miễn khống chế.`,'s');
+}
+function bleedOn(t,src){
+  t.dots.push({dps:SHIKA.bleedDps,left:SHIKA.bleedT,acc:0,src,tint:'bleed'});
+}
+
+/* Chiêu 2 — Trói bóng khoá cổ. Shikamaru đứng yên kết ấn, dải bóng bò từ chân cậu
+   sang địch; chạm rồi thì quấn quanh người và bóp cổ, hết giờ thì bóng rút về và
+   địch đứng hình. Bị choáng giữa chừng là đứt chiêu. */
+function shadowBind(k,e){
+  setPose(k,'atk2',1.2); aim(k,e,.4); sfx('stun');
+  const guarded=k.bindGuard;                        // lần bù sau khi bị cắt: chắc chắn né được choáng
+  k.bindGuard=false;
+  k.bind={ph:'reach',t:0,len:0,guard:guarded,e,acc:0};
+  k.lock=Math.max(k.lock,SHIKA.bindT+gs(2));
+  G.floats.push({x:k.x,y:k.y-108,txt:'SHADOW-NECK BIND!',color:k.color,life:1.5,ml:1.5,
+    banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
+  if(guarded) G.floats.push({x:k.x,y:k.y-86,txt:'FOCUSED — CANNOT BE BROKEN',color:'#CFC6FF',
+    life:1.5,ml:1.5,banner:true,sc:.6});
+  say(guarded?'Lần này Shikamaru tính trước — dải bóng không thể bị cắt ngang.'
+             :'Kagekubishibari no Jutsu — dải bóng trườn tới!','s');
+}
+function bindTick(k,dt){
+  const B=k.bind; if(!B)return;
+  const e=B.e;
+  if(!e||!e.alive||!k.alive||G.over){ k.bind=null; k.lock=0; return; }
+  const d=dist(k,e)||1;
+  if(B.ph==='reach'){
+    B.len+=SHIKA.bindSpd*dt;
+    if(B.len>=d-e.r){                                // bóng chạm chân địch
+      B.ph='hold'; B.t=SHIKA.bindT; B.len=d;
+      ring(e.x,e.y,96,'#2A2140',.55);
+      sfx('stun');
+      say(`Bị dải bóng quấn kín — ${SHIKA.bindDps/RT} dmg mỗi giây trong ${rts(SHIKA.bindT)} giây.`,'s');
+    }
+  }else if(B.ph==='hold'){
+    B.len=d;
+    e.lock=Math.max(e.lock,.25);                     // bị bóp cổ thì đứng im, không ra chiêu
+    e.moving=false;
+    setPose(e,'hurt',.3);                            // bị trói thì giữ dáng chịu đòn
+    B.acc+=dt;
+    if(B.acc>=.5){ B.acc-=.5; hurt(e,SHIKA.bindDps*.5,k,false,'dot','shadow'); }
+    B.t-=dt;
+    if(B.t<=0){ B.ph='back'; B.len=d; }
+  }else{
+    B.len-=SHIKA.bindSpd*1.6*dt;                     // rút bóng về chân Shikamaru
+    if(B.len<=6){
+      const st=stunFx(e,SHIKA.bindStun,'spin');
+      ring(k.x,k.y,120,'#8E7BFF',.5);
+      say(st?`Bóng rút về — đối thủ đứng hình ${rts(SHIKA.bindStun)} giây.`
+            :'Bóng rút về — nhưng đối thủ miễn khống chế.','s');
+      k.bind=null; k.lock=0;
+    }
+  }
+}
+/* Bị choáng giữa lúc kết ấn hoặc lúc lao đâm thì đứt chiêu. Cú lao được bù bằng
+   cách cắt nửa hồi chiêu; dải bóng thì hẹn tung lại sau 7 giây người chơi, và lần
+   bù đó chắc chắn không bị cắt nữa — xong lần bù thì mọi thứ về lại bình thường. */
+function shikaInterrupt(f){
+  if(f.dash&&f.dash.kind==='stab'){
+    f.dash=null; f.pose='idle';
+    f.dashCd=Math.min(f.dashCd,SHIKA.stabCd*SHIKA.stabCut);
+    G.floats.push({x:f.x,y:f.y-96,txt:'STAB BROKEN · CD −50%',color:'#CFC6FF',
+      life:1.3,ml:1.3,banner:true,sc:.62});
+    say('Cú đâm bị cắt ngang — bù lại nửa hồi chiêu.','s');
+  }
+  if(f.bind){
+    if(f.bind.guard) return;                         // lần bù: không thể bị cắt
+    f.bind=null; f.lock=0; f.pose='idle';
+    f.bindGuard=true;
+    f.cds.s2=SHIKA.bindRetry;
+    G.floats.push({x:f.x,y:f.y-96,txt:`BIND BROKEN · RETRY ${rts(SHIKA.bindRetry)}s`,color:'#CFC6FF',
+      life:1.4,ml:1.4,banner:true,sc:.62});
+    say(`Dải bóng đứt giữa chừng — ${rts(SHIKA.bindRetry)} giây nữa sẽ kết ấn lại.`,'s');
+  }
+}
+
+/* Chiêu 3 — Khu vườn bóng của nhà Nara. Mở ra khi máu tụt dưới 20%, phủ kín sàn,
+   và sống được bao lâu là do chakra tích từ đầu trận quyết định: 100 chakra đổi
+   một giây người chơi. Đây chính là chỗ nội tại "nằm lười" trả công — nằm càng
+   lâu lúc đầu thì lãnh địa càng dài. */
+function naraDomain(k,e){
+  k.domainDone=true;
+  const secPlayer=k.chakra/SHIKA.chakraPerSec;
+  const dur=gs(secPlayer);
+  k.domain={t:dur,max:dur,acc:0,e};
+  k.chakra=0;
+  k.lock=0; k.dash=null; k.bind=null;
+  setPose(k,'ulti',1.6);
+  G.freeze=1.8; G.freezeAt=k;
+  G.flashScreen=1;
+  sfx('summon');
+  for(let i=0;i<4;i++) later(i*.22,()=>ring(k.x,k.y,220+i*180,'#6B5BD6',.7),true);
+  G.callBanner={txt:'NARA SHADOW GARDEN',color:k.color,life:2.2,ml:2.2};
+  G.floats.push({x:k.x,y:k.y-118,txt:`${Math.round(secPlayer*SHIKA.chakraPerSec)} CHAKRA · ${secPlayer.toFixed(1)}s`,
+    color:'#CFC6FF',life:2,ml:2,banner:true,gold:true});
+  say(`Khu vườn nhà Nara mở ra — ${Math.round(secPlayer*SHIKA.chakraPerSec)} chakra đổi lấy ${secPlayer.toFixed(1)} giây.`,'s');
+  say('Trong vườn: địch kiệt sức, chỉ gây một nửa sát thương và ăn bom lẫn bóng liên tục.','m');
+}
+function domainTick(k,dt){
+  const D=k.domain; if(!D)return;
+  const e=D.e;
+  k.domainA=Math.min(1,k.domainA+dt*3);
+  D.t-=dt;
+  if(e&&e.alive){
+    e.exhaust=Math.max(e.exhaust,.6);                 // kiệt sức y như phân thân Konohamaru
+    e.outCut=SHIKA.domainOutCut;
+    D.acc+=dt;
+    if(D.acc>=.25){
+      D.acc-=.25;
+      const dps=rnd(SHIKA.domainLo,SHIKA.domainHi);
+      hurt(e,dps*.25,k,false,'domain','shadow');
+      if(chance(.55)){
+        const bx=e.x+rnd(-52,52), by=e.y+rnd(-46,34);
+        G.fx.push({type:'dust',x:bx,y:by,r:7,life:.4,ml:.4});
+        ring(bx,by,rnd(38,72),chance(.5)?'#FFB03A':'#6B5BD6',.3);
+      }
+      sfx('burn');
+    }
+  }
+  if(D.t<=0){
+    k.domain=null; k.weak=true;
+    if(e) e.outCut=0;
+    ring(k.x,k.y,320,'#6B5BD6',.5);
+    G.floats.push({x:k.x,y:k.y-112,txt:'CHAKRA SPENT',color:'#9B8CFF',life:1.6,ml:1.6,banner:true,gold:true});
+    say('Khu vườn khép lại — Shikamaru cạn chakra: mất chiêu trói bóng, shuriken yếu đi 30%.','s');
+  }
+}
+/* Nội tại 1 — nằm lười tích chakra, trúng đòn tới ngưỡng thì bật dậy. */
+function shikaPassive(f,dt){
+  if(f.weak||f.domain)return;                         // mở lãnh địa rồi thì thôi tích
+  if(f.lazy&&f.hp<=f.maxHp*SHIKA.wakeHp){
+    f.lazy=false; f.awake=true;
+    setPose(f,'hurt',.4);
+    ring(f.x,f.y,110,f.color,.45);
+    G.floats.push({x:f.x,y:f.y-108,txt:'FINE. I\'M UP.',color:f.color,life:1.6,ml:1.6,
+      banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
+    say(`Bị chọc tới ${Math.round(SHIKA.wakeHp*100)}% máu — Shikamaru đứng dậy, chakra chỉ còn ${SHIKA.fightRate/RT} mỗi giây.`,'s');
+  }
+  f.chakra+=(f.lazy?SHIKA.lazyRate:SHIKA.fightRate)*dt;
+}
+
 const SCOLDS=[
   'DON\'T YOU DARE!','GET BACK HERE!','I\'M NOT ASKING TWICE!',
   'WATCH YOUR TONE!','SIT DOWN. NOW.','WHO RAISED YOU?!',
@@ -1438,7 +1690,7 @@ function ballHit(p,f){
     }
     say('DRIVE SHOT trúng đích — 80 dmg kèm thiêu đốt 5 dmg × 3 đợt.','g');
   }else{
-    hurt(f,p.dmg,o,p.bic?'OVERHEAD KICK!':false);
+    hurt(f,p.dmg,o,p.bic?'OVERHEAD KICK!':false,'basic');
     sfx('hit');
     if(f.alive&&f.invuln<=0){
       if(p.bic) stunFx(f,.25,'spark');          // chỉ overhead kick mới gây choáng
@@ -1660,6 +1912,8 @@ function step(dt){
     if(f.stun>0)f.stun-=dt;
     if(f.flash>0)f.flash-=dt;
     if(f.poseT>0){ f.poseT-=dt; if(f.poseT<=0&&!f.dash) f.pose = f.summon&&f.fired?'atk1':(f.summon?'skill':'idle'); }
+    if(f.lazy) f.pose='lazy';
+    if(f.bind) f.pose='atk2';
     f.strafeT-=dt; if(f.strafeT<=0){ f.strafe=chance(.5)?1:-1; f.strafeT=rnd(.9,2.2); }
     if(f.recoil>0) f.recoil=Math.max(0,f.recoil-dt*4);
     if(f.lunge>0) f.lunge=Math.max(0,f.lunge-dt*3.2);
@@ -1673,6 +1927,9 @@ function step(dt){
     if(f.lock>0) f.lock=Math.max(0,f.lock-dt);
     if(f.unhideT>0){ f.unhideT-=dt; if(f.unhideT<=0){ f.hidden=false; f.lock=0; } }
     if(f.eagle) eagleTick(f,dt);
+    if(f.key==='shika'&&!f.summon&&f.alive){ shikaPassive(f,dt); bindTick(f,dt); domainTick(f,dt); }
+    if(f.outCut>0&&!(foeOf(f)&&foeOf(f).domain)) f.outCut=0;
+    f.domainA=clamp(f.domainA+dt*(f.domain?3:-2.5),0,1);
     if(!f.summon && f.hp<=f.maxHp*.20) f.injured=true;   // đã tơi tả là giữ luôn
     if(!f.summon){
       f.wt-=dt;
@@ -1732,7 +1989,7 @@ function step(dt){
     if(!f.alive)continue;
     const e=f===k?c:k;
     let v={x:0,y:0};
-    if(f.stun>0||f.lock>0||f.dash) v={x:0,y:0};
+    if(f.stun>0||f.lock>0||f.dash||f.lazy) v={x:0,y:0};   // nằm lười thì không nhúc nhích
     else if(isPlayer(f)) v=playerVec();
     else v=aiVec(f,e);
     if(f.lunge>.35 && !isPlayer(f)){ v.x=f.ax; v.y=f.ay; }
@@ -1780,15 +2037,20 @@ function step(dt){
     const e=foeOf(f);
     const D=f.dash;
     D.t-=dt;
-    const dd=dist(f,e)||1, dspd=D.spd||340;
-    f.x=clamp(f.x+(e.x-f.x)/dd*dspd*dt,PAD,W-PAD);
-    f.y=clamp(f.y+(e.y-f.y)/dd*dspd*dt,PAD+50,H-PAD-10);
+    // đích đến: thường là người địch, riêng cú đâm của Shikamaru là điểm sau lưng địch
+    const gx=D.tx!==undefined?D.tx:e.x, gy=D.ty!==undefined?D.ty:e.y;
+    const dd=Math.hypot(gx-f.x,gy-f.y)||1, dspd=D.spd||340;
+    f.x=clamp(f.x+(gx-f.x)/dd*dspd*dt,PAD,W-PAD);
+    f.y=clamp(f.y+(gy-f.y)/dd*dspd*dt,PAD+50,H-PAD-10);
     f.moving=true;
     f.ghostT-=dt;
     if(f.ghostT<=0){ f.ghostT=.06; G.fx.push({type:'ghost',x:f.x,y:f.y,face:f.face,key:f.key,pose:D.pose||'ulti',h:f.spriteH,life:.34,ml:.34}); }
-    if(dd<f.r+e.r+6&&!D.hit){
+    if(dd<(D.tx!==undefined?14:f.r+e.r+6)&&!D.hit){
       D.hit=true; f.dash=null; f.pose='idle';
-      if(D.kind==='charge'){                     // ChiChi lao tới: cú đá chắc chắn chí mạng
+      if(D.kind==='stab'){                       // đã vòng ra sau lưng, quay lại đâm
+        aim(f,e,1.2);
+        shikaStabHit(f,e);
+      }else if(D.kind==='charge'){                     // ChiChi lao tới: cú đá chắc chắn chí mạng
         ring(e.x,e.y,120,f.color,.5);
         G.flashScreen=Math.max(G.flashScreen,.1);
         melee(f,e,'FLYING KICK!');
@@ -1841,6 +2103,9 @@ function step(dt){
       }
       f.prewing=on;
     }
+    if(f.key==='shika' && !f.domainDone && f.hp<=f.maxHp*SHIKA.domainHp){
+      naraDomain(f,foeOf(f));
+    }
     if(f.key==='tsubasa' && !f.eagleDone && f.hp<=f.maxHp*EAGLE_HP){
       ring(f.x,f.y,130,'#FFF3C4',.5);
       G.flashScreen=Math.max(G.flashScreen,.08);
@@ -1881,7 +2146,7 @@ function step(dt){
       if(dist(f,w)<w.r+f.r){
         w.hit.push(f);
         if(f.invuln>0){ hurt(f,w.dmg,w.owner,w.crit); continue; }
-        hurt(f,w.dmg,w.owner,w.crit);
+        hurt(f,w.dmg,w.owner,w.crit,'basic');
         stunFx(f,.5,'spark'); sfx('stun');
       }
     }
@@ -2001,7 +2266,10 @@ function step(dt){
       if(p.type==='kunai'&&hitsBody(p,f)){ explode(p); dead=true; break; }
       if((p.type==='ball'||p.type==='drive'||p.type==='twin')&&hitsBody(p,f)){ ballHit(p,f); dead=true; break; }
       if(hitsBody(p,f)){
-        hurt(f,p.dmg,p.owner,p.type==='kame'?'KAMEHAMEHA!':!!p.crit);
+        const basic = p.type==='shuriken'||p.type==='kunai';
+        const hpWas=f.hp;
+        hurt(f,p.dmg,p.owner,p.type==='kame'?'KAMEHAMEHA!':!!p.crit,basic?'basic':undefined);
+        if(p.bleed&&f.hp<hpWas) bleedOn(f,p.owner);      // shuriken của Shikamaru để lại vết cắt
         sfx('hit');
         if(p.type==='clone'){
           if(f.invuln<=0){
@@ -2096,6 +2364,33 @@ function vector(f){
       ctx.beginPath(); ctx.moveTo(-11,y+19); ctx.lineTo(-5,y+12); ctx.lineTo(0,y+19); ctx.closePath(); ctx.fill();
       ctx.beginPath(); ctx.moveTo(3,y+19); ctx.lineTo(8,y+13); ctx.lineTo(13,y+19); ctx.closePath(); ctx.fill();
       ctx.fillStyle='#E8E2F0'; ctx.fillRect(6,y-6,4,12);
+    }
+  }else if(f.key==='shika'){
+    const vest='#2F5D3A', dark='#1E2436';
+    ctx.fillStyle=dark;
+    ctx.fillRect(-9,y+12,7,9+sw); ctx.fillRect(3,y+12,7,9-sw);
+    torso(0,y-6,22,22,vest);
+    ctx.fillStyle='#3B4557'; ctx.fillRect(-11,y-6,22,7);          // nẹp áo giáp
+    ctx.fillStyle='#F5CFA8'; ctx.fillRect(11,y-4+sw*1.5,7,13); ctx.fillRect(-18,y-4-sw*1.5,7,13);
+    ctx.fillStyle='#8E7BFF'; ctx.fillRect(-13,y+8,26,4);          // đai lưng
+    head(0,y-18,12);
+    ctx.fillStyle='#241C33';                                       // tóc buộc đuôi dựng
+    ctx.beginPath(); ctx.arc(0,y-21,12.6,Math.PI,2*Math.PI); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-3,y-30); ctx.lineTo(2,y-46+Math.sin(G.t*3)*1.5); ctx.lineTo(8,y-30); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#3B4557'; ctx.fillRect(-13,y-30,26,4);          // băng trán
+    ctx.fillStyle='#B9C4D6'; ctx.fillRect(-5,y-30,10,4);
+    ctx.fillStyle='#1B1428'; ctx.fillRect(-2,y-19,3,3); ctx.fillRect(5,y-19,3,3);
+    if(f.pose==='atk2'){                                           // kết ấn: hai tay chắp trước ngực
+      ctx.fillStyle='#F5CFA8';
+      ctx.fillRect(-6,y-10,12,6);
+      ctx.strokeStyle='#8E7BFF'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(0,y-7,9+Math.sin(G.t*12)*1.6,0,7); ctx.stroke();
+    }
+    if(f.injured){
+      ctx.strokeStyle='#8E1023'; ctx.lineWidth=2.4; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-8,y+1); ctx.lineTo(-1,y+8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(3,y-3); ctx.lineTo(9,y+3); ctx.stroke();
     }
   }else if(f.key==='tsubasa'||FRIEND_KIT[f.key]){
     const kit=FRIEND_KIT[f.key]||{shirt:'#2B6BE4',short:'#F2F4FA',hair:'#171326',sock:'#2B6BE4'};
@@ -2201,6 +2496,8 @@ function sprite(f){
   let arr=set[pk];
   if(!arr||!arr.length){
     if(pk==='bicycle') arr=set.atk1||set.idle;
+    else if(pk==='stab') arr=set.atk1||set.idle;          // chưa có ảnh đâm thì mượn ảnh phóng shuriken
+    else if(pk==='lazy') arr=set.hurt||set.idle;          // chưa có ảnh nằm lười thì mượn ảnh đứng
     else if(pk==='wings') arr=set.injured||set.idle;
     else if(pk==='call') arr=set.wounded||set.injured||set.skill||set.idle;
     else if(pk==='wounded') arr=set.injured||set.hurt||set.idle;
@@ -2346,7 +2643,7 @@ function drawFighter(f){
 
   ctx.save();
   ctx.translate(f.x+ox, f.y+20+oy*.4-hop);
-  ctx.rotate(lean + aimTilt - fs*rec*.12);
+  ctx.rotate(lean + aimTilt - fs*rec*.12 + (f.lazy?fs*1.15:0));   // nằm lười: ngả hẳn người ra
   ctx.scale(fs*sx, sy);
   // ám màu phủ lên người: cú đòn vừa dính được ưu tiên, hết chớp thì tới trạng thái đang mang.
   // đỏ khi trúng đòn nổ / thiêu đốt, hồng khi dính khói Sexy Jutsu, xanh lá khi đang kiệt sức vì phân thân.
@@ -2426,7 +2723,11 @@ const TINT={
         glow:'#B9BCC8', alpha:.46, glowA:.36},
   // kiệt sức: chỉ phủ một lớp xanh rất mỏng, phần nhận ra trạng thái là bọt khí sủi lên
   green:{filter:'saturate(1.5) hue-rotate(34deg) brightness(.97)',
-        glow:'#8CF2AD', alpha:.92, glowA:.05}
+        glow:'#8CF2AD', alpha:.92, glowA:.05},
+  bleed:{filter:'saturate(1.8) hue-rotate(-14deg) brightness(.94)',
+        glow:'#C4142C', alpha:.86, glowA:.2},
+  shadow:{filter:'grayscale(.7) brightness(.6) contrast(1.15)',
+        glow:'#2A2140', alpha:.72, glowA:.45}
 };
 function heartPath(x,y,s){
   ctx.beginPath();
@@ -2618,6 +2919,10 @@ function drawBars(f){
   if(f.vuln>0) lines.push({t:`VULNERABLE +50% (${(f.vuln*RT).toFixed(1)}s)`, c:'#FFF3C4', s:11});
   if(f.exhaust>0) lines.push({t:`EXHAUSTED −25% MOVE / CAST (${(f.exhaust*RT).toFixed(1)}s)`, c:'#BFD4FF', s:10});
   if(f.prewing) lines.push({t:`PRE-WINGS · −35% DMG · +50% CAST · ${Math.round((1-PREWING_STUN)*100)}% STUN RESIST`, c:'#9AE6C4', s:9});
+  if(f.key==='shika'&&f.lazy) lines.push({t:`LAZY · +${SHIKA.lazyRate/RT} CHAKRA/s`, c:'#CFC6FF', s:10});
+  if(f.key==='shika'&&f.evade>SHIKA.evadeBase) lines.push({t:`EVASION ${Math.round(f.evade*100)}%`, c:'#CFC6FF', s:10});
+  if(f.key==='shika'&&f.weak) lines.push({t:'CHAKRA SPENT · NO BIND · −30% SHURIKEN', c:'#A79BD6', s:9});
+  if(f.outCut>0) lines.push({t:`IN THE GARDEN · −${Math.round(SHIKA.domainOutCut*100)}% DAMAGE DEALT`, c:'#B7A6FF', s:9});
   if(f.dash&&f.dash.guard) lines.push({t:'FLYING KICK · CC IMMUNE · −30% DMG', c:'#FFC0CE', s:10});
   if(f.invuln>0) lines.push({t:`IMMUNE (${(f.invuln*RT).toFixed(1)}s)`, c:'#FF9AD5', s:11});
   ctx.lineWidth=3; ctx.strokeStyle='#000';
@@ -2627,6 +2932,130 @@ function drawBars(f){
     ctx.fillStyle=L.c; ctx.fillText(L.t,x+w/2,ly);
     ly+=13;
   });
+}
+/* Khu vườn bóng nhà Nara: nền tối phủ kín sàn, lưới bóng bò dọc ngang, những cụm
+   bóng dựng lên như bụi cây, và bom nổ lốm đốm. Hiện dần theo domainA nên lúc mở
+   ra là cả sàn tối lại chứ không bật đánh cụp một cái. */
+function drawGarden(){
+  const k=G.fighters.find(f=>f.key==='shika'&&!f.summon);
+  if(!k||k.domainA<=0)return;
+  const a=k.domainA, T=G.t, e=foeOf(k);
+  ctx.save();
+
+  ctx.globalAlpha=a*.72;                                  // nền vườn tối sập xuống
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#120D26'); g.addColorStop(.55,'#1D1538'); g.addColorStop(1,'#0A0716');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  ctx.globalAlpha=a*.55;                                  // lưới bóng bò dọc ngang khắp sàn
+  ctx.strokeStyle='#07040E'; ctx.lineCap='round';
+  for(let i=0;i<16;i++){
+    const yy=26+i*38+Math.sin(T*1.1+i)*7;
+    ctx.lineWidth=i%3?2.5:4;
+    ctx.beginPath(); ctx.moveTo(0,yy);
+    for(let x=0;x<=W;x+=48) ctx.lineTo(x,yy+Math.sin(T*1.7+x*.035+i)*12);
+    ctx.stroke();
+  }
+
+  // rừng bóng viền quanh cả bốn cạnh, dựng lên như bụi cây nhà Nara
+  ctx.fillStyle='#07040E';
+  const bush=(bx,by,h,dir)=>{
+    ctx.beginPath();
+    ctx.moveTo(bx-14,by);
+    ctx.quadraticCurveTo(bx-7+Math.sin(T*1.6+bx)*9, by-dir*h*.6, bx, by-dir*h);
+    ctx.quadraticCurveTo(bx+8+Math.sin(T*1.6+bx)*9, by-dir*h*.6, bx+14, by);
+    ctx.closePath(); ctx.fill();
+  };
+  ctx.globalAlpha=a*.85;
+  for(let i=0;i<22;i++){
+    const t=i/21, h=52+((i*53)%78)+Math.sin(T*2+i)*10;
+    bush(10+t*(W-20), H-2, h, 1);                         // cạnh dưới
+    bush(10+t*(W-20), 2, h*.8, -1);                       // cạnh trên
+  }
+  ctx.save();
+  for(let i=0;i<16;i++){                                  // hai cạnh bên: xoay bụi cây 90°
+    const t=i/15, h=44+((i*67)%64)+Math.sin(T*2.2+i)*9;
+    ctx.setTransform(S,0,0,S,0,HEADER*S); camApply();
+    ctx.translate(2,10+t*(H-20)); ctx.rotate(-Math.PI/2);
+    ctx.globalAlpha=a*.85; ctx.fillStyle='#07040E'; bush(0,0,h,1);
+    ctx.setTransform(S,0,0,S,0,HEADER*S); camApply();
+    ctx.translate(W-2,10+t*(H-20)); ctx.rotate(Math.PI/2);
+    ctx.globalAlpha=a*.85; ctx.fillStyle='#07040E'; bush(0,0,h,1);
+  }
+  ctx.restore();
+
+  if(e&&e.alive){                                         // gai bóng chồi lên ngay dưới chân địch
+    ctx.globalAlpha=a*.9; ctx.fillStyle='#07040E';
+    for(let i=0;i<7;i++){
+      const ph=(T*1.5+i*.143)%1;
+      const sx=e.x+Math.cos(i*.9+T)*(34+i*7), sy=e.y+18;
+      const h=(24+i*6)*Math.sin(ph*Math.PI);
+      if(h<=1)continue;
+      ctx.beginPath();
+      ctx.moveTo(sx-6,sy); ctx.lineTo(sx,sy-h); ctx.lineTo(sx+6,sy); ctx.closePath(); ctx.fill();
+    }
+  }
+
+  for(let i=0;i<11;i++){                                  // bom nổ lốm đốm: loé sáng rồi lan ra
+    const ph=(T*.75+i*.0909)%1;
+    const bx=((i*211)%(W-80))+40, by=((i*137)%(H-110))+60;
+    const rr=8+ph*74;
+    ctx.globalAlpha=a*(1-ph)*(1-ph)*.85;
+    ctx.fillStyle=i%2?'#FFC24A':'#A292FF';
+    ctx.beginPath(); ctx.arc(bx,by,rr*.34,0,7); ctx.fill();
+    ctx.globalAlpha=a*(1-ph)*.7;
+    ctx.strokeStyle=i%2?'#FFB03A':'#8E7BFF'; ctx.lineWidth=4*(1-ph)+1;
+    ctx.beginPath(); ctx.arc(bx,by,rr,0,7); ctx.stroke();
+  }
+
+  const vg=ctx.createRadialGradient(W/2,H/2,H*.22,W/2,H/2,H*.72);   // tối dồn vào bốn góc
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.72)');
+  ctx.globalAlpha=a; ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+  ctx.restore();
+}
+
+/* Dải bóng khoá cổ: một dây đen bò từ chân Shikamaru sang địch, tới nơi thì quấn
+   quanh người và một bàn tay bóng bóp lấy cổ. */
+function drawBindShadow(){
+  for(const k of G.fighters){
+    const B=k.bind; if(!B||!B.e)continue;
+    const e=B.e;
+    const ax=k.x, ay=k.y+18;
+    const d=dist(k,e)||1;
+    const ux=(e.x-k.x)/d, uy=(e.y-k.y)/d;
+    const L=Math.min(B.len,d);
+    ctx.save();
+    ctx.strokeStyle='#0B0714'; ctx.lineCap='round';
+    ctx.lineWidth=9; ctx.globalAlpha=.9;                  // thân dây bóng, uốn nhẹ
+    ctx.beginPath(); ctx.moveTo(ax,ay);
+    const steps=Math.max(2,Math.floor(L/16));
+    for(let i=1;i<=steps;i++){
+      const t=i/steps, px=ax+ux*L*t, py=ay+uy*L*t;
+      const w=Math.sin(t*7+G.t*7)*7*(1-t*.5);
+      ctx.lineTo(px-uy*w,py+ux*w);
+    }
+    ctx.stroke();
+    ctx.lineWidth=3.5; ctx.strokeStyle='#3A2C5E'; ctx.globalAlpha=.75; ctx.stroke();
+    if(B.ph==='hold'){                                    // quấn quanh người và bóp cổ
+      ctx.globalAlpha=.92; ctx.strokeStyle='#0B0714'; ctx.lineWidth=6;
+      for(let i=0;i<5;i++){
+        const yy=e.y+10-i*20, rw=20-Math.abs(2-i)*3;
+        ctx.beginPath();
+        ctx.ellipse(e.x,yy,rw,6.5,Math.sin(G.t*4+i)*.22,0,7);
+        ctx.stroke();
+      }
+      ctx.fillStyle='#0B0714'; ctx.globalAlpha=.95;
+      const ny=e.y-e.spriteH*.62;
+      ctx.beginPath(); ctx.ellipse(e.x,ny,15,10,0,0,7); ctx.fill();
+      ctx.strokeStyle='#0B0714'; ctx.lineWidth=5; ctx.lineCap='round';
+      for(let i=0;i<4;i++){                               // năm ngón siết lấy cổ
+        const g=-.9+i*.6;
+        ctx.beginPath(); ctx.moveTo(e.x+Math.cos(g)*12,ny+Math.sin(g)*8);
+        ctx.lineTo(e.x+Math.cos(g)*20,ny+Math.sin(g)*15); ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
 }
 function drawProj(p){
   ctx.save();
@@ -2832,6 +3261,7 @@ function draw(){
   ctx.beginPath(); ctx.rect(10,10,W-20,H-20); ctx.clip();
   camApply();
   arenaFloor();
+  drawGarden();
   for(const e of G.fx){
     ctx.save(); const a=clamp(e.life/(e.ml||.4),0,1);
     if(e.type==='ring'){ ctx.globalAlpha=a*.85; ctx.strokeStyle=e.color; ctx.lineWidth=4;
@@ -2937,6 +3367,7 @@ function draw(){
   for(const m of G.mates) drawMate(m);
   const order=[...G.fighters].filter(f=>f.alive).sort((a,b)=>a.y-b.y);
   for(const f of order) drawFighter(f);
+  drawBindShadow();
   if(!G.flashback) for(const f of order) drawBars(f);   // hồi tưởng thì giấu thanh máu cho sạch hình
 
   for(const f of G.floats){
@@ -3352,6 +3783,8 @@ function buildCsel(){
       list.appendChild(card);
     }
   }
+  const sub=el('cselCount');
+  if(sub) sub.textContent=`Chọn một nhân vật cho mỗi bên · ${CKEYS.length} nhân vật`;
   cselRefresh();
 }
 function openCsel(){
