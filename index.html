@@ -243,12 +243,16 @@ const MASENKO_SPD=330;            // Masenko bay nhanh hơn hẳn mức cũ 205
 const EAGLE_CD=1/4;               // tốc độ ra chiêu gấp 4: hồi chiêu chỉ còn một phần tư
 const EAGLE_DRIVE=.5;             // riêng Drive Shot còn ra nhanh gấp đôi nữa
 const EAGLE_QUOTA={drive:2,bic:2}; // trong 5 giây cháy phải tung đủ chừng này
+const CHICHI_DASH_CD=10;          // ChiChi cứ chừng này giây lại lao tới một lần
+const CHICHI_DASH_RES=.7;         // lúc lao tới chỉ nhận 70% sát thương
+const EXHAUST_T=4;                // phân thân gây kiệt sức bấy nhiêu giây
+const EXHAUST_MUL=.5;             // kiệt sức: còn nửa tốc chạy và nửa tốc ra chiêu
 const EAGLE_ACC=.5;               // độ lệch khi sút giảm một nửa, tức chuẩn xác gấp đôi
 const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
     role:'ranged', want:215, speed:92, dodge:1, male:true,
-    skills:['<b>1</b> Shuriken / Explosive Kunai','<b>2</b> Kage Bunshin — homing clone','<b>3</b> Sexy no Jutsu','<b>Rage 20</b> Rasengan Dash'],
+    skills:['<b>1</b> Shuriken / Explosive Kunai','<b>2</b> Kage Bunshin 60 dmg — homing clone, exhausts foe −50% move &amp; cast','<b>3</b> Sexy no Jutsu','<b>Rage 20</b> Rasengan Dash'],
     init(f){ f.cds={s1:cm(1),s2:cm(3),s3:cm(6)}; f.rage=0; },
     think(f,e,d,auto){
       if(f.dash)return;
@@ -262,11 +266,15 @@ const CHARS={
   chichi:{
     name:'ChiChi', short:'ChiChi', tag:'Housewife · Melee', emoji:'🍳', color:'#FF4D6D', alt:'#FF93A8',
     role:'melee', speed:106, dodge:.55, male:false,
-    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball','<b>Passive</b> every 5 hits +5% crit','<b>Below 20% HP</b> calls Goku / Gohan'],
-    init(f){ f.cds={s1:0,s2:cm(3)}; f.hits=0; f.critBonus=0; },
+    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball',`<b>Every ${CHICHI_DASH_CD}s</b> Flying Kick — dash in, guaranteed crit, CC immune &amp; −30% dmg while dashing`,'<b>Passive</b> every 5 hits +5% crit','<b>Below 20% HP</b> calls Goku / Gohan'],
+    init(f){ f.cds={s1:0,s2:cm(3)}; f.dashCd=CHICHI_DASH_CD; f.hits=0; f.critBonus=0; },
     think(f,e,d,auto){
       if(f.cds.s1<=0&&d<f.r+e.r+16&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
       if(f.cds.s2<=0&&(auto?d<460:keys['k'])){ f.cds.s2=cm(7); scold(f,e); }
+      // Đồng hồ riêng, không nằm trong cds: đây là nhịp cố định mỗi 10 giây nên
+      // không bị hiệu ứng kiệt sức kéo dài, cũng không kèm điều kiện khoảng cách
+      // vì AI cận chiến vốn bám sát địch, đòi đứng xa mới lao thì gần như không tung được
+      if(f.dashCd<=0&&!f.dash&&(auto||keys['l'])){ f.dashCd=CHICHI_DASH_CD; chichiCharge(f,e); }
     },
     gauge:f=>({pct:clamp((.10+f.critBonus)*3,0,1), fill:'#FFE100', txt:`Crit: ${Math.round((.10+f.critBonus)*100)}%`})
   },
@@ -926,7 +934,7 @@ function mk(o){
     vx:0, vy:0, recoil:0, rdx:0, rdy:0, dustT:0, ghostT:0,
     ax:1, ay:0, lunge:0, invuln:0, dvx:0, dvy:0, moveAmt:0, leanS:0,
     wx:W/2, wy:H/2, wt:0, engage:true, engT:2,
-    goals:0, vuln:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
+    goals:0, vuln:0, exhaust:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
 }
 function mkChar(key,team,x,y){
@@ -958,7 +966,10 @@ function newGame(){
   paintLog(); draw();
 }
 function say(m,c){ G.logs.unshift({m,c:c||'m'}); if(G.logs.length>50)G.logs.pop(); paintLog(); }
-function later(t,fn){ G.timers.push({t,fn}); }
+/* cine=true: hẹn giờ của phân cảnh, vẫn chạy trong lúc đóng băng.
+   Hẹn giờ thường thì tạm dừng theo trận, nhờ vậy loạt đạn đang dở của viện binh
+   không bị mất mà chỉ chờ hết phân cảnh rồi bắn tiếp. */
+function later(t,fn,cine){ G.timers.push({t,fn,cine:!!cine}); }
 function pop(x,y,txt,color,big,sc){ if(G.over)return; G.floats.push({x:x+rnd(-14,14),y:y-40,txt,color,life:big?1.3:1,ml:big?1.3:1,big:!!big,sc:sc||1}); }
 function ring(x,y,max,color,life){ G.fx.push({type:'ring',x,y,r:6,max,color,life,ml:life}); }
 function setPose(f,p,t){ if(f.dash&&p!=='ulti')return; f.pose=p; f.poseT=t; }
@@ -973,6 +984,11 @@ function hitsBody(p,f){
 }
 /* choáng kèm loại hiệu ứng để vẽ cho đúng: điện giật, sao xoay, trái tim… */
 function stunFx(f,dur,kind){
+  if(f.dash&&f.dash.guard){                      // đang lao tới thì không dính khống chế
+    G.floats.push({x:f.x,y:f.y-104,txt:'CC IMMUNE',color:f.color,
+      life:.9,ml:.9,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
+    return false;
+  }
   if(f.eagle){                                   // bảo hộ: lúc này miễn khống chế
     G.floats.push({x:f.x,y:f.y-104,txt:'CC IMMUNE',color:'#FFE9A8',
       life:.9,ml:.9,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
@@ -999,6 +1015,7 @@ function hurt(t,amt,src,crit,kind,tint){
   }
   if(t.vuln>0) amt*=1.5;                    // dính Twin Shot: nhận thêm 50% sát thương
   if(t.eagle) amt*=.3;                      // Wings of the Eagle: miễn 70% sát thương
+  if(t.dash&&t.dash.guard) amt*=CHICHI_DASH_RES;   // đang lao tới: nhận ít sát thương hơn
   t.hp=Math.max(0,t.hp-amt);
   t.flash=crit?.2:.12; t.recoil=crit?1.4:1;
   t.flashCol=tint||null;                    // đỏ: nổ / thiêu đốt · hồng: Sexy no Jutsu
@@ -1100,7 +1117,7 @@ function bunshin(k,e){
     const a=Math.atan2(e.y-k.y,e.x-k.x);
     G.fx.push({type:'poof',x:k.x+Math.cos(a)*28,y:k.y+Math.sin(a)*28-16,life:.5,ml:.5});
     G.proj.push({type:'clone',team:k.team,owner:k,tgt:e,x:k.x+Math.cos(a)*28,y:k.y+Math.sin(a)*28,
-      vx:Math.cos(a)*280,vy:Math.sin(a)*280,r:20,dmg:40,life:3.4,bob:0,homing:true,
+      vx:Math.cos(a)*280,vy:Math.sin(a)*280,r:20,dmg:60,life:3.4,bob:0,homing:true,
       face:Math.sign(Math.cos(a))||1});
     say(`Phân thân bám sát ${e.name}!`,'k');
   });
@@ -1136,11 +1153,11 @@ function rasengan(k,e){
 }
 
 /* ---------- ChiChi ---------- */
-function melee(c,e){
+function melee(c,e,forceCrit){
   setPose(c,'atk1',cm(.26)); aim(c,e,.85); sfx('punch');
-  const crit=chance(.10+c.critBonus);
+  const crit=forceCrit||chance(.10+c.critBonus);
   hurt(e,crit?25:5,c,crit);
-  if(crit) say('Cú đá chí mạng 25 dmg!','c');
+  if(crit&&!forceCrit) say('Cú đá chí mạng 25 dmg!','c');
   G.fx.push({type:'punch',x:(c.x+e.x)/2,y:(c.y+e.y)/2,life:.16,ml:.16});
 }
 const SCOLDS=[
@@ -1155,6 +1172,17 @@ let lastScold=-1;
 function pickScold(){
   let i; do{ i=Math.floor(Math.random()*SCOLDS.length); }while(i===lastScold&&SCOLDS.length>1);
   lastScold=i; return SCOLDS[i];
+}
+/* Cứ CHICHI_DASH_CD giây ChiChi lại lao thẳng tới địch, chạm là một cú đá
+   chắc chắn chí mạng. Trong lúc lao thì miễn khống chế và nhận ít sát thương hơn,
+   để không bị đối thủ đánh xa cầm chân mãi. */
+function chichiCharge(c,e){
+  setPose(c,'atk1',2.2); aim(c,e,1.5); sfx('punch');
+  c.dash={t:2, hit:false, kind:'charge', spd:320, pose:'atk1', guard:true};
+  G.floats.push({x:c.x,y:c.y-104,txt:'FLYING KICK!',color:c.color,life:1.4,ml:1.4,
+    banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.07,.07)});
+  ring(c.x,c.y,90,c.color,.45);
+  say('ChiChi bật người lao thẳng tới — miễn khống chế, giảm 30% sát thương!','c');
 }
 function scold(c,e){
   setPose(c,'atk2',cm(3)); aim(c,e,.5);
@@ -1180,7 +1208,7 @@ const canReflect=p=>PHYSICAL.has(p.type)&&!p.noReflect;
 
 /* ---------- Ozora Tsubasa ---------- */
 function knock(f,vx,vy,power){
-  if(!f||f.summon||f.eagle)return;               // lúc này không bị hất văng
+  if(!f||f.summon||f.eagle||(f.dash&&f.dash.guard))return;   // lúc này không bị hất văng
   const m=Math.hypot(vx,vy)||1;
   f.kbx=vx/m*power; f.kby=vy/m*power;
 }
@@ -1266,7 +1294,7 @@ function twinShot(t,e){
   t.cds.s1=Math.max(t.cds.s1,cm(.8));
   t.cds.s2=Math.max(t.cds.s2,cm(1.6));
   G.freeze=1.5; G.freezeAt=t;
-  G.proj.length=0; G.waves.length=0; G.floats.length=0; G.callBanner=null;
+  G.floats.length=0; G.callBanner=null;
   for(const f of G.fighters){ f.flash=0; f.recoil=0; f.lunge=0; }
   for(const m of G.mates) G.fx.push({type:'poof',x:m.x,y:m.y-18,life:.4,ml:.4});
   G.mates.length=0;
@@ -1288,7 +1316,7 @@ function twinShot(t,e){
     G.fx.push({type:'poof',x:mx,y:my-18,life:.7,ml:.7});
     G.mates.push({key:mateKey,name:mateName,x:mx,y:my,face:1,pose:'idle',h:118,life:9,ml:9});
     ring(mx,my,110,t.color,.5);
-  });
+  },true);
   later(1.5,()=>{
     if(G.over)return;
     // nhịp 2: hai người nhường chỗ cho mô hình sút đôi của đúng viện binh đó
@@ -1303,8 +1331,8 @@ function twinShot(t,e){
       r:16, dmg:150, life:5, spin:0, wig:0, homing:true, turn:5.2, noReflect:true});
     G.flashScreen=Math.max(G.flashScreen,.12);
     ring(src.x,src.y,130,'#FFF3C4',.5);
-  });
-  later(cm(6),()=>releaseTwin(t));             // lưới an toàn
+  },true);
+  later(cm(6),()=>releaseTwin(t),true);        // lưới an toàn
 }
 /* Nội tại — Wings of the Eagle: 5 giây cuối đời, mạnh nhất và cũng là hạn chót */
 function eagleAwaken(t){
@@ -1313,8 +1341,8 @@ function eagleAwaken(t){
   t.injured=true;
   setPose(t,'wounded',1);
   G.freeze=3; G.freezeAt=t;
-  G.timers.length=0;
-  G.proj.length=0; G.waves.length=0; G.floats.length=0; G.callBanner=null; G.flashScreen=0;
+  // giữ nguyên hẹn giờ và đạn đang bay: viện binh của ChiChi bắn tiếp sau phân cảnh
+  G.floats.length=0; G.callBanner=null; G.flashScreen=0;
   for(const f of G.fighters){
     f.flash=0; f.recoil=0; f.lunge=0; f.dots.length=0;
     if(f!==t&&(f.pose==='hurt'||f.pose==='atk1'||f.pose==='atk2')){ f.pose='idle'; f.poseT=0; }
@@ -1327,7 +1355,7 @@ function eagleAwaken(t){
     {key:'ishizaki',name:'ISHIZAKI'},{key:'misaki',name:'MISAKI'}
   ]};
   say('Tsubasa gục xuống, chấn thương nặng… ký ức về các đồng đội ùa về.','g');
-  later(.5,()=>{ if(!G.over) sfx('wings'); });
+  later(.5,()=>{ if(!G.over) sfx('wings'); },true);
   later(2.5,()=>{
     if(G.over||!t.alive)return;
     t.eagle=true; t.eagleAcc=0; t.eagleT=0; t.eagleBurn=t.hp/EAGLE_BURN; t.goals=0;
@@ -1341,7 +1369,7 @@ function eagleAwaken(t){
     G.callBanner={txt:'WINGS OF THE EAGLE',color:'#FFF3C4',life:2.2,ml:2.2};
     say('WINGS OF THE EAGLE! Ra chiêu gấp 4, Drive Shot gấp đôi nữa, sút chuẩn gấp đôi, miễn 70% sát thương, miễn nhiễm khống chế.','g');
     say(`Cái giá: cháy sạch máu trong ${EAGLE_BURN}s là gục, và không còn tính goal — Twin Shot vô hiệu.`,'m');
-  });
+  },true);
 }
 /* Đốt máu lúc kích hoạt nội tại: chia đều số máu còn lại vào EAGLE_BURN giây, nên dù
    đối thủ không đánh thêm đòn nào thì hết ngần ấy giây Tsubasa cũng gục. */
@@ -1410,10 +1438,8 @@ function summonHelp(c,force){
   setPose(c,'wounded',.6);
   G.freeze=1.6; G.freezeAt=c;
 
-  // dọn sạch mọi thứ đang dở: chiêu đang chờ, đạn, sóng, bong bóng
-  G.timers.length=0;
+  // giữ nguyên hẹn giờ và đạn đang bay, chỉ dọn phần trang trí
   G.floats.length=0; G.callBanner=null;
-  G.proj.length=0; G.waves.length=0;
   G.flashScreen=0;
   for(const f of G.fighters){
     f.flash=0; f.recoil=0; f.lunge=0; f.dots.length=0;
@@ -1447,7 +1473,7 @@ function summonHelp(c,force){
     sfx(isGoku?'callgoku':'callgohan');
     G.callBanner={txt:isGoku?'GOKU!!':'GOHAN!!',color:c.color,life:1.9,ml:1.9};
     if(c.alive) setPose(c,'call',1.4);
-  });
+  },true);
   say(`ChiChi trọng thương, hét gọi ${name} — thời gian như ngưng lại.`,'c');
 
   // đứng lệch hẳn sang một bên ChiChi, không chồng hình
@@ -1457,7 +1483,7 @@ function summonHelp(c,force){
   if(px<PAD+34||px>W-PAD-34) px=c.x-side*GAP;
   px=clamp(px,PAD+34,W-PAD-34);
   const py=clamp(c.y+rnd(20,46),PAD+40,H-PAD-20);
-  later(1,()=>{ G.fx.push({type:'poof',x:px,y:py-18,life:.9,ml:.9}); });
+  later(1,()=>{ G.fx.push({type:'poof',x:px,y:py-18,life:.9,ml:.9}); },true);
   later(1.6,()=>{
     const s=mk({key:isGoku?'goku':'gohan',name,team:1,male:true,summon:true,x:px,y:py,r:26,
       hp:9999,maxHp:9999,speed:0,dodge:0,charge:isGoku?1.4:1.1,fired:false,leave:isGoku?.18:99,
@@ -1467,7 +1493,7 @@ function summonHelp(c,force){
     ring(px,py,115,s.color,.55);
     sfx('summon'); sfx(isGoku?'kame':'masenko');
     say(`${name} bước ra từ khói — trận đấu tiếp tục!`,'g');
-  });
+  },true);
 }
 function summonFire(s,e){
   setPose(s,'atk1',3); aim(s,e,1.4);
@@ -1558,8 +1584,10 @@ function aiVec(f,e){
 function step(dt){
   G.t+=dt;
   if(G.flashScreen>0)G.flashScreen-=dt;
+  const frozen=G.freeze>0&&!G.over;
   for(let i=G.timers.length-1;i>=0;i--){
     const tm=G.timers[i]; if(!tm) continue;
+    if(frozen&&!tm.cine) continue;             // đang diễn phân cảnh: hẹn giờ thường đứng chờ
     tm.t-=dt;
     if(tm.t<=0){ G.timers.splice(i,1); try{ tm.fn(); }catch(err){ console.error(err); } }
   }
@@ -1605,6 +1633,8 @@ function step(dt){
     if(f.lunge>0) f.lunge=Math.max(0,f.lunge-dt*3.2);
     if(f.invuln>0) f.invuln=Math.max(0,f.invuln-dt);
     if(f.vuln>0) f.vuln=Math.max(0,f.vuln-dt);
+    if(f.exhaust>0) f.exhaust=Math.max(0,f.exhaust-dt);
+    if(f.dashCd>0) f.dashCd=Math.max(0,f.dashCd-dt);
     if(f.driveAura>0) f.driveAura=Math.max(0,f.driveAura-dt);
     if(f.lock>0) f.lock=Math.max(0,f.lock-dt);
     if(f.unhideT>0){ f.unhideT-=dt; if(f.unhideT<=0){ f.hidden=false; f.lock=0; } }
@@ -1668,7 +1698,7 @@ function step(dt){
     if(!f.alive)continue;
     const e=f===k?c:k;
     let v={x:0,y:0};
-    if(f.stun>0||f.lock>0||(f===k&&k.dash)) v={x:0,y:0};
+    if(f.stun>0||f.lock>0||f.dash) v={x:0,y:0};
     else if(isPlayer(f)) v=playerVec();
     else v=aiVec(f,e);
     if(f.lunge>.35 && !isPlayer(f)){ v.x=f.ax; v.y=f.ay; }
@@ -1676,7 +1706,7 @@ function step(dt){
     // vùng chết: ý định quá yếu thì đứng yên hẳn, không rung
     let tvx=0, tvy=0;
     if(m>.34){
-      const spd=f.speed*(f.lunge>.35?.55:1);
+      const spd=f.speed*(f.lunge>.35?.55:1)*(f.exhaust>0?EXHAUST_MUL:1);
       tvx=v.x/m*spd; tvy=v.y/m*spd;
     }
     // lọc mượt hướng đi để không đảo chiều đột ngột từng khung
@@ -1714,24 +1744,37 @@ function step(dt){
   for(const f of [k,c]){
     if(!f.dash||!f.alive)continue;
     const e=foeOf(f);
-    f.dash.t-=dt;
-    const dd=dist(f,e)||1;
-    f.x=clamp(f.x+(e.x-f.x)/dd*340*dt,PAD,W-PAD);
-    f.y=clamp(f.y+(e.y-f.y)/dd*340*dt,PAD+50,H-PAD-10);
+    const D=f.dash;
+    D.t-=dt;
+    const dd=dist(f,e)||1, dspd=D.spd||340;
+    f.x=clamp(f.x+(e.x-f.x)/dd*dspd*dt,PAD,W-PAD);
+    f.y=clamp(f.y+(e.y-f.y)/dd*dspd*dt,PAD+50,H-PAD-10);
     f.moving=true;
     f.ghostT-=dt;
-    if(f.ghostT<=0){ f.ghostT=.06; G.fx.push({type:'ghost',x:f.x,y:f.y,face:f.face,key:f.key,pose:'ulti',h:f.spriteH,life:.34,ml:.34}); }
-    if(dd<f.r+e.r+6&&!f.dash.hit){
-      f.dash.hit=true; f.dash=null; f.pose='idle';
-      hurt(e,150,f,'RASENGAN!');
-      const st=stunFx(e,3,'spin');
-      G.flashScreen=.18; ring(e.x,e.y,140,'#63B4FF',.55);
-      say(st?'Rasengan trúng! 150 dmg + choáng 3 giây.':'Rasengan trúng! 150 dmg — nhưng đối thủ miễn nhiễm khống chế.','g');
-    }else if(f.dash&&f.dash.t<=0){ f.dash=null; f.pose='idle'; say(`Rasengan tan — ${e.name} né kịp.`,'m'); }
+    if(f.ghostT<=0){ f.ghostT=.06; G.fx.push({type:'ghost',x:f.x,y:f.y,face:f.face,key:f.key,pose:D.pose||'ulti',h:f.spriteH,life:.34,ml:.34}); }
+    if(dd<f.r+e.r+6&&!D.hit){
+      D.hit=true; f.dash=null; f.pose='idle';
+      if(D.kind==='charge'){                     // ChiChi lao tới: cú đá chắc chắn chí mạng
+        ring(e.x,e.y,120,f.color,.5);
+        G.flashScreen=Math.max(G.flashScreen,.1);
+        melee(f,e,'FLYING KICK!');
+        say('ChiChi lao tới, cú đá chí mạng chắc chắn 25 dmg!','c');
+      }else{
+        hurt(e,150,f,'RASENGAN!');
+        const st=stunFx(e,3,'spin');
+        G.flashScreen=.18; ring(e.x,e.y,140,'#63B4FF',.55);
+        say(st?'Rasengan trúng! 150 dmg + choáng 3 giây.':'Rasengan trúng! 150 dmg — nhưng đối thủ miễn nhiễm khống chế.','g');
+      }
+    }else if(f.dash&&D.t<=0){
+      f.dash=null; f.pose='idle';
+      say(D.kind==='charge'?`${e.name} chạy thoát, ChiChi lao hụt.`:`Rasengan tan — ${e.name} né kịp.`,'m');
+    }
   }
 
-  for(const key in k.cds) k.cds[key]=Math.max(0,k.cds[key]-dt);
-  for(const key in c.cds) c.cds[key]=Math.max(0,c.cds[key]-dt);
+  for(const f of [k,c]){                        // kiệt sức thì hồi chiêu chạy chậm một nửa
+    const rate=dt*(f.exhaust>0?EXHAUST_MUL:1);
+    for(const key in f.cds) f.cds[key]=Math.max(0,f.cds[key]-rate);
+  }
   const d=dist(k,c);
 
   for(const f of [k,c]){
@@ -1912,11 +1955,17 @@ function step(dt){
         hurt(f,p.dmg,p.owner,p.type==='kame'?'KAMEHAMEHA!':!!p.crit);
         sfx('hit');
         if(p.type==='clone'){
-          if(f.invuln<=0) stunFx(f,.5,'spark');
+          if(f.invuln<=0){
+            stunFx(f,.5,'spark');
+            f.exhaust=Math.max(f.exhaust,EXHAUST_T);   // kiệt sức: chậm chân và chậm chiêu
+            G.floats.push({x:f.x,y:f.y-118,txt:`EXHAUSTED −50% MOVE / CAST ${EXHAUST_T}s`,
+              color:'#BFD4FF',life:1.5,ml:1.5,banner:true,gold:true,tilt:rnd(-.05,.05)});
+            ring(f.x,f.y,120,'#7F9FD8',.45);
+          }
           sfx('stun');
-          say('Phân thân đấm trúng — 40 dmg và choáng 0.5 giây.','k');
+          say(`Phân thân đấm trúng — 60 dmg, choáng 0.5 giây và kiệt sức ${EXHAUST_T} giây.`,'k');
         }
-        if(p.type==='kame'){say('Kamehameha xuyên trúng — 150 dmg!','g');G.flashScreen=.2;}
+        if(p.type==='kame'){say(`Kamehameha xuyên trúng — ${Math.round(p.dmg)} dmg!`,'g');G.flashScreen=.2;}
         dead=true;break;
       }
     }
@@ -2253,6 +2302,16 @@ function drawFighter(f){
     ctx.restore();
   }
 
+  if(f.dash&&f.dash.guard){                    // đang lao tới: vòng chắn quanh người
+    ctx.save();
+    const pl=1+Math.sin(G.t*20)*.05;
+    ctx.globalAlpha=.5+Math.sin(G.t*14)*.2;
+    ctx.strokeStyle=f.color; ctx.lineWidth=4;
+    ctx.setLineDash([7,6]); ctx.lineDashOffset=G.t*70;
+    ctx.beginPath(); ctx.ellipse(f.x,f.y-10,32*pl,42*pl,0,0,7); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
   if(f.invuln>0){
     ctx.save();
     const pl=1+Math.sin(G.t*16)*.06;
@@ -2462,6 +2521,8 @@ function drawBars(f){
   }
   const lines=[];
   if(f.vuln>0) lines.push({t:`VULNERABLE +50% (${f.vuln.toFixed(1)}s)`, c:'#FFF3C4', s:11});
+  if(f.exhaust>0) lines.push({t:`EXHAUSTED −50% MOVE / CAST (${f.exhaust.toFixed(1)}s)`, c:'#BFD4FF', s:10});
+  if(f.dash&&f.dash.guard) lines.push({t:'FLYING KICK · CC IMMUNE · −30% DMG', c:'#FFC0CE', s:10});
   if(f.invuln>0) lines.push({t:`IMMUNE (${f.invuln.toFixed(1)}s)`, c:'#FF9AD5', s:11});
   ctx.lineWidth=3; ctx.strokeStyle='#000';
   lines.forEach(L=>{
