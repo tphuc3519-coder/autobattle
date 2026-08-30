@@ -64,27 +64,36 @@
   .csel{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
     padding:14px;overflow:auto;background:rgba(6,4,18,.88)}
   .csel.off{display:none}
-  .cselBox{width:100%;max-width:680px;background:var(--panel);border:1px solid var(--line);
+  /* Hộp cao tối đa bằng màn hình, phần giữa mới cuộn — nhờ vậy tiêu đề và hàng nút
+     luôn nằm trong tầm mắt, không phải cuộn cả trang mới bấm được Vào trận. */
+  .cselBox{width:100%;max-width:760px;max-height:calc(100vh - 28px);
+    display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);
     border-radius:16px;padding:15px 15px 13px;box-shadow:0 18px 60px rgba(0,0,0,.6)}
+  .cselBody{flex:1;min-height:0;overflow:auto;padding-right:2px}
   .cselBox h2{margin:0;font-size:clamp(17px,4.6vw,22px);font-weight:900;letter-spacing:-.01em}
   .cselBox h2 span{color:var(--gold)}
   .cselSub{font-family:"Space Mono",monospace;font-size:10.5px;color:var(--mute);
     letter-spacing:.14em;text-transform:uppercase;margin:4px 0 12px}
   .cselCols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media(max-width:520px){.cselCols{grid-template-columns:1fr}}
-  .cselCol{background:#120F28;border:1px solid var(--line);border-radius:12px;padding:9px}
+  .cselCol{background:#120F28;border:1px solid var(--line);border-radius:12px;padding:9px;
+    display:flex;flex-direction:column}
+  .cselCol .cDetail{flex:1}    /* hai khung mô tả cao bằng nhau dù danh sách chiêu dài ngắn khác nhau */
   .cselHead{font-size:11px;font-family:"Space Mono",monospace;letter-spacing:.12em;text-transform:uppercase;
     color:var(--mute);margin-bottom:8px;display:flex;align-items:center;gap:6px}
   .cselHead b{color:var(--paper);font-family:"Be Vietnam Pro",sans-serif;letter-spacing:0;font-size:12.5px}
-  .cCard{display:flex;gap:9px;align-items:flex-start;width:100%;text-align:left;padding:8px 9px;margin-bottom:7px;
+  /* Bốn ô nhỏ nằm ngang thay cho bốn thẻ dài xếp dọc: cả bảng chọn gọn lại còn
+     hai hàng ô cộng hai khung mô tả, thay vì tám thẻ dài phải cuộn mãi mới hết. */
+  .cTiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .cTile{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 3px;
     background:#191436;border:1px solid #2E2758;border-radius:10px;cursor:pointer;transition:.14s;font-weight:400}
-  .cCard:last-child{margin-bottom:0}
-  .cCard:hover{background:#241D4C;border-color:#4A3F8C}
-  .cCard.on{border-color:var(--gold);background:#2A2149;box-shadow:0 0 0 1px var(--gold) inset}
-  .cAva{width:38px;height:38px;flex:0 0 38px;border-radius:9px;display:flex;align-items:center;justify-content:center;
-    font-size:19px;background:#0C0920;border:2px solid currentColor}
-  .cCard>span:last-child{flex:1;min-width:0}
-  .cName{display:block;font-weight:800;font-size:13.5px;line-height:1.25}
+  .cTile:hover{background:#241D4C;border-color:#4A3F8C}
+  .cTile.on{border-color:var(--gold);background:#2A2149;box-shadow:0 0 0 1px var(--gold) inset}
+  .cAva{width:34px;height:34px;flex:0 0 34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    font-size:18px;background:#0C0920;border:2px solid currentColor}
+  .cDetail{margin-top:8px;background:#120F28;border:1px solid #2A2450;border-radius:10px;padding:9px 10px}
+  .cName{display:block;font-weight:800;font-size:12px;line-height:1.2;text-align:center}
+  .cDetail .cName{font-size:14px;text-align:left}
   .cTag{display:block;font-family:"Space Mono",monospace;font-size:9.5px;color:var(--mute);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
   .cSkills{display:block;font-size:11px;color:#C3B9E6;line-height:1.5;margin-top:5px}
   .cSkills i{color:var(--mute);font-style:normal}
@@ -190,9 +199,19 @@
   <div class="cselBox">
     <h2>CHỌN <span>NHÂN VẬT</span></h2>
     <div class="cselSub" id="cselCount">Chọn một nhân vật cho mỗi bên</div>
-    <div class="cselCols">
-      <div class="cselCol"><div class="cselHead">Bên trái <b id="pickNameA"></b></div><div id="listA"></div></div>
-      <div class="cselCol"><div class="cselHead">Bên phải <b id="pickNameB"></b></div><div id="listB"></div></div>
+    <div class="cselBody">
+      <div class="cselCols">
+        <div class="cselCol">
+          <div class="cselHead">Bên trái <b id="pickNameA"></b></div>
+          <div class="cTiles" id="listA"></div>
+          <div class="cDetail" id="detailA"></div>
+        </div>
+        <div class="cselCol">
+          <div class="cselHead">Bên phải <b id="pickNameB"></b></div>
+          <div class="cTiles" id="listB"></div>
+          <div class="cDetail" id="detailB"></div>
+        </div>
+      </div>
     </div>
     <div class="cselBar">
       <button id="cselGo" class="primary">⚔ Vào trận</button>
@@ -268,7 +287,7 @@ const SHIKA={
   wakeHp:.80,                     // tụt xuống mức này thì bật dậy đánh
   evadeBase:.10, evadeStep:.025, evadeMax:.70,   // né được thì không cộng dồn, chỉ ăn đòn mới cộng
   atkCd:2.7,                      // đánh chậm gấp đôi Konohamaru (1.35)
-  shurikenDmg:30, shurikenSpd:300,
+  shurikenDmg:12, shurikenSpd:300,   // mỗi phi tiêu 12 dmg, tự mang một lớp chảy máu riêng
   bleedDps:5*RT, bleedT:gs(3),    // chảy máu 5 dmg/s trong 3 giây người chơi
   stabDmg:50, stabSpd:680,        // lao nhanh gấp đôi cú lao Rasengan (340)
   stabStun:gs(1), stabCd:gs(15), stabRange:190, stabCut:.5,
@@ -342,11 +361,11 @@ const CHARS={
     name:'Shikamaru', short:'Shika', tag:'Ninja · Bóng', emoji:'🦌', color:'#9B8CFF', alt:'#C6BDFF',
     role:'ranged', want:230, speed:88, dodge:.9, male:true,
     skills:[
-      `<b>1</b> Twin Shuriken ${SHIKA.shurikenDmg} + bleed 5/s · half Konohamaru's attack speed, far better aim`,
+      `<b>1</b> Twin Shuriken — ${SHIKA.shurikenDmg} dmg each + bleed ${SHIKA.bleedDps/RT}/s each · half Konohamaru's attack speed, far better aim`,
       `<b>1+</b> Shadow Stab — blink behind for ${SHIKA.stabDmg} + bleed, stun ${rts(SHIKA.stabStun)}s · every ${rts(SHIKA.stabCd)}s`,
       `<b>2</b> Shadow-Neck Bind — 45 dmg/s for ${rts(SHIKA.bindT)}s, then stun ${rts(SHIKA.bindStun)}s`,
       `<b>Passive</b> Lazy start: ${SHIKA.lazyRate/RT} chakra/s sitting out, ${SHIKA.fightRate/RT}/s once hurt to ${Math.round(SHIKA.wakeHp*100)}%`,
-      `<b>Passive</b> Evasion ${Math.round(SHIKA.evadeBase*100)}%, +${+(SHIKA.evadeStep*100).toFixed(1)}% per hit taken, up to ${Math.round(SHIKA.evadeMax*100)}%`,
+      `<b>Passive</b> Evasion ${Math.round(SHIKA.evadeBase*100)}% vs every direct hit — ultimates included, Sexy no Jutsu excepted; +${+(SHIKA.evadeStep*100).toFixed(1)}% per basic hit taken, up to ${Math.round(SHIKA.evadeMax*100)}%`,
       `<b>Below ${Math.round(SHIKA.domainHp*100)}% HP</b> Nara Shadow Garden — chakra spent as duration`],
     init(f){
       f.cds={s1:cm(1),s2:cm(2)};
@@ -1085,22 +1104,31 @@ function aim(f,e,power){
 }
 
 /* ---------- damage ---------- */
+/* Nội tại 2 của Shikamaru: né được mọi đòn đánh thẳng — shuriken, Rasengan, khói hồng
+   Kamehameha, Masenko và mọi cú sút của Tsubasa. Không né được: sát thương duy trì và
+   lãnh địa, vì đó là phần dư của một đòn đã trúng rồi; và Sexy no Jutsu, vì khói hồng
+   phủ kín sàn nên không có chỗ mà lách.
+   Cộng dồn thì hẹp hơn: né được không cộng, và chiêu lớn (kind='big') dù ăn phải cũng
+   không cộng — chỉ đòn đánh thường ăn phải mới đẩy tỉ lệ lên. */
+function tryEvade(t,kind){
+  if(!(t.evade>0)||kind==='dot'||kind==='domain')return false;
+  if(chance(t.evade)){
+    G.floats.push({x:t.x,y:t.y-88,txt:'DODGE',color:'#CFC6FF',life:.9,ml:.9,banner:true,sc:.62});
+    return true;
+  }
+  if(kind!=='big') t.evade=Math.min(SHIKA.evadeMax,t.evade+SHIKA.evadeStep);  // chiêu lớn né được nhưng không cộng dồn
+  return false;
+}
+/* Trả về true nếu đòn thật sự trúng. Chỗ nào còn gắn thêm choáng hay sát thương duy trì
+   sau cú đánh thì phải xem giá trị này, nếu không né xong vẫn dính phần đuôi. */
 function hurt(t,amt,src,crit,kind,tint){
-  if(!t.alive||G.over)return;
+  if(!t.alive||G.over)return false;
   if(t.invuln>0){
     pop(t.x,t.y,'IMMUNE',t.color||'#FFF3C4',false);
     ring(t.x,t.y,52,'#FF9AD5',.3);
-    return;
+    return false;
   }
-  // Nội tại 2 của Shikamaru: né đòn đánh thường, mỗi lần ăn đòn lại nhạy hơn một chút.
-  // Đòn duy trì, lãnh địa và các chiêu lớn không tính là đòn thường nên không né được.
-  if(kind==='basic'&&t.evade>0){
-    if(chance(t.evade)){
-      G.floats.push({x:t.x,y:t.y-88,txt:'DODGE',color:'#CFC6FF',life:.9,ml:.9,banner:true,sc:.62});
-      return;
-    }
-    t.evade=Math.min(SHIKA.evadeMax,t.evade+SHIKA.evadeStep);
-  }
+  if(tryEvade(t,kind))return false;
   if(src&&src.outCut>0) amt*=(1-src.outCut);   // đứng trong lãnh địa thì đánh yếu hẳn
   if(t.vuln>0) amt*=1.5;                    // dính Twin Shot: nhận thêm 50% sát thương
   if(t.eagle) amt*=.3;                      // Wings of the Eagle: miễn 70% sát thương
@@ -1129,6 +1157,7 @@ function hurt(t,amt,src,crit,kind,tint){
   }
   counters(src,t);
   if(t.hp<=0&&!t.summon){ t.alive=false; finish(src); }
+  return true;                              // đòn đã trúng: chỗ gọi được phép gắn thêm choáng / duy trì
 }
 function counters(src,tgt){
   for(const f of [src,tgt]){
@@ -1189,7 +1218,7 @@ function explode(p){
     if(f.team===p.team||!f.alive||f.summon)continue;
     if(dist(f,p)<R+f.r){
       landed=true;
-      hurt(f,p.dmg,p.owner,'BOOM!','basic','red');       // dính đòn nổ: đỏ
+      hurt(f,p.dmg,p.owner,'BOOM!',null,'red');          // dính đòn nổ: đỏ
       if(f.invuln<=0) stunFx(f,.5,'spark');
     }
   }
@@ -1227,6 +1256,8 @@ function sexy(k,e){
   for(const f of G.fighters){
     if(f===k||!f.alive||dist(f,k)>R+f.r)continue;
     if(f.summon){ say(`${f.name} đang dồn khí, không hề nao núng.`,'m'); continue; }
+    // Khói hồng phủ kín sàn nên không có chỗ mà lách: đây là ngoại lệ duy nhất
+    // mà nội tại né đòn của Shikamaru không ăn.
     f.dots.push({dps:SEXY_DPS,left:2,acc:0,src:k,tint:'pink'});
     if(f.male){
       if(stunFx(f,SEXY_STUN,'heart')){ sfx('charm'); say(`${f.name} đứng hình ${rts(SEXY_STUN)} giây.`,'g'); }
@@ -1246,7 +1277,7 @@ function rasengan(k,e){
 function melee(c,e,forceCrit){
   setPose(c,'atk1',cm(.26)); aim(c,e,.85); sfx('punch');
   const crit=forceCrit||chance(.10+c.critBonus);
-  hurt(e,crit?25:5,c,crit,'basic');
+  hurt(e,crit?25:5,c,crit);
   if(crit&&!forceCrit) say('Cú đá chí mạng 25 dmg!','c');
   G.fx.push({type:'punch',x:(c.x+e.x)/2,y:(c.y+e.y)/2,life:.16,ml:.16});
 }
@@ -1284,7 +1315,8 @@ function shikaStab(k,e){
 function shikaStabHit(k,e){
   ring(e.x,e.y,110,'#8E7BFF',.5);
   G.flashScreen=Math.max(G.flashScreen,.09);
-  hurt(e,SHIKA.stabDmg*(k.weak?SHIKA.weakMul:1),k,'SHADOW STAB!');
+  const landed=hurt(e,SHIKA.stabDmg*(k.weak?SHIKA.weakMul:1),k,'SHADOW STAB!','big');
+  if(!landed){ say('Đối thủ né được cú đâm sau lưng.','s'); return; }
   bleedOn(e,k);
   const st=stunFx(e,SHIKA.stabStun,'spark');
   sfx('hit');
@@ -1671,8 +1703,8 @@ function ballHit(p,f){
   if(p.type==='twin'){
     G.flashScreen=Math.max(G.flashScreen,.2);
     ring(f.x,f.y,170,'#FFF3C4',.6);
-    hurt(f,p.dmg,o,'TWIN SHOT!');
-    if(f.alive&&f.invuln<=0){
+    const twinHit=hurt(f,p.dmg,o,'TWIN SHOT!','big');
+    if(twinHit&&f.alive&&f.invuln<=0){
       const st=stunFx(f,2,'shock'); if(st) sfx('shock');  // choáng Twin Shot: điện giật
       f.vuln=Math.max(f.vuln,3);
       knock(f,p.vx,p.vy,260);
@@ -1682,17 +1714,17 @@ function ballHit(p,f){
     say(`VICTORY SHOT xuyên thẳng — 150 dmg, thủng giáp 50% trong ${rts(3)} giây!`,'g');
   }else if(p.type==='drive'){
     ring(f.x,f.y,120,'#FF8A2B',.5);
-    hurt(f,p.dmg,o,'DRIVE SHOT!',null,'red');            // cú nổ lửa: đỏ
-    if(f.alive){
+    const driveHit=hurt(f,p.dmg,o,'DRIVE SHOT!','big','red');   // cú nổ lửa: đỏ
+    if(driveHit&&f.alive){
       f.dots.push({dps:10,left:1.5,acc:0,src:o,tint:'red'});   // thiêu đốt 5 dmg × 3 đợt
       knock(f,p.vx,p.vy,200);
       for(let i=0;i<8;i++) G.fx.push({type:'dust',x:f.x+rnd(-16,16),y:f.y+rnd(-24,10),r:5,life:.45,ml:.45});
     }
     say('DRIVE SHOT trúng đích — 80 dmg kèm thiêu đốt 5 dmg × 3 đợt.','g');
   }else{
-    hurt(f,p.dmg,o,p.bic?'OVERHEAD KICK!':false,'basic');
+    const kickHit=hurt(f,p.dmg,o,p.bic?'OVERHEAD KICK!':false);
     sfx('hit');
-    if(f.alive&&f.invuln<=0){
+    if(kickHit&&f.alive&&f.invuln<=0){
       if(p.bic) stunFx(f,.25,'spark');          // chỉ overhead kick mới gây choáng
       knock(f,p.vx,p.vy,p.kb||180);
     }
@@ -2056,8 +2088,8 @@ function step(dt){
         melee(f,e,'FLYING KICK!');
         say('ChiChi lao tới, cú đá chí mạng chắc chắn 25 dmg!','c');
       }else{
-        hurt(e,150,f,'RASENGAN!');
-        const st=stunFx(e,3,'spin');
+        const rasHit=hurt(e,150,f,'RASENGAN!','big');
+        const st=rasHit&&stunFx(e,3,'spin');
         G.flashScreen=.18; ring(e.x,e.y,140,'#63B4FF',.55);
         say(st?`Rasengan trúng! 150 dmg + choáng ${rts(3)} giây.`:'Rasengan trúng! 150 dmg — nhưng đối thủ miễn nhiễm khống chế.','g');
       }
@@ -2146,7 +2178,7 @@ function step(dt){
       if(dist(f,w)<w.r+f.r){
         w.hit.push(f);
         if(f.invuln>0){ hurt(f,w.dmg,w.owner,w.crit); continue; }
-        hurt(f,w.dmg,w.owner,w.crit,'basic');
+        hurt(f,w.dmg,w.owner,w.crit);
         stunFx(f,.5,'spark'); sfx('stun');
       }
     }
@@ -2266,10 +2298,12 @@ function step(dt){
       if(p.type==='kunai'&&hitsBody(p,f)){ explode(p); dead=true; break; }
       if((p.type==='ball'||p.type==='drive'||p.type==='twin')&&hitsBody(p,f)){ ballHit(p,f); dead=true; break; }
       if(hitsBody(p,f)){
-        const basic = p.type==='shuriken'||p.type==='kunai';
-        const hpWas=f.hp;
-        hurt(f,p.dmg,p.owner,p.type==='kame'?'KAMEHAMEHA!':!!p.crit,basic?'basic':undefined);
-        if(p.bleed&&f.hp<hpWas) bleedOn(f,p.owner);      // shuriken của Shikamaru để lại vết cắt
+        // phi tiêu và kunai là đòn đánh thường nên cộng dồn né; phân thân, Kamehameha
+        // và Masenko là chiêu lớn: né được nhưng không cộng dồn
+        const big = p.type==='clone'||p.type==='kame'||p.type==='masenko';
+        const landed=hurt(f,p.dmg,p.owner,p.type==='kame'?'KAMEHAMEHA!':!!p.crit,big?'big':undefined);
+        if(!landed){ dead=true; break; }
+        if(p.bleed) bleedOn(f,p.owner);                  // shuriken của Shikamaru để lại vết cắt
         sfx('hit');
         if(p.type==='clone'){
           if(f.invuln<=0){
@@ -2643,9 +2677,11 @@ function drawFighter(f){
 
   ctx.save();
   ctx.translate(f.x+ox, f.y+20+oy*.4-hop);
-  // ngồi lười: ngả nhẹ ra sau và thu người thấp xuống chứ không nằm hẳn
-  ctx.rotate(lean + aimTilt - fs*rec*.12 + (f.lazy?fs*.2:0));
-  ctx.scale(fs*sx, sy*(f.lazy?.68:1));
+  // Ngồi lười: nếu đã có ảnh dáng ngồi riêng thì vẽ nguyên, đừng bóp gì cả.
+  // Chỉ khi chưa nạp ảnh mới ngả nhẹ và thu thấp để hình đứng đọc ra thành ngồi.
+  const fakeSit = f.lazy && !(SPR[f.key]&&SPR[f.key].lazy&&SPR[f.key].lazy.length);
+  ctx.rotate(lean + aimTilt - fs*rec*.12 + (fakeSit?fs*.2:0));
+  ctx.scale(fs*sx, sy*(fakeSit?.68:1));
   // ám màu phủ lên người: cú đòn vừa dính được ưu tiên, hết chớp thì tới trạng thái đang mang.
   // đỏ khi trúng đòn nổ / thiêu đốt, hồng khi dính khói Sexy Jutsu, xanh lá khi đang kiệt sức vì phân thân.
   // chỉ lọc màu khi vẽ bằng ảnh — hình vector gồm hàng chục lệnh vẽ, lọc từng lệnh sẽ tụt khung hình
@@ -3761,9 +3797,15 @@ el('testEagle').addEventListener('click',testEagle);
 const TMP={a:PICK.a,b:PICK.b};
 function cselRefresh(){
   for(const slot of ['a','b']){
+    const key=TMP[slot], C=CHARS[key];
     const list=el(slot==='a'?'listA':'listB');
-    [...list.children].forEach(card=>card.classList.toggle('on',card.dataset.key===TMP[slot]));
-    el(slot==='a'?'pickNameA':'pickNameB').textContent='· '+CHARS[TMP[slot]].name;
+    [...list.children].forEach(t=>t.classList.toggle('on',t.dataset.key===key));
+    el(slot==='a'?'pickNameA':'pickNameB').textContent='· '+C.name;
+    // chỉ nhân vật đang chọn mới trải kỹ năng ra, ba người còn lại chỉ là ô nhỏ
+    el(slot==='a'?'detailA':'detailB').innerHTML=
+      `<span class="cName" style="color:${C.color}">${C.name}</span>`+
+      `<span class="cTag">${C.tag}</span>`+
+      `<span class="cSkills">${C.skills.map(x=>'<i>·</i> '+x).join('<br>')}</span>`;
   }
   el('cselVs').innerHTML=`<b>${CHARS[TMP.a].name}</b> vs <b>${CHARS[TMP.b].name}</b>`;
 }
@@ -3773,15 +3815,13 @@ function buildCsel(){
     list.innerHTML='';
     for(const key of CKEYS){
       const C=CHARS[key];
-      const card=document.createElement('button');
-      card.className='cCard'; card.dataset.key=key; card.type='button';
-      card.innerHTML=
+      const tile=document.createElement('button');
+      tile.className='cTile'; tile.dataset.key=key; tile.type='button'; tile.title=C.name;
+      tile.innerHTML=
         `<span class="cAva" style="color:${C.color}">${C.emoji}</span>`+
-        `<span><span class="cName" style="color:${C.color}">${C.name}</span>`+
-        `<span class="cTag">${C.tag}</span>`+
-        `<span class="cSkills">${C.skills.map(s=>'<i>·</i> '+s).join('<br>')}</span></span>`;
-      card.addEventListener('click',()=>{ TMP[slot]=key; cselRefresh(); });
-      list.appendChild(card);
+        `<span class="cName" style="color:${C.color}">${C.short||C.name}</span>`;
+      tile.addEventListener('click',()=>{ TMP[slot]=key; cselRefresh(); });
+      list.appendChild(tile);
     }
   }
   const sub=el('cselCount');
