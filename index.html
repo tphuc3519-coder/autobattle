@@ -250,7 +250,7 @@ const PREWING_HP=.20;             // Pre-Wings: chặng đệm trước khi đô
 const PREWING_RES=.65;            // Pre-Wings: chỉ nhận 65% sát thương
 const PREWING_CAST=1.5;           // Pre-Wings: hồi chiêu trôi nhanh gấp rưỡi
 const PREWING_STUN=.6;            // Pre-Wings: choáng chỉ còn 60% thời gian
-const EAGLE_BURN=5;               // Wings of the Eagle cháy hết máu trong bấy nhiêu giây trong trận
+const EAGLE_BURN=3.75;            // Wings of the Eagle cháy hết máu trong bấy nhiêu giây trong trận (7.5 giây người chơi)
 const MASENKO_SPD=330;            // Masenko bay nhanh hơn hẳn mức cũ 205
 const EAGLE_CD=1/4;               // tốc độ ra chiêu gấp 4: hồi chiêu chỉ còn một phần tư
 const EAGLE_DRIVE=.5;             // riêng Drive Shot còn ra nhanh gấp đôi nữa
@@ -265,12 +265,12 @@ const CHARS={
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
     role:'ranged', want:215, speed:92, dodge:1, male:true,
     skills:['<b>1</b> Shuriken / Explosive Kunai','<b>2</b> Kage Bunshin 60 dmg — homing clone, exhausts foe −25% move &amp; cast','<b>3</b> Sexy no Jutsu','<b>Rage 20</b> Rasengan Dash'],
-    init(f){ f.cds={s1:cm(1),s2:cm(3),s3:cm(6)}; f.rage=0; },
+    init(f){ f.cds={s1:cm(1),s2:cm(3),s3:cm(2)}; f.rage=0; },
     think(f,e,d,auto){
       if(f.dash)return;
       if(f.cds.s1<=0&&(auto?d<460:keys['j'])){ f.cds.s1=cm(1.35); shuriken(f,e); }
       if(f.cds.s2<=0&&(auto?d<420:keys['k'])){ f.cds.s2=cm(6.5); bunshin(f,e); }
-      if(f.cds.s3<=0&&(auto?true:keys['l'])){ f.cds.s3=cm(18); sexy(f,e); }
+      if(f.cds.s3<=0&&(auto?true:keys['l'])){ f.cds.s3=cm(5); sexy(f,e); }
       if(f.rage>=20&&(auto||keys['u'])) rasengan(f,e);
     },
     gauge:f=>({pct:f.rage/20, fill:'#FFE100', txt:`Rage: ${f.rage}`})
