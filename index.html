@@ -1965,7 +1965,7 @@ function step(dt){
           sfx('stun');
           say(`Phân thân đấm trúng — 60 dmg, choáng 0.5 giây và kiệt sức ${EXHAUST_T} giây.`,'k');
         }
-        if(p.type==='kame'){say('Kamehameha xuyên trúng — 150 dmg!','g');G.flashScreen=.2;}
+        if(p.type==='kame'){say(`Kamehameha xuyên trúng — ${Math.round(p.dmg)} dmg!`,'g');G.flashScreen=.2;}
         dead=true;break;
       }
     }
