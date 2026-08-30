@@ -240,7 +240,8 @@ const PICK={a:'kono',b:'chichi'};
 const GOAL_MAX=8;                 // số goal cần để mở Victory Twin Shot
 const EAGLE_BURN=5;               // Wings of the Eagle cháy hết máu trong bấy nhiêu giây
 const MASENKO_SPD=330;            // Masenko bay nhanh hơn hẳn mức cũ 205
-const EAGLE_CD=.4;                // +150% tốc độ ra chiêu: hồi chiêu chỉ còn 40%
+const EAGLE_CD=1/3;               // tốc độ ra chiêu gấp 3: hồi chiêu chỉ còn một phần ba
+const EAGLE_ACC=.5;               // độ lệch khi sút giảm một nửa, tức chuẩn xác gấp đôi
 const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
@@ -270,7 +271,7 @@ const CHARS={
   tsubasa:{
     name:'Ozora Tsubasa', short:'Tsubasa', tag:'Striker · Long shots', emoji:'⚽', color:'#2ED573', alt:'#7DEBAB',
     role:'ranged', want:235, speed:100, dodge:.8, male:true,
-    skills:['<b>1</b> Basic Shot 25 dmg, often misses (10% Overhead Kick 40 + stun)','<b>2</b> Drive Shot 80 + burn 5×3',`<b>${GOAL_MAX} goals</b> Victory Twin Shot 150 + stun 2s`,`<b>Below 8% HP</b> Wings of the Eagle — +150% attack speed, 70% resist, CC immune, burns out in ${EAGLE_BURN}s`],
+    skills:['<b>1</b> Basic Shot 25 dmg, often misses (10% Overhead Kick 40 + stun)','<b>2</b> Drive Shot 80 + burn 5×3',`<b>${GOAL_MAX} goals</b> Victory Twin Shot 150 + stun 2s`,`<b>Below 8% HP</b> Wings of the Eagle — 3× attack speed, 2× accuracy, 70% resist, CC immune, burns out in ${EAGLE_BURN}s`],
     init(f){ f.cds={s1:cm(1),s2:cm(3)}; f.goals=0; },
     think(f,e,d,auto){
       const sp=f.eagle?EAGLE_CD:1;
@@ -1203,8 +1204,10 @@ function basicShot(t,e){
 function kickBall(t,e,bic){
   // luôn sút về phía địch, nhưng lệch trái / phải / trúng ngay tâm — random.
   // tỉ lệ vào giữa thấp và độ lệch rộng, nên đá hụt là chuyện thường.
-  const side=chance(.2)?0:(chance(.5)?1:-1);
-  const spread=side===0?rnd(-.05,.05):side*rnd(.17,.36);
+  // lúc Wings of the Eagle: gấp đôi tỉ lệ sút thẳng tâm và giảm nửa độ lệch
+  const acc=t.eagle?EAGLE_ACC:1;
+  const side=chance(t.eagle?.4:.2)?0:(chance(.5)?1:-1);
+  const spread=(side===0?rnd(-.05,.05):side*rnd(.17,.36))*acc;
   const a=Math.atan2(e.y-t.y,e.x-t.x)+spread;
   const spd=bic?345:305;                      // nhanh hơn phi tiêu (285) một chút
   G.proj.push({type:'ball',bic:!!bic,team:t.team,owner:t,
@@ -1326,7 +1329,7 @@ function eagleAwaken(t){
     ring(t.x,t.y,90,'#FFFFFF',.5);
     G.flashScreen=Math.max(G.flashScreen,.18);
     G.callBanner={txt:'WINGS OF THE EAGLE',color:'#FFF3C4',life:2.2,ml:2.2};
-    say('WINGS OF THE EAGLE! Tốc độ ra chiêu +150%, miễn 70% sát thương, miễn nhiễm khống chế.','g');
+    say('WINGS OF THE EAGLE! Tốc độ ra chiêu gấp 3, sút chuẩn gấp đôi, miễn 70% sát thương, miễn nhiễm khống chế.','g');
     say(`Cái giá: cháy sạch máu trong ${EAGLE_BURN}s là gục, và không còn tính goal — Twin Shot vô hiệu.`,'m');
   });
 }
@@ -2440,7 +2443,7 @@ function drawBars(f){
     ly+=15;
     ctx.font='900 9px "Space Mono",monospace';
     ctx.lineWidth=3; ctx.strokeStyle='#000';
-    const sub=`+150% ATK SPEED · 70% RESIST · CC IMMUNE · BURNS OUT IN ${EAGLE_BURN}s`;
+    const sub=`3× ATK SPEED · 2× ACCURACY · 70% RESIST · CC IMMUNE · BURNS OUT IN ${EAGLE_BURN}s`;
     ctx.strokeText(sub,x+w/2,ly); ctx.fillStyle='#FFD9A0'; ctx.fillText(sub,x+w/2,ly);
     ly+=14;
   }
