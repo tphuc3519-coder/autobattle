@@ -242,6 +242,7 @@ const EAGLE_BURN=5;               // Wings of the Eagle cháy hết máu trong b
 const MASENKO_SPD=330;            // Masenko bay nhanh hơn hẳn mức cũ 205
 const EAGLE_CD=1/4;               // tốc độ ra chiêu gấp 4: hồi chiêu chỉ còn một phần tư
 const EAGLE_DRIVE=.5;             // riêng Drive Shot còn ra nhanh gấp đôi nữa
+const EAGLE_QUOTA={drive:2,bic:2}; // trong 5 giây cháy phải tung đủ chừng này
 const EAGLE_ACC=.5;               // độ lệch khi sút giảm một nửa, tức chuẩn xác gấp đôi
 const CHARS={
   kono:{
@@ -276,8 +277,14 @@ const CHARS={
     init(f){ f.cds={s1:cm(1),s2:cm(3)}; f.goals=0; },
     think(f,e,d,auto){
       const sp=f.eagle?EAGLE_CD:1;
-      if(f.cds.s1<=0&&(auto?d<520:keys['j'])){ f.cds.s1=cm(1.35)*sp; basicShot(f,e); }
-      if(f.cds.s2<=0&&(auto?d<560:keys['k'])){ f.cds.s2=cm(6.5)*sp*(f.eagle?EAGLE_DRIVE:1); driveShot(f,e); }
+      // lúc cháy: còn thiếu chỉ tiêu thì tung bằng được, không đợi vào tầm
+      const needBic=f.eagle&&f.quota.bic>0, needDrive=f.eagle&&f.quota.drive>0;
+      if(f.cds.s1<=0&&(auto?(d<520||needBic):keys['j'])){
+        f.cds.s1=cm(1.35)*sp; basicShot(f,e,needBic); if(needBic)f.quota.bic--;
+      }
+      if(f.cds.s2<=0&&(auto?(d<560||needDrive):keys['k'])){
+        f.cds.s2=cm(6.5)*sp*(f.eagle?EAGLE_DRIVE:1); driveShot(f,e); if(needDrive)f.quota.drive--;
+      }
       if(!f.eagle&&f.goals>=GOAL_MAX&&(auto||keys['l'])) twinShot(f,e);
     },
     gauge:f=>f.eagle
@@ -919,7 +926,7 @@ function mk(o){
     vx:0, vy:0, recoil:0, rdx:0, rdy:0, dustT:0, ghostT:0,
     ax:1, ay:0, lunge:0, invuln:0, dvx:0, dvy:0, moveAmt:0, leanS:0,
     wx:W/2, wy:H/2, wt:0, engage:true, engT:2,
-    goals:0, vuln:0, kbx:0, kby:0, driveAura:0, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
+    goals:0, vuln:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
 }
 function mkChar(key,team,x,y){
@@ -1190,9 +1197,9 @@ function tsuBanner(t,txt){
     banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.07,.07)});
 }
 /* Skill 1 — Basic shot (10% thành Overhead kick) */
-function basicShot(t,e){
+function basicShot(t,e,force){
   const sp=t.eagle?EAGLE_CD:1;
-  const bic=chance(.10);
+  const bic=!!force||chance(.10);
   setPose(t,bic?'bicycle':'atk1',cm(bic?.62:.5)*sp);
   aim(t,e,bic?1.5:1);
   if(bic){ tsuBanner(t,'OVERHEAD KICK!'); say('Tsubasa bật người — OVERHEAD KICK!','g'); }
@@ -1324,6 +1331,8 @@ function eagleAwaken(t){
   later(2.5,()=>{
     if(G.over||!t.alive)return;
     t.eagle=true; t.eagleAcc=0; t.eagleT=0; t.eagleBurn=t.hp/EAGLE_BURN; t.goals=0;
+    t.quota={drive:EAGLE_QUOTA.drive, bic:EAGLE_QUOTA.bic};
+    t.cds.s1=0; t.cds.s2=0;                      // vào là tung được ngay
     t.stun=0; t.stunKind=null; t.kbx=0; t.kby=0;   // gỡ sạch khống chế đang dính
     setPose(t,'wings',1.4);
     ring(t.x,t.y,150,'#FFF3C4',.7);
