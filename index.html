@@ -2643,9 +2643,11 @@ function drawFighter(f){
 
   ctx.save();
   ctx.translate(f.x+ox, f.y+20+oy*.4-hop);
-  // ngồi lười: ngả nhẹ ra sau và thu người thấp xuống chứ không nằm hẳn
-  ctx.rotate(lean + aimTilt - fs*rec*.12 + (f.lazy?fs*.2:0));
-  ctx.scale(fs*sx, sy*(f.lazy?.68:1));
+  // Ngồi lười: nếu đã có ảnh dáng ngồi riêng thì vẽ nguyên, đừng bóp gì cả.
+  // Chỉ khi chưa nạp ảnh mới ngả nhẹ và thu thấp để hình đứng đọc ra thành ngồi.
+  const fakeSit = f.lazy && !(SPR[f.key]&&SPR[f.key].lazy&&SPR[f.key].lazy.length);
+  ctx.rotate(lean + aimTilt - fs*rec*.12 + (fakeSit?fs*.2:0));
+  ctx.scale(fs*sx, sy*(fakeSit?.68:1));
   // ám màu phủ lên người: cú đòn vừa dính được ưu tiên, hết chớp thì tới trạng thái đang mang.
   // đỏ khi trúng đòn nổ / thiêu đốt, hồng khi dính khói Sexy Jutsu, xanh lá khi đang kiệt sức vì phân thân.
   // chỉ lọc màu khi vẽ bằng ảnh — hình vector gồm hàng chục lệnh vẽ, lọc từng lệnh sẽ tụt khung hình
