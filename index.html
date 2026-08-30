@@ -958,7 +958,10 @@ function newGame(){
   paintLog(); draw();
 }
 function say(m,c){ G.logs.unshift({m,c:c||'m'}); if(G.logs.length>50)G.logs.pop(); paintLog(); }
-function later(t,fn){ G.timers.push({t,fn}); }
+/* cine=true: hẹn giờ của phân cảnh, vẫn chạy trong lúc đóng băng.
+   Hẹn giờ thường thì tạm dừng theo trận, nhờ vậy loạt đạn đang dở của viện binh
+   không bị mất mà chỉ chờ hết phân cảnh rồi bắn tiếp. */
+function later(t,fn,cine){ G.timers.push({t,fn,cine:!!cine}); }
 function pop(x,y,txt,color,big,sc){ if(G.over)return; G.floats.push({x:x+rnd(-14,14),y:y-40,txt,color,life:big?1.3:1,ml:big?1.3:1,big:!!big,sc:sc||1}); }
 function ring(x,y,max,color,life){ G.fx.push({type:'ring',x,y,r:6,max,color,life,ml:life}); }
 function setPose(f,p,t){ if(f.dash&&p!=='ulti')return; f.pose=p; f.poseT=t; }
@@ -1266,7 +1269,7 @@ function twinShot(t,e){
   t.cds.s1=Math.max(t.cds.s1,cm(.8));
   t.cds.s2=Math.max(t.cds.s2,cm(1.6));
   G.freeze=1.5; G.freezeAt=t;
-  G.proj.length=0; G.waves.length=0; G.floats.length=0; G.callBanner=null;
+  G.floats.length=0; G.callBanner=null;
   for(const f of G.fighters){ f.flash=0; f.recoil=0; f.lunge=0; }
   for(const m of G.mates) G.fx.push({type:'poof',x:m.x,y:m.y-18,life:.4,ml:.4});
   G.mates.length=0;
@@ -1288,7 +1291,7 @@ function twinShot(t,e){
     G.fx.push({type:'poof',x:mx,y:my-18,life:.7,ml:.7});
     G.mates.push({key:mateKey,name:mateName,x:mx,y:my,face:1,pose:'idle',h:118,life:9,ml:9});
     ring(mx,my,110,t.color,.5);
-  });
+  },true);
   later(1.5,()=>{
     if(G.over)return;
     // nhịp 2: hai người nhường chỗ cho mô hình sút đôi của đúng viện binh đó
@@ -1303,8 +1306,8 @@ function twinShot(t,e){
       r:16, dmg:150, life:5, spin:0, wig:0, homing:true, turn:5.2, noReflect:true});
     G.flashScreen=Math.max(G.flashScreen,.12);
     ring(src.x,src.y,130,'#FFF3C4',.5);
-  });
-  later(cm(6),()=>releaseTwin(t));             // lưới an toàn
+  },true);
+  later(cm(6),()=>releaseTwin(t),true);        // lưới an toàn
 }
 /* Nội tại — Wings of the Eagle: 5 giây cuối đời, mạnh nhất và cũng là hạn chót */
 function eagleAwaken(t){
@@ -1313,8 +1316,8 @@ function eagleAwaken(t){
   t.injured=true;
   setPose(t,'wounded',1);
   G.freeze=3; G.freezeAt=t;
-  G.timers.length=0;
-  G.proj.length=0; G.waves.length=0; G.floats.length=0; G.callBanner=null; G.flashScreen=0;
+  // giữ nguyên hẹn giờ và đạn đang bay: viện binh của ChiChi bắn tiếp sau phân cảnh
+  G.floats.length=0; G.callBanner=null; G.flashScreen=0;
   for(const f of G.fighters){
     f.flash=0; f.recoil=0; f.lunge=0; f.dots.length=0;
     if(f!==t&&(f.pose==='hurt'||f.pose==='atk1'||f.pose==='atk2')){ f.pose='idle'; f.poseT=0; }
@@ -1327,7 +1330,7 @@ function eagleAwaken(t){
     {key:'ishizaki',name:'ISHIZAKI'},{key:'misaki',name:'MISAKI'}
   ]};
   say('Tsubasa gục xuống, chấn thương nặng… ký ức về các đồng đội ùa về.','g');
-  later(.5,()=>{ if(!G.over) sfx('wings'); });
+  later(.5,()=>{ if(!G.over) sfx('wings'); },true);
   later(2.5,()=>{
     if(G.over||!t.alive)return;
     t.eagle=true; t.eagleAcc=0; t.eagleT=0; t.eagleBurn=t.hp/EAGLE_BURN; t.goals=0;
@@ -1341,7 +1344,7 @@ function eagleAwaken(t){
     G.callBanner={txt:'WINGS OF THE EAGLE',color:'#FFF3C4',life:2.2,ml:2.2};
     say('WINGS OF THE EAGLE! Ra chiêu gấp 4, Drive Shot gấp đôi nữa, sút chuẩn gấp đôi, miễn 70% sát thương, miễn nhiễm khống chế.','g');
     say(`Cái giá: cháy sạch máu trong ${EAGLE_BURN}s là gục, và không còn tính goal — Twin Shot vô hiệu.`,'m');
-  });
+  },true);
 }
 /* Đốt máu lúc kích hoạt nội tại: chia đều số máu còn lại vào EAGLE_BURN giây, nên dù
    đối thủ không đánh thêm đòn nào thì hết ngần ấy giây Tsubasa cũng gục. */
@@ -1410,10 +1413,8 @@ function summonHelp(c,force){
   setPose(c,'wounded',.6);
   G.freeze=1.6; G.freezeAt=c;
 
-  // dọn sạch mọi thứ đang dở: chiêu đang chờ, đạn, sóng, bong bóng
-  G.timers.length=0;
+  // giữ nguyên hẹn giờ và đạn đang bay, chỉ dọn phần trang trí
   G.floats.length=0; G.callBanner=null;
-  G.proj.length=0; G.waves.length=0;
   G.flashScreen=0;
   for(const f of G.fighters){
     f.flash=0; f.recoil=0; f.lunge=0; f.dots.length=0;
@@ -1447,7 +1448,7 @@ function summonHelp(c,force){
     sfx(isGoku?'callgoku':'callgohan');
     G.callBanner={txt:isGoku?'GOKU!!':'GOHAN!!',color:c.color,life:1.9,ml:1.9};
     if(c.alive) setPose(c,'call',1.4);
-  });
+  },true);
   say(`ChiChi trọng thương, hét gọi ${name} — thời gian như ngưng lại.`,'c');
 
   // đứng lệch hẳn sang một bên ChiChi, không chồng hình
@@ -1457,7 +1458,7 @@ function summonHelp(c,force){
   if(px<PAD+34||px>W-PAD-34) px=c.x-side*GAP;
   px=clamp(px,PAD+34,W-PAD-34);
   const py=clamp(c.y+rnd(20,46),PAD+40,H-PAD-20);
-  later(1,()=>{ G.fx.push({type:'poof',x:px,y:py-18,life:.9,ml:.9}); });
+  later(1,()=>{ G.fx.push({type:'poof',x:px,y:py-18,life:.9,ml:.9}); },true);
   later(1.6,()=>{
     const s=mk({key:isGoku?'goku':'gohan',name,team:1,male:true,summon:true,x:px,y:py,r:26,
       hp:9999,maxHp:9999,speed:0,dodge:0,charge:isGoku?1.4:1.1,fired:false,leave:isGoku?.18:99,
@@ -1467,7 +1468,7 @@ function summonHelp(c,force){
     ring(px,py,115,s.color,.55);
     sfx('summon'); sfx(isGoku?'kame':'masenko');
     say(`${name} bước ra từ khói — trận đấu tiếp tục!`,'g');
-  });
+  },true);
 }
 function summonFire(s,e){
   setPose(s,'atk1',3); aim(s,e,1.4);
@@ -1558,8 +1559,10 @@ function aiVec(f,e){
 function step(dt){
   G.t+=dt;
   if(G.flashScreen>0)G.flashScreen-=dt;
+  const frozen=G.freeze>0&&!G.over;
   for(let i=G.timers.length-1;i>=0;i--){
     const tm=G.timers[i]; if(!tm) continue;
+    if(frozen&&!tm.cine) continue;             // đang diễn phân cảnh: hẹn giờ thường đứng chờ
     tm.t-=dt;
     if(tm.t<=0){ G.timers.splice(i,1); try{ tm.fn(); }catch(err){ console.error(err); } }
   }
