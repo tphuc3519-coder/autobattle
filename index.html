@@ -1152,7 +1152,7 @@ function sexy(k,e){
   for(const f of G.fighters){
     if(f===k||!f.alive||dist(f,k)>R+f.r)continue;
     if(f.summon){ say(`${f.name} đang dồn khí, không hề nao núng.`,'m'); continue; }
-    f.dots.push({dps:20,left:2,acc:0,src:k,tint:'pink'});   // dính khói hồng: hồng
+    f.dots.push({dps:10,left:2,acc:0,src:k,tint:'pink'});   // khói hồng: 4 nhịp x 5 dmg, tổng 20
     if(f.male){
       if(stunFx(f,2,'heart')){ sfx('charm'); say(`${f.name} đứng hình ${rts(2)} giây.`,'g'); }
       else say(`${f.name} miễn nhiễm khống chế — không hề đứng hình.`,'g');
