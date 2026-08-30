@@ -365,7 +365,7 @@ const CHARS={
       `<b>1+</b> Shadow Stab — blink behind for ${SHIKA.stabDmg} + bleed, stun ${rts(SHIKA.stabStun)}s · every ${rts(SHIKA.stabCd)}s`,
       `<b>2</b> Shadow-Neck Bind — 45 dmg/s for ${rts(SHIKA.bindT)}s, then stun ${rts(SHIKA.bindStun)}s`,
       `<b>Passive</b> Lazy start: ${SHIKA.lazyRate/RT} chakra/s sitting out, ${SHIKA.fightRate/RT}/s once hurt to ${Math.round(SHIKA.wakeHp*100)}%`,
-      `<b>Passive</b> Evasion ${Math.round(SHIKA.evadeBase*100)}% vs every direct hit — ultimates included; +${+(SHIKA.evadeStep*100).toFixed(1)}% per basic hit taken, up to ${Math.round(SHIKA.evadeMax*100)}%`,
+      `<b>Passive</b> Evasion ${Math.round(SHIKA.evadeBase*100)}% vs every direct hit — ultimates included, Sexy no Jutsu excepted; +${+(SHIKA.evadeStep*100).toFixed(1)}% per basic hit taken, up to ${Math.round(SHIKA.evadeMax*100)}%`,
       `<b>Below ${Math.round(SHIKA.domainHp*100)}% HP</b> Nara Shadow Garden — chakra spent as duration`],
     init(f){
       f.cds={s1:cm(1),s2:cm(2)};
@@ -1105,8 +1105,9 @@ function aim(f,e,power){
 
 /* ---------- damage ---------- */
 /* Nội tại 2 của Shikamaru: né được mọi đòn đánh thẳng — shuriken, Rasengan, khói hồng
-   Sexy no Jutsu, Kamehameha, Masenko và mọi cú sút của Tsubasa. Chỉ sát thương duy trì
-   và lãnh địa là không né, vì đó là phần dư của một đòn đã trúng rồi.
+   Kamehameha, Masenko và mọi cú sút của Tsubasa. Không né được: sát thương duy trì và
+   lãnh địa, vì đó là phần dư của một đòn đã trúng rồi; và Sexy no Jutsu, vì khói hồng
+   phủ kín sàn nên không có chỗ mà lách.
    Cộng dồn thì hẹp hơn: né được không cộng, và chiêu lớn (kind='big') dù ăn phải cũng
    không cộng — chỉ đòn đánh thường ăn phải mới đẩy tỉ lệ lên. */
 function tryEvade(t,kind){
@@ -1255,9 +1256,8 @@ function sexy(k,e){
   for(const f of G.fighters){
     if(f===k||!f.alive||dist(f,k)>R+f.r)continue;
     if(f.summon){ say(`${f.name} đang dồn khí, không hề nao núng.`,'m'); continue; }
-    if(tryEvade(f,'big')){                            // né được thì thoát cả khói lẫn choáng
-      say(`${f.name} nín thở lách khỏi làn khói hồng.`,'m'); continue;
-    }
+    // Khói hồng phủ kín sàn nên không có chỗ mà lách: đây là ngoại lệ duy nhất
+    // mà nội tại né đòn của Shikamaru không ăn.
     f.dots.push({dps:SEXY_DPS,left:2,acc:0,src:k,tint:'pink'});
     if(f.male){
       if(stunFx(f,SEXY_STUN,'heart')){ sfx('charm'); say(`${f.name} đứng hình ${rts(SEXY_STUN)} giây.`,'g'); }
