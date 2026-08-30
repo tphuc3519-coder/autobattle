@@ -108,10 +108,11 @@
       <option value="p2" id="modeP2">Điều khiển bên phải</option>
     </select>
     <select id="speed">
-      <option value="0.35">Rất chậm 0.35x</option>
-      <option value="0.5" selected>Chậm 0.5x</option>
-      <option value="0.75">Chậm 0.75x</option>
-      <option value="1">1x</option>
+      <!-- nhịp 0.5 cũ giờ là tốc độ gốc, các mốc khác quy đổi theo nó -->
+      <option value="0.35">Chậm 0.7x</option>
+      <option value="0.5" selected>Gốc 1x</option>
+      <option value="0.75">Nhanh 1.5x</option>
+      <option value="1">Nhanh 2x</option>
     </select>
     <label class="chk"><input type="checkbox" id="autoskill" checked> Tự dùng chiêu</label>
     <select id="cast" title="Nhịp ra chiêu của cả hai bên">
@@ -246,13 +247,13 @@ const EAGLE_QUOTA={drive:2,bic:2}; // trong 5 giây cháy phải tung đủ ch�
 const CHICHI_DASH_CD=10;          // ChiChi cứ chừng này giây lại lao tới một lần
 const CHICHI_DASH_RES=.7;         // lúc lao tới chỉ nhận 70% sát thương
 const EXHAUST_T=4;                // phân thân gây kiệt sức bấy nhiêu giây
-const EXHAUST_MUL=.5;             // kiệt sức: còn nửa tốc chạy và nửa tốc ra chiêu
+const EXHAUST_MUL=.75;            // kiệt sức: giảm 25% tốc chạy và 25% tốc ra chiêu
 const EAGLE_ACC=.5;               // độ lệch khi sút giảm một nửa, tức chuẩn xác gấp đôi
 const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
     role:'ranged', want:215, speed:92, dodge:1, male:true,
-    skills:['<b>1</b> Shuriken / Explosive Kunai','<b>2</b> Kage Bunshin 60 dmg — homing clone, exhausts foe −50% move &amp; cast','<b>3</b> Sexy no Jutsu','<b>Rage 20</b> Rasengan Dash'],
+    skills:['<b>1</b> Shuriken / Explosive Kunai','<b>2</b> Kage Bunshin 60 dmg — homing clone, exhausts foe −25% move &amp; cast','<b>3</b> Sexy no Jutsu','<b>Rage 20</b> Rasengan Dash'],
     init(f){ f.cds={s1:cm(1),s2:cm(3),s3:cm(6)}; f.rage=0; },
     think(f,e,d,auto){
       if(f.dash)return;
@@ -1771,7 +1772,7 @@ function step(dt){
     }
   }
 
-  for(const f of [k,c]){                        // kiệt sức thì hồi chiêu chạy chậm một nửa
+  for(const f of [k,c]){                        // kiệt sức thì hồi chiêu chạy chậm 25%
     const rate=dt*(f.exhaust>0?EXHAUST_MUL:1);
     for(const key in f.cds) f.cds[key]=Math.max(0,f.cds[key]-rate);
   }
@@ -1958,7 +1959,7 @@ function step(dt){
           if(f.invuln<=0){
             stunFx(f,.5,'spark');
             f.exhaust=Math.max(f.exhaust,EXHAUST_T);   // kiệt sức: chậm chân và chậm chiêu
-            G.floats.push({x:f.x,y:f.y-118,txt:`EXHAUSTED −50% MOVE / CAST ${EXHAUST_T}s`,
+            G.floats.push({x:f.x,y:f.y-118,txt:`EXHAUSTED −25% MOVE / CAST ${EXHAUST_T}s`,
               color:'#BFD4FF',life:1.5,ml:1.5,banner:true,gold:true,tilt:rnd(-.05,.05)});
             ring(f.x,f.y,120,'#7F9FD8',.45);
           }
@@ -2521,7 +2522,7 @@ function drawBars(f){
   }
   const lines=[];
   if(f.vuln>0) lines.push({t:`VULNERABLE +50% (${f.vuln.toFixed(1)}s)`, c:'#FFF3C4', s:11});
-  if(f.exhaust>0) lines.push({t:`EXHAUSTED −50% MOVE / CAST (${f.exhaust.toFixed(1)}s)`, c:'#BFD4FF', s:10});
+  if(f.exhaust>0) lines.push({t:`EXHAUSTED −25% MOVE / CAST (${f.exhaust.toFixed(1)}s)`, c:'#BFD4FF', s:10});
   if(f.dash&&f.dash.guard) lines.push({t:'FLYING KICK · CC IMMUNE · −30% DMG', c:'#FFC0CE', s:10});
   if(f.invuln>0) lines.push({t:`IMMUNE (${f.invuln.toFixed(1)}s)`, c:'#FF9AD5', s:11});
   ctx.lineWidth=3; ctx.strokeStyle='#000';
