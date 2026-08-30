@@ -931,7 +931,7 @@ function mk(o){
   return Object.assign({
     r:26, hp:1000, maxHp:1000, stun:0, dots:[], rage:0, hits:0, critBonus:0,
     strafe:chance(.5)?1:-1, strafeT:1, moving:false, alive:true, face:1,
-    pose:'idle', poseT:0, flash:0, cds:{}, summon:false, dash:null, spriteH:120,
+    pose:'idle', poseT:0, flash:0, cds:{}, summon:false, master:null, dash:null, spriteH:120,
     vx:0, vy:0, recoil:0, rdx:0, rdy:0, dustT:0, ghostT:0,
     ax:1, ay:0, lunge:0, invuln:0, dvx:0, dvy:0, moveAmt:0, leanS:0,
     wx:W/2, wy:H/2, wt:0, engage:true, engT:2,
@@ -955,6 +955,7 @@ function foeOf(f){
   if(!f||!G)return null;
   if(f===G.k)return G.c;
   if(f===G.c)return G.k;
+  if(f.master)return foeOf(f.master);   // viện binh nhắm đúng đối thủ của người gọi
   return f.team===0?G.c:G.k;
 }
 function newGame(){
@@ -1486,7 +1487,9 @@ function summonHelp(c,force){
   const py=clamp(c.y+rnd(20,46),PAD+40,H-PAD-20);
   later(1,()=>{ G.fx.push({type:'poof',x:px,y:py-18,life:.9,ml:.9}); },true);
   later(1.6,()=>{
-    const s=mk({key:isGoku?'goku':'gohan',name,team:1,male:true,summon:true,x:px,y:py,r:26,
+    // viện binh đứng cùng phe với người gọi — trước đây ghi cứng team 1 nên
+    // khi ChiChi ở ô bên trái (team 0) thì Goku/Gohan lại bắn vào chính cô
+    const s=mk({key:isGoku?'goku':'gohan',name,team:c.team,master:c,male:true,summon:true,x:px,y:py,r:26,
       hp:9999,maxHp:9999,speed:0,dodge:0,charge:isGoku?1.4:1.1,fired:false,leave:isGoku?.18:99,
       color:isGoku?'#FF8A2B':'#B57BFF',spriteH:130});
     s.pose='skill';
