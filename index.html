@@ -287,7 +287,7 @@ const SHIKA={
   wakeHp:.80,                     // tụt xuống mức này thì bật dậy đánh
   evadeBase:.10, evadeStep:.025, evadeMax:.70,   // né được thì không cộng dồn, chỉ ăn đòn mới cộng
   atkCd:2.7,                      // đánh chậm gấp đôi Konohamaru (1.35)
-  shurikenDmg:30, shurikenSpd:300,
+  shurikenDmg:12, shurikenSpd:300,   // mỗi phi tiêu 12 dmg, tự mang một lớp chảy máu riêng
   bleedDps:5*RT, bleedT:gs(3),    // chảy máu 5 dmg/s trong 3 giây người chơi
   stabDmg:50, stabSpd:680,        // lao nhanh gấp đôi cú lao Rasengan (340)
   stabStun:gs(1), stabCd:gs(15), stabRange:190, stabCut:.5,
@@ -361,11 +361,11 @@ const CHARS={
     name:'Shikamaru', short:'Shika', tag:'Ninja · Bóng', emoji:'🦌', color:'#9B8CFF', alt:'#C6BDFF',
     role:'ranged', want:230, speed:88, dodge:.9, male:true,
     skills:[
-      `<b>1</b> Twin Shuriken ${SHIKA.shurikenDmg} + bleed 5/s · half Konohamaru's attack speed, far better aim`,
+      `<b>1</b> Twin Shuriken — ${SHIKA.shurikenDmg} dmg each + bleed ${SHIKA.bleedDps/RT}/s each · half Konohamaru's attack speed, far better aim`,
       `<b>1+</b> Shadow Stab — blink behind for ${SHIKA.stabDmg} + bleed, stun ${rts(SHIKA.stabStun)}s · every ${rts(SHIKA.stabCd)}s`,
       `<b>2</b> Shadow-Neck Bind — 45 dmg/s for ${rts(SHIKA.bindT)}s, then stun ${rts(SHIKA.bindStun)}s`,
       `<b>Passive</b> Lazy start: ${SHIKA.lazyRate/RT} chakra/s sitting out, ${SHIKA.fightRate/RT}/s once hurt to ${Math.round(SHIKA.wakeHp*100)}%`,
-      `<b>Passive</b> Evasion ${Math.round(SHIKA.evadeBase*100)}%, +${+(SHIKA.evadeStep*100).toFixed(1)}% per hit taken, up to ${Math.round(SHIKA.evadeMax*100)}%`,
+      `<b>Passive</b> Evasion ${Math.round(SHIKA.evadeBase*100)}% vs every direct hit — ultimates included; +${+(SHIKA.evadeStep*100).toFixed(1)}% per basic hit taken, up to ${Math.round(SHIKA.evadeMax*100)}%`,
       `<b>Below ${Math.round(SHIKA.domainHp*100)}% HP</b> Nara Shadow Garden — chakra spent as duration`],
     init(f){
       f.cds={s1:cm(1),s2:cm(2)};
@@ -1104,22 +1104,30 @@ function aim(f,e,power){
 }
 
 /* ---------- damage ---------- */
+/* Nội tại 2 của Shikamaru: né được mọi đòn đánh thẳng — shuriken, Rasengan, khói hồng
+   Sexy no Jutsu, Kamehameha, Masenko và mọi cú sút của Tsubasa. Chỉ sát thương duy trì
+   và lãnh địa là không né, vì đó là phần dư của một đòn đã trúng rồi.
+   Cộng dồn thì hẹp hơn: né được không cộng, và chiêu lớn (kind='big') dù ăn phải cũng
+   không cộng — chỉ đòn đánh thường ăn phải mới đẩy tỉ lệ lên. */
+function tryEvade(t,kind){
+  if(!(t.evade>0)||kind==='dot'||kind==='domain')return false;
+  if(chance(t.evade)){
+    G.floats.push({x:t.x,y:t.y-88,txt:'DODGE',color:'#CFC6FF',life:.9,ml:.9,banner:true,sc:.62});
+    return true;
+  }
+  if(kind!=='big') t.evade=Math.min(SHIKA.evadeMax,t.evade+SHIKA.evadeStep);  // chiêu lớn né được nhưng không cộng dồn
+  return false;
+}
+/* Trả về true nếu đòn thật sự trúng. Chỗ nào còn gắn thêm choáng hay sát thương duy trì
+   sau cú đánh thì phải xem giá trị này, nếu không né xong vẫn dính phần đuôi. */
 function hurt(t,amt,src,crit,kind,tint){
-  if(!t.alive||G.over)return;
+  if(!t.alive||G.over)return false;
   if(t.invuln>0){
     pop(t.x,t.y,'IMMUNE',t.color||'#FFF3C4',false);
     ring(t.x,t.y,52,'#FF9AD5',.3);
-    return;
+    return false;
   }
-  // Nội tại 2 của Shikamaru: né đòn đánh thường, mỗi lần ăn đòn lại nhạy hơn một chút.
-  // Đòn duy trì, lãnh địa và các chiêu lớn không tính là đòn thường nên không né được.
-  if(kind==='basic'&&t.evade>0){
-    if(chance(t.evade)){
-      G.floats.push({x:t.x,y:t.y-88,txt:'DODGE',color:'#CFC6FF',life:.9,ml:.9,banner:true,sc:.62});
-      return;
-    }
-    t.evade=Math.min(SHIKA.evadeMax,t.evade+SHIKA.evadeStep);
-  }
+  if(tryEvade(t,kind))return false;
   if(src&&src.outCut>0) amt*=(1-src.outCut);   // đứng trong lãnh địa thì đánh yếu hẳn
   if(t.vuln>0) amt*=1.5;                    // dính Twin Shot: nhận thêm 50% sát thương
   if(t.eagle) amt*=.3;                      // Wings of the Eagle: miễn 70% sát thương
@@ -1148,6 +1156,7 @@ function hurt(t,amt,src,crit,kind,tint){
   }
   counters(src,t);
   if(t.hp<=0&&!t.summon){ t.alive=false; finish(src); }
+  return true;                              // đòn đã trúng: chỗ gọi được phép gắn thêm choáng / duy trì
 }
 function counters(src,tgt){
   for(const f of [src,tgt]){
@@ -1208,7 +1217,7 @@ function explode(p){
     if(f.team===p.team||!f.alive||f.summon)continue;
     if(dist(f,p)<R+f.r){
       landed=true;
-      hurt(f,p.dmg,p.owner,'BOOM!','basic','red');       // dính đòn nổ: đỏ
+      hurt(f,p.dmg,p.owner,'BOOM!',null,'red');          // dính đòn nổ: đỏ
       if(f.invuln<=0) stunFx(f,.5,'spark');
     }
   }
@@ -1246,6 +1255,9 @@ function sexy(k,e){
   for(const f of G.fighters){
     if(f===k||!f.alive||dist(f,k)>R+f.r)continue;
     if(f.summon){ say(`${f.name} đang dồn khí, không hề nao núng.`,'m'); continue; }
+    if(tryEvade(f,'big')){                            // né được thì thoát cả khói lẫn choáng
+      say(`${f.name} nín thở lách khỏi làn khói hồng.`,'m'); continue;
+    }
     f.dots.push({dps:SEXY_DPS,left:2,acc:0,src:k,tint:'pink'});
     if(f.male){
       if(stunFx(f,SEXY_STUN,'heart')){ sfx('charm'); say(`${f.name} đứng hình ${rts(SEXY_STUN)} giây.`,'g'); }
@@ -1265,7 +1277,7 @@ function rasengan(k,e){
 function melee(c,e,forceCrit){
   setPose(c,'atk1',cm(.26)); aim(c,e,.85); sfx('punch');
   const crit=forceCrit||chance(.10+c.critBonus);
-  hurt(e,crit?25:5,c,crit,'basic');
+  hurt(e,crit?25:5,c,crit);
   if(crit&&!forceCrit) say('Cú đá chí mạng 25 dmg!','c');
   G.fx.push({type:'punch',x:(c.x+e.x)/2,y:(c.y+e.y)/2,life:.16,ml:.16});
 }
@@ -1303,7 +1315,8 @@ function shikaStab(k,e){
 function shikaStabHit(k,e){
   ring(e.x,e.y,110,'#8E7BFF',.5);
   G.flashScreen=Math.max(G.flashScreen,.09);
-  hurt(e,SHIKA.stabDmg*(k.weak?SHIKA.weakMul:1),k,'SHADOW STAB!');
+  const landed=hurt(e,SHIKA.stabDmg*(k.weak?SHIKA.weakMul:1),k,'SHADOW STAB!','big');
+  if(!landed){ say('Đối thủ né được cú đâm sau lưng.','s'); return; }
   bleedOn(e,k);
   const st=stunFx(e,SHIKA.stabStun,'spark');
   sfx('hit');
@@ -1690,8 +1703,8 @@ function ballHit(p,f){
   if(p.type==='twin'){
     G.flashScreen=Math.max(G.flashScreen,.2);
     ring(f.x,f.y,170,'#FFF3C4',.6);
-    hurt(f,p.dmg,o,'TWIN SHOT!');
-    if(f.alive&&f.invuln<=0){
+    const twinHit=hurt(f,p.dmg,o,'TWIN SHOT!','big');
+    if(twinHit&&f.alive&&f.invuln<=0){
       const st=stunFx(f,2,'shock'); if(st) sfx('shock');  // choáng Twin Shot: điện giật
       f.vuln=Math.max(f.vuln,3);
       knock(f,p.vx,p.vy,260);
@@ -1701,17 +1714,17 @@ function ballHit(p,f){
     say(`VICTORY SHOT xuyên thẳng — 150 dmg, thủng giáp 50% trong ${rts(3)} giây!`,'g');
   }else if(p.type==='drive'){
     ring(f.x,f.y,120,'#FF8A2B',.5);
-    hurt(f,p.dmg,o,'DRIVE SHOT!',null,'red');            // cú nổ lửa: đỏ
-    if(f.alive){
+    const driveHit=hurt(f,p.dmg,o,'DRIVE SHOT!','big','red');   // cú nổ lửa: đỏ
+    if(driveHit&&f.alive){
       f.dots.push({dps:10,left:1.5,acc:0,src:o,tint:'red'});   // thiêu đốt 5 dmg × 3 đợt
       knock(f,p.vx,p.vy,200);
       for(let i=0;i<8;i++) G.fx.push({type:'dust',x:f.x+rnd(-16,16),y:f.y+rnd(-24,10),r:5,life:.45,ml:.45});
     }
     say('DRIVE SHOT trúng đích — 80 dmg kèm thiêu đốt 5 dmg × 3 đợt.','g');
   }else{
-    hurt(f,p.dmg,o,p.bic?'OVERHEAD KICK!':false,'basic');
+    const kickHit=hurt(f,p.dmg,o,p.bic?'OVERHEAD KICK!':false);
     sfx('hit');
-    if(f.alive&&f.invuln<=0){
+    if(kickHit&&f.alive&&f.invuln<=0){
       if(p.bic) stunFx(f,.25,'spark');          // chỉ overhead kick mới gây choáng
       knock(f,p.vx,p.vy,p.kb||180);
     }
@@ -2075,8 +2088,8 @@ function step(dt){
         melee(f,e,'FLYING KICK!');
         say('ChiChi lao tới, cú đá chí mạng chắc chắn 25 dmg!','c');
       }else{
-        hurt(e,150,f,'RASENGAN!');
-        const st=stunFx(e,3,'spin');
+        const rasHit=hurt(e,150,f,'RASENGAN!','big');
+        const st=rasHit&&stunFx(e,3,'spin');
         G.flashScreen=.18; ring(e.x,e.y,140,'#63B4FF',.55);
         say(st?`Rasengan trúng! 150 dmg + choáng ${rts(3)} giây.`:'Rasengan trúng! 150 dmg — nhưng đối thủ miễn nhiễm khống chế.','g');
       }
@@ -2165,7 +2178,7 @@ function step(dt){
       if(dist(f,w)<w.r+f.r){
         w.hit.push(f);
         if(f.invuln>0){ hurt(f,w.dmg,w.owner,w.crit); continue; }
-        hurt(f,w.dmg,w.owner,w.crit,'basic');
+        hurt(f,w.dmg,w.owner,w.crit);
         stunFx(f,.5,'spark'); sfx('stun');
       }
     }
@@ -2285,10 +2298,12 @@ function step(dt){
       if(p.type==='kunai'&&hitsBody(p,f)){ explode(p); dead=true; break; }
       if((p.type==='ball'||p.type==='drive'||p.type==='twin')&&hitsBody(p,f)){ ballHit(p,f); dead=true; break; }
       if(hitsBody(p,f)){
-        const basic = p.type==='shuriken'||p.type==='kunai';
-        const hpWas=f.hp;
-        hurt(f,p.dmg,p.owner,p.type==='kame'?'KAMEHAMEHA!':!!p.crit,basic?'basic':undefined);
-        if(p.bleed&&f.hp<hpWas) bleedOn(f,p.owner);      // shuriken của Shikamaru để lại vết cắt
+        // phi tiêu và kunai là đòn đánh thường nên cộng dồn né; phân thân, Kamehameha
+        // và Masenko là chiêu lớn: né được nhưng không cộng dồn
+        const big = p.type==='clone'||p.type==='kame'||p.type==='masenko';
+        const landed=hurt(f,p.dmg,p.owner,p.type==='kame'?'KAMEHAMEHA!':!!p.crit,big?'big':undefined);
+        if(!landed){ dead=true; break; }
+        if(p.bleed) bleedOn(f,p.owner);                  // shuriken của Shikamaru để lại vết cắt
         sfx('hit');
         if(p.type==='clone'){
           if(f.invuln<=0){
