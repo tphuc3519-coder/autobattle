@@ -64,27 +64,36 @@
   .csel{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
     padding:14px;overflow:auto;background:rgba(6,4,18,.88)}
   .csel.off{display:none}
-  .cselBox{width:100%;max-width:680px;background:var(--panel);border:1px solid var(--line);
+  /* Hộp cao tối đa bằng màn hình, phần giữa mới cuộn — nhờ vậy tiêu đề và hàng nút
+     luôn nằm trong tầm mắt, không phải cuộn cả trang mới bấm được Vào trận. */
+  .cselBox{width:100%;max-width:760px;max-height:calc(100vh - 28px);
+    display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);
     border-radius:16px;padding:15px 15px 13px;box-shadow:0 18px 60px rgba(0,0,0,.6)}
+  .cselBody{flex:1;min-height:0;overflow:auto;padding-right:2px}
   .cselBox h2{margin:0;font-size:clamp(17px,4.6vw,22px);font-weight:900;letter-spacing:-.01em}
   .cselBox h2 span{color:var(--gold)}
   .cselSub{font-family:"Space Mono",monospace;font-size:10.5px;color:var(--mute);
     letter-spacing:.14em;text-transform:uppercase;margin:4px 0 12px}
   .cselCols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media(max-width:520px){.cselCols{grid-template-columns:1fr}}
-  .cselCol{background:#120F28;border:1px solid var(--line);border-radius:12px;padding:9px}
+  .cselCol{background:#120F28;border:1px solid var(--line);border-radius:12px;padding:9px;
+    display:flex;flex-direction:column}
+  .cselCol .cDetail{flex:1}    /* hai khung mô tả cao bằng nhau dù danh sách chiêu dài ngắn khác nhau */
   .cselHead{font-size:11px;font-family:"Space Mono",monospace;letter-spacing:.12em;text-transform:uppercase;
     color:var(--mute);margin-bottom:8px;display:flex;align-items:center;gap:6px}
   .cselHead b{color:var(--paper);font-family:"Be Vietnam Pro",sans-serif;letter-spacing:0;font-size:12.5px}
-  .cCard{display:flex;gap:9px;align-items:flex-start;width:100%;text-align:left;padding:8px 9px;margin-bottom:7px;
+  /* Bốn ô nhỏ nằm ngang thay cho bốn thẻ dài xếp dọc: cả bảng chọn gọn lại còn
+     hai hàng ô cộng hai khung mô tả, thay vì tám thẻ dài phải cuộn mãi mới hết. */
+  .cTiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .cTile{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 3px;
     background:#191436;border:1px solid #2E2758;border-radius:10px;cursor:pointer;transition:.14s;font-weight:400}
-  .cCard:last-child{margin-bottom:0}
-  .cCard:hover{background:#241D4C;border-color:#4A3F8C}
-  .cCard.on{border-color:var(--gold);background:#2A2149;box-shadow:0 0 0 1px var(--gold) inset}
-  .cAva{width:38px;height:38px;flex:0 0 38px;border-radius:9px;display:flex;align-items:center;justify-content:center;
-    font-size:19px;background:#0C0920;border:2px solid currentColor}
-  .cCard>span:last-child{flex:1;min-width:0}
-  .cName{display:block;font-weight:800;font-size:13.5px;line-height:1.25}
+  .cTile:hover{background:#241D4C;border-color:#4A3F8C}
+  .cTile.on{border-color:var(--gold);background:#2A2149;box-shadow:0 0 0 1px var(--gold) inset}
+  .cAva{width:34px;height:34px;flex:0 0 34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    font-size:18px;background:#0C0920;border:2px solid currentColor}
+  .cDetail{margin-top:8px;background:#120F28;border:1px solid #2A2450;border-radius:10px;padding:9px 10px}
+  .cName{display:block;font-weight:800;font-size:12px;line-height:1.2;text-align:center}
+  .cDetail .cName{font-size:14px;text-align:left}
   .cTag{display:block;font-family:"Space Mono",monospace;font-size:9.5px;color:var(--mute);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
   .cSkills{display:block;font-size:11px;color:#C3B9E6;line-height:1.5;margin-top:5px}
   .cSkills i{color:var(--mute);font-style:normal}
@@ -190,9 +199,19 @@
   <div class="cselBox">
     <h2>CHỌN <span>NHÂN VẬT</span></h2>
     <div class="cselSub" id="cselCount">Chọn một nhân vật cho mỗi bên</div>
-    <div class="cselCols">
-      <div class="cselCol"><div class="cselHead">Bên trái <b id="pickNameA"></b></div><div id="listA"></div></div>
-      <div class="cselCol"><div class="cselHead">Bên phải <b id="pickNameB"></b></div><div id="listB"></div></div>
+    <div class="cselBody">
+      <div class="cselCols">
+        <div class="cselCol">
+          <div class="cselHead">Bên trái <b id="pickNameA"></b></div>
+          <div class="cTiles" id="listA"></div>
+          <div class="cDetail" id="detailA"></div>
+        </div>
+        <div class="cselCol">
+          <div class="cselHead">Bên phải <b id="pickNameB"></b></div>
+          <div class="cTiles" id="listB"></div>
+          <div class="cDetail" id="detailB"></div>
+        </div>
+      </div>
     </div>
     <div class="cselBar">
       <button id="cselGo" class="primary">⚔ Vào trận</button>
@@ -3763,9 +3782,15 @@ el('testEagle').addEventListener('click',testEagle);
 const TMP={a:PICK.a,b:PICK.b};
 function cselRefresh(){
   for(const slot of ['a','b']){
+    const key=TMP[slot], C=CHARS[key];
     const list=el(slot==='a'?'listA':'listB');
-    [...list.children].forEach(card=>card.classList.toggle('on',card.dataset.key===TMP[slot]));
-    el(slot==='a'?'pickNameA':'pickNameB').textContent='· '+CHARS[TMP[slot]].name;
+    [...list.children].forEach(t=>t.classList.toggle('on',t.dataset.key===key));
+    el(slot==='a'?'pickNameA':'pickNameB').textContent='· '+C.name;
+    // chỉ nhân vật đang chọn mới trải kỹ năng ra, ba người còn lại chỉ là ô nhỏ
+    el(slot==='a'?'detailA':'detailB').innerHTML=
+      `<span class="cName" style="color:${C.color}">${C.name}</span>`+
+      `<span class="cTag">${C.tag}</span>`+
+      `<span class="cSkills">${C.skills.map(x=>'<i>·</i> '+x).join('<br>')}</span>`;
   }
   el('cselVs').innerHTML=`<b>${CHARS[TMP.a].name}</b> vs <b>${CHARS[TMP.b].name}</b>`;
 }
@@ -3775,15 +3800,13 @@ function buildCsel(){
     list.innerHTML='';
     for(const key of CKEYS){
       const C=CHARS[key];
-      const card=document.createElement('button');
-      card.className='cCard'; card.dataset.key=key; card.type='button';
-      card.innerHTML=
+      const tile=document.createElement('button');
+      tile.className='cTile'; tile.dataset.key=key; tile.type='button'; tile.title=C.name;
+      tile.innerHTML=
         `<span class="cAva" style="color:${C.color}">${C.emoji}</span>`+
-        `<span><span class="cName" style="color:${C.color}">${C.name}</span>`+
-        `<span class="cTag">${C.tag}</span>`+
-        `<span class="cSkills">${C.skills.map(s=>'<i>·</i> '+s).join('<br>')}</span></span>`;
-      card.addEventListener('click',()=>{ TMP[slot]=key; cselRefresh(); });
-      list.appendChild(card);
+        `<span class="cName" style="color:${C.color}">${C.short||C.name}</span>`;
+      tile.addEventListener('click',()=>{ TMP[slot]=key; cselRefresh(); });
+      list.appendChild(tile);
     }
   }
   const sub=el('cselCount');
