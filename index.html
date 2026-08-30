@@ -233,7 +233,7 @@ const SETS=[
   {key:'kono', name:'Konohamaru', poses:[['idle','Thủ thế'],['atk1','Phi tiêu'],['atk2','Kết ấn phân thân'],['clone','Phân thân (bay ra)'],['skill','Sexy Jutsu'],['ulti','Rasengan'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
   {key:'chichi', name:'ChiChi', poses:[['idle','Thủ thế'],['atk1','Đấm đá'],['atk2','Mắng'],['skill','Hăng máu'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc gọi)'],['call','Dáng gọi viện binh']]},
   {key:'tsubasa', name:'Ozora Tsubasa', poses:[['idle','Thủ thế'],['atk1','Sút bóng'],['bicycle','Overhead kick'],['atk2','Drive shot'],['wings','Đôi cánh đại bàng'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc kích hoạt nội tại)']]},
-  {key:'shika', name:'Shikamaru', poses:[['idle','Thủ thế'],['lazy','Nằm lười (đầu trận)'],['atk1','Phóng shuriken'],['stab','Đâm sau lưng'],['atk2','Kết ấn trói bóng'],['ulti','Mở lãnh địa'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
+  {key:'shika', name:'Shikamaru', poses:[['idle','Thủ thế'],['lazy','Ngồi lười (đầu trận)'],['atk1','Phóng shuriken'],['stab','Đâm sau lưng'],['atk2','Kết ấn trói bóng'],['ulti','Mở lãnh địa'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
   {key:'goku', name:'Son Goku', poses:[['idle','Đứng'],['skill','Dồn khí'],['atk1','Kamehameha']]},
   {key:'gohan', name:'Son Gohan', poses:[['idle','Đứng'],['skill','Dồn khí'],['atk1','Masenko']]},
   {key:'hyuga', name:'Hyuga (đồng đội Tsubasa)', poses:[['idle','Đứng'],['atk1','Twin shot: Tsubasa + Hyuga']]},
@@ -263,10 +263,10 @@ const CHICHI_DASH_CD=5;           // ChiChi lao tới mỗi 5 giây trong trận
    còn sát thương duy trì thì nhân RT vì bảng dots tính theo giây trong trận. */
 const gs=sec=>sec/RT;             // giây người chơi -> giây trong trận
 const SHIKA={
-  lazyRate:25*RT,                 // nằm lười: 25 chakra mỗi giây người chơi
-  fightRate:8*RT,                 // đã vào trận: 8 chakra mỗi giây người chơi
+  lazyRate:12*RT,                 // ngồi lười: 12 chakra mỗi giây người chơi
+  fightRate:4*RT,                 // đã vào trận: 4 chakra mỗi giây người chơi
   wakeHp:.80,                     // tụt xuống mức này thì bật dậy đánh
-  evadeBase:.10, evadeStep:.05, evadeMax:.70,
+  evadeBase:.10, evadeStep:.025, evadeMax:.70,   // né được thì không cộng dồn, chỉ ăn đòn mới cộng
   atkCd:2.7,                      // đánh chậm gấp đôi Konohamaru (1.35)
   shurikenDmg:30, shurikenSpd:300,
   bleedDps:5*RT, bleedT:gs(3),    // chảy máu 5 dmg/s trong 3 giây người chơi
@@ -345,8 +345,8 @@ const CHARS={
       `<b>1</b> Twin Shuriken ${SHIKA.shurikenDmg} + bleed 5/s · half Konohamaru's attack speed, far better aim`,
       `<b>1+</b> Shadow Stab — blink behind for ${SHIKA.stabDmg} + bleed, stun ${rts(SHIKA.stabStun)}s · every ${rts(SHIKA.stabCd)}s`,
       `<b>2</b> Shadow-Neck Bind — 45 dmg/s for ${rts(SHIKA.bindT)}s, then stun ${rts(SHIKA.bindStun)}s`,
-      `<b>Passive</b> Lazy start: ${SHIKA.lazyRate/RT} chakra/s lying down, ${SHIKA.fightRate/RT}/s once hurt to ${Math.round(SHIKA.wakeHp*100)}%`,
-      `<b>Passive</b> Evasion ${Math.round(SHIKA.evadeBase*100)}%, +${Math.round(SHIKA.evadeStep*100)}% per hit taken, up to ${Math.round(SHIKA.evadeMax*100)}%`,
+      `<b>Passive</b> Lazy start: ${SHIKA.lazyRate/RT} chakra/s sitting out, ${SHIKA.fightRate/RT}/s once hurt to ${Math.round(SHIKA.wakeHp*100)}%`,
+      `<b>Passive</b> Evasion ${Math.round(SHIKA.evadeBase*100)}%, +${+(SHIKA.evadeStep*100).toFixed(1)}% per hit taken, up to ${Math.round(SHIKA.evadeMax*100)}%`,
       `<b>Below ${Math.round(SHIKA.domainHp*100)}% HP</b> Nara Shadow Garden — chakra spent as duration`],
     init(f){
       f.cds={s1:cm(1),s2:cm(2)};
@@ -1417,7 +1417,7 @@ function domainTick(k,dt){
     say('Khu vườn khép lại — Shikamaru cạn chakra: mất chiêu trói bóng, shuriken yếu đi 30%.','s');
   }
 }
-/* Nội tại 1 — nằm lười tích chakra, trúng đòn tới ngưỡng thì bật dậy. */
+/* Nội tại 1 — ngồi lười tích chakra, trúng đòn tới ngưỡng thì bật dậy. */
 function shikaPassive(f,dt){
   if(f.weak||f.domain)return;                         // mở lãnh địa rồi thì thôi tích
   if(f.lazy&&f.hp<=f.maxHp*SHIKA.wakeHp){
@@ -1989,7 +1989,7 @@ function step(dt){
     if(!f.alive)continue;
     const e=f===k?c:k;
     let v={x:0,y:0};
-    if(f.stun>0||f.lock>0||f.dash||f.lazy) v={x:0,y:0};   // nằm lười thì không nhúc nhích
+    if(f.stun>0||f.lock>0||f.dash||f.lazy) v={x:0,y:0};   // ngồi lười thì không nhúc nhích
     else if(isPlayer(f)) v=playerVec();
     else v=aiVec(f,e);
     if(f.lunge>.35 && !isPlayer(f)){ v.x=f.ax; v.y=f.ay; }
@@ -2643,8 +2643,9 @@ function drawFighter(f){
 
   ctx.save();
   ctx.translate(f.x+ox, f.y+20+oy*.4-hop);
-  ctx.rotate(lean + aimTilt - fs*rec*.12 + (f.lazy?fs*1.15:0));   // nằm lười: ngả hẳn người ra
-  ctx.scale(fs*sx, sy);
+  // ngồi lười: ngả nhẹ ra sau và thu người thấp xuống chứ không nằm hẳn
+  ctx.rotate(lean + aimTilt - fs*rec*.12 + (f.lazy?fs*.2:0));
+  ctx.scale(fs*sx, sy*(f.lazy?.68:1));
   // ám màu phủ lên người: cú đòn vừa dính được ưu tiên, hết chớp thì tới trạng thái đang mang.
   // đỏ khi trúng đòn nổ / thiêu đốt, hồng khi dính khói Sexy Jutsu, xanh lá khi đang kiệt sức vì phân thân.
   // chỉ lọc màu khi vẽ bằng ảnh — hình vector gồm hàng chục lệnh vẽ, lọc từng lệnh sẽ tụt khung hình
@@ -2920,7 +2921,7 @@ function drawBars(f){
   if(f.exhaust>0) lines.push({t:`EXHAUSTED −25% MOVE / CAST (${(f.exhaust*RT).toFixed(1)}s)`, c:'#BFD4FF', s:10});
   if(f.prewing) lines.push({t:`PRE-WINGS · −35% DMG · +50% CAST · ${Math.round((1-PREWING_STUN)*100)}% STUN RESIST`, c:'#9AE6C4', s:9});
   if(f.key==='shika'&&f.lazy) lines.push({t:`LAZY · +${SHIKA.lazyRate/RT} CHAKRA/s`, c:'#CFC6FF', s:10});
-  if(f.key==='shika'&&f.evade>SHIKA.evadeBase) lines.push({t:`EVASION ${Math.round(f.evade*100)}%`, c:'#CFC6FF', s:10});
+  if(f.key==='shika'&&f.evade>SHIKA.evadeBase) lines.push({t:`EVASION ${+(f.evade*100).toFixed(1)}%`, c:'#CFC6FF', s:10});
   if(f.key==='shika'&&f.weak) lines.push({t:'CHAKRA SPENT · NO BIND · −30% SHURIKEN', c:'#A79BD6', s:9});
   if(f.outCut>0) lines.push({t:`IN THE GARDEN · −${Math.round(SHIKA.domainOutCut*100)}% DAMAGE DEALT`, c:'#B7A6FF', s:9});
   if(f.dash&&f.dash.guard) lines.push({t:'FLYING KICK · CC IMMUNE · −30% DMG', c:'#FFC0CE', s:10});
