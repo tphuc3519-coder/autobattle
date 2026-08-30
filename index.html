@@ -256,6 +256,7 @@ const EAGLE_CD=1/4;               // tốc độ ra chiêu gấp 4: hồi chiêu
 const EAGLE_DRIVE=.5;             // riêng Drive Shot còn ra nhanh gấp đôi nữa
 const EAGLE_QUOTA={drive:2,bic:2}; // trong quãng cháy phải tung đủ chừng này
 const CHICHI_DASH_CD=5;           // ChiChi lao tới mỗi 5 giây trong trận, tức 10 giây người chơi thấy
+const CHICHI_CALL_LOCK=1.5;       // khoá ChiChi bấy nhiêu giây sau phân cảnh gọi viện binh
 const CHICHI_DASH_RES=.7;         // lúc lao tới chỉ nhận 70% sát thương
 const EXHAUST_T=4;                // phân thân gây kiệt sức bấy nhiêu giây trong trận
 const SEXY_DPS=15;                // khói hồng: nhịp nửa giây một lần, 4 nhịp x 7.5 = 30 dmg
@@ -1454,6 +1455,16 @@ function summonHelp(c,force){
   for(const f of G.fighters) releaseTwin(f);
   c.summonDone=true;
   c.injured=true;
+
+  // Phân cảnh chấn thương được ưu tiên tuyệt đối: huỷ cú lao đang bay và khoá ChiChi
+  // lại, nếu không hình Flying Kick (tư thế đá, vệt bóng mờ, vòng chắn) sẽ đè lên
+  // hình cô ôm vết thương gọi viện binh. Cú lao không mất — hẹn tung lại ngay khi
+  // khoá mở, tức là sau khi phân cảnh diễn xong.
+  const wasDashing = !!(c.dash && c.dash.kind==='charge');
+  c.dash=null;
+  c.lock=Math.max(c.lock, CHICHI_CALL_LOCK);
+  if(wasDashing){ c.dashCd=0; say('Cú lao dở dang bị cắt ngang — ChiChi gục xuống.','c'); }
+
   setPose(c,'wounded',.6);
   G.freeze=1.6; G.freezeAt=c;
 
