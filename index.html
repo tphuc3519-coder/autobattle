@@ -2343,7 +2343,7 @@ function drawFighter(f){
   const bodyTint = f.flash>0 ? TINT[f.flashCol] : (f.exhaust>0 ? TINT.green : null);
   if(f.flash>0||bodyTint){
     ctx.globalAlpha = f.flash>0 ? (bodyTint?bodyTint.alpha:.4)
-                                : bodyTint.alpha+Math.sin(G.t*4.5)*.06;
+                                : bodyTint.alpha+Math.sin(G.t*4.5)*.03;
     if(bodyTint&&img) try{ ctx.filter=bodyTint.filter; }catch(e){}
   }
   if(img){ const h=f.spriteH, w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
@@ -2357,6 +2357,29 @@ function drawFighter(f){
     ctx.globalAlpha=gA*tn.glowA*(img?1:1.6);
     ctx.fillStyle=tn.glow;
     ctx.beginPath(); ctx.ellipse(f.x+ox,bodyCY(f)-hop*.6,f.r+8,bodyRY(f)+6,0,0,7); ctx.fill();
+    ctx.restore();
+  }
+
+  // Kiệt sức: bọt khí độc sủi lên dọc người rồi tan ở trên đầu
+  if(f.exhaust>0){
+    const cx=f.x+ox, foot=f.y+18-hop, H=f.spriteH*.95;
+    ctx.save();
+    for(let i=0;i<9;i++){
+      const t=(G.t*.42+i*.111)%1;                    // mỗi bọt lệch pha một chút
+      const bx=cx+Math.sin(i*2.1+G.t*1.6+t*3)*13+((i%3)-1)*11;
+      const by=foot-t*H;
+      const r=1.8+(i%4)*.7+t*1.7;                    // càng nổi lên càng phình ra
+      const a=Math.sin(t*Math.PI)*.55;               // hiện dần rồi tan dần
+      ctx.globalAlpha=a;
+      ctx.fillStyle='#7BE38F';
+      ctx.beginPath(); ctx.arc(bx,by,r,0,7); ctx.fill();
+      ctx.globalAlpha=a*.8;
+      ctx.strokeStyle='#C9F7D4'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(bx,by,r,0,7); ctx.stroke();
+      ctx.globalAlpha=a*.7;                          // đốm sáng nhỏ cho ra chất bọt
+      ctx.fillStyle='#EAFFF0';
+      ctx.beginPath(); ctx.arc(bx-r*.34,by-r*.34,Math.max(.5,r*.28),0,7); ctx.fill();
+    }
     ctx.restore();
   }
 
@@ -2390,8 +2413,9 @@ const TINT={
         glow:'#FF6EC7', alpha:.62, glowA:.34},
   gray:{filter:'grayscale(1) brightness(1.1) contrast(.9)',
         glow:'#B9BCC8', alpha:.46, glowA:.36},
-  green:{filter:'grayscale(1) sepia(1) saturate(7) hue-rotate(52deg) brightness(.92) contrast(1.2)',
-        glow:'#38D66B', alpha:.5, glowA:.34}
+  // kiệt sức: chỉ phủ một lớp xanh rất mỏng, phần nhận ra trạng thái là bọt khí sủi lên
+  green:{filter:'saturate(1.5) hue-rotate(34deg) brightness(.97)',
+        glow:'#8CF2AD', alpha:.92, glowA:.05}
 };
 function heartPath(x,y,s){
   ctx.beginPath();
