@@ -258,6 +258,9 @@ const EAGLE_QUOTA={drive:2,bic:2}; // trong quãng cháy phải tung đủ chừ
 const CHICHI_DASH_CD=5;           // ChiChi lao tới mỗi 5 giây trong trận, tức 10 giây người chơi thấy
 const CHICHI_DASH_RES=.7;         // lúc lao tới chỉ nhận 70% sát thương
 const EXHAUST_T=4;                // phân thân gây kiệt sức bấy nhiêu giây trong trận
+const SEXY_DPS=15;                // khói hồng: nhịp nửa giây một lần, 4 nhịp x 7.5 = 30 dmg
+const SEXY_STUN=1.25;             // Sexy no Jutsu choáng nhân vật nam (2.5 giây người chơi)
+const SEXY_IMMUNE=.375;           // Konohamaru tự miễn nhiễm sau khi tung (0.75 giây người chơi)
 const EXHAUST_MUL=.75;            // kiệt sức: giảm 25% tốc chạy và 25% tốc ra chiêu
 const EAGLE_ACC=.5;               // độ lệch khi sút giảm một nửa, tức chuẩn xác gấp đôi
 const CHARS={
@@ -1145,16 +1148,16 @@ function sexy(k,e){
   ring(k.x,k.y,520,'#FFC6E6',.6);
   G.fx.push({type:'smoke',x:k.x,y:k.y,life:1.1,ml:1.1,big:true});
   G.flashScreen=Math.max(G.flashScreen,.06);
-  k.invuln=Math.max(k.invuln,.75);
-  G.floats.push({x:k.x,y:k.y-140,txt:`IMMUNE ${rts(.75)}s`,color:'#FF9AD5',life:1.2,ml:1.2,banner:true,gold:true,tilt:rnd(-.05,.05)});
-  say(`Khói hồng che chắn — Konohamaru miễn nhiễm ${rts(.75)} giây.`,'k');
+  k.invuln=Math.max(k.invuln,SEXY_IMMUNE);
+  G.floats.push({x:k.x,y:k.y-140,txt:`IMMUNE ${rts(SEXY_IMMUNE)}s`,color:'#FF9AD5',life:1.2,ml:1.2,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  say(`Khói hồng che chắn — Konohamaru miễn nhiễm ${rts(SEXY_IMMUNE)} giây.`,'k');
   say('Sexy no Jutsu! Khói hồng lan ra…','k');
   for(const f of G.fighters){
     if(f===k||!f.alive||dist(f,k)>R+f.r)continue;
     if(f.summon){ say(`${f.name} đang dồn khí, không hề nao núng.`,'m'); continue; }
-    f.dots.push({dps:10,left:2,acc:0,src:k,tint:'pink'});   // khói hồng: 4 nhịp x 5 dmg, tổng 20
+    f.dots.push({dps:SEXY_DPS,left:2,acc:0,src:k,tint:'pink'});
     if(f.male){
-      if(stunFx(f,2,'heart')){ sfx('charm'); say(`${f.name} đứng hình ${rts(2)} giây.`,'g'); }
+      if(stunFx(f,SEXY_STUN,'heart')){ sfx('charm'); say(`${f.name} đứng hình ${rts(SEXY_STUN)} giây.`,'g'); }
       else say(`${f.name} miễn nhiễm khống chế — không hề đứng hình.`,'g');
     }
     else say(`${f.name} là nữ — không choáng, chỉ tức nổ máu.`,'c');
