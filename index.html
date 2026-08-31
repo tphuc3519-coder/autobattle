@@ -545,7 +545,9 @@ const SFX_EVENTS=[
   ['stun','Choáng'],['summon','Viện binh tới'],['kame','Kamehameha'],['masenko','Masenko'],['callgoku','ChiChi gọi Goku'],['callgohan','ChiChi gọi Gohan'],['boom','Kunai nổ'],['ko','Kết thúc'],['win','Nhạc thắng trận'],['cheer','Khán giả hò reo'],
   ['kick','Tsubasa sút bóng'],['bicycle','Overhead kick'],['bounce','Bóng dội tường'],['drive','Drive shot'],['twin_hyuga','Twin shot với Hyuga'],['twin_misaki','Twin shot với Misaki'],['goal','Ghi goal'],['wings','Đôi cánh đại bàng'],
   ['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt'],
-  ['shika_lazy','Shikamaru ngồi than thở'],['shika_wake','Shikamaru bật dậy đánh'],['shika_garden','Mở khu rừng nhà Nara']
+  ['shika_lazy','Shikamaru ngồi than thở'],['shika_wake','Shikamaru bật dậy đánh'],
+  ['shika_stab','Đâm sau lưng'],['shika_bind','Trói bóng khoá cổ'],['shika_grab','Bóng siết lấy cổ'],
+  ['shika_garden','Mở khu rừng nhà Nara']
 ];
 const SFXBUF={};
 let AC=null, volume=.6, muted=false, lastSfx={};
@@ -660,6 +662,18 @@ function synth(name,c,g){
     case 'shika_wake':       // bật dậy: một nhịp trống gọn rồi vút lên
       noise(c,g,{dur:.16,f0:400,f1:120,vol:.18});
       tone(c,g,{type:'triangle',f0:220,f1:640,dur:.34,vol:.16,delay:.06});
+      break;
+    case 'shika_stab':       // đâm sau lưng: tiếng xé gió gọn rồi một nhát sắc
+      noise(c,g,{dur:.18,f0:2600,f1:700,vol:.15,type:'bandpass',q:1.4});
+      tone(c,g,{type:'square',f0:900,f1:260,dur:.14,vol:.13,delay:.1});
+      break;
+    case 'shika_bind':       // trói bóng: trầm bò dài, như bóng trườn trên đất
+      tone(c,g,{type:'sine',f0:90,f1:220,dur:.6,vol:.2});
+      noise(c,g,{dur:.6,f0:300,f1:1400,vol:.1,type:'lowpass',q:.9});
+      break;
+    case 'shika_grab':       // bóng siết cổ: một nhịp bóp nghẹt
+      tone(c,g,{type:'sawtooth',f0:300,f1:80,dur:.34,vol:.2});
+      noise(c,g,{dur:.22,f0:1200,f1:200,vol:.13});
       break;
     case 'shika_garden':     // mở vườn: trầm dâng lên kèm tiếng gió lá
       tone(c,g,{type:'sawtooth',f0:70,f1:340,dur:1.1,vol:.26});
@@ -1319,7 +1333,7 @@ function shikaThrow(k,e){
 /* Chiêu 1+ — chớp ra sau lưng địch rồi đâm. Dùng chung vòng lặp lao tới, chỉ khác
    là nhắm vào một điểm sau lưng địch chứ không phải vào người địch. */
 function shikaStab(k,e){
-  setPose(k,'stab',1.1); aim(k,e,1.4); sfx('throw');
+  setPose(k,'stab',1.1); aim(k,e,1.4); sfx('shika_stab');
   const d=dist(k,e)||1;
   const bx=clamp(e.x+(e.x-k.x)/d*(k.r+e.r+16),PAD,W-PAD);
   const by=clamp(e.y+(e.y-k.y)/d*(k.r+e.r+16),PAD+50,H-PAD-10);
@@ -1347,7 +1361,7 @@ function bleedOn(t,src){
    sang địch; chạm rồi thì quấn quanh người và bóp cổ, hết giờ thì bóng rút về và
    địch đứng hình. Bị choáng giữa chừng là đứt chiêu. */
 function shadowBind(k,e){
-  setPose(k,'atk2',1.2); aim(k,e,.4); sfx('stun');
+  setPose(k,'atk2',1.2); aim(k,e,.4); sfx('shika_bind');
   const guarded=k.bindGuard;                        // lần bù sau khi bị cắt: chắc chắn né được choáng
   k.bindGuard=false;
   k.bind={ph:'reach',t:0,len:0,guard:guarded,e,acc:0};
@@ -1369,7 +1383,7 @@ function bindTick(k,dt){
     if(B.len>=d-e.r){                                // bóng chạm chân địch
       B.ph='hold'; B.t=SHIKA.bindT; B.len=d;
       ring(e.x,e.y,96,'#2A2140',.55);
-      sfx('stun');
+      sfx('shika_grab');
       say(`Bị dải bóng quấn kín — ${SHIKA.bindDps/RT} dmg mỗi giây trong ${rts(SHIKA.bindT)} giây.`,'s');
     }
   }else if(B.ph==='hold'){
