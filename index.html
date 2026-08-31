@@ -182,7 +182,7 @@
       </div>
       <div class="slots" id="sfxArea" style="margin-top:8px"></div>
       <div class="help" id="sfxStatus">Đang dùng tiếng tự tạo sẵn có. Nạp file để thay thế từng loại.</div>
-      <div class="help">File dài (trên 2.6 giây) sẽ được đọc <b>nối tiếp từng đoạn ~2 giây</b>, lần sau nói tiếp chỗ cũ chứ không quay lại đầu — hợp cho một tràng ChiChi chửi dài. Riêng <b>Kamehameha, Masenko và Đôi cánh đại bàng phát từ đầu, dài tối đa 5 giây</b> (tia bắn ra ở giây thứ 2.8 và 2.2 ở tốc độ gốc). Tiếng kết thúc, nhạc thắng, hò reo và <b>tiếng mở khu rừng nhà Nara</b> thì phát trọn vẹn, dài bao nhiêu cũng được. Còn mấy tiếng đi kèm một hình cụ thể thì phát từ đầu rồi <b>tắt đúng lúc hình đó tắt</b>, file dài hơn chỉ nghe được phần đầu: tiếng Shikamaru than thở tắt cùng bong bóng thoại, tiếng gọi Goku / Gohan tắt cùng băng-rôn, tiếng viện binh hiện ra tắt lúc họ bắn.</div>
+      <div class="help">File dài (trên 2.6 giây) sẽ được đọc <b>nối tiếp từng đoạn ~2 giây</b>, lần sau nói tiếp chỗ cũ chứ không quay lại đầu — hợp cho một tràng ChiChi chửi dài. Riêng <b>Kamehameha, Masenko và Đôi cánh đại bàng phát từ đầu, dài tối đa 5 giây</b> (tia bắn ra ở giây thứ 2.8 và 2.2 ở tốc độ gốc). Tiếng kết thúc, nhạc thắng, hò reo và <b>tiếng mở khu rừng nhà Nara</b> thì phát trọn vẹn, dài bao nhiêu cũng được. Tiếng gọi Goku / Gohan và tiếng viện binh hiện ra thì phát từ đầu rồi <b>tắt đúng lúc hình tắt</b>, file dài hơn chỉ nghe được phần đầu. Riêng <b>tiếng Shikamaru than thở</b> đọc nối tiếp từng đoạn dài bằng bong bóng thoại: lần sau nói tiếp chỗ cũ chứ không lặp lại câu đầu, nên một file thu nhiều câu là mỗi lần cậu càu nhàu một câu khác.</div>
     </details>
   </div>
 
@@ -738,11 +738,14 @@ const SFX_FULL=new Set(['ko','win','cheer','twin_hyuga','twin_misaki','shika_gar
 // trên sân chẳng còn gì.
 const SFX_MAXLEN={
   kame:5, masenko:5, wings:5,
-  shika_lazy:GRUMBLE_LIFE*RT,                   // hết bong bóng thoại là hết nói
   callgoku:CALL_BANNER_LIFE*RT,                 // hết băng-rôn gọi là hết
   callgohan:CALL_BANNER_LIFE*RT,
   summon:SUMMON_CHARGE*RT                       // viện binh hiện ra tới lúc bắn
 };
+// File dài thì đọc nối tiếp từng đoạn, lần sau nói tiếp chỗ cũ. Mặc định mỗi đoạn
+// 2.2 giây; riêng tiếng than thở lấy đúng tuổi thọ bong bóng làm độ dài đoạn, nên
+// mỗi lần Shikamaru mở miệng là một câu khác trong file, và vẫn tắt cùng bong bóng.
+const SFX_SEG={ shika_lazy:GRUMBLE_LIFE*RT };
 const SFX_POS={}, SFX_ACTIVE={};
 function resetSfxPos(){ for(const k in SFX_POS) delete SFX_POS[k]; }
 function playBuffer(name,buf,c,g){
@@ -766,7 +769,7 @@ function playBuffer(name,buf,c,g){
     return;
   }
   // file dài: đọc tiếp từng đoạn, không quay lại đầu
-  const SEG=Math.min(2.2, dur);
+  const SEG=Math.min(SFX_SEG[name]||2.2, dur);
   let off=SFX_POS[name]||0;
   if(off>=dur-.2) off=0;
   const len=Math.min(SEG, dur-off);
