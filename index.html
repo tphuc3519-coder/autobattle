@@ -137,7 +137,11 @@
     <button id="play" class="primary">Bắt đầu</button>
     <button id="reset">Đánh lại</button>
     <button id="rec">⏺ Ghi hình sàn đấu</button>
-    <label class="chk" title="Xuất video khung dọc 9:16 (1080×1920) cho vừa màn hình điện thoại"><input type="checkbox" id="rec916" checked> Dọc 9:16</label>
+    <select id="rec916" title="Khung video lúc ghi hình. 1080p nét hơn nhưng máy yếu có thể rớt khung; 720p thì nhẹ hều.">
+      <option value="1080" selected>Video dọc 9:16 · 1080p</option>
+      <option value="720">Video dọc 9:16 · 720p</option>
+      <option value="0">Video khung nguyên bản</option>
+    </select>
     <button id="testGoku" title="Gọi Goku ngay để thử">🧪 Test Goku</button>
     <button id="testGohan" title="Gọi Gohan ngay để thử">🧪 Test Gohan</button>
     <button id="testTwin" title="Nạp đủ goal để xem Victory Twin Shot">🧪 Test Twin Shot</button>
@@ -3890,18 +3894,26 @@ function loop(now){
    sàn đấu vuông đặt giữa khung, dải trên ghi tên trận và đồng hồ, dải dưới chạy bốn
    dòng nhật ký gần nhất. Bỏ tick "Dọc 9:16" thì ghi thẳng canvas như cũ.
    Khung dọc chỉ được dựng trong lúc đang ghi nên không đụng tới fps lúc chơi thường. */
-const REC916={w:720,h:1280};        // khung video xuất ra (9:16, vừa TikTok/Reels/Shorts)
-const RECD={w:1080,h:1920,top:355}; // hệ toạ độ lúc vẽ, rồi thu nhỏ về REC916
+/* Khung video dọc 9:16 (vừa TikTok/Reels/Shorts). Chọn ở #rec916: 1080p cho nét,
+   720p cho máy yếu — mã hoá 1080×1920 bằng CPU khá nặng. Chữ luôn vẽ theo hệ toạ độ
+   RECD 1080×1920 rồi setTransform thu về đúng bề ngang đang chọn. */
+const RECD={w:1080,h:1920,top:355};
+let REC916={w:1080,h:1920};
 let REC=null, recChunks=[], recStart=0, recTimer=null, recTall=false;
 let RECV=null, RECX=null, recSig='';
-function recWantTall(){ const c=document.getElementById('rec916'); return !c||c.checked; }
-function recCanvas(){
-  if(!RECV){
-    RECV=document.createElement('canvas');
+function recWantTall(){                       // 0 = ghi thẳng canvas như cũ
+  const c=document.getElementById('rec916');
+  const v=c?parseInt(c.value,10):1080;
+  return v===720||v===1080?v:0;
+}
+function recCanvas(wide){
+  if(!RECV||REC916.w!==wide){
+    REC916={w:wide,h:Math.round(wide*16/9)};
+    RECV=RECV||document.createElement('canvas');
     RECV.width=REC916.w; RECV.height=REC916.h;
     RECX=RECV.getContext('2d');
     // 'low': thu nhỏ sàn đấu mỗi khung bằng 'high' hay 'medium' làm tụt fps lúc ghi
-    // xuống còn nửa (đo được 59 -> 29 fps trên máy không có GPU).
+    // xuống còn nửa (đo ở 720p trên máy không có GPU: 59 -> 29 fps).
     RECX.imageSmoothingEnabled=true; RECX.imageSmoothingQuality='low';
     const k=REC916.w/RECD.w;
     RECX.setTransform(k,0,0,k,0,0);        // vẽ theo hệ 1080×1920 cho dễ canh chữ
@@ -3941,7 +3953,7 @@ function toggleRec(){
   }
   let stream, src=CV;
   recTall=recWantTall();
-  if(recTall){ src=recCanvas(); recSig=''; recFrame(); }   // có khung đầu tiên rồi mới mở luồng
+  if(recTall){ src=recCanvas(recTall); recSig=''; recFrame(); }   // có khung đầu tiên rồi mới mở luồng
   try{ stream=src.captureStream(60); }catch(e){ recTall=false; say('Không mở được luồng hình.','m'); return; }
   try{
     ac(); const d=recDest();

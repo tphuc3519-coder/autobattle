@@ -225,25 +225,27 @@ Máy chạy test không có GPU, nên:
 
 ## 7b. Ghi hình — khung dọc 9:16
 
-Nút `#rec` quay canvas sàn đấu; tick `#rec916` (bật sẵn) thì video lưu ra **720×1280** thay
-vì canvas gốc. Cách làm: một canvas phụ `RECV` 720×1280, mỗi khung `recFrame()` blit canvas
-sàn đấu vào giữa; `MediaRecorder` quay `RECV.captureStream(60)`.
+Nút `#rec` quay canvas sàn đấu; ô chọn `#rec916` quyết định khung video:
+**1080p (1080×1920, mặc định)**, **720p (720×1280)**, hoặc khung nguyên bản như cũ. Cách làm:
+một canvas phụ `RECV` đúng cỡ đó, mỗi khung `recFrame()` blit canvas sàn đấu vào giữa;
+`MediaRecorder` quay `RECV.captureStream(60)`.
 
 > **Khung dọc chỉ có ba thứ: nền đen, dòng tên cặp đấu, và sàn đấu.** Người dùng đã bác bản
 > có dải nhật ký tiếng Việt phía dưới và dòng đồng hồ / chữ AUTOBATTLE phía trên — đừng in
 > thêm chữ gì lên video.
 
-Ba điều đã đo, đừng đảo lại:
+Chữ vẽ theo hệ toạ độ thiết kế **1080×1920** (`RECD`) rồi `setTransform` thu về bề ngang đang
+chọn, nên đổi độ phân giải không phải chỉnh lại từng cỡ chữ. `recCanvas(wide)` dựng lại canvas
+khi đổi cỡ (gán `.width` là reset luôn transform lẫn `imageSmoothing*`, nhớ đặt lại).
 
-1. **Kích thước xuất 720×1280, không phải 1080×1920.** Máy không GPU mã hoá VP9 ở 1080×1920
-   chỉ đạt **14~17 fps**; ở 720×1280 được **60 fps** (quay canvas gốc: 44~49 fps).
-2. **`imageSmoothingQuality='low'` cho `RECX`.** Để `'medium'` hay `'high'` thì cú thu nhỏ
-   sàn đấu mỗi khung kéo fps từ 60 xuống **29**. Ở 720 nhìn vẫn nét.
-3. **Nền đen và dòng tên chỉ vẽ lại khi tên đổi** (`recSig`): cú blit sàn đấu không đè lên
-   phần đó nên chữ vẫn còn từ khung trước. Vẽ chữ cỡ lớn mỗi khung cũng tốn thấy rõ.
+Hai chỗ phải làm cho nhẹ, đo trên máy test không có GPU (mã hoá VP9 bằng CPU):
 
-Chữ vẽ theo hệ toạ độ thiết kế **1080×1920** (`RECD`) rồi `setTransform` thu về `REC916`, nên
-đổi độ phân giải chỉ cần sửa `REC916`, không phải chỉnh lại từng cỡ chữ.
+1. **`imageSmoothingQuality='low'` cho `RECX`.** Để `'medium'` hay `'high'` thì cú thu nhỏ sàn
+   đấu mỗi khung kéo fps từ 59 xuống **29** (đo ở 720p). Ở 720p nhìn vẫn nét.
+2. **Nền đen và dòng tên chỉ vẽ lại khi tên đổi** (`recSig`): cú blit sàn đấu không đè lên
+   phần đó nên chữ vẫn còn từ khung trước. Bản đầu vẽ gradient toàn khung + chữ mỗi khung chỉ
+   được **14~17 fps** ở 1080p; bỏ hai thứ đó đi thì 1080p lên **37~45 fps**, xấp xỉ bằng quay
+   canvas nguyên bản (36~48), còn 720p **43~48 fps**. Máy có GPU thì nhẹ hơn nữa.
 
 ## 8. Kiểm thử
 
