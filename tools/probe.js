@@ -14,6 +14,10 @@ window.__G=()=>G; window.__ac=ac; window.__RT=RT; window.__SHIKA=SHIKA;
 window.__SFXBUF=SFXBUF; window.__sfx=n=>sfx(n); window.__SFXE=SFX_EVENTS;
 window.__CHARS=CHARS; window.__hurt=hurt; window.__shikaStabHit=shikaStabHit;
 window.__gs=gs; window.__rts=rts;
+window.__vector=vector; window.__drawFighter=drawFighter;
+window.__setCtx=c=>{ ctx=c; };            // ctx khai bằng let chính vì để mượn thế này
+window.__hurt=hurt; window.__stunFx=stunFx; window.__explode=explode;
+window.__sexy=sexy; window.__shadowBind=shadowBind; window.__tryEvade=tryEvade;
 `;
 
 /* Trả về đường dẫn file probe. Ghi ra thư mục tạm để không bẩn repo. */

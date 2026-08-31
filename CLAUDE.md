@@ -117,8 +117,16 @@ Toàn bộ trong hằng `SHIKA`. Những điểm người dùng chốt riêng:
   rơi vào khoảng 4 giây — đó là bình thường, không phải lỗi.
 - **Né đòn**: gốc 10%, mỗi lần **trúng đòn thường** +2.5%, trần 70%. Né được thì **không**
   cộng dồn. Né được **mọi thứ kể cả ultimate** (Rasengan, Kamehameha, Masenko, mọi cú sút
-  của Tsubasa) — nhưng ultimate **không** cộng dồn tỉ lệ. **Ngoại lệ duy nhất: Sexy no Jutsu
-  không né được.**
+  của Tsubasa) — nhưng ultimate **không** cộng dồn tỉ lệ. Bốn luật đi kèm:
+  1. **Đang choáng thì không né được cú nào** (vẫn cộng dồn tỉ lệ, vì vẫn là đòn ăn vào người).
+  2. **Né được thì không dính choáng ăn theo** — nên mọi chỗ gọi `stunFx()` phải nằm sau khi
+     kiểm `hurt()` trả về true.
+  3. **Ngoại lệ duy nhất: Sexy no Jutsu** — ăn cả sát thương lẫn choáng, không né được
+     (sát thương đi đường `dots`, choáng gọi thẳng `stunFx`).
+  4. Trừ lúc đang kết ấn **trói bóng lần bù** (`bind.guard`): lần đó không gì cắt được,
+     Sexy no Jutsu cũng không.
+
+  Kiểm bằng `node tools/t_dodge.js`.
 - Chiêu 1: hai phi tiêu, mỗi cái **12 dmg + 5 dmg/giây chảy máu**, tốc đánh bằng nửa Konohamaru.
 - Đâm sau lưng: 50 dmg + chảy máu + choáng 1 giây người chơi, mỗi 15 giây người chơi, bị
   cắt ngang thì hoàn 50% hồi chiêu.
@@ -219,6 +227,7 @@ Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 ```bash
 node tools/t_reg.js     # 10 cặp đấu song song, bắt lỗi trang, xem cơ chế lớn có nổ không
 node tools/t_wake.js    # đo nhịp Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây
+node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 ```
 
 Cả hai trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng

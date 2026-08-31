@@ -1178,7 +1178,9 @@ function aim(f,e,power){
    không cộng — chỉ đòn đánh thường ăn phải mới đẩy tỉ lệ lên. */
 function tryEvade(t,kind){
   if(!(t.evade>0)||kind==='dot'||kind==='domain')return false;
-  if(chance(t.evade)){
+  // Đang choáng thì đứng như trời trồng: không lách được cú nào. Vẫn cộng dồn tỉ lệ
+  // ở dưới, vì đó vẫn là một đòn thường ăn vào người.
+  if(t.stun<=0&&chance(t.evade)){
     G.floats.push({x:t.x,y:t.y-88,txt:'DODGE',color:'#CFC6FF',life:.9,ml:.9,banner:true,sc:.62});
     return true;
   }
@@ -1283,9 +1285,11 @@ function explode(p){
   for(const f of G.fighters){
     if(f.team===p.team||!f.alive||f.summon)continue;
     if(dist(f,p)<R+f.r){
-      landed=true;
-      hurt(f,p.dmg,p.owner,'BOOM!',null,'red');          // dính đòn nổ: đỏ
-      if(f.invuln<=0) stunFx(f,.5,'spark');
+      // né được thì cả choáng lẫn sát thương đều trượt, nên phải xem hurt() trả về gì
+      if(hurt(f,p.dmg,p.owner,'BOOM!',null,'red')){      // dính đòn nổ: đỏ
+        landed=true;
+        if(f.invuln<=0) stunFx(f,.5,'spark');
+      }
     }
   }
   sfx('boom');
@@ -2274,8 +2278,7 @@ function step(dt){
       if(dist(f,w)<w.r+f.r){
         w.hit.push(f);
         if(f.invuln>0){ hurt(f,w.dmg,w.owner,w.crit); continue; }
-        hurt(f,w.dmg,w.owner,w.crit);
-        stunFx(f,.5,'spark'); sfx('stun');
+        if(hurt(f,w.dmg,w.owner,w.crit)){ stunFx(f,.5,'spark'); sfx('stun'); }
       }
     }
     for(const p of G.proj){
