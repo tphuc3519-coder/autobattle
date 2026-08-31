@@ -141,6 +141,7 @@
     <button id="testGohan" title="Gọi Gohan ngay để thử">🧪 Test Gohan</button>
     <button id="testTwin" title="Nạp đủ goal để xem Victory Twin Shot">🧪 Test Twin Shot</button>
     <button id="testEagle" title="Ép Tsubasa vào trạng thái Wings of the Eagle">🧪 Test Eagle</button>
+    <button id="testForest" title="Ép Shikamaru mở khu rừng nhà Nara">🧪 Test lãnh địa</button>
   </div>
 
   <div class="stage"><canvas id="arena" width="620" height="620"></canvas></div>
@@ -1483,10 +1484,11 @@ function domainTick(k,dt){
 /* Ngồi lười thì cứ một lúc lại càu nhàu một câu. Nói thưa thôi — mỗi câu cách nhau
    vài giây — nhưng bong bóng thoại luôn hiện dù file tiếng chưa nạp hay dài quá. */
 const SHIKA_GRUMBLES=[
-  'What a drag...','Too troublesome.','Wake me when it matters.',
-  'The clouds are better than this.','Five more minutes.',
-  'I already know how this ends.','Not worth the chakra.',
-  'Can we not?','Fighting is such a pain.','Let me nap on it.'
+  'What a drag...','What a drag this is.','Too troublesome.',
+  'Troublesome as always.','Ugh... troublesome.','Such a pain.',
+  'What a hassle.','What a bother.','What a chore.',
+  'What a nuisance.','This is a headache.','So much trouble.',
+  'Way too much effort.','More trouble than it\'s worth.'
 ];
 let lastGrumble=-1;
 function grumble(f){
@@ -3938,6 +3940,21 @@ function testEagle(){
   eagleAwaken(t);
   say('[Thử nghiệm] Ép Tsubasa vào trạng thái Wings of the Eagle.','m');
 }
+function testForest(){
+  if(G.over){ newGame(); }
+  const k=findFighter('shika');
+  if(!k){ say('Cần có Shikamaru trong trận mới thử được lãnh địa.','m'); return; }
+  if(k.domain){ say('Khu rừng đang mở rồi.','m'); return; }
+  if(k.domainDone){ say('Shikamaru đã mở lãnh địa một lần, chakra đã cạn.','m'); return; }
+  ac(); if(MUSIC.on) startMusic();
+  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  k.lazy=false; k.awake=true;
+  // đầu trận chakra còn ít, lãnh địa sẽ chớp một cái là hết — nạp cho đủ xem
+  if(k.chakra<400){ k.chakra=400; say('[Thử nghiệm] Nạp tạm 400 chakra cho đủ xem.','m'); }
+  k.hp=Math.min(k.hp,Math.round(k.maxHp*(SHIKA.domainHp-.01)));
+  naraDomain(k,foeOf(k));
+  say('[Thử nghiệm] Ép Shikamaru mở khu rừng nhà Nara.','m');
+}
 function testTwin(){
   if(G.over){ newGame(); }
   const t=findFighter('tsubasa');
@@ -3952,6 +3969,7 @@ el('testGoku').addEventListener('click',()=>testSummon('goku'));
 el('testGohan').addEventListener('click',()=>testSummon('gohan'));
 el('testTwin').addEventListener('click',testTwin);
 el('testEagle').addEventListener('click',testEagle);
+el('testForest').addEventListener('click',testForest);
 
 /* ---------- màn chọn nhân vật ---------- */
 const TMP={a:PICK.a,b:PICK.b};
