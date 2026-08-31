@@ -1,0 +1,53 @@
+/* Dựng bản "có móc" của game để chạy test tự động.
+   Cả game nằm trong một IIFE nên không biến nào lộ ra window; ở đây chèn thêm
+   một dòng gán trước dấu đóng IIFE để test với tới được ruột game. */
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+
+const ROOT = path.join(__dirname, '..');
+const SRC = path.join(ROOT, 'index.html');
+
+/* Những thứ test hay cần. Thêm vào đây chứ đừng sửa index.html. */
+const HOOKS = `
+window.__G=()=>G; window.__ac=ac; window.__RT=RT; window.__SHIKA=SHIKA;
+window.__SFXBUF=SFXBUF; window.__sfx=n=>sfx(n); window.__SFXE=SFX_EVENTS;
+window.__CHARS=CHARS; window.__hurt=hurt; window.__shikaStabHit=shikaStabHit;
+window.__gs=gs; window.__rts=rts;
+`;
+
+/* Trả về đường dẫn file probe. Ghi ra thư mục tạm để không bẩn repo. */
+function build() {
+  const s = fs.readFileSync(SRC, 'utf8');
+  const i = s.lastIndexOf('})();');
+  if (i < 0) throw new Error('không tìm thấy dấu đóng IIFE trong index.html');
+  const out = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'autobattle-')), 'probe.html');
+  fs.writeFileSync(out, s.slice(0, i) + HOOKS + s.slice(i));
+  return out;
+}
+
+function playwright() {
+  try { return require('playwright'); }
+  catch (e) { return require('/opt/node22/lib/node_modules/playwright'); }
+}
+
+/* Mở một trận: chọn hai nhân vật rồi bấm vào trận và chạy.
+   keyA/keyB lấy trong CHARS: kono | chichi | tsubasa | shika */
+async function openGame(keyA, keyB, opt) {
+  const o = opt || {};
+  const { chromium } = playwright();
+  const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
+  const page = await browser.newPage({ viewport: { width: 700, height: 980 } });
+  await page.route('**://fonts.*/**', r => r.abort());   // khỏi chờ font mạng
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto('file://' + (o.file || build()), { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+  await page.click(`#listA .cTile[data-key="${keyA}"]`);
+  await page.click(`#listB .cTile[data-key="${keyB}"]`);
+  await page.click('#cselGo');
+  if (o.play !== false) await page.click('#play');
+  return { browser, page, errors };
+}
+
+module.exports = { build, openGame, playwright, SRC, ROOT };
