@@ -182,7 +182,7 @@
       </div>
       <div class="slots" id="sfxArea" style="margin-top:8px"></div>
       <div class="help" id="sfxStatus">Đang dùng tiếng tự tạo sẵn có. Nạp file để thay thế từng loại.</div>
-      <div class="help">File dài (trên 2.6 giây) sẽ được đọc <b>nối tiếp từng đoạn ~2 giây</b>, lần sau nói tiếp chỗ cũ chứ không quay lại đầu — hợp cho một tràng ChiChi chửi dài. Riêng <b>Kamehameha, Masenko và Đôi cánh đại bàng phát từ đầu, dài tối đa 5 giây</b> (tia bắn ra ở giây thứ 2.8 và 2.2 ở tốc độ gốc). Tiếng kết thúc, nhạc thắng, hò reo và <b>tiếng mở khu rừng nhà Nara</b> thì phát trọn vẹn, dài bao nhiêu cũng được. Còn mấy tiếng đi kèm một hình cụ thể thì phát từ đầu rồi <b>tắt đúng lúc hình đó tắt</b>, file dài hơn chỉ nghe được phần đầu: tiếng Shikamaru than thở tắt cùng bong bóng thoại, tiếng gọi Goku / Gohan tắt cùng băng-rôn, tiếng viện binh hiện ra tắt lúc họ bắn.</div>
+      <div class="help">File dài (trên 2.6 giây) sẽ được đọc <b>nối tiếp từng đoạn ~2 giây</b>, lần sau nói tiếp chỗ cũ chứ không quay lại đầu — hợp cho một tràng ChiChi chửi dài. Riêng <b>Kamehameha, Masenko và Đôi cánh đại bàng phát từ đầu, dài tối đa 5 giây</b> (tia bắn ra ở giây thứ 2.8 và 2.2 ở tốc độ gốc). Tiếng kết thúc, nhạc thắng, hò reo và <b>tiếng mở khu rừng nhà Nara</b> thì phát trọn vẹn, dài bao nhiêu cũng được. Tiếng gọi Goku / Gohan và tiếng viện binh hiện ra thì phát từ đầu rồi <b>tắt đúng lúc hình tắt</b>, file dài hơn chỉ nghe được phần đầu. <b>Tiếng Shikamaru than thở</b> đọc nối tiếp từng đoạn dài bằng bong bóng thoại, còn <b>tiếng mắng của ChiChi</b> đọc theo đúng nhịp hét — chỉnh tốc ra chiêu thì độ dài đoạn đổi theo. Cả hai đều nói tiếp chỗ cũ, hết file thì quay lại đầu, nên một file thu nhiều câu là mỗi lần một câu khác chứ không lặp câu đầu.</div>
     </details>
   </div>
 
@@ -299,13 +299,15 @@ const SHIKA={
   domainHp:.20, domainLo:35*RT, domainHi:215*RT,
   domainOutCut:.5,                // địch trong lãnh địa chỉ gây một nửa sát thương
   chakraPerSec:100,               // 100 chakra đổi được 1 giây người chơi
-  weakMul:.7                      // hết lãnh địa: chiêu 1 yếu đi 30%
+  weakMul:.7,                     // hết lãnh địa: chiêu 1 yếu đi 30%
+  wakeDelay:1                     // bật dậy rồi chờ bấy nhiêu giây người chơi mới ra đòn
 };
 /* Tuổi thọ của mấy thứ nhìn thấy được, khai ở đây vì SFX_MAXLEN bên dưới bám theo:
    tiếng không được sống lâu hơn hình đi kèm nó. */
 const GRUMBLE_LIFE=2.2;           // bong bóng than thở của Shikamaru
 const CALL_BANNER_LIFE=1.9;       // băng-rôn "GOKU!!" / "GOHAN!!" lúc ChiChi gọi
 const SUMMON_CHARGE=1.4;          // viện binh hiện ra rồi dồn khí bấy nhiêu giây mới bắn
+const SCOLD_BUBBLE=1.5;           // bong bóng mỗi câu mắng của ChiChi
 const CHICHI_CALL_LOCK=1.5;       // khoá ChiChi bấy nhiêu giây sau phân cảnh gọi viện binh
 const CHICHI_DASH_RES=.7;         // lúc lao tới chỉ nhận 70% sát thương
 const EXHAUST_T=4;                // phân thân gây kiệt sức bấy nhiêu giây trong trận
@@ -383,7 +385,8 @@ const CHARS={
     },
     think(f,e,d,auto){
       if(f.dash||f.bind||f.domain)return;
-      if(f.lazy)return;                                  // còn nằm lười thì chưa đánh
+      if(f.lazy)return;                                  // còn ngồi lười thì chưa đánh
+      if(f.wakeT>0)return;                               // vừa đứng dậy, hẵng thở một nhịp
       // lao ra sau lưng địch: chỉ khi đã đủ gần, và không dùng trong lãnh địa
       if(f.dashCd<=0&&d<SHIKA.stabRange&&(auto||keys['u'])){ f.dashCd=SHIKA.stabCd; shikaStab(f,e); return; }
       if(!f.weak&&f.cds.s2<=0&&(auto?d<520:keys['k'])){ f.cds.s2=cm(SHIKA.bindCd*RT); shadowBind(f,e); return; }
@@ -738,12 +741,25 @@ const SFX_FULL=new Set(['ko','win','cheer','twin_hyuga','twin_misaki','shika_gar
 // trên sân chẳng còn gì.
 const SFX_MAXLEN={
   kame:5, masenko:5, wings:5,
-  shika_lazy:GRUMBLE_LIFE*RT,                   // hết bong bóng thoại là hết nói
   callgoku:CALL_BANNER_LIFE*RT,                 // hết băng-rôn gọi là hết
   callgohan:CALL_BANNER_LIFE*RT,
   summon:SUMMON_CHARGE*RT                       // viện binh hiện ra tới lúc bắn
 };
+/* File dài thì đọc nối tiếp từng đoạn, hết file thì quay lại đầu. Mặc định mỗi đoạn
+   2.2 giây; hai ô dưới đây lấy độ dài đoạn theo đúng thứ giới hạn chúng.
+   Giá trị có thể là hàm, tính lại mỗi lần phát — cần thế vì nhịp mắng của ChiChi
+   đổi theo thiết lập tốc ra chiêu. */
+const SFX_SEG={
+  shika_lazy:GRUMBLE_LIFE*RT,                   // đúng tuổi thọ bong bóng thoại
+  // Câu mắng bị cắt bởi câu kế tiếp chứ không phải bởi bong bóng, nên đoạn đọc bám
+  // theo nhịp hét: ra chiêu nhanh thì đoạn ngắn lại, chậm thì dài ra, không còn
+  // cảnh cắt ngang giữa chừng hay im lặng chờ. Vẫn chặn trên bằng tuổi thọ bong bóng.
+  scold:()=>Math.min(cm(.6)*RT, SCOLD_BUBBLE*RT)
+};
 const SFX_POS={}, SFX_ACTIVE={};
+/* Cắt ngang một tiếng đang phát dở. Dùng khi cảnh đi kèm nó kết thúc sớm hơn
+   đoạn tiếng, chẳng hạn Shikamaru đang than dở thì bật dậy đánh. */
+function stopSfx(name){ try{ if(SFX_ACTIVE[name]) SFX_ACTIVE[name].stop(); }catch(e){} SFX_ACTIVE[name]=null; }
 function resetSfxPos(){ for(const k in SFX_POS) delete SFX_POS[k]; }
 function playBuffer(name,buf,c,g){
   const dur=buf.duration;
@@ -766,7 +782,8 @@ function playBuffer(name,buf,c,g){
     return;
   }
   // file dài: đọc tiếp từng đoạn, không quay lại đầu
-  const SEG=Math.min(2.2, dur);
+  const seg=SFX_SEG[name];
+  const SEG=Math.min((typeof seg==='function'?seg():seg)||2.2, dur);
   let off=SFX_POS[name]||0;
   if(off>=dur-.2) off=0;
   const len=Math.min(SEG, dur-off);
@@ -1068,7 +1085,7 @@ function mk(o){
     wx:W/2, wy:H/2, wt:0, engage:true, engT:2,
     goals:0, vuln:0, exhaust:0, prewing:false, prewingDone:false, prewingA:0,
     chakra:0, lazy:false, awake:false, evade:0, outCut:0, weak:false,
-    bind:null, bindGuard:false, bindPending:false, lazyTalk:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
+    bind:null, bindGuard:false, bindPending:false, lazyTalk:0, wakeT:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
 }
 function mkChar(key,team,x,y){
@@ -1508,7 +1525,7 @@ function grumble(f){
   let i; do{ i=Math.floor(Math.random()*SHIKA_GRUMBLES.length); }while(i===lastGrumble&&SHIKA_GRUMBLES.length>1);
   lastGrumble=i;
   G.floats.push({x:f.x,y:f.y-96,txt:SHIKA_GRUMBLES[i],color:'#CFC6FF',life:GRUMBLE_LIFE,ml:GRUMBLE_LIFE,
-    banner:true,bubble:true,sc:.72,tilt:rnd(-.04,.04)});
+    banner:true,bubble:true,sc:.72,grumble:true,tilt:rnd(-.04,.04)});
   sfx('shika_lazy');
 }
 
@@ -1521,6 +1538,11 @@ function shikaPassive(f,dt){
   }
   if(f.lazy&&f.hp<=f.maxHp*SHIKA.wakeHp){
     f.lazy=false; f.awake=true;
+    // đang than dở mà bị chọc dậy thì câm ngay, và bỏ luôn bong bóng còn treo —
+    // không để câu càu nhàu vắt sang lúc đã đứng lên đánh
+    stopSfx('shika_lazy');
+    for(let i=G.floats.length-1;i>=0;i--) if(G.floats[i].grumble) G.floats.splice(i,1);
+    f.wakeT=gs(SHIKA.wakeDelay);              // đứng lên rồi mới thủng thẳng ra đòn
     setPose(f,'hurt',.4);
     sfx('shika_wake');
     ring(f.x,f.y,110,f.color,.45);
@@ -1564,7 +1586,7 @@ function scold(c,e){
     const crit=chance(.20+c.critBonus);
     sfx('scold');
     G.floats.push({x:c.x+rnd(-34,34), y:c.y-96, txt:pickScold(), color:c.color,
-      life:1.5, ml:1.5, banner:true, bubble:true, tilt:rnd(-.13,.13)});
+      life:SCOLD_BUBBLE, ml:SCOLD_BUBBLE, banner:true, bubble:true, tilt:rnd(-.13,.13)});
     G.waves.push({x:c.x,y:c.y,r:12,max:195,spd:330,dmg:crit?30:10,crit,owner:c,team:c.team,hit:[]});
     if(crit) say('Câu mắng chí mạng — 30 dmg!','c');
   });
@@ -2021,6 +2043,7 @@ function step(dt){
     if(f.vuln>0) f.vuln=Math.max(0,f.vuln-dt);
     if(f.exhaust>0) f.exhaust=Math.max(0,f.exhaust-dt);
     if(f.dashCd>0) f.dashCd=Math.max(0,f.dashCd-dt);
+    if(f.wakeT>0) f.wakeT=Math.max(0,f.wakeT-dt);
     if(f.driveAura>0) f.driveAura=Math.max(0,f.driveAura-dt);
     // hào quang Pre-Wings dâng dần trong ~1.6 giây trong trận rồi tắt cũng dần
     f.prewingA=clamp(f.prewingA+dt*(f.prewing?.62:-1.4),0,1);
