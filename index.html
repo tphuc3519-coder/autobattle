@@ -243,7 +243,7 @@ let G=null, running=false, speedMul=BASE_SPEED, mode='auto', autoSkill=true;
 const keys={};
 
 /* ---------- sprite slots ---------- */
-const SPR={kono:{},chichi:{},tsubasa:{},shika:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
+const SPR={kono:{},chichi:{},tsubasa:{},shika:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
 const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF'};
 const HP={kono:1000,chichi:1000,tsubasa:1000,shika:1000};
 const CAST={mul:1.8};
@@ -253,6 +253,8 @@ const SETS=[
   {key:'chichi', name:'ChiChi', poses:[['idle','Thủ thế'],['atk1','Đấm đá'],['atk2','Mắng'],['skill','Hăng máu'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc gọi)'],['call','Dáng gọi viện binh']]},
   {key:'tsubasa', name:'Ozora Tsubasa', poses:[['idle','Thủ thế'],['atk1','Sút bóng'],['bicycle','Overhead kick'],['atk2','Drive shot'],['wings','Đôi cánh đại bàng'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc kích hoạt nội tại)']]},
   {key:'shika', name:'Shikamaru', poses:[['idle','Thủ thế'],['lazy','Ngồi lười (đầu trận)'],['atk1','Phóng shuriken'],['stab','Đâm sau lưng'],['atk2','Kết ấn trói bóng'],['ulti','Mở lãnh địa'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
+  {key:'nara', name:'Con nai nhà Nara', poses:[['idle','Đứng cạnh Shikamaru trong lãnh địa']]},
+  {key:'garden', name:'Phong cảnh lãnh địa', poses:[['idle','Ảnh nền khu rừng nhà Nara']]},
   {key:'goku', name:'Son Goku', poses:[['idle','Đứng'],['skill','Dồn khí'],['atk1','Kamehameha']]},
   {key:'gohan', name:'Son Gohan', poses:[['idle','Đứng'],['skill','Dồn khí'],['atk1','Masenko']]},
   {key:'hyuga', name:'Hyuga (đồng đội Tsubasa)', poses:[['idle','Đứng'],['atk1','Twin shot: Tsubasa + Hyuga']]},
@@ -366,7 +368,7 @@ const CHARS={
       `<b>2</b> Shadow-Neck Bind — 45 dmg/s for ${rts(SHIKA.bindT)}s, then stun ${rts(SHIKA.bindStun)}s`,
       `<b>Passive</b> Lazy start: ${SHIKA.lazyRate/RT} chakra/s sitting out, ${SHIKA.fightRate/RT}/s once hurt to ${Math.round(SHIKA.wakeHp*100)}%`,
       `<b>Passive</b> Evasion ${Math.round(SHIKA.evadeBase*100)}% vs every direct hit — ultimates included, Sexy no Jutsu excepted; +${+(SHIKA.evadeStep*100).toFixed(1)}% per basic hit taken, up to ${Math.round(SHIKA.evadeMax*100)}%`,
-      `<b>Below ${Math.round(SHIKA.domainHp*100)}% HP</b> Nara Shadow Garden — chakra spent as duration`],
+      `<b>Below ${Math.round(SHIKA.domainHp*100)}% HP</b> Nara Clan Forest — chakra spent as duration`],
     init(f){
       f.cds={s1:cm(1),s2:cm(2)};
       f.dashCd=SHIKA.stabCd;
@@ -383,9 +385,9 @@ const CHARS={
     },
     gauge:f=>f.domain
       ? {pct:clamp(f.domain.t/f.domain.max,0,1), fill:'#B7A6FF',
-         txt:`GARDEN ${(f.domain.t*RT).toFixed(1)}s`}
+         txt:`FOREST ${(f.domain.t*RT).toFixed(1)}s`}
       : {pct:clamp(f.chakra/600,0,1), fill:'#8E7BFF',
-         txt:f.weak?'Chakra: cạn':`Chakra: ${Math.round(f.chakra)}`}
+         txt:f.weak?'Chakra: spent':`Chakra: ${Math.round(f.chakra)}`}
   }
 };
 const CKEYS=Object.keys(CHARS);
@@ -542,7 +544,8 @@ const SFX_EVENTS=[
   ['rasengan','Rasengan'],['punch','ChiChi đấm'],['crit','Chí mạng'],['scold','Mắng'],
   ['stun','Choáng'],['summon','Viện binh tới'],['kame','Kamehameha'],['masenko','Masenko'],['callgoku','ChiChi gọi Goku'],['callgohan','ChiChi gọi Gohan'],['boom','Kunai nổ'],['ko','Kết thúc'],['win','Nhạc thắng trận'],['cheer','Khán giả hò reo'],
   ['kick','Tsubasa sút bóng'],['bicycle','Overhead kick'],['bounce','Bóng dội tường'],['drive','Drive shot'],['twin_hyuga','Twin shot với Hyuga'],['twin_misaki','Twin shot với Misaki'],['goal','Ghi goal'],['wings','Đôi cánh đại bàng'],
-  ['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt']
+  ['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt'],
+  ['shika_lazy','Shikamaru ngồi than thở'],['shika_wake','Shikamaru bật dậy đánh'],['shika_garden','Mở khu rừng nhà Nara']
 ];
 const SFXBUF={};
 let AC=null, volume=.6, muted=false, lastSfx={};
@@ -650,6 +653,19 @@ function synth(name,c,g){
       tone(c,g,{type:'sawtooth',f0:70,f1:40,dur:.4,vol:.12});
       break;
     }
+    case 'shika_lazy':       // càu nhàu: hai nốt trầm uể oải, như tiếng thở dài
+      tone(c,g,{type:'sine',f0:250,f1:180,dur:.3,vol:.1});
+      tone(c,g,{type:'sine',f0:190,f1:130,dur:.4,vol:.09,delay:.22});
+      break;
+    case 'shika_wake':       // bật dậy: một nhịp trống gọn rồi vút lên
+      noise(c,g,{dur:.16,f0:400,f1:120,vol:.18});
+      tone(c,g,{type:'triangle',f0:220,f1:640,dur:.34,vol:.16,delay:.06});
+      break;
+    case 'shika_garden':     // mở vườn: trầm dâng lên kèm tiếng gió lá
+      tone(c,g,{type:'sawtooth',f0:70,f1:340,dur:1.1,vol:.26});
+      noise(c,g,{dur:1.1,f0:600,f1:2200,vol:.13,type:'bandpass',q:.8});
+      tone(c,g,{type:'sine',f0:110,f1:55,dur:1.3,vol:.14,delay:.2});
+      break;
     case 'burn': {           // thiêu đốt: xèo xèo trầm, lép bép nhỏ
       noise(c,g,{dur:.55,f0:900,f1:220,vol:.16,type:'lowpass',q:.7});
       noise(c,g,{dur:.5,f0:2600,f1:900,vol:.07,q:1.2,delay:.04});
@@ -696,7 +712,7 @@ function synth(name,c,g){
     default:        noise(c,g,{dur:.1,f0:1200,vol:.2});
   }
 }
-const SFX_FULL=new Set(['ko','win','cheer','callgoku','callgohan','summon','twin_hyuga','twin_misaki']);
+const SFX_FULL=new Set(['ko','win','cheer','callgoku','callgohan','summon','twin_hyuga','twin_misaki','shika_lazy','shika_garden']);
 // các tiếng chiêu lớn: luôn phát từ đầu, cho phép dài tới 5 giây
 const SFX_MAXLEN={kame:5,masenko:5,wings:5};
 const SFX_POS={}, SFX_ACTIVE={};
@@ -1024,7 +1040,7 @@ function mk(o){
     wx:W/2, wy:H/2, wt:0, engage:true, engT:2,
     goals:0, vuln:0, exhaust:0, prewing:false, prewingDone:false, prewingA:0,
     chakra:0, lazy:false, awake:false, evade:0, outCut:0, weak:false,
-    bind:null, bindGuard:false, bindPending:false, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
+    bind:null, bindGuard:false, bindPending:false, lazyTalk:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
 }
 function mkChar(key,team,x,y){
@@ -1398,7 +1414,7 @@ function shikaInterrupt(f){
   }
 }
 
-/* Chiêu 3 — Khu vườn bóng của nhà Nara. Mở ra khi máu tụt dưới 20%, phủ kín sàn,
+/* Chiêu 3 — Khu rừng bóng của nhà Nara. Mở ra khi máu tụt dưới 20%, phủ kín sàn,
    và sống được bao lâu là do chakra tích từ đầu trận quyết định: 100 chakra đổi
    một giây người chơi. Đây chính là chỗ nội tại "nằm lười" trả công — nằm càng
    lâu lúc đầu thì lãnh địa càng dài. */
@@ -1412,13 +1428,13 @@ function naraDomain(k,e){
   setPose(k,'ulti',1.6);
   G.freeze=1.8; G.freezeAt=k;
   G.flashScreen=1;
-  sfx('summon');
+  sfx('shika_garden');
   for(let i=0;i<4;i++) later(i*.22,()=>ring(k.x,k.y,220+i*180,'#6B5BD6',.7),true);
-  G.callBanner={txt:'NARA SHADOW GARDEN',color:k.color,life:2.2,ml:2.2};
+  G.callBanner={txt:'NARA CLAN FOREST',color:k.color,life:2.2,ml:2.2};
   G.floats.push({x:k.x,y:k.y-118,txt:`${Math.round(secPlayer*SHIKA.chakraPerSec)} CHAKRA · ${secPlayer.toFixed(1)}s`,
     color:'#CFC6FF',life:2,ml:2,banner:true,gold:true});
-  say(`Khu vườn nhà Nara mở ra — ${Math.round(secPlayer*SHIKA.chakraPerSec)} chakra đổi lấy ${secPlayer.toFixed(1)} giây.`,'s');
-  say('Trong vườn: địch kiệt sức, chỉ gây một nửa sát thương và ăn bom lẫn bóng liên tục.','m');
+  say(`Khu rừng nhà Nara mở ra — ${Math.round(secPlayer*SHIKA.chakraPerSec)} chakra đổi lấy ${secPlayer.toFixed(1)} giây.`,'s');
+  say('Trong rừng: địch kiệt sức, chỉ gây một nửa sát thương và ăn bom lẫn bóng liên tục.','m');
 }
 function domainTick(k,dt){
   const D=k.domain; if(!D)return;
@@ -1433,11 +1449,12 @@ function domainTick(k,dt){
       D.acc-=.25;
       const dps=rnd(SHIKA.domainLo,SHIKA.domainHi);
       hurt(e,dps*.25,k,false,'domain','shadow');
-      if(chance(.55)){
-        const bx=e.x+rnd(-52,52), by=e.y+rnd(-46,34);
-        G.fx.push({type:'dust',x:bx,y:by,r:7,life:.4,ml:.4});
-        ring(bx,by,rnd(38,72),chance(.5)?'#FFB03A':'#6B5BD6',.3);
-      }
+      // quả bom nổ ngay cạnh địch: lõi sáng, sóng xung kích, khói bay
+      const bx=e.x+rnd(-46,46), by=e.y+rnd(-40,22);
+      G.fx.push({type:'gboom',x:bx,y:by,life:.42,ml:.42,seed:rnd(0,9),
+        big:dps>(SHIKA.domainLo+SHIKA.domainHi)/2});
+      for(let q=0;q<3;q++) G.fx.push({type:'dust',x:bx+rnd(-14,14),y:by+rnd(-12,12),r:7,life:.45,ml:.45});
+      G.flashScreen=Math.max(G.flashScreen,.05);
       sfx('burn');
     }
   }
@@ -1446,15 +1463,37 @@ function domainTick(k,dt){
     if(e) e.outCut=0;
     ring(k.x,k.y,320,'#6B5BD6',.5);
     G.floats.push({x:k.x,y:k.y-112,txt:'CHAKRA SPENT',color:'#9B8CFF',life:1.6,ml:1.6,banner:true,gold:true});
-    say('Khu vườn khép lại — Shikamaru cạn chakra: mất chiêu trói bóng, shuriken yếu đi 30%.','s');
+    say('Khu rừng khép lại — Shikamaru cạn chakra: mất chiêu trói bóng, shuriken yếu đi 30%.','s');
   }
 }
+/* Ngồi lười thì cứ một lúc lại càu nhàu một câu. Nói thưa thôi — mỗi câu cách nhau
+   vài giây — nhưng bong bóng thoại luôn hiện dù file tiếng chưa nạp hay dài quá. */
+const SHIKA_GRUMBLES=[
+  'What a drag...','Too troublesome.','Wake me when it matters.',
+  'The clouds are better than this.','Five more minutes.',
+  'I already know how this ends.','Not worth the chakra.',
+  'Can we not?','Fighting is such a pain.','Let me nap on it.'
+];
+let lastGrumble=-1;
+function grumble(f){
+  let i; do{ i=Math.floor(Math.random()*SHIKA_GRUMBLES.length); }while(i===lastGrumble&&SHIKA_GRUMBLES.length>1);
+  lastGrumble=i;
+  G.floats.push({x:f.x,y:f.y-96,txt:SHIKA_GRUMBLES[i],color:'#CFC6FF',life:2.2,ml:2.2,
+    banner:true,bubble:true,sc:.72,tilt:rnd(-.04,.04)});
+  sfx('shika_lazy');
+}
+
 /* Nội tại 1 — ngồi lười tích chakra, trúng đòn tới ngưỡng thì bật dậy. */
 function shikaPassive(f,dt){
   if(f.weak||f.domain)return;                         // mở lãnh địa rồi thì thôi tích
+  if(f.lazy){
+    f.lazyTalk-=dt;
+    if(f.lazyTalk<=0){ f.lazyTalk=rnd(gs(6),gs(11)); grumble(f); }
+  }
   if(f.lazy&&f.hp<=f.maxHp*SHIKA.wakeHp){
     f.lazy=false; f.awake=true;
     setPose(f,'hurt',.4);
+    sfx('shika_wake');
     ring(f.x,f.y,110,f.color,.45);
     G.floats.push({x:f.x,y:f.y-108,txt:'FINE. I\'M UP.',color:f.color,life:1.6,ml:1.6,
       banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
@@ -2959,7 +2998,7 @@ function drawBars(f){
   if(f.key==='shika'&&f.lazy) lines.push({t:`LAZY · +${SHIKA.lazyRate/RT} CHAKRA/s`, c:'#CFC6FF', s:10});
   if(f.key==='shika'&&f.evade>SHIKA.evadeBase) lines.push({t:`EVASION ${+(f.evade*100).toFixed(1)}%`, c:'#CFC6FF', s:10});
   if(f.key==='shika'&&f.weak) lines.push({t:'CHAKRA SPENT · NO BIND · −30% SHURIKEN', c:'#A79BD6', s:9});
-  if(f.outCut>0) lines.push({t:`IN THE GARDEN · −${Math.round(SHIKA.domainOutCut*100)}% DAMAGE DEALT`, c:'#B7A6FF', s:9});
+  if(f.outCut>0) lines.push({t:`IN THE FOREST · −${Math.round(SHIKA.domainOutCut*100)}% DAMAGE DEALT`, c:'#B7A6FF', s:9});
   if(f.dash&&f.dash.guard) lines.push({t:'FLYING KICK · CC IMMUNE · −30% DMG', c:'#FFC0CE', s:10});
   if(f.invuln>0) lines.push({t:`IMMUNE (${(f.invuln*RT).toFixed(1)}s)`, c:'#FF9AD5', s:11});
   ctx.lineWidth=3; ctx.strokeStyle='#000';
@@ -2973,53 +3012,62 @@ function drawBars(f){
 /* Khu vườn bóng nhà Nara: nền tối phủ kín sàn, lưới bóng bò dọc ngang, những cụm
    bóng dựng lên như bụi cây, và bom nổ lốm đốm. Hiện dần theo domainA nên lúc mở
    ra là cả sàn tối lại chứ không bật đánh cụp một cái. */
+/* Khu rừng nhà Nara. Dải màu nền và lớp tối bốn góc dựng một lần rồi dùng lại —
+   tạo gradient mỗi khung là phí. Phần còn lại vẽ thẳng: đã thử nướng cả nền vào
+   canvas phụ nhưng lại chậm hơn hẳn, vì phóng một tấm kín sàn mỗi khung với
+   imageSmoothingQuality='high' còn đắt hơn mấy trăm nét vector. */
+let GARDEN_BG=null, GARDEN_VG=null;
+function gardenGrads(){
+  if(GARDEN_BG) return;
+  GARDEN_BG=ctx.createLinearGradient(0,0,0,H);
+  GARDEN_BG.addColorStop(0,'#120D26'); GARDEN_BG.addColorStop(.55,'#1D1538'); GARDEN_BG.addColorStop(1,'#0A0716');
+  GARDEN_VG=ctx.createRadialGradient(W/2,H/2,H*.22,W/2,H/2,H*.72);
+  GARDEN_VG.addColorStop(0,'rgba(0,0,0,0)'); GARDEN_VG.addColorStop(1,'rgba(0,0,0,.72)');
+}
 function drawGarden(){
   const k=G.fighters.find(f=>f.key==='shika'&&!f.summon);
   if(!k||k.domainA<=0)return;
   const a=k.domainA, T=G.t, e=foeOf(k);
   ctx.save();
 
-  ctx.globalAlpha=a*.72;                                  // nền vườn tối sập xuống
-  const g=ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,'#120D26'); g.addColorStop(.55,'#1D1538'); g.addColorStop(1,'#0A0716');
-  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  // Nạp ảnh phong cảnh thì trải ảnh kín sàn thay cho nền vẽ tay; bom nổ, gai bóng
+  // và dây bóng vẫn phủ lên trên nên rừng vẫn động chứ không phải ảnh tĩnh.
+  const bgImg=(SPR.garden.idle&&SPR.garden.idle.length)?SPR.garden.idle[0]:null;
+  if(bgImg){
+    ctx.globalAlpha=a; ctx.drawImage(bgImg,0,0,W,H);
+  }else{
+    gardenGrads();
+    ctx.globalAlpha=a*.72; ctx.fillStyle=GARDEN_BG; ctx.fillRect(0,0,W,H);
 
-  ctx.globalAlpha=a*.55;                                  // lưới bóng bò dọc ngang khắp sàn
-  ctx.strokeStyle='#07040E'; ctx.lineCap='round';
-  for(let i=0;i<16;i++){
-    const yy=26+i*38+Math.sin(T*1.1+i)*7;
-    ctx.lineWidth=i%3?2.5:4;
-    ctx.beginPath(); ctx.moveTo(0,yy);
-    for(let x=0;x<=W;x+=48) ctx.lineTo(x,yy+Math.sin(T*1.7+x*.035+i)*12);
-    ctx.stroke();
-  }
+    ctx.globalAlpha=a*.55; ctx.strokeStyle='#07040E'; ctx.lineCap='round';
+    for(let i=0;i<11;i++){                                // lưới bóng bò dọc ngang khắp sàn
+      const yy=26+i*56+Math.sin(T*1.1+i)*7;
+      ctx.lineWidth=i%3?2.5:4;
+      ctx.beginPath(); ctx.moveTo(0,yy);
+      for(let x=0;x<=W;x+=78) ctx.lineTo(x,yy+Math.sin(T*1.7+x*.035+i)*12);
+      ctx.stroke();
+    }
 
-  // rừng bóng viền quanh cả bốn cạnh, dựng lên như bụi cây nhà Nara
-  ctx.fillStyle='#07040E';
-  const bush=(bx,by,h,dir)=>{
-    ctx.beginPath();
-    ctx.moveTo(bx-14,by);
-    ctx.quadraticCurveTo(bx-7+Math.sin(T*1.6+bx)*9, by-dir*h*.6, bx, by-dir*h);
-    ctx.quadraticCurveTo(bx+8+Math.sin(T*1.6+bx)*9, by-dir*h*.6, bx+14, by);
-    ctx.closePath(); ctx.fill();
-  };
-  ctx.globalAlpha=a*.85;
-  for(let i=0;i<22;i++){
-    const t=i/21, h=52+((i*53)%78)+Math.sin(T*2+i)*10;
-    bush(10+t*(W-20), H-2, h, 1);                         // cạnh dưới
-    bush(10+t*(W-20), 2, h*.8, -1);                       // cạnh trên
+    ctx.fillStyle='#07040E';                              // rừng bóng viền quanh bốn cạnh
+    const bush=(bx,by,h,dir)=>{
+      ctx.beginPath();
+      ctx.moveTo(bx-14,by);
+      ctx.quadraticCurveTo(bx-7+Math.sin(T*1.6+bx)*9, by-dir*h*.6, bx, by-dir*h);
+      ctx.quadraticCurveTo(bx+8+Math.sin(T*1.6+bx)*9, by-dir*h*.6, bx+14, by);
+      ctx.closePath(); ctx.fill();
+    };
+    ctx.globalAlpha=a*.85;
+    for(let i=0;i<15;i++){
+      const t=i/14, h=52+((i*53)%78)+Math.sin(T*2+i)*10;
+      bush(10+t*(W-20), H-2, h, 1);
+      bush(10+t*(W-20), 2, h*.8, -1);
+    }
+    for(let i=0;i<10;i++){                                // hai cạnh bên: xoay bụi cây 90°
+      const t=i/9, h=44+((i*67)%64)+Math.sin(T*2.2+i)*9;
+      ctx.save(); ctx.translate(2,10+t*(H-20)); ctx.rotate(-Math.PI/2); bush(0,0,h,1); ctx.restore();
+      ctx.save(); ctx.translate(W-2,10+t*(H-20)); ctx.rotate(Math.PI/2); bush(0,0,h,1); ctx.restore();
+    }
   }
-  ctx.save();
-  for(let i=0;i<16;i++){                                  // hai cạnh bên: xoay bụi cây 90°
-    const t=i/15, h=44+((i*67)%64)+Math.sin(T*2.2+i)*9;
-    ctx.setTransform(S,0,0,S,0,HEADER*S); camApply();
-    ctx.translate(2,10+t*(H-20)); ctx.rotate(-Math.PI/2);
-    ctx.globalAlpha=a*.85; ctx.fillStyle='#07040E'; bush(0,0,h,1);
-    ctx.setTransform(S,0,0,S,0,HEADER*S); camApply();
-    ctx.translate(W-2,10+t*(H-20)); ctx.rotate(Math.PI/2);
-    ctx.globalAlpha=a*.85; ctx.fillStyle='#07040E'; bush(0,0,h,1);
-  }
-  ctx.restore();
 
   if(e&&e.alive){                                         // gai bóng chồi lên ngay dưới chân địch
     ctx.globalAlpha=a*.9; ctx.fillStyle='#07040E';
@@ -3031,10 +3079,41 @@ function drawGarden(){
       ctx.beginPath();
       ctx.moveTo(sx-6,sy); ctx.lineTo(sx,sy-h); ctx.lineTo(sx+6,sy); ctx.closePath(); ctx.fill();
     }
+
+    // dây bóng bò từ đất lên quấn lấy địch, kèm mấy ngọn quật ra ngoài
+    const foot=e.y+18, top=e.y-e.spriteH*.72;
+    ctx.lineCap='round';
+    for(let i=0;i<5;i++){
+      const off=(i-2)*11, sw=Math.sin(T*2.4+i*1.3)*9;
+      ctx.beginPath();
+      ctx.moveTo(e.x+off*1.7,foot);
+      ctx.bezierCurveTo(e.x+off*1.4+sw,foot-26, e.x+off*.5-sw,top+34, e.x+off*.35,top+8);
+      ctx.globalAlpha=a*.92; ctx.strokeStyle='#07040E'; ctx.lineWidth=8-Math.abs(i-2)*1.2;
+      ctx.stroke();
+      ctx.globalAlpha=a*.5; ctx.strokeStyle='#6B5BD6'; ctx.lineWidth=2.2;
+      ctx.stroke();                                       // viền tím mảnh cho nổi trên nền tối
+    }
+    ctx.globalAlpha=a*.9; ctx.strokeStyle='#07040E'; ctx.lineWidth=6;
+    for(let i=0;i<5;i++){                                 // vòng siết quanh thân
+      const yy=e.y+10-i*Math.max(12,e.spriteH*.16);
+      ctx.beginPath();
+      ctx.ellipse(e.x,yy,23-Math.abs(2-i)*4,7,Math.sin(T*3+i)*.2,0,7);
+      ctx.stroke();
+    }
+    ctx.strokeStyle='#07040E'; ctx.lineWidth=5;
+    for(let i=0;i<3;i++){                                 // ngọn bóng quật ra ngoài
+      const ph=(T*.9+i*.333)%1, ang=i*2.1+T*.8, L=40+ph*70;
+      ctx.globalAlpha=a*(1-ph)*.8;
+      ctx.beginPath();
+      ctx.moveTo(e.x,e.y-14);
+      ctx.quadraticCurveTo(e.x+Math.cos(ang)*L*.6, e.y-14+Math.sin(ang)*L*.4-22,
+                           e.x+Math.cos(ang)*L,    e.y-14+Math.sin(ang)*L*.7);
+      ctx.stroke();
+    }
   }
 
-  for(let i=0;i<11;i++){                                  // bom nổ lốm đốm: loé sáng rồi lan ra
-    const ph=(T*.75+i*.0909)%1;
+  for(let i=0;i<7;i++){                                   // bom nổ lốm đốm khắp rừng
+    const ph=(T*.75+i*.1429)%1;
     const bx=((i*211)%(W-80))+40, by=((i*137)%(H-110))+60;
     const rr=8+ph*74;
     ctx.globalAlpha=a*(1-ph)*(1-ph)*.85;
@@ -3045,9 +3124,49 @@ function drawGarden(){
     ctx.beginPath(); ctx.arc(bx,by,rr,0,7); ctx.stroke();
   }
 
-  const vg=ctx.createRadialGradient(W/2,H/2,H*.22,W/2,H/2,H*.72);   // tối dồn vào bốn góc
-  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.72)');
-  ctx.globalAlpha=a; ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+  if(!bgImg){
+    gardenGrads();                                        // tối dồn vào bốn góc
+    ctx.globalAlpha=a; ctx.fillStyle=GARDEN_VG; ctx.fillRect(0,0,W,H);
+  }
+  ctx.restore();
+}
+
+/* Con nai nhà Nara ra đứng cạnh Shikamaru suốt lúc lãnh địa mở. Nạp ảnh thì vẽ ảnh,
+   chưa nạp thì vẽ tạm một dáng nai đơn giản để ô còn trống vẫn có gì đó đứng đấy. */
+function drawNaraDeer(){
+  const k=G.fighters.find(f=>f.key==='shika'&&!f.summon);
+  if(!k||!k.domain||k.domainA<=0)return;
+  const a=k.domainA;
+  const side=k.face>=0?-1:1;                              // đứng phía sau lưng, không che mặt
+  const dx=clamp(k.x+side*58,PAD+20,W-PAD-20), dy=k.y+14;
+  const img=(SPR.nara.idle&&SPR.nara.idle.length)?SPR.nara.idle[0]:null;
+  ctx.save();
+  ctx.globalAlpha=a*.3; ctx.fillStyle='#000';             // bóng đổ dưới chân
+  ctx.beginPath(); ctx.ellipse(dx,dy+6,20,6,0,0,7); ctx.fill();
+  ctx.globalAlpha=a;
+  if(img){
+    const h=92, w=img.width/img.height*h;
+    ctx.translate(dx,dy+6); ctx.scale(side<0?1:-1,1);
+    ctx.drawImage(img,-w/2,-h,w,h);
+  }else{
+    ctx.translate(dx,dy); ctx.scale(side<0?1:-1,1);
+    const bob=Math.sin(G.t*1.6)*1.5;
+    ctx.fillStyle='#7A5A3A';
+    ctx.fillRect(-16,-34+bob,30,17);                      // thân
+    ctx.fillRect(-13,-18+bob,5,18); ctx.fillRect(-2,-18+bob,5,18);
+    ctx.fillRect(6,-18+bob,5,18);  ctx.fillRect(11,-18+bob,4,18);
+    ctx.beginPath(); ctx.ellipse(19,-40+bob,9,7,0,0,7); ctx.fill();   // đầu
+    ctx.fillRect(13,-38+bob,7,8);                                     // cổ
+    ctx.strokeStyle='#5A4128'; ctx.lineWidth=2.4; ctx.lineCap='round';
+    for(const sx of [16,23]){                                         // gạc
+      ctx.beginPath(); ctx.moveTo(sx,-46+bob); ctx.lineTo(sx-2,-56+bob); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(sx-1,-51+bob); ctx.lineTo(sx+5,-56+bob); ctx.stroke();
+    }
+    ctx.fillStyle='#1B1428';
+    ctx.beginPath(); ctx.arc(22,-41+bob,1.6,0,7); ctx.fill();
+    ctx.fillStyle='#C79A6B';
+    for(let i=0;i<4;i++){ ctx.beginPath(); ctx.arc(-8+i*7,-30+bob,1.7,0,7); ctx.fill(); }
+  }
   ctx.restore();
 }
 
@@ -3364,6 +3483,29 @@ function draw(){
     else if(e.type==='eagle'){
       drawWings(e.x,e.y,1.1+(1-a)*1.6,Math.sin(G.t*12),'#FFD9A0',a*.9);
     }
+    else if(e.type==='gboom'){
+      // bom trong vườn: lõi trắng loé, quầng cam, rồi hai vòng sóng lan ra
+      const pr=1-a, sc=e.big?1.45:1;
+      ctx.globalAlpha=a*a;
+      ctx.fillStyle='#FFF6D8';
+      ctx.beginPath(); ctx.arc(e.x,e.y,(6+pr*16)*sc,0,7); ctx.fill();
+      ctx.globalAlpha=a*.78;
+      ctx.fillStyle='#FFA324';
+      ctx.beginPath(); ctx.arc(e.x,e.y,(10+pr*30)*sc,0,7); ctx.fill();
+      ctx.globalAlpha=a*.6; ctx.lineWidth=5*a+1.5;
+      ctx.strokeStyle='#FFD98A';
+      ctx.beginPath(); ctx.arc(e.x,e.y,(14+pr*62)*sc,0,7); ctx.stroke();
+      ctx.strokeStyle='#8E7BFF'; ctx.lineWidth=3*a+1;
+      ctx.beginPath(); ctx.arc(e.x,e.y,(8+pr*88)*sc,0,7); ctx.stroke();
+      ctx.globalAlpha=a*.7; ctx.strokeStyle='#FFE7B0'; ctx.lineWidth=3*a+1; ctx.lineCap='round';
+      for(let i=0;i<6;i++){                      // tia lửa bắn ra
+        const g=e.seed+i*1.047;
+        ctx.beginPath();
+        ctx.moveTo(e.x+Math.cos(g)*(12+pr*26)*sc, e.y+Math.sin(g)*(12+pr*26)*sc);
+        ctx.lineTo(e.x+Math.cos(g)*(18+pr*60)*sc, e.y+Math.sin(g)*(18+pr*60)*sc);
+        ctx.stroke();
+      }
+    }
     else if(e.type==='punch'){ ctx.globalAlpha=a; ctx.strokeStyle='#fff'; ctx.lineWidth=3;
       for(let i=0;i<4;i++){ const g=i*1.57+.4; ctx.beginPath(); ctx.moveTo(e.x+Math.cos(g)*9,e.y+Math.sin(g)*9); ctx.lineTo(e.x+Math.cos(g)*22,e.y+Math.sin(g)*22); ctx.stroke(); } }
     ctx.restore();
@@ -3404,6 +3546,7 @@ function draw(){
   for(const m of G.mates) drawMate(m);
   const order=[...G.fighters].filter(f=>f.alive).sort((a,b)=>a.y-b.y);
   for(const f of order) drawFighter(f);
+  drawNaraDeer();
   drawBindShadow();
   if(!G.flashback) for(const f of order) drawBars(f);   // hồi tưởng thì giấu thanh máu cho sạch hình
 
