@@ -31,7 +31,7 @@ File dài ~4100 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên --
 | `AI` | `aiVec()`, `dodgeVec()`, `playerVec()` |
 | `step` | một hàm to — toàn bộ mô phỏng một bước 1/120 giây |
 | `draw` | `vector()`, `sprite()`, `drawFighter()`, `drawGarden()`, `drawForestGrip()`, `bombAt()`, `tendril()`, phân cảnh, băng-rôn |
-| `loop` / `ghi hình sàn đấu` / `màn chọn nhân vật` | vòng `requestAnimationFrame`, quay video, dựng thẻ `.cTile` |
+| `loop` / `ghi hình sàn đấu` / `màn chọn nhân vật` | vòng `requestAnimationFrame`, quay video (`recFrame()` dựng khung dọc 9:16), dựng thẻ `.cTile` |
 
 ---
 
@@ -222,6 +222,25 @@ Máy chạy test không có GPU, nên:
 - Gradient phủ toàn màn hình cũng nặng — dùng dè.
 
 ---
+
+## 7b. Ghi hình — khung dọc 9:16
+
+Nút `#rec` quay canvas sàn đấu; tick `#rec916` (bật sẵn) thì video lưu ra **720×1280** thay
+vì canvas gốc. Cách làm: một canvas phụ `RECV` 720×1280, mỗi khung `recFrame()` blit canvas
+sàn đấu vào giữa, dải trên ghi tên trận + đồng hồ, dải dưới chạy 6 dòng nhật ký gần nhất;
+`MediaRecorder` quay `RECV.captureStream(60)`.
+
+Ba điều đã đo, đừng đảo lại:
+
+1. **Kích thước xuất 720×1280, không phải 1080×1920.** Máy không GPU mã hoá VP9 ở 1080×1920
+   chỉ đạt **14~17 fps**; ở 720×1280 được **60 fps** (quay canvas gốc: 44~49 fps).
+2. **`imageSmoothingQuality='low'` cho `RECX`.** Để `'medium'` hay `'high'` thì cú thu nhỏ
+   sàn đấu mỗi khung kéo fps từ 60 xuống **29**. Ở 720 nhìn vẫn nét.
+3. **Hai dải chữ chỉ vẽ lại khi nội dung đổi** (`recSig`): cú blit sàn đấu không đè lên chúng
+   nên chữ vẫn còn từ khung trước. Vẽ chữ cỡ lớn mỗi khung cũng tốn thấy rõ.
+
+Chữ vẽ theo hệ toạ độ thiết kế **1080×1920** (`RECD`) rồi `setTransform` thu về `REC916`, nên
+đổi độ phân giải chỉ cần sửa `REC916`, không phải chỉnh lại từng cỡ chữ.
 
 ## 8. Kiểm thử
 
