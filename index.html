@@ -373,7 +373,7 @@ const CHARS={
     skills:[
       `<b>1</b> Twin Shuriken — ${SHIKA.shurikenDmg} dmg each + bleed ${SHIKA.bleedDps/RT}/s each · half Konohamaru's attack speed, far better aim`,
       `<b>1+</b> Shadow Stab — blink behind for ${SHIKA.stabDmg} + bleed, stun ${rts(SHIKA.stabStun)}s · every ${rts(SHIKA.stabCd)}s`,
-      `<b>2</b> Shadow-Neck Bind — 45 dmg/s for ${rts(SHIKA.bindT)}s, then stun ${rts(SHIKA.bindStun)}s`,
+      `<b>2</b> Shadow Strangle Jutsu — 45 dmg/s for ${rts(SHIKA.bindT)}s, then stun ${rts(SHIKA.bindStun)}s`,
       `<b>Passive</b> Lazy start: ${SHIKA.lazyRate/RT} chakra/s sitting out, ${SHIKA.fightRate/RT}/s once hurt to ${Math.round(SHIKA.wakeHp*100)}%`,
       `<b>Passive</b> Evasion ${Math.round(SHIKA.evadeBase*100)}% vs every direct hit — ultimates included, Sexy no Jutsu excepted; +${+(SHIKA.evadeStep*100).toFixed(1)}% per basic hit taken, up to ${Math.round(SHIKA.evadeMax*100)}%`,
       `<b>Below ${Math.round(SHIKA.domainHp*100)}% HP</b> Nara Clan Forest — chakra spent as duration`],
@@ -1402,7 +1402,7 @@ function shadowBind(k,e){
   k.bindGuard=false;
   k.bind={ph:'reach',t:0,len:0,guard:guarded,e,acc:0};
   k.lock=Math.max(k.lock,SHIKA.bindT+gs(2));
-  G.floats.push({x:k.x,y:k.y-108,txt:'SHADOW-NECK BIND!',color:k.color,life:1.5,ml:1.5,
+  G.floats.push({x:k.x,y:k.y-108,txt:'SHADOW STRANGLE JUTSU!',color:k.color,life:1.5,ml:1.5,
     banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
   if(guarded) G.floats.push({x:k.x,y:k.y-86,txt:'FOCUSED — CANNOT BE BROKEN',color:'#CFC6FF',
     life:1.5,ml:1.5,banner:true,sc:.6});
@@ -1458,7 +1458,7 @@ function shikaInterrupt(f){
     f.bind=null; f.lock=0; f.pose='idle';
     f.bindGuard=true;
     f.cds.s2=SHIKA.bindRetry;
-    G.floats.push({x:f.x,y:f.y-96,txt:`BIND BROKEN · RETRY ${rts(SHIKA.bindRetry)}s`,color:'#CFC6FF',
+    G.floats.push({x:f.x,y:f.y-96,txt:`STRANGLE BROKEN · RETRY ${rts(SHIKA.bindRetry)}s`,color:'#CFC6FF',
       life:1.4,ml:1.4,banner:true,sc:.62});
     say(`Dải bóng đứt giữa chừng — ${rts(SHIKA.bindRetry)} giây nữa sẽ kết ấn lại.`,'s');
   }
@@ -3054,7 +3054,7 @@ function drawBars(f){
   if(f.prewing) lines.push({t:`PRE-WINGS · −35% DMG · +50% CAST · ${Math.round((1-PREWING_STUN)*100)}% STUN RESIST`, c:'#9AE6C4', s:9});
   if(f.key==='shika'&&f.lazy) lines.push({t:`LAZY · +${SHIKA.lazyRate/RT} CHAKRA/s`, c:'#CFC6FF', s:10});
   if(f.key==='shika'&&f.evade>SHIKA.evadeBase) lines.push({t:`EVASION ${+(f.evade*100).toFixed(1)}%`, c:'#CFC6FF', s:10});
-  if(f.key==='shika'&&f.weak) lines.push({t:'CHAKRA SPENT · NO BIND · −30% SHURIKEN', c:'#A79BD6', s:9});
+  if(f.key==='shika'&&f.weak) lines.push({t:'CHAKRA SPENT · NO STRANGLE · −30% SHURIKEN', c:'#A79BD6', s:9});
   if(f.outCut>0) lines.push({t:`IN THE FOREST · −${Math.round(SHIKA.domainOutCut*100)}% DAMAGE DEALT`, c:'#B7A6FF', s:9});
   if(f.dash&&f.dash.guard) lines.push({t:'FLYING KICK · CC IMMUNE · −30% DMG', c:'#FFC0CE', s:10});
   if(f.invuln>0) lines.push({t:`IMMUNE (${(f.invuln*RT).toFixed(1)}s)`, c:'#FF9AD5', s:11});
