@@ -31,7 +31,7 @@ File dài ~4100 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên --
 | `AI` | `aiVec()`, `dodgeVec()`, `playerVec()` |
 | `step` | một hàm to — toàn bộ mô phỏng một bước 1/120 giây |
 | `draw` | `vector()`, `sprite()`, `drawFighter()`, `drawGarden()`, `drawForestGrip()`, `bombAt()`, `tendril()`, phân cảnh, băng-rôn |
-| `loop` / `ghi hình sàn đấu` / `màn chọn nhân vật` | vòng `requestAnimationFrame`, quay video, dựng thẻ `.cTile` |
+| `loop` / `ghi hình sàn đấu` / `màn chọn nhân vật` | vòng `requestAnimationFrame`, quay video (`recFrame()` dựng khung dọc 9:16), dựng thẻ `.cTile` |
 
 ---
 
@@ -107,6 +107,9 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
 - **Dưới 10% máu — Wings of the Eagle** (`EAGLE_HP=.10`): tốc đánh ×4, Drive Shot ×2 nữa,
   chuẩn xác ×2, kháng 70%, miễn khống chế, **cháy hết máu trong 7.5 giây người chơi**
   (`EAGLE_BURN=3.75`). Có chỉ tiêu `EAGLE_QUOTA` bắt buộc tung đủ 2 drive + 2 bicycle.
+  **Drive Shot lúc này bỏ hẳn quãng vọt lên trời ngẫu nhiên**: bóng bay thẳng vào địch như
+  mọi loại bóng khác (`straight:true`, `rise:0`, `homing:false`, tốc `EAGLE_DRIVE_SPD=420`),
+  trượt thì nảy tường một lần rồi tan giống quả bóng thường. Kiểm bằng `node tools/t_drive.js`.
 
 ### Shikamaru (`shika`)
 Toàn bộ trong hằng `SHIKA`. Những điểm người dùng chốt riêng:
@@ -220,6 +223,25 @@ Máy chạy test không có GPU, nên:
 
 ---
 
+## 7b. Ghi hình — khung dọc 9:16
+
+Nút `#rec` quay canvas sàn đấu; tick `#rec916` (bật sẵn) thì video lưu ra **720×1280** thay
+vì canvas gốc. Cách làm: một canvas phụ `RECV` 720×1280, mỗi khung `recFrame()` blit canvas
+sàn đấu vào giữa, dải trên ghi tên trận + đồng hồ, dải dưới chạy 6 dòng nhật ký gần nhất;
+`MediaRecorder` quay `RECV.captureStream(60)`.
+
+Ba điều đã đo, đừng đảo lại:
+
+1. **Kích thước xuất 720×1280, không phải 1080×1920.** Máy không GPU mã hoá VP9 ở 1080×1920
+   chỉ đạt **14~17 fps**; ở 720×1280 được **60 fps** (quay canvas gốc: 44~49 fps).
+2. **`imageSmoothingQuality='low'` cho `RECX`.** Để `'medium'` hay `'high'` thì cú thu nhỏ
+   sàn đấu mỗi khung kéo fps từ 60 xuống **29**. Ở 720 nhìn vẫn nét.
+3. **Hai dải chữ chỉ vẽ lại khi nội dung đổi** (`recSig`): cú blit sàn đấu không đè lên chúng
+   nên chữ vẫn còn từ khung trước. Vẽ chữ cỡ lớn mỗi khung cũng tốn thấy rõ.
+
+Chữ vẽ theo hệ toạ độ thiết kế **1080×1920** (`RECD`) rồi `setTransform` thu về `REC916`, nên
+đổi độ phân giải chỉ cần sửa `REC916`, không phải chỉnh lại từng cỡ chữ.
+
 ## 8. Kiểm thử
 
 Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
@@ -228,9 +250,10 @@ Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 node tools/t_reg.js     # 10 cặp đấu song song, bắt lỗi trang, xem cơ chế lớn có nổ không
 node tools/t_wake.js    # đo nhịp Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
+node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 ```
 
-Cả hai trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng
+Tất cả trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng
 hoặc tới `step()`.**
 
 `tools/probe.js` là phần dùng chung: nó đọc `index.html`, chèn một dòng gán vào ngay trước

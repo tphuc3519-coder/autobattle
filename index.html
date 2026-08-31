@@ -137,6 +137,7 @@
     <button id="play" class="primary">Bắt đầu</button>
     <button id="reset">Đánh lại</button>
     <button id="rec">⏺ Ghi hình sàn đấu</button>
+    <label class="chk" title="Xuất video khung dọc 9:16 (1080×1920) cho vừa màn hình điện thoại"><input type="checkbox" id="rec916" checked> Dọc 9:16</label>
     <button id="testGoku" title="Gọi Goku ngay để thử">🧪 Test Goku</button>
     <button id="testGohan" title="Gọi Gohan ngay để thử">🧪 Test Gohan</button>
     <button id="testTwin" title="Nạp đủ goal để xem Victory Twin Shot">🧪 Test Twin Shot</button>
@@ -277,6 +278,7 @@ const EAGLE_BURN=3.75;            // Wings of the Eagle cháy hết máu trong b
 const MASENKO_SPD=330;            // Masenko bay nhanh hơn hẳn mức cũ 205
 const EAGLE_CD=1/4;               // tốc độ ra chiêu gấp 4: hồi chiêu chỉ còn một phần tư
 const EAGLE_DRIVE=.5;             // riêng Drive Shot còn ra nhanh gấp đôi nữa
+const EAGLE_DRIVE_SPD=420;        // lúc Wings of the Eagle: drive bay thẳng vào địch, nhanh hơn cú sút thường
 const EAGLE_QUOTA={drive:2,bic:2}; // trong quãng cháy phải tung đủ chừng này
 const CHICHI_DASH_CD=5;           // ChiChi lao tới mỗi 5 giây trong trận, tức 10 giây người chơi thấy
 
@@ -349,7 +351,7 @@ const CHARS={
   tsubasa:{
     name:'Ozora Tsubasa', short:'Tsubasa', tag:'Striker · Long shots', emoji:'⚽', color:'#2ED573', alt:'#7DEBAB',
     role:'ranged', want:235, speed:100, dodge:.8, male:true,
-    skills:['<b>1</b> Basic Shot 25 dmg, often misses (10% Overhead Kick 40 + stun)','<b>2</b> Drive Shot 80 + burn 5×3',`<b>${GOAL_MAX} goals</b> Victory Twin Shot 150 + stun ${rts(2)}s`,`<b>Below ${Math.round(PREWING_HP*100)}% HP</b> Pre-Wings — −35% damage taken, +50% cast speed, ${Math.round((1-PREWING_STUN)*100)}% stun resist`,`<b>Below ${Math.round(EAGLE_HP*100)}% HP</b> Wings of the Eagle — 4× attack speed, 2× drive shot rate, 2× accuracy, 70% resist, CC immune, burns out in ${rts(EAGLE_BURN)}s`],
+    skills:['<b>1</b> Basic Shot 25 dmg, often misses (10% Overhead Kick 40 + stun)','<b>2</b> Drive Shot 80 + burn 5×3 — cong lên trời rồi bổ xuống; trong Wings of the Eagle thì bay thẳng vào địch',`<b>${GOAL_MAX} goals</b> Victory Twin Shot 150 + stun ${rts(2)}s`,`<b>Below ${Math.round(PREWING_HP*100)}% HP</b> Pre-Wings — −35% damage taken, +50% cast speed, ${Math.round((1-PREWING_STUN)*100)}% stun resist`,`<b>Below ${Math.round(EAGLE_HP*100)}% HP</b> Wings of the Eagle — 4× attack speed, 2× drive shot rate, 2× accuracy, drive shot bay thẳng, 70% resist, CC immune, burns out in ${rts(EAGLE_BURN)}s`],
     init(f){ f.cds={s1:cm(1),s2:cm(3)}; f.goals=0; },
     think(f,e,d,auto){
       const sp=f.eagle?EAGLE_CD:1;
@@ -1654,15 +1656,27 @@ function kickBall(t,e,bic){
     r:bic?13:11, dmg:bic?40:25, kb:bic?330:180,
     life:4.5, spin:0, bounce:0, maxBounce:1});
 }
-/* Skill 2 — Drive shot: vọt lên trời rồi ngoặt xuống bổ vào địch */
+/* Skill 2 — Drive shot: vọt lên trời rồi ngoặt xuống bổ vào địch.
+   Lúc Wings of the Eagle thì bỏ hẳn quãng bốc lên ngẫu nhiên: bóng bay thẳng vào
+   đối phương như mọi loại bóng khác, chỉ nhanh hơn và không đổi hướng giữa chừng. */
 function driveShot(t,e){
-  const sp=t.eagle?EAGLE_CD:1;
+  const sp=t.eagle?EAGLE_CD:1, straight=!!t.eagle;
   setPose(t,'atk2',cm(.9)*sp); aim(t,e,1.2); sfx('drive');
   t.driveAura=cm(2.4)*sp;                     // hào quang đại bàng phủ lên người
   tsuBanner(t,'DRIVE SHOT!');
-  say('DRIVE SHOT! Quả bóng bốc lửa vọt thẳng lên trời…','g');
+  say(straight?'DRIVE SHOT! Quả bóng bốc lửa lao thẳng vào đối phương…'
+              :'DRIVE SHOT! Quả bóng bốc lửa vọt thẳng lên trời…','g');
   later(cm(.42)*sp,()=>{
     if(!t.alive||G.over||G.freeze>0)return;
+    if(straight){
+      const a=Math.atan2(e.y-t.y,e.x-t.x);      // nhắm thẳng vào địch, không lệch
+      G.proj.push({type:'drive',straight:true,team:t.team,owner:t,tgt:e,
+        x:t.x+Math.cos(a)*26, y:t.y+Math.sin(a)*26-8,
+        vx:Math.cos(a)*EAGLE_DRIVE_SPD, vy:Math.sin(a)*EAGLE_DRIVE_SPD,
+        r:14, dmg:80, life:4.5, spin:0, rise:0, homing:false, wing:0,
+        bounce:0, maxBounce:1, noReflect:true});
+      return;
+    }
     const up=-Math.PI/2+rnd(-.95,.95);          // hướng bốc lên ngẫu nhiên
     G.proj.push({type:'drive',team:t.team,owner:t,tgt:e,
       x:t.x+Math.cos(up)*22, y:t.y-16,
@@ -1770,7 +1784,7 @@ function eagleAwaken(t){
     ring(t.x,t.y,90,'#FFFFFF',.5);
     G.flashScreen=Math.max(G.flashScreen,.18);
     G.callBanner={txt:'WINGS OF THE EAGLE',color:'#FFF3C4',life:2.2,ml:2.2};
-    say('WINGS OF THE EAGLE! Ra chiêu gấp 4, Drive Shot gấp đôi nữa, sút chuẩn gấp đôi, miễn 70% sát thương, miễn nhiễm khống chế.','g');
+    say('WINGS OF THE EAGLE! Ra chiêu gấp 4, Drive Shot gấp đôi nữa và bay thẳng vào địch, sút chuẩn gấp đôi, miễn 70% sát thương, miễn nhiễm khống chế.','g');
     say(`Cái giá: cháy sạch máu trong ${rts(EAGLE_BURN)}s là gục, và không còn tính goal — Twin Shot vô hiệu.`,'m');
   },true);
 }
@@ -2350,7 +2364,7 @@ function step(dt){
         say(`Tia Kamehameha dội tường lần ${p.bounce} — còn ${p.dmg} dmg.`,'m');
         if(p.bounce>=8) dead=true;
       }
-    }else if(!dead && p.type==='ball'){
+    }else if(!dead && (p.type==='ball'||p.straight)){
       // sút trượt: bóng dội tường tối đa 2 lần rồi tan biến
       const lo=24, hiX=W-24, hiY=H-24;
       let hitWall=false;
@@ -2368,7 +2382,9 @@ function step(dt){
         }else{
           sfx('bounce'); ring(p.x,p.y,34,'#FFFFFF',.24);
           p.vx*=.94; p.vy*=.94;
-          say(p.bic?'Overhead kick trượt — bóng nảy tường một lần rồi mới tan.':'Cú sút trượt — bóng nảy tường một lần rồi mới tan.','m');
+          say(p.type==='drive'?'Drive Shot trượt — quả bóng lửa nảy tường một lần rồi mới tan.'
+             :p.bic?'Overhead kick trượt — bóng nảy tường một lần rồi mới tan.'
+             :'Cú sút trượt — bóng nảy tường một lần rồi mới tan.','m');
         }
       }
     }else if(!dead && (p.type==='drive'||p.type==='twin')){
@@ -3045,6 +3061,7 @@ function drawBars(f){
     ctx.font='900 9px "Space Mono",monospace';
     ctx.lineWidth=3; ctx.strokeStyle='#000';
     for(const sub of ['4× ATK SPEED · 2× DRIVE RATE · 2× ACCURACY',
+                      'DRIVE SHOT FLIES STRAIGHT',
                       `70% RESIST · CC IMMUNE · BURNS OUT IN ${rts(EAGLE_BURN)}s`]){
       ctx.strokeText(sub,x+w/2,ly); ctx.fillStyle='#FFD9A0'; ctx.fillText(sub,x+w/2,ly);
       ly+=11;
@@ -3865,18 +3882,86 @@ let last=performance.now(),acc=0;
 function loop(now){
   const raw=Math.min(.05,(now-last)/1000); last=now;
   if(running){ acc+=raw*speedMul; let guard=0; while(acc>=1/120 && guard++<600){ step(1/120); acc-=1/120; } }
-  draw(); requestAnimationFrame(loop);
+  draw(); if(REC&&recTall) recFrame();      // khung dọc chỉ dựng lúc đang ghi hình
+  requestAnimationFrame(loop);
 }
 /* ---------- ghi hình sàn đấu ---------- */
-let REC=null, recChunks=[], recStart=0, recTimer=null;
+/* Mặc định video lưu ra theo khung dọc 9:16 (1080×1920) cho vừa màn hình điện thoại:
+   sàn đấu vuông đặt giữa khung, dải trên ghi tên trận và đồng hồ, dải dưới chạy bốn
+   dòng nhật ký gần nhất. Bỏ tick "Dọc 9:16" thì ghi thẳng canvas như cũ.
+   Khung dọc chỉ được dựng trong lúc đang ghi nên không đụng tới fps lúc chơi thường. */
+const REC916={w:720,h:1280};        // khung video xuất ra (9:16, vừa TikTok/Reels/Shorts)
+const RECD={w:1080,h:1920,top:250}; // hệ toạ độ lúc vẽ, rồi thu nhỏ về REC916
+const RECLOG={k:'#63B4FF',c:'#FF4D6D',g:'#FFC542',m:'#9A8FC4',s:'#9B8CFF'};
+let REC=null, recChunks=[], recStart=0, recTimer=null, recTall=false;
+let RECV=null, RECX=null, recBg=null, recSig='';
+function recWantTall(){ const c=document.getElementById('rec916'); return !c||c.checked; }
+function recCanvas(){
+  if(!RECV){
+    RECV=document.createElement('canvas');
+    RECV.width=REC916.w; RECV.height=REC916.h;
+    RECX=RECV.getContext('2d');
+    // 'low': thu nhỏ sàn đấu mỗi khung bằng 'high' hay 'medium' làm tụt fps lúc ghi
+    // xuống còn nửa (đo được 59 -> 29 fps trên máy không có GPU).
+    RECX.imageSmoothingEnabled=true; RECX.imageSmoothingQuality='low';
+    const k=REC916.w/RECD.w;
+    RECX.setTransform(k,0,0,k,0,0);        // vẽ theo hệ 1080×1920 cho dễ canh chữ
+    recBg=RECX.createLinearGradient(0,0,0,RECD.h);   // dựng một lần, đừng tạo lại mỗi khung
+    recBg.addColorStop(0,'#241C52'); recBg.addColorStop(.45,'#0B0918'); recBg.addColorStop(1,'#120F28');
+  }
+  return RECV;
+}
+/* cắt chuỗi cho vừa bề ngang khung, dài quá thì thêm dấu … */
+function recFit(g,s,max){
+  if(g.measureText(s).width<=max) return s;
+  let t=s;
+  while(t.length>4&&g.measureText(t+'…').width>max) t=t.slice(0,-1);
+  return t+'…';
+}
+function recFrame(){
+  if(!RECV) return;
+  const g=RECX, w=RECD.w, h=RECD.h;
+  const dy=RECD.top, dh=Math.round(w*CV.height/CV.width);
+  g.drawImage(CV,0,dy,w,dh);
+  // hai dải trên/dưới không bị cú blit sàn đấu đè lên, nên chỉ vẽ lại khi chữ đổi:
+  // vẽ chữ cỡ lớn mỗi khung cũng làm tụt fps trên máy không có GPU.
+  const sec=Math.max(0,Math.floor(G.t*RT));
+  const logs=G.logs.slice(0,6);
+  const sig=`${sec}|${PICK.a}|${PICK.b}|${logs.map(l=>l.m).join('¦')}`;
+  if(sig===recSig) return;
+  recSig=sig;
+  g.fillStyle=recBg;                              // gradient khai theo toạ độ canvas
+  g.fillRect(0,0,w,dy); g.fillRect(0,dy+dh,w,h-dy-dh);
+  // dải trên: tên trận và đồng hồ (giây người chơi, nên nhân RT)
+  g.textAlign='center';
+  g.fillStyle='#FFC542'; g.font='700 28px "Space Mono",monospace';
+  g.fillText('A U T O B A T T L E', w/2, dy-160);
+  const mirror=PICK.a===PICK.b;
+  g.font='800 54px "Be Vietnam Pro",system-ui,sans-serif'; g.fillStyle='#EFE9FF';
+  g.fillText(recFit(g,`${CHARS[PICK.a].name}  vs  ${CHARS[PICK.b].name}${mirror?' II':''}`,w-60), w/2, dy-96);
+  g.font='700 26px "Space Mono",monospace'; g.fillStyle='#9A8FC4';
+  g.fillText(`${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`, w/2, dy-44);
+  // dải dưới: nhật ký gần nhất
+  g.textAlign='left';
+  g.font='600 25px "Be Vietnam Pro",system-ui,sans-serif';
+  let ly=dy+dh+62;
+  for(const l of logs){
+    if(ly>h-28) break;
+    g.fillStyle=RECLOG[l.c]||RECLOG.m;
+    g.fillText(recFit(g,l.m,w-100), 50, ly);
+    ly+=44;
+  }
+}
 function recLabel(txt){ const b=document.getElementById('rec'); if(b)b.textContent=txt; }
 function toggleRec(){
   if(REC){ try{ REC.stop(); }catch(e){} return; }
   if(!CV.captureStream || typeof MediaRecorder==='undefined'){
     say('Trình duyệt này không hỗ trợ ghi hình.','m'); return;
   }
-  let stream;
-  try{ stream=CV.captureStream(60); }catch(e){ say('Không mở được luồng hình.','m'); return; }
+  let stream, src=CV;
+  recTall=recWantTall();
+  if(recTall){ src=recCanvas(); recSig=''; recFrame(); }   // có khung đầu tiên rồi mới mở luồng
+  try{ stream=src.captureStream(60); }catch(e){ recTall=false; say('Không mở được luồng hình.','m'); return; }
   try{
     ac(); const d=recDest();
     if(d) d.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
@@ -3885,7 +3970,7 @@ function toggleRec(){
   const mime=types.find(t=>{try{return MediaRecorder.isTypeSupported(t)}catch(e){return false}});
   try{
     REC=new MediaRecorder(stream, mime?{mimeType:mime,videoBitsPerSecond:8000000}:undefined);
-  }catch(e){ say('Không khởi động được bộ ghi.','m'); REC=null; return; }
+  }catch(e){ say('Không khởi động được bộ ghi.','m'); REC=null; recTall=false; return; }
   recChunks=[];
   REC.ondataavailable=e=>{ if(e.data&&e.data.size)recChunks.push(e.data); };
   REC.onstop=()=>{
@@ -3893,12 +3978,13 @@ function toggleRec(){
     const blob=new Blob(recChunks,{type});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
-    a.download='tran-dau-'+Date.now()+(type.includes('mp4')?'.mp4':'.webm');
+    a.download='tran-dau-'+(recTall?'9x16-':'')+Date.now()+(type.includes('mp4')?'.mp4':'.webm');
     a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href),4000);
     REC=null; clearInterval(recTimer); recTimer=null;
     recLabel('⏺ Ghi hình sàn đấu');
-    say(`Đã lưu video (${(blob.size/1048576).toFixed(1)} MB).`,'g');
+    say(`Đã lưu video ${recTall?`khung dọc 9:16 (${REC916.w}×${REC916.h})`:'khung nguyên bản'} — ${(blob.size/1048576).toFixed(1)} MB.`,'g');
+    recTall=false;
   };
   REC.start(300);
   recStart=performance.now();
@@ -3907,7 +3993,7 @@ function toggleRec(){
     const t=Math.floor((performance.now()-recStart)/1000);
     recLabel(`⏹ Dừng ghi (${Math.floor(t/60)}:${String(t%60).padStart(2,'0')})`);
   },250);
-  say('Bắt đầu ghi hình sàn đấu.','g');
+  say(recTall?'Bắt đầu ghi hình — video sẽ lưu theo khung dọc 9:16.':'Bắt đầu ghi hình sàn đấu (khung nguyên bản).','g');
 }
 
 const el=id=>document.getElementById(id);
