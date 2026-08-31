@@ -227,8 +227,11 @@ Máy chạy test không có GPU, nên:
 
 Nút `#rec` quay canvas sàn đấu; tick `#rec916` (bật sẵn) thì video lưu ra **720×1280** thay
 vì canvas gốc. Cách làm: một canvas phụ `RECV` 720×1280, mỗi khung `recFrame()` blit canvas
-sàn đấu vào giữa, dải trên ghi tên trận + đồng hồ, dải dưới chạy 6 dòng nhật ký gần nhất;
-`MediaRecorder` quay `RECV.captureStream(60)`.
+sàn đấu vào giữa; `MediaRecorder` quay `RECV.captureStream(60)`.
+
+> **Khung dọc chỉ có ba thứ: nền đen, dòng tên cặp đấu, và sàn đấu.** Người dùng đã bác bản
+> có dải nhật ký tiếng Việt phía dưới và dòng đồng hồ / chữ AUTOBATTLE phía trên — đừng in
+> thêm chữ gì lên video.
 
 Ba điều đã đo, đừng đảo lại:
 
@@ -236,8 +239,8 @@ Ba điều đã đo, đừng đảo lại:
    chỉ đạt **14~17 fps**; ở 720×1280 được **60 fps** (quay canvas gốc: 44~49 fps).
 2. **`imageSmoothingQuality='low'` cho `RECX`.** Để `'medium'` hay `'high'` thì cú thu nhỏ
    sàn đấu mỗi khung kéo fps từ 60 xuống **29**. Ở 720 nhìn vẫn nét.
-3. **Hai dải chữ chỉ vẽ lại khi nội dung đổi** (`recSig`): cú blit sàn đấu không đè lên chúng
-   nên chữ vẫn còn từ khung trước. Vẽ chữ cỡ lớn mỗi khung cũng tốn thấy rõ.
+3. **Nền đen và dòng tên chỉ vẽ lại khi tên đổi** (`recSig`): cú blit sàn đấu không đè lên
+   phần đó nên chữ vẫn còn từ khung trước. Vẽ chữ cỡ lớn mỗi khung cũng tốn thấy rõ.
 
 Chữ vẽ theo hệ toạ độ thiết kế **1080×1920** (`RECD`) rồi `setTransform` thu về `REC916`, nên
 đổi độ phân giải chỉ cần sửa `REC916`, không phải chỉnh lại từng cỡ chữ.
