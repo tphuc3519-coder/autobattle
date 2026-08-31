@@ -3012,17 +3012,70 @@ function drawBars(f){
 /* Khu vườn bóng nhà Nara: nền tối phủ kín sàn, lưới bóng bò dọc ngang, những cụm
    bóng dựng lên như bụi cây, và bom nổ lốm đốm. Hiện dần theo domainA nên lúc mở
    ra là cả sàn tối lại chứ không bật đánh cụp một cái. */
-/* Khu rừng nhà Nara. Dải màu nền và lớp tối bốn góc dựng một lần rồi dùng lại —
-   tạo gradient mỗi khung là phí. Phần còn lại vẽ thẳng: đã thử nướng cả nền vào
-   canvas phụ nhưng lại chậm hơn hẳn, vì phóng một tấm kín sàn mỗi khung với
-   imageSmoothingQuality='high' còn đắt hơn mấy trăm nét vector. */
-let GARDEN_BG=null, GARDEN_VG=null;
-function gardenGrads(){
-  if(GARDEN_BG) return;
-  GARDEN_BG=ctx.createLinearGradient(0,0,0,H);
-  GARDEN_BG.addColorStop(0,'#120D26'); GARDEN_BG.addColorStop(.55,'#1D1538'); GARDEN_BG.addColorStop(1,'#0A0716');
-  GARDEN_VG=ctx.createRadialGradient(W/2,H/2,H*.22,W/2,H/2,H*.72);
-  GARDEN_VG.addColorStop(0,'rgba(0,0,0,0)'); GARDEN_VG.addColorStop(1,'rgba(0,0,0,.72)');
+/* Khu rừng nhà Nara.
+   Phong cảnh là việc của ô nạp ảnh — nạp vào thì trải kín sàn. Chưa nạp thì chỉ
+   phủ một lớp tối phẳng, không vẽ cây cối gì cả: công sức để dành cho bom nổ và
+   dây bóng, là hai thứ người chơi thật sự nhìn vào. */
+let FOREST_DIM=null;
+function forestDim(){
+  if(FOREST_DIM) return FOREST_DIM;
+  FOREST_DIM=ctx.createLinearGradient(0,0,0,H);
+  FOREST_DIM.addColorStop(0,'#120D26'); FOREST_DIM.addColorStop(.55,'#1A1333'); FOREST_DIM.addColorStop(1,'#0A0716');
+  return FOREST_DIM;
+}
+/* Một quả bom: loé trắng, cầu lửa, hai vòng sóng, mảnh văng và khói đọng. */
+function bombAt(bx,by,a,ph,seed,sc){
+  const g=1-ph;
+  ctx.globalAlpha=a*g*g;                                  // lõi trắng
+  ctx.fillStyle='#FFF8E2';
+  ctx.beginPath(); ctx.arc(bx,by,(5+ph*13)*sc,0,7); ctx.fill();
+  ctx.globalAlpha=a*g*.85;                                // cầu lửa
+  ctx.fillStyle='#FF9A1E';
+  ctx.beginPath(); ctx.arc(bx,by,(9+ph*26)*sc,0,7); ctx.fill();
+  ctx.globalAlpha=a*g*.34;
+  ctx.fillStyle='#8A4415';
+  ctx.beginPath(); ctx.arc(bx,by,(11+ph*30)*sc,0,7); ctx.fill();
+  ctx.globalAlpha=a*g*.7; ctx.lineWidth=5*g+1.5;          // hai vòng sóng
+  ctx.strokeStyle='#FFD98A';
+  ctx.beginPath(); ctx.arc(bx,by,(13+ph*58)*sc,0,7); ctx.stroke();
+  ctx.strokeStyle='#8E7BFF'; ctx.lineWidth=3*g+1;
+  ctx.beginPath(); ctx.arc(bx,by,(8+ph*84)*sc,0,7); ctx.stroke();
+  ctx.globalAlpha=a*g*.85; ctx.fillStyle='#3A2416';       // mảnh vụn văng ra
+  for(let i=0;i<7;i++){
+    const an=seed+i*.898, d=(16+ph*72)*sc, r=(2.6-ph*1.4)*sc;
+    if(r<=.2)continue;
+    ctx.save();
+    ctx.translate(bx+Math.cos(an)*d, by+Math.sin(an)*d*.72);
+    ctx.rotate(an+ph*5);
+    ctx.fillRect(-r,-r*.6,r*2,r*1.2);
+    ctx.restore();
+  }
+  ctx.globalAlpha=a*g*.22; ctx.fillStyle='#2A2038';       // khói mỏng bay lên, không che người
+  for(let i=0;i<4;i++){
+    const an=seed*1.7+i*1.571;
+    ctx.beginPath();
+    ctx.arc(bx+Math.cos(an)*ph*28*sc, by+Math.sin(an)*ph*14*sc-ph*24,
+            (4+ph*9)*sc, 0, 7);
+    ctx.fill();
+  }
+}
+/* Dây bóng: thân thuôn dần, có gai bám dọc thân. */
+function tendril(x0,y0,cx1,cy1,cx2,cy2,x1,y1,w,a,barbs){
+  ctx.globalAlpha=a; ctx.strokeStyle='#07040E'; ctx.lineWidth=w; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(x0,y0); ctx.bezierCurveTo(cx1,cy1,cx2,cy2,x1,y1); ctx.stroke();
+  ctx.globalAlpha=a*.55; ctx.strokeStyle='#6B5BD6'; ctx.lineWidth=Math.max(1,w*.28);
+  ctx.stroke();                                           // viền tím cho nổi trên nền tối
+  if(!barbs)return;
+  ctx.globalAlpha=a*.9; ctx.fillStyle='#07040E';
+  for(let i=1;i<=4;i++){                                  // gai bám dọc thân
+    const t=i/5, u=1-t;
+    const px=u*u*u*x0+3*u*u*t*cx1+3*u*t*t*cx2+t*t*t*x1;
+    const py=u*u*u*y0+3*u*u*t*cy1+3*u*t*t*cy2+t*t*t*y1;
+    const dir=i%2?1:-1, sz=w*.5*(1-t*.4);
+    ctx.beginPath();
+    ctx.moveTo(px,py-sz); ctx.lineTo(px+dir*sz*2.1,py); ctx.lineTo(px,py+sz);
+    ctx.closePath(); ctx.fill();
+  }
 }
 function drawGarden(){
   const k=G.fighters.find(f=>f.key==='shika'&&!f.summon);
@@ -3030,104 +3083,72 @@ function drawGarden(){
   const a=k.domainA, T=G.t, e=foeOf(k);
   ctx.save();
 
-  // Nạp ảnh phong cảnh thì trải ảnh kín sàn thay cho nền vẽ tay; bom nổ, gai bóng
-  // và dây bóng vẫn phủ lên trên nên rừng vẫn động chứ không phải ảnh tĩnh.
   const bgImg=(SPR.garden.idle&&SPR.garden.idle.length)?SPR.garden.idle[0]:null;
-  if(bgImg){
-    ctx.globalAlpha=a; ctx.drawImage(bgImg,0,0,W,H);
-  }else{
-    gardenGrads();
-    ctx.globalAlpha=a*.72; ctx.fillStyle=GARDEN_BG; ctx.fillRect(0,0,W,H);
+  if(bgImg){ ctx.globalAlpha=a; ctx.drawImage(bgImg,0,0,W,H); }
+  else{ ctx.globalAlpha=a*.78; ctx.fillStyle=forestDim(); ctx.fillRect(0,0,W,H); }
 
-    ctx.globalAlpha=a*.55; ctx.strokeStyle='#07040E'; ctx.lineCap='round';
-    for(let i=0;i<11;i++){                                // lưới bóng bò dọc ngang khắp sàn
-      const yy=26+i*56+Math.sin(T*1.1+i)*7;
-      ctx.lineWidth=i%3?2.5:4;
-      ctx.beginPath(); ctx.moveTo(0,yy);
-      for(let x=0;x<=W;x+=78) ctx.lineTo(x,yy+Math.sin(T*1.7+x*.035+i)*12);
-      ctx.stroke();
-    }
-
-    ctx.fillStyle='#07040E';                              // rừng bóng viền quanh bốn cạnh
-    const bush=(bx,by,h,dir)=>{
-      ctx.beginPath();
-      ctx.moveTo(bx-14,by);
-      ctx.quadraticCurveTo(bx-7+Math.sin(T*1.6+bx)*9, by-dir*h*.6, bx, by-dir*h);
-      ctx.quadraticCurveTo(bx+8+Math.sin(T*1.6+bx)*9, by-dir*h*.6, bx+14, by);
-      ctx.closePath(); ctx.fill();
-    };
-    ctx.globalAlpha=a*.85;
-    for(let i=0;i<15;i++){
-      const t=i/14, h=52+((i*53)%78)+Math.sin(T*2+i)*10;
-      bush(10+t*(W-20), H-2, h, 1);
-      bush(10+t*(W-20), 2, h*.8, -1);
-    }
-    for(let i=0;i<10;i++){                                // hai cạnh bên: xoay bụi cây 90°
-      const t=i/9, h=44+((i*67)%64)+Math.sin(T*2.2+i)*9;
-      ctx.save(); ctx.translate(2,10+t*(H-20)); ctx.rotate(-Math.PI/2); bush(0,0,h,1); ctx.restore();
-      ctx.save(); ctx.translate(W-2,10+t*(H-20)); ctx.rotate(Math.PI/2); bush(0,0,h,1); ctx.restore();
-    }
+  for(let i=0;i<6;i++){                                   // bom rải rác khắp rừng
+    const ph=(T*.7+i*.1667)%1;
+    bombAt(((i*211)%(W-80))+40, ((i*137)%(H-110))+60, a*.8, ph, i*1.3, .82);
   }
+  ctx.restore();
+}
 
-  if(e&&e.alive){                                         // gai bóng chồi lên ngay dưới chân địch
-    ctx.globalAlpha=a*.9; ctx.fillStyle='#07040E';
-    for(let i=0;i<7;i++){
+/* Bóng bám lên người địch trong lãnh địa: vũng bóng, gai, dây leo quấn, vòng siết,
+   bàn tay bóp cổ và mấy ngọn quật ra. Thuần hiệu ứng — địch vẫn chạy nhảy bình
+   thường, chỉ chậm đi vì Kiệt sức. Vẽ sau nhân vật để bom nổ không phủ mất. */
+function drawForestGrip(){
+  const k=G.fighters.find(f=>f.key==='shika'&&!f.summon);
+  if(!k||!k.domain||k.domainA<=0)return;
+  const a=k.domainA, T=G.t, e=foeOf(k);
+  if(!e||!e.alive)return;
+  ctx.save();
+    const foot=e.y+18, top=e.y-e.spriteH*.72;
+    ctx.globalAlpha=a*.55; ctx.fillStyle='#07040E';       // vũng bóng đọng dưới chân
+    ctx.beginPath(); ctx.ellipse(e.x,foot+2,42+Math.sin(T*2.2)*4,13,0,0,7); ctx.fill();
+
+    for(let i=0;i<7;i++){                                 // gai bóng chồi lên quanh chân
       const ph=(T*1.5+i*.143)%1;
-      const sx=e.x+Math.cos(i*.9+T)*(34+i*7), sy=e.y+18;
+      const sx=e.x+Math.cos(i*.9+T)*(34+i*7), sy=foot;
       const h=(24+i*6)*Math.sin(ph*Math.PI);
       if(h<=1)continue;
+      ctx.globalAlpha=a*.9;
       ctx.beginPath();
       ctx.moveTo(sx-6,sy); ctx.lineTo(sx,sy-h); ctx.lineTo(sx+6,sy); ctx.closePath(); ctx.fill();
     }
 
-    // dây bóng bò từ đất lên quấn lấy địch, kèm mấy ngọn quật ra ngoài
-    const foot=e.y+18, top=e.y-e.spriteH*.72;
-    ctx.lineCap='round';
+    for(let i=0;i<6;i++){                                 // sáu dây leo lên quấn lấy người
+      const off=(i-2.5)*10, sw=Math.sin(T*2.4+i*1.3)*10;
+      tendril(e.x+off*1.8,foot, e.x+off*1.4+sw,foot-28, e.x+off*.5-sw,top+34, e.x+off*.3,top+10,
+              8.5-Math.abs(i-2.5)*1.3, a*.92, true);
+    }
+    ctx.globalAlpha=a*.92; ctx.strokeStyle='#07040E';
+    for(let i=0;i<6;i++){                                 // vòng siết quanh thân
+      const yy=e.y+12-i*Math.max(11,e.spriteH*.14);
+      ctx.lineWidth=6.5-Math.abs(2.5-i)*.8;
+      ctx.beginPath();
+      ctx.ellipse(e.x,yy,24-Math.abs(2.5-i)*3.4,7,Math.sin(T*3+i)*.22,0,7);
+      ctx.stroke();
+    }
+    const ny=top+6;                                       // bàn tay bóng bóp lấy cổ
+    ctx.globalAlpha=a*.95; ctx.fillStyle='#07040E';
+    ctx.beginPath(); ctx.ellipse(e.x,ny,15,10,0,0,7); ctx.fill();
+    ctx.strokeStyle='#07040E'; ctx.lineWidth=4.5; ctx.lineCap='round';
     for(let i=0;i<5;i++){
-      const off=(i-2)*11, sw=Math.sin(T*2.4+i*1.3)*9;
+      const g2=-1.1+i*.55, fl=Math.sin(T*4+i)*1.4;
       ctx.beginPath();
-      ctx.moveTo(e.x+off*1.7,foot);
-      ctx.bezierCurveTo(e.x+off*1.4+sw,foot-26, e.x+off*.5-sw,top+34, e.x+off*.35,top+8);
-      ctx.globalAlpha=a*.92; ctx.strokeStyle='#07040E'; ctx.lineWidth=8-Math.abs(i-2)*1.2;
-      ctx.stroke();
-      ctx.globalAlpha=a*.5; ctx.strokeStyle='#6B5BD6'; ctx.lineWidth=2.2;
-      ctx.stroke();                                       // viền tím mảnh cho nổi trên nền tối
-    }
-    ctx.globalAlpha=a*.9; ctx.strokeStyle='#07040E'; ctx.lineWidth=6;
-    for(let i=0;i<5;i++){                                 // vòng siết quanh thân
-      const yy=e.y+10-i*Math.max(12,e.spriteH*.16);
-      ctx.beginPath();
-      ctx.ellipse(e.x,yy,23-Math.abs(2-i)*4,7,Math.sin(T*3+i)*.2,0,7);
+      ctx.moveTo(e.x+Math.cos(g2)*11, ny+Math.sin(g2)*7);
+      ctx.lineTo(e.x+Math.cos(g2)*(20+fl), ny+Math.sin(g2)*(15+fl));
       ctx.stroke();
     }
-    ctx.strokeStyle='#07040E'; ctx.lineWidth=5;
     for(let i=0;i<3;i++){                                 // ngọn bóng quật ra ngoài
-      const ph=(T*.9+i*.333)%1, ang=i*2.1+T*.8, L=40+ph*70;
-      ctx.globalAlpha=a*(1-ph)*.8;
-      ctx.beginPath();
-      ctx.moveTo(e.x,e.y-14);
-      ctx.quadraticCurveTo(e.x+Math.cos(ang)*L*.6, e.y-14+Math.sin(ang)*L*.4-22,
-                           e.x+Math.cos(ang)*L,    e.y-14+Math.sin(ang)*L*.7);
-      ctx.stroke();
+      const ph=(T*.9+i*.333)%1, an=i*2.1+T*.8, L=42+ph*74;
+      tendril(e.x,e.y-14,
+              e.x+Math.cos(an)*L*.45, e.y-14+Math.sin(an)*L*.3-26,
+              e.x+Math.cos(an)*L*.8,  e.y-14+Math.sin(an)*L*.55,
+              e.x+Math.cos(an)*L,     e.y-14+Math.sin(an)*L*.72,
+              5*(1-ph)+1.5, a*(1-ph)*.85, false);
     }
-  }
-
-  for(let i=0;i<7;i++){                                   // bom nổ lốm đốm khắp rừng
-    const ph=(T*.75+i*.1429)%1;
-    const bx=((i*211)%(W-80))+40, by=((i*137)%(H-110))+60;
-    const rr=8+ph*74;
-    ctx.globalAlpha=a*(1-ph)*(1-ph)*.85;
-    ctx.fillStyle=i%2?'#FFC24A':'#A292FF';
-    ctx.beginPath(); ctx.arc(bx,by,rr*.34,0,7); ctx.fill();
-    ctx.globalAlpha=a*(1-ph)*.7;
-    ctx.strokeStyle=i%2?'#FFB03A':'#8E7BFF'; ctx.lineWidth=4*(1-ph)+1;
-    ctx.beginPath(); ctx.arc(bx,by,rr,0,7); ctx.stroke();
-  }
-
-  if(!bgImg){
-    gardenGrads();                                        // tối dồn vào bốn góc
-    ctx.globalAlpha=a; ctx.fillStyle=GARDEN_VG; ctx.fillRect(0,0,W,H);
-  }
   ctx.restore();
 }
 
@@ -3484,27 +3505,8 @@ function draw(){
       drawWings(e.x,e.y,1.1+(1-a)*1.6,Math.sin(G.t*12),'#FFD9A0',a*.9);
     }
     else if(e.type==='gboom'){
-      // bom trong vườn: lõi trắng loé, quầng cam, rồi hai vòng sóng lan ra
-      const pr=1-a, sc=e.big?1.45:1;
-      ctx.globalAlpha=a*a;
-      ctx.fillStyle='#FFF6D8';
-      ctx.beginPath(); ctx.arc(e.x,e.y,(6+pr*16)*sc,0,7); ctx.fill();
-      ctx.globalAlpha=a*.78;
-      ctx.fillStyle='#FFA324';
-      ctx.beginPath(); ctx.arc(e.x,e.y,(10+pr*30)*sc,0,7); ctx.fill();
-      ctx.globalAlpha=a*.6; ctx.lineWidth=5*a+1.5;
-      ctx.strokeStyle='#FFD98A';
-      ctx.beginPath(); ctx.arc(e.x,e.y,(14+pr*62)*sc,0,7); ctx.stroke();
-      ctx.strokeStyle='#8E7BFF'; ctx.lineWidth=3*a+1;
-      ctx.beginPath(); ctx.arc(e.x,e.y,(8+pr*88)*sc,0,7); ctx.stroke();
-      ctx.globalAlpha=a*.7; ctx.strokeStyle='#FFE7B0'; ctx.lineWidth=3*a+1; ctx.lineCap='round';
-      for(let i=0;i<6;i++){                      // tia lửa bắn ra
-        const g=e.seed+i*1.047;
-        ctx.beginPath();
-        ctx.moveTo(e.x+Math.cos(g)*(12+pr*26)*sc, e.y+Math.sin(g)*(12+pr*26)*sc);
-        ctx.lineTo(e.x+Math.cos(g)*(18+pr*60)*sc, e.y+Math.sin(g)*(18+pr*60)*sc);
-        ctx.stroke();
-      }
+      // bom nổ ngay cạnh địch: dùng chung cách vẽ với bom rải rác khắp rừng
+      bombAt(e.x,e.y,a,1-a,e.seed,e.big?1.5:1.1);
     }
     else if(e.type==='punch'){ ctx.globalAlpha=a; ctx.strokeStyle='#fff'; ctx.lineWidth=3;
       for(let i=0;i<4;i++){ const g=i*1.57+.4; ctx.beginPath(); ctx.moveTo(e.x+Math.cos(g)*9,e.y+Math.sin(g)*9); ctx.lineTo(e.x+Math.cos(g)*22,e.y+Math.sin(g)*22); ctx.stroke(); } }
@@ -3547,6 +3549,7 @@ function draw(){
   const order=[...G.fighters].filter(f=>f.alive).sort((a,b)=>a.y-b.y);
   for(const f of order) drawFighter(f);
   drawNaraDeer();
+  drawForestGrip();
   drawBindShadow();
   if(!G.flashback) for(const f of order) drawBars(f);   // hồi tưởng thì giấu thanh máu cho sạch hình
 
