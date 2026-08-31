@@ -9,6 +9,32 @@ thì phải tạo bản sao có gắn thêm móc (xem mục Kiểm thử).
 
 ---
 
+## 0. Bản đồ `index.html`
+
+File dài ~4100 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên ---------- */`,
+**tìm bằng cách grep chính cái tên đó** thay vì nhớ số dòng (số dòng đổi liên tục):
+
+| Khu | Có gì |
+|---|---|
+| đầu file (chưa đánh dấu) | CSS, khung HTML, các `id` của nút và bảng |
+| *(ngay sau `<script>`)* | canvas, `BASE_SPEED` / `RT` / `rts`, vòng lặp bước cố định |
+| `sprite slots` | `SPR`, `COLORS`, `HP`, `SETS` — danh sách ô dán ảnh |
+| `bảng nhân vật chơi được` | mọi hằng số cân bằng của Kono / ChiChi / Tsubasa |
+| `Shikamaru` (khối hằng) | `gs()`, cả cụm `SHIKA`, các hằng tuổi thọ hình (`GRUMBLE_LIFE`…) |
+| *(kế đó)* | `CHARS` — `init` / `think` / `gauge` / mảng `skills` của bốn nhân vật |
+| *(kế đó)* | `Store` — IndexedDB, khoá `spr_*` / `sfx_*`, nạp và xoá ảnh |
+| `âm thanh` | `SFX_EVENTS`, `synth()`, `SFX_FULL/MAXLEN/SEG/POS/ACTIVE`, `sfx()`, `playBuffer()` |
+| `nhạc nền` | nhạc nền tự sinh |
+| `state` | `mk()`, `mkChar()`, `foeOf()`, `newGame()`, `later()`, `pop()`, `setPose()` |
+| `damage` | `stunFx()`, `tryEvade()`, **`hurt()`**, `counters()`, `finish()` |
+| `Konohamaru` / `ChiChi` / `Shikamaru` / `Ozora Tsubasa` | thân các chiêu thức |
+| `AI` | `aiVec()`, `dodgeVec()`, `playerVec()` |
+| `step` | một hàm to — toàn bộ mô phỏng một bước 1/120 giây |
+| `draw` | `vector()`, `sprite()`, `drawFighter()`, `drawGarden()`, `drawForestGrip()`, `bombAt()`, `tendril()`, phân cảnh, băng-rôn |
+| `loop` / `ghi hình sàn đấu` / `màn chọn nhân vật` | vòng `requestAnimationFrame`, quay video, dựng thẻ `.cTile` |
+
+---
+
 ## 1. Quy đổi thời gian — đọc kỹ trước khi sửa bất kỳ con số nào
 
 Thanh tốc độ ghi **"Gốc 1x"**, nhưng giá trị thật là `speedMul = 0.5`. Nghĩa là:
@@ -188,32 +214,39 @@ Máy chạy test không có GPU, nên:
 
 ## 8. Kiểm thử
 
-Playwright có sẵn tại `/opt/node22/lib/node_modules/playwright`, Chromium ở
-`/opt/pw-browsers` (**đừng chạy `playwright install`**).
+Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 
-Vì game nằm trong IIFE, phải chèn móc vào một bản sao:
-
-```js
-const s = fs.readFileSync('index.html','utf8');
-const i = s.rindex('})();');   // Python; JS thì lastIndexOf
-const probe = s.slice(0,i) +
-  "window.__G=()=>G; window.__ac=ac; window.__RT=RT; window.__SHIKA=SHIKA;" +
-  "window.__SFXBUF=SFXBUF; window.__sfx=n=>sfx(n);\n" + s.slice(i);
+```bash
+node tools/t_reg.js     # 10 cặp đấu song song, bắt lỗi trang, xem cơ chế lớn có nổ không
+node tools/t_wake.js    # đo nhịp Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây
 ```
 
-Mở trận: chọn `#listA .cTile[data-key="..."]`, `#listB .cTile[...]`, bấm `#cselGo` rồi `#play`.
+Cả hai trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng
+hoặc tới `step()`.**
 
-**Đo bằng thời gian trong trận (`G.t`), đừng đo bằng đồng hồ thật.** Chạy headless thì mỗi
-giây thật chỉ trôi ~0.26 giây trong trận, đo nhầm ra 20 giây trong khi thật sự là 5.
+`tools/probe.js` là phần dùng chung: nó đọc `index.html`, chèn một dòng gán vào ngay trước
+dấu đóng IIFE rồi ghi ra file tạm, nhờ vậy test với tới được `G`, `SHIKA`, `hurt()`… mà
+**không phải sửa `index.html`**. Cần thêm móc thì sửa hằng `HOOKS` trong file đó.
+`openGame(keyA, keyB)` lo hết phần chọn nhân vật và bấm vào trận.
 
-Kiểm cú pháp nhanh: `new Function(<phần trong thẻ script>)` — nhưng **nó chỉ biên dịch, không
-bắt được lỗi TDZ**, phải chạy thật trong trình duyệt mới thấy.
+Vài điều đã học khi viết test:
 
-Trước khi commit thay đổi có ảnh hưởng tới cân bằng: chạy đủ 10 cặp đấu, xem có lỗi trang không.
+- **Đo bằng thời gian trong trận (`G.t`), đừng đo bằng đồng hồ thật.** Chạy headless thì mỗi
+  giây thật chỉ trôi ~0.26 giây trong trận — từng đo nhầm Flying Kick thành 20 giây trong khi
+  thật sự là 5.
+- Đánh tự nhiên hiếm khi kịp tụt xuống máu thấp, mà mấy cơ chế dễ vỡ nhất lại nằm hết ở đó.
+  `t_reg.js` vì vậy **ép máu xuống hai chặng** (18% rồi 8%) để gọi Pre-Wings, Wings of the
+  Eagle, viện binh và lãnh địa ra. *(Chiêu trói bóng có thể không kịp xuất hiện khi lãnh địa
+  mở trước — không phải lỗi.)*
+- `sfx()` chặn trùng 45 ms, gọi liên tiếp trong test thì phải giãn ≥70 ms.
+- Chặn font mạng (`page.route('**://fonts.*/**', r => r.abort())`) cho khỏi treo.
+- Kiểm cú pháp nhanh bằng `new Function(<phần trong thẻ script>)` — nhưng **nó chỉ biên dịch,
+  không bắt được lỗi TDZ**, phải chạy thật trong trình duyệt mới thấy.
+- Playwright có sẵn ở `/opt/node22/lib/node_modules/playwright`, Chromium ở `/opt/pw-browsers`.
+  **Đừng chạy `playwright install`.**
 
-Nút test có sẵn: `#testEagle`, `#testForest`, `#testTwin`, `#testGoku`, `#testGohan`.
-
----
+Nút test bấm tay có sẵn trong game: `#testEagle`, `#testForest`, `#testTwin`, `#testGoku`,
+`#testGohan`.
 
 ## 9. Lỗi đã sửa — đừng làm lại
 
