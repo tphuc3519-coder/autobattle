@@ -299,7 +299,8 @@ const SHIKA={
   domainHp:.20, domainLo:35*RT, domainHi:215*RT,
   domainOutCut:.5,                // địch trong lãnh địa chỉ gây một nửa sát thương
   chakraPerSec:100,               // 100 chakra đổi được 1 giây người chơi
-  weakMul:.7                      // hết lãnh địa: chiêu 1 yếu đi 30%
+  weakMul:.7,                     // hết lãnh địa: chiêu 1 yếu đi 30%
+  wakeDelay:1                     // bật dậy rồi chờ bấy nhiêu giây người chơi mới ra đòn
 };
 /* Tuổi thọ của mấy thứ nhìn thấy được, khai ở đây vì SFX_MAXLEN bên dưới bám theo:
    tiếng không được sống lâu hơn hình đi kèm nó. */
@@ -384,7 +385,8 @@ const CHARS={
     },
     think(f,e,d,auto){
       if(f.dash||f.bind||f.domain)return;
-      if(f.lazy)return;                                  // còn nằm lười thì chưa đánh
+      if(f.lazy)return;                                  // còn ngồi lười thì chưa đánh
+      if(f.wakeT>0)return;                               // vừa đứng dậy, hẵng thở một nhịp
       // lao ra sau lưng địch: chỉ khi đã đủ gần, và không dùng trong lãnh địa
       if(f.dashCd<=0&&d<SHIKA.stabRange&&(auto||keys['u'])){ f.dashCd=SHIKA.stabCd; shikaStab(f,e); return; }
       if(!f.weak&&f.cds.s2<=0&&(auto?d<520:keys['k'])){ f.cds.s2=cm(SHIKA.bindCd*RT); shadowBind(f,e); return; }
@@ -755,6 +757,9 @@ const SFX_SEG={
   scold:()=>Math.min(cm(.6)*RT, SCOLD_BUBBLE*RT)
 };
 const SFX_POS={}, SFX_ACTIVE={};
+/* Cắt ngang một tiếng đang phát dở. Dùng khi cảnh đi kèm nó kết thúc sớm hơn
+   đoạn tiếng, chẳng hạn Shikamaru đang than dở thì bật dậy đánh. */
+function stopSfx(name){ try{ if(SFX_ACTIVE[name]) SFX_ACTIVE[name].stop(); }catch(e){} SFX_ACTIVE[name]=null; }
 function resetSfxPos(){ for(const k in SFX_POS) delete SFX_POS[k]; }
 function playBuffer(name,buf,c,g){
   const dur=buf.duration;
@@ -1080,7 +1085,7 @@ function mk(o){
     wx:W/2, wy:H/2, wt:0, engage:true, engT:2,
     goals:0, vuln:0, exhaust:0, prewing:false, prewingDone:false, prewingA:0,
     chakra:0, lazy:false, awake:false, evade:0, outCut:0, weak:false,
-    bind:null, bindGuard:false, bindPending:false, lazyTalk:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
+    bind:null, bindGuard:false, bindPending:false, lazyTalk:0, wakeT:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
 }
 function mkChar(key,team,x,y){
@@ -1520,7 +1525,7 @@ function grumble(f){
   let i; do{ i=Math.floor(Math.random()*SHIKA_GRUMBLES.length); }while(i===lastGrumble&&SHIKA_GRUMBLES.length>1);
   lastGrumble=i;
   G.floats.push({x:f.x,y:f.y-96,txt:SHIKA_GRUMBLES[i],color:'#CFC6FF',life:GRUMBLE_LIFE,ml:GRUMBLE_LIFE,
-    banner:true,bubble:true,sc:.72,tilt:rnd(-.04,.04)});
+    banner:true,bubble:true,sc:.72,grumble:true,tilt:rnd(-.04,.04)});
   sfx('shika_lazy');
 }
 
@@ -1533,6 +1538,11 @@ function shikaPassive(f,dt){
   }
   if(f.lazy&&f.hp<=f.maxHp*SHIKA.wakeHp){
     f.lazy=false; f.awake=true;
+    // đang than dở mà bị chọc dậy thì câm ngay, và bỏ luôn bong bóng còn treo —
+    // không để câu càu nhàu vắt sang lúc đã đứng lên đánh
+    stopSfx('shika_lazy');
+    for(let i=G.floats.length-1;i>=0;i--) if(G.floats[i].grumble) G.floats.splice(i,1);
+    f.wakeT=gs(SHIKA.wakeDelay);              // đứng lên rồi mới thủng thẳng ra đòn
     setPose(f,'hurt',.4);
     sfx('shika_wake');
     ring(f.x,f.y,110,f.color,.45);
@@ -2033,6 +2043,7 @@ function step(dt){
     if(f.vuln>0) f.vuln=Math.max(0,f.vuln-dt);
     if(f.exhaust>0) f.exhaust=Math.max(0,f.exhaust-dt);
     if(f.dashCd>0) f.dashCd=Math.max(0,f.dashCd-dt);
+    if(f.wakeT>0) f.wakeT=Math.max(0,f.wakeT-dt);
     if(f.driveAura>0) f.driveAura=Math.max(0,f.driveAura-dt);
     // hào quang Pre-Wings dâng dần trong ~1.6 giây trong trận rồi tắt cũng dần
     f.prewingA=clamp(f.prewingA+dt*(f.prewing?.62:-1.4),0,1);
