@@ -107,6 +107,9 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
 - **Dưới 10% máu — Wings of the Eagle** (`EAGLE_HP=.10`): tốc đánh ×4, Drive Shot ×2 nữa,
   chuẩn xác ×2, kháng 70%, miễn khống chế, **cháy hết máu trong 7.5 giây người chơi**
   (`EAGLE_BURN=3.75`). Có chỉ tiêu `EAGLE_QUOTA` bắt buộc tung đủ 2 drive + 2 bicycle.
+  **Drive Shot lúc này bỏ hẳn quãng vọt lên trời ngẫu nhiên**: bóng bay thẳng vào địch như
+  mọi loại bóng khác (`straight:true`, `rise:0`, `homing:false`, tốc `EAGLE_DRIVE_SPD=420`),
+  trượt thì nảy tường một lần rồi tan giống quả bóng thường. Kiểm bằng `node tools/t_drive.js`.
 
 ### Shikamaru (`shika`)
 Toàn bộ trong hằng `SHIKA`. Những điểm người dùng chốt riêng:
@@ -228,9 +231,10 @@ Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 node tools/t_reg.js     # 10 cặp đấu song song, bắt lỗi trang, xem cơ chế lớn có nổ không
 node tools/t_wake.js    # đo nhịp Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
+node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 ```
 
-Cả hai trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng
+Tất cả trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng
 hoặc tới `step()`.**
 
 `tools/probe.js` là phần dùng chung: nó đọc `index.html`, chèn một dòng gán vào ngay trước

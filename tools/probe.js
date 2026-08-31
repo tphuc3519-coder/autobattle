@@ -18,6 +18,7 @@ window.__vector=vector; window.__drawFighter=drawFighter;
 window.__setCtx=c=>{ ctx=c; };            // ctx khai bằng let chính vì để mượn thế này
 window.__hurt=hurt; window.__stunFx=stunFx; window.__explode=explode;
 window.__sexy=sexy; window.__shadowBind=shadowBind; window.__tryEvade=tryEvade;
+window.__driveShot=driveShot; window.__eagleAwaken=eagleAwaken;
 `;
 
 /* Trả về đường dẫn file probe. Ghi ra thư mục tạm để không bẩn repo. */
