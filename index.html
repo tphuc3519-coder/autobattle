@@ -4109,12 +4109,92 @@ function aacAsc(rate,ch){
   const i=Math.max(0,R.indexOf(rate));
   return new Uint8Array([(2<<3)|(i>>1), ((i&1)<<7)|(ch<<3)]);   // AAC-LC
 }
+/* Đầu thu PCM cắm thẳng vào đồ thị âm thanh của game.
+   KHÔNG dùng MediaStreamTrackProcessor nữa: API đó chỉ có trên Chrome desktop, còn Safari
+   và Firefox thì không — video quay ra chỉ có track hình, đúng lỗi "hoàn toàn không có
+   âm thanh". AudioWorklet chạy trên luồng âm thanh nên không bị đói lúc mã hoá hình;
+   trình duyệt nào không có thì lui về ScriptProcessor.
+   Mốc thời gian của tiếng tính theo số mẫu đã đi qua, không theo đồng hồ máy. */
+let PCMTAP=null;
+function pcmTapUrl(){
+  if(PCMTAP) return PCMTAP;
+  const src=`class T extends AudioWorkletProcessor{
+    constructor(){super();this.b=[[],[]];this.n=0;}
+    process(i){
+      const c=i[0];
+      if(c&&c.length){
+        const k=Math.min(2,c.length);
+        for(let q=0;q<k;q++) this.b[q].push(c[q].slice());
+        this.n+=c[0].length;
+        if(this.n>=2048){                      // gom ~46ms rồi mới gửi, khỏi vụn quá
+          const out=[];
+          for(let q=0;q<k;q++){
+            const m=new Float32Array(this.n); let o=0;
+            for(const p of this.b[q]){ m.set(p,o); o+=p.length; }
+            out.push(m); this.b[q]=[];
+          }
+          this.n=0;
+          this.port.postMessage(out,out.map(x=>x.buffer));
+        }
+      }
+      return true;
+    }
+  }
+  registerProcessor('pcmtap',T);`;
+  PCMTAP=URL.createObjectURL(new Blob([src],{type:'text/javascript'}));
+  return PCMTAP;
+}
+async function cfrAudioTap(st){
+  try{
+    const c=ac();
+    if(!c){ say('Không mở được AudioContext — video sẽ không có tiếng.','m'); return; }
+    if(typeof AudioEncoder==='undefined'||typeof AudioData==='undefined'){
+      say('Trình duyệt không có AudioEncoder — video sẽ không có tiếng.','m'); return;
+    }
+    const src=master();
+    if(!src){ say('Không lấy được luồng tiếng của game — video sẽ không có tiếng.','m'); return; }
+    const rate=c.sampleRate;
+    if(!await cfrAudioOpen(st,rate,2)) return;
+    const push=chans=>{
+      if(CFR!==st||st.stopping||!st.aenc||st.aenc.state!=='configured') return;
+      const k=chans.length, n=chans[0].length;
+      const buf=new Float32Array(n*k);
+      for(let q=0;q<k;q++) buf.set(chans[q],q*n);
+      try{
+        const ad=new AudioData({format:'f32-planar',sampleRate:rate,numberOfFrames:n,
+          numberOfChannels:k,timestamp:Math.round(st.apos*1e6/rate),data:buf});
+        st.aenc.encode(ad); ad.close(); st.apos+=n;
+        if(st.aWall0===0) st.aWall0=performance.now();
+      }catch(e){
+        if(!st.aerr){ st.aerr=1; say('Bộ mã hoá tiếng từ chối dữ liệu: '+e.message,'m'); }
+      }
+    };
+    let node=null;
+    if(c.audioWorklet&&typeof AudioWorkletNode!=='undefined'){
+      try{
+        await c.audioWorklet.addModule(pcmTapUrl());
+        node=new AudioWorkletNode(c,'pcmtap',{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
+        node.port.onmessage=e=>push(e.data);
+        st.atapKind='AudioWorklet';
+      }catch(e){ node=null; }
+    }
+    if(!node&&c.createScriptProcessor){
+      node=c.createScriptProcessor(4096,2,2);
+      node.onaudioprocess=e=>push([e.inputBuffer.getChannelData(0),e.inputBuffer.getChannelData(1)]);
+      st.atapKind='ScriptProcessor';
+    }
+    if(!node){ say('Không tạo được đầu thu PCM — video sẽ không có tiếng.','m'); return; }
+    const sink=c.createGain(); sink.gain.value=0; sink.connect(c.destination);  // giữ nhịp kéo
+    src.connect(node); node.connect(sink);
+    st.atap=()=>{ try{node.disconnect();}catch(e){} try{sink.disconnect();}catch(e){} };
+  }catch(e){ say('Không mở được đường tiếng: '+e.message,'m'); }
+}
 async function cfrStart(src,w,h){
   const vcfg=await cfrPickVideo(w,h);
   if(!vcfg) return false;
   const st={src,w,h,fps:REC_FPS,codec:vcfg.codec,v:[],a:[],n:0,vdesc:null,adesc:null,
-            acodec:null,arate:0,ach:0,t0:0,stopping:false,areader:null,aenc:null,
-            aWall0:0,aTs0:null,aerr:0,awarn:0};
+            acodec:null,arate:0,ach:0,t0:0,stopping:false,aenc:null,
+            aWall0:0,aTs0:null,aerr:0,awarn:0,apos:0,atap:null,atapKind:''};
   st.enc=new VideoEncoder({
     output:(chunk,meta)=>{
       const d=meta&&meta.decoderConfig&&meta.decoderConfig.description;
@@ -4125,37 +4205,7 @@ async function cfrStart(src,w,h){
     error:()=>{ say('Bộ mã hoá hình gặp lỗi, dừng ghi.','m'); if(CFR)cfrStop(); }
   });
   st.enc.configure(vcfg);
-  // tiếng: lấy PCM từ luồng trộn của game rồi mã hoá song song với hình
-  try{
-    ac(); const d=recDest();
-    const track=d&&d.stream.getAudioTracks()[0];
-    if(!track) say('Không lấy được luồng tiếng của game — video sẽ không có tiếng.','m');
-    else if(typeof AudioEncoder==='undefined'||typeof MediaStreamTrackProcessor==='undefined')
-      say('Trình duyệt thiếu AudioEncoder/MediaStreamTrackProcessor — video sẽ không có tiếng.','m');
-    else{
-      const proc=new MediaStreamTrackProcessor({track});
-      st.areader=proc.readable.getReader();
-      (async()=>{
-        try{
-          for(;;){
-            const {value,done}=await st.areader.read();
-            if(done)break;
-            if(!st.aenc){
-              const ok=await cfrAudioOpen(st,value.sampleRate,value.numberOfChannels);
-              st.aWall0=performance.now();                 // lúc mẻ PCM đầu tiên về tới
-              if(!ok){ value.close(); break; }
-            }
-            try{ st.aenc.encode(value); }
-            catch(e){
-              if(!st.aerr){ st.aerr=1; say('Bộ mã hoá tiếng từ chối dữ liệu: '+e.message,'m'); }
-              value.close(); break;
-            }
-            value.close();
-          }
-        }catch(e){}
-      })();
-    }
-  }catch(e){ say('Không mở được đường tiếng: '+e.message,'m'); }
+  await cfrAudioTap(st);
   st.t0=performance.now();
   CFR=st;
   return true;
@@ -4185,17 +4235,13 @@ async function cfrStop(){
   recLabel('⏳ Đang dựng video…');
   clearInterval(recTimer); recTimer=null;
   const st=CFR;
-  // vòng đọc PCM hay bị bỏ đói lúc mã hoá hình nên tiếng về trễ: chờ nó đuổi kịp
-  // độ dài hình rồi mới cắt, nếu không đoạn cuối video sẽ mất tiếng.
-  if(st.aenc&&st.a.length){
-    const target=st.n*1e6/st.fps, wait=performance.now()+2500;
-    while(performance.now()<wait){
-      const last=st.a[st.a.length-1];
-      if(last&&st.aTs0!==null&&last.ts-st.aTs0>=target) break;
-      await new Promise(r=>setTimeout(r,40));
-    }
+  // tin nhắn từ đầu thu xếp hàng ở luồng chính nên tiếng có thể về trễ: chờ nó đuổi kịp
+  // độ dài hình rồi mới ngắt, nếu không đoạn cuối video sẽ mất tiếng.
+  if(st.aenc){
+    const target=st.n/st.fps, wait=performance.now()+2500;
+    while(performance.now()<wait&&st.apos/st.arate<target) await new Promise(r=>setTimeout(r,40));
   }
-  try{ if(st.areader) st.areader.cancel().catch(()=>{}); }catch(e){}
+  try{ if(st.atap) st.atap(); }catch(e){}
   try{ await st.enc.flush(); }catch(e){}
   try{ if(st.aenc) await st.aenc.flush(); }catch(e){}
   try{ st.enc.close(); }catch(e){}
@@ -4213,7 +4259,8 @@ async function cfrStop(){
   recSave(blob,'.mp4');
   say(`Đã lưu video ${recTall?`khung dọc 9:16 (${REC916.w}×${REC916.h})`:'khung nguyên bản'} — `+
       `${st.v.length} khung, nhịp cố định ${st.fps} fps (CFR), `+
-      `${aud?`tiếng ${st.acodec} ${st.a.length} mẫu`:'KHÔNG có tiếng'}, ${(blob.size/1048576).toFixed(1)} MB.`,
+      `${aud?`tiếng ${st.acodec} qua ${st.atapKind} (${st.a.length} mẫu)`:'KHÔNG có tiếng'}, `+
+      `${(blob.size/1048576).toFixed(1)} MB.`,
       aud?'g':'m');
   recTall=false;
 }

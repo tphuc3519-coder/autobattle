@@ -248,12 +248,21 @@ làm:
 3. `mp4Build()` tự dựng file MP4: `ftyp + mdat + moov`, mỗi track gom vào **một chunk** nên
    `stsc`/`stco` chỉ có một dòng. Track hình timescale `60*1000`, mỗi mẫu **1000 nhịp** ⇒
    bảng `stts` đúng **một dòng** = CFR thật.
-4. Tiếng: `MediaStreamTrackProcessor` lấy PCM từ luồng trộn của game → `AudioEncoder`
+4. Tiếng: **đầu thu PCM cắm thẳng vào đồ thị âm thanh** (`cfrAudioTap`) → `AudioEncoder`
    (`mp4a.40.2`, không thì `opus`) → track thứ hai (`esds` cho AAC, `dOps` cho Opus).
-   - **Cấu hình bộ mã hoá theo đúng mẻ PCM đầu tiên** (`value.sampleRate` /
-     `value.numberOfChannels`), đừng lấy `track.getSettings()`: thông số track có khi lệch
-     với dữ liệu thật, `encode()` ném lỗi và **mất sạch tiếng** — đúng lỗi "ghi hình không
-     có âm thanh" người dùng gặp.
+   - **Đừng quay lại `MediaStreamTrackProcessor`.** API đó chỉ có trên Chrome desktop; trên
+     Safari/Firefox thì không, và video quay ra chỉ có mỗi track hình — người dùng gửi đúng
+     một file như vậy (`avc1` một track, CFR chuẩn, không có tiếng).
+   - Thứ tự thử: `AudioWorklet` (chạy trên luồng âm thanh, không bị đói lúc mã hoá hình),
+     không được thì `ScriptProcessor`. Mở game bằng `file://` thì worklet **luôn** hỏng
+     (`addModule` với blob URL: `AbortError`), nên thực tế chạy `ScriptProcessor` — vẫn tốt.
+   - Đầu thu phải nối vào một `GainNode` gain 0 rồi ra `destination`, không thì đồ thị không
+     được kéo.
+   - Mốc thời gian của mẫu tiếng tính theo **số mẫu đã đi qua** (`st.apos`), không theo đồng
+     hồ máy, nên tiếng không trôi.
+   - Cấu hình bộ mã hoá theo đúng **tần số của `AudioContext`**, đừng lấy
+     `track.getSettings()`: thông số track có khi lệch với dữ liệu thật, `encode()` ném lỗi
+     và mất sạch tiếng.
    - AAC phải khai `aac:{format:'aac'}` cho ra AudioSpecificConfig. Vẫn chuẩn bị sẵn hai
      đường bù: `aacRaw()` lột 7~9 byte ADTS nếu bộ mã hoá trả khung bọc ADTS, `aacAsc()` tự
      dựng ASC nếu không có `description`.
@@ -330,6 +339,7 @@ Nút test bấm tay có sẵn trong game: `#testEagle`, `#testForest`, `#testTwi
 | Lỗi | Nguyên nhân | Cách sửa |
 |---|---|---|
 | Video quay ra không có tiếng | `mAudioEntry()` dựng `esds`/`dOps` rồi quên gắn vào sample entry | gắn `cfg` vào cuối `mBox(type,…)`, và test soi byte thay vì chỉ đếm track |
+| Video chỉ có track hình, không có track tiếng | thu PCM bằng `MediaStreamTrackProcessor` — Safari/Firefox không có API này | thu thẳng từ đồ thị âm thanh: `AudioWorklet`, không được thì `ScriptProcessor` |
 | Gohan bắn vào chính ChiChi | `summonHelp` cắm cứng `team:1` | `team:c.team` + `master:c`, `foeOf` đi qua `master` |
 | Mọi đòn đều thành "né" | `hurt()` thiếu `return true` | thêm lại, và kiểm giá trị trả về ở mọi nơi gọi |
 | `GRUMBLE_LIFE is not defined` | khai sau chỗ `SFX_MAXLEN` dùng nó | dời hằng số lên trên |
