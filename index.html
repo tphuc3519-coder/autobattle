@@ -479,7 +479,7 @@ const CHARS={
     // Thanh điểm lớp thôi, đúng kiểu Rage / Crit / Goal / Chakra của mấy nhân vật kia.
     // Không ghi form, không ghi bậc: người chơi tự thấy cô đổi khác qua dáng và đòn đánh.
     gauge:f=>({pct:clamp(f.cp/SUZ.cpMax,0,1), fill:'#7FC8FF',
-               txt:`Class pts: ${Math.round(f.cp)}/${SUZ.cpMax}`})
+               txt:`Class: ${Math.round(f.cp)}/${SUZ.cpMax}`})
   }
 };
 const CKEYS=Object.keys(CHARS);
@@ -3737,9 +3737,20 @@ function bar(x,y,w,h,pct,fill,text,textCol){
   ctx.fillStyle='#fff'; ctx.fillRect(x,y,w,h);
   ctx.fillStyle=fill; ctx.fillRect(x,y,w*clamp(pct,0,1),h);
   ctx.strokeStyle='#000'; ctx.lineWidth=3; ctx.strokeRect(x,y,w,h);
-  ctx.fillStyle=textCol||'#000'; ctx.font='900 15px "Be Vietnam Pro",sans-serif';
+  ctx.fillStyle=textCol||'#000';
   ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText(text,x+w/2,y+h/2+1);
+  /* Chữ phải nằm gọn trong khung. Cỡ 15px cố định thì hễ con số lên hai ba chữ số là
+     tràn hẳn ra ngoài thanh — thu cỡ chữ vừa đủ để vừa, và chốt thêm maxWidth làm chặn
+     cuối để dù có tình huống nào cũng không thò ra. */
+  const room=w-10;
+  let size=15;
+  ctx.font=`900 ${size}px "Be Vietnam Pro",sans-serif`;
+  const tw=ctx.measureText(text).width;
+  if(tw>room){
+    size=Math.max(9,Math.floor(size*room/tw));
+    ctx.font=`900 ${size}px "Be Vietnam Pro",sans-serif`;
+  }
+  ctx.fillText(text,x+w/2,y+h/2+1,room);
   ctx.textBaseline='alphabetic';
 }
 /* Chữ rực lửa: dùng cho tên và tên hiệu ứng lúc Wings of the Eagle.

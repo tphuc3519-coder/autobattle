@@ -238,7 +238,7 @@ quyết định đúng, +5% tỉ lệ hồi máu, +6% lượng hồi máu, +8% m
 > bỏ bảng chỉ số lúc lên bậc, bỏ đồng hồ `AYANOKOUJI GUARDS …s`, bỏ luôn mấy dòng
 > `AYANOKOUJI SUPPORT` / `TAUNT` / `TAUNTED`. Đổi form thì chỉ nói bằng **hình và câu
 > thoại**: dáng đứng khác, vòng sáng, chớp màn, một tiếng. Thanh phụ chỉ còn
-> `Class pts: n/150`, đúng kiểu Rage / Crit / Goal / Chakra của mấy nhân vật kia.
+> `Class: n/150`, đúng kiểu Rage / Crit / Goal / Chakra của mấy nhân vật kia.
 > Chỗ duy nhất được phép giải thích là **mảng `skills` trong màn chọn nhân vật**.
 > Nhật ký cũng kể chuyện chứ không đọc bảng chỉ số.
 
@@ -505,6 +505,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 | Ayanokouji đứng chồng lên Horikita | chỗ đứng chỉ cách 48px, mà hình rộng ~40px | giãn ra 66px và giãn luôn đội hình lúc chắn cận chiến |
 | Chữ thò ra ngoài khung sàn | mọi float vẽ đúng tại `f.x/f.y`, không ai đo bề ngang chữ | đo khối chữ trước rồi kéo vào **khung đang nhìn thấy** (`W/z × H/z` quanh tâm camera), không phải cả sàn — lúc phân cảnh zoom, chỗ nằm trong sàn vẫn có thể nằm ngoài màn hình. Dòng trạng thái dưới thanh máu cũng canh theo bề ngang của chính nó |
 | Mũi tên bong bóng quyết định tụt vào trong khung | lấy `min(bw/2,bh/2)` làm mép | tính giao điểm của tia với hình chữ nhật |
+| Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---
 
