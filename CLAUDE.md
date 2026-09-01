@@ -229,9 +229,10 @@ Nút `#rec` quay canvas sàn đấu; ô chọn `#rec916` quyết định khung v
 **1080p (1080×1920, mặc định)**, **720p (720×1280)**, hoặc khung nguyên bản. Một canvas phụ
 `RECV` đúng cỡ đó, mỗi khung `recFrame()` blit canvas sàn đấu vào giữa.
 
-> **Khung dọc chỉ có ba thứ: nền đen, dòng tên cặp đấu, và sàn đấu.** Người dùng đã bác bản
-> có dải nhật ký tiếng Việt phía dưới và dòng đồng hồ / chữ AUTOBATTLE phía trên — đừng in
-> thêm chữ gì lên video.
+> **Khung dọc chỉ có hai thứ: nền đen và nguyên canvas sàn đấu đặt giữa** — trong canvas đã
+> sẵn băng-rôn tên cặp đấu có màu. **Đừng vẽ thêm chữ gì lên video.** Người dùng đã bác lần
+> lượt: dải nhật ký tiếng Việt phía dưới, dòng đồng hồ và chữ AUTOBATTLE phía trên, rồi cả
+> dòng tên cặp đấu tự vẽ — "chỉ cần tên màu của cặp đấu vs arena như trước giờ thôi".
 
 ### Vì sao không dùng MediaRecorder nữa
 
@@ -263,12 +264,12 @@ nguyên bản 59.5** (không ghi: 60.2). Đường WebCodecs còn nhẹ hơn `Me
 
 1. **`imageSmoothingQuality='low'` cho `RECX`.** Để `'medium'`/`'high'` thì cú thu nhỏ sàn
    đấu mỗi khung kéo fps xuống còn nửa.
-2. **Nền đen và dòng tên chỉ vẽ lại khi tên đổi** (`recSig`): cú blit sàn đấu không đè lên
-   phần đó nên chữ vẫn còn từ khung trước.
+2. **Nền đen chỉ tô một lần** (`recPainted`): cú blit sàn đấu không đè lên hai dải đen nên
+   chúng vẫn còn từ khung trước.
 
-Chữ vẽ theo hệ toạ độ thiết kế **1080×1920** (`RECD`) rồi `setTransform` thu về bề ngang đang
-chọn. `recCanvas(wide)` dựng lại canvas khi đổi cỡ (gán `.width` là reset luôn transform lẫn
-`imageSmoothing*`, nhớ đặt lại).
+Vẽ theo hệ toạ độ thiết kế **1080×1920** (`RECD`) rồi `setTransform` thu về bề ngang đang chọn,
+nên đổi độ phân giải không phải tính lại toạ độ. `recCanvas(wide)` dựng lại canvas khi đổi cỡ
+(gán `.width` là reset luôn transform lẫn `imageSmoothing*`, nhớ đặt lại và tô nền lại).
 
 ## 8. Kiểm thử
 

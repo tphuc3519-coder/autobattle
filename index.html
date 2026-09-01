@@ -3893,11 +3893,11 @@ function loop(now){
 /* Khung video dọc 9:16 (vừa TikTok/Reels/Shorts). Chọn ở #rec916: 1080p cho nét,
    720p cho máy yếu — mã hoá 1080×1920 bằng CPU khá nặng. Chữ luôn vẽ theo hệ toạ độ
    RECD 1080×1920 rồi setTransform thu về đúng bề ngang đang chọn. */
-const RECD={w:1080,h:1920,top:355};
+const RECD={w:1080,h:1920};
 const REC_FPS=60, REC_BPS=8000000;
 let REC916={w:1080,h:1920};
 let REC=null, recChunks=[], recStart=0, recTimer=null, recTall=false, recBusy=false;
-let RECV=null, RECX=null, recSig='';
+let RECV=null, RECX=null, recPainted=false;
 function recWantTall(){                       // 0 = ghi thẳng canvas như cũ
   const c=document.getElementById('rec916');
   const v=c?parseInt(c.value,10):1080;
@@ -3913,34 +3913,20 @@ function recCanvas(wide){
     // xuống còn nửa (đo ở 720p trên máy không có GPU: 59 -> 29 fps).
     RECX.imageSmoothingEnabled=true; RECX.imageSmoothingQuality='low';
     const k=REC916.w/RECD.w;
-    RECX.setTransform(k,0,0,k,0,0);        // vẽ theo hệ 1080×1920 cho dễ canh chữ
+    RECX.setTransform(k,0,0,k,0,0);        // vẽ theo hệ 1080×1920, đổi cỡ khỏi tính lại
+    recPainted=false;
   }
   return RECV;
 }
-/* cắt chuỗi cho vừa bề ngang khung, dài quá thì thêm dấu … */
-function recFit(g,s,max){
-  if(g.measureText(s).width<=max) return s;
-  let t=s;
-  while(t.length>4&&g.measureText(t+'…').width>max) t=t.slice(0,-1);
-  return t+'…';
-}
-/* Khung dọc chỉ có ba thứ: nền đen, tên cặp đấu, và sàn đấu đặt giữa.
-   Không in nhật ký hay chữ tiếng Việt nào khác lên video. */
+/* Khung dọc chỉ có hai thứ: nền đen và nguyên canvas sàn đấu đặt giữa khung — trong đó
+   đã sẵn băng-rôn tên cặp đấu có màu. KHÔNG in thêm chữ gì lên video.
+   Nền chỉ tô một lần: cú blit sàn đấu không đè lên hai dải đen nên chúng vẫn còn. */
 function recFrame(){
   if(!RECV) return;
   const g=RECX, w=RECD.w, h=RECD.h;
-  const dy=RECD.top, dh=Math.round(w*CV.height/CV.width);
+  const dh=Math.round(w*CV.height/CV.width), dy=Math.round((h-dh)/2);
+  if(!recPainted){ recPainted=true; g.fillStyle='#000'; g.fillRect(0,0,w,h); }
   g.drawImage(CV,0,dy,w,dh);
-  // nền đen và dòng tên không bị cú blit sàn đấu đè lên, nên chỉ vẽ lại khi tên đổi
-  const sig=`${PICK.a}|${PICK.b}`;
-  if(sig===recSig) return;
-  recSig=sig;
-  g.fillStyle='#000';
-  g.fillRect(0,0,w,dy); g.fillRect(0,dy+dh,w,h-dy-dh);
-  const mirror=PICK.a===PICK.b;
-  g.textAlign='center'; g.fillStyle='#EFE9FF';
-  g.font='800 54px "Be Vietnam Pro",system-ui,sans-serif';
-  g.fillText(recFit(g,`${CHARS[PICK.a].name}  vs  ${CHARS[PICK.b].name}${mirror?' II':''}`,w-60), w/2, dy-72);
 }
 function recLabel(txt){ const b=document.getElementById('rec'); if(b)b.textContent=txt; }
 
@@ -4217,7 +4203,7 @@ function toggleRec(){
   if(REC){ try{ REC.stop(); }catch(e){} return; }
   recTall=recWantTall();
   let src=CV;
-  if(recTall){ src=recCanvas(recTall); recSig=''; recFrame(); }
+  if(recTall){ src=recCanvas(recTall); recPainted=false; recFrame(); }
   recBusy=true;
   cfrStart(src,src.width,src.height).then(ok=>{
     recBusy=false;
