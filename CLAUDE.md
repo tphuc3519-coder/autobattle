@@ -289,6 +289,21 @@ VFR, và nhật ký nói rõ điều đó.
 > `t_rec.js` chặn lần lượt `AudioEncoder`, `AudioData`, mọi codec tiếng, rồi cả
 > `AudioWorklet` + `ScriptProcessor` — cả bốn trường hợp file ra vẫn phải giải mã được tiếng.
 
+### Safari
+
+Người dùng quay bằng **Safari**. Safari có `VideoEncoder` (ra `avc1`) nhưng **không có
+`MediaStreamTrackProcessor`**, và tuỳ đời máy có thể không có `AudioEncoder`/`AudioData` —
+hai file họ gửi đều chỉ có mỗi track hình. Vì vậy:
+
+- Đường CFR chỉ chạy đủ hình + tiếng khi trình duyệt có `AudioEncoder`; không thì
+  `cfrNoAudio()` nhường cho `MediaRecorder` (Safari xuất MP4 có AAC) — **VFR nhưng có tiếng**.
+- `cfrAudioOpen()` thử `isConfigSupported` trước, không được thì **liều `configure()` luôn**:
+  Safari có lúc báo false nhưng vẫn cấu hình được.
+- Bộ ghi thường gộp hình + tiếng bằng `new MediaStream([...])`, **đừng `addTrack` vào luồng
+  canvas** — Safari không chịu. Danh sách mime có thêm `video/mp4` trần.
+- Safari hay chặn cú bấm tải tự động, nên `recSave()` in thêm một đường dẫn bấm tay vào nhật
+  ký và giữ object URL 5 phút.
+
 Lúc bắt đầu ghi, nhật ký in một dòng chẩn đoán: `VideoEncoder <codec> · AudioEncoder <codec>
 · đầu thu <AudioWorklet|ScriptProcessor>` — hỏi người dùng dòng này là biết ngay khâu nào hỏng.
 
