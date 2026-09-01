@@ -250,10 +250,21 @@ làm:
    bảng `stts` đúng **một dòng** = CFR thật.
 4. Tiếng: `MediaStreamTrackProcessor` lấy PCM từ luồng trộn của game → `AudioEncoder`
    (`mp4a.40.2`, không thì `opus`) → track thứ hai (`esds` cho AAC, `dOps` cho Opus).
+   - **Cấu hình bộ mã hoá theo đúng mẻ PCM đầu tiên** (`value.sampleRate` /
+     `value.numberOfChannels`), đừng lấy `track.getSettings()`: thông số track có khi lệch
+     với dữ liệu thật, `encode()` ném lỗi và **mất sạch tiếng** — đúng lỗi "ghi hình không
+     có âm thanh" người dùng gặp.
+   - AAC phải khai `aac:{format:'aac'}` cho ra AudioSpecificConfig. Vẫn chuẩn bị sẵn hai
+     đường bù: `aacRaw()` lột 7~9 byte ADTS nếu bộ mã hoá trả khung bọc ADTS, `aacAsc()` tự
+     dựng ASC nếu không có `description`.
+   - **Đừng nuốt lỗi ở đường tiếng.** Mọi nhánh hỏng đều phải `say()` ra nhật ký, và dòng
+     "Đã lưu video" nói rõ tiếng bằng codec gì / bao nhiêu mẫu, hay KHÔNG có tiếng.
    - Vòng đọc PCM hay **bị bỏ đói** lúc mã hoá hình, nên lúc dừng phải **chờ tiếng đuổi kịp
      độ dài hình** (tối đa 2.5s) rồi mới `cancel()`, không thì cụt tiếng đoạn cuối.
    - Tiếng vào trễ vài chục ms so với hình, nên track tiếng có `edts/elst` chèn một đoạn
      trống đúng bằng khoảng trễ đó.
+   - Máy không có bộ mã hoá AAC thì lui về Opus-trong-MP4 và **báo cho người dùng biết**:
+     Chrome/VLC nghe được nhưng vài phần mềm dựng phim thì không.
 
 Không có WebCodecs (Firefox, Safari cũ) thì lui về `MediaRecorder` — vẫn ghi được nhưng là
 VFR, và nhật ký nói rõ điều đó.
@@ -280,7 +291,7 @@ node tools/t_reg.js     # 10 cặp đấu song song, bắt lỗi trang, xem cơ 
 node tools/t_wake.js    # đo nhịp Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
-node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), có tiếng, đường lui MediaRecorder
+node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 ```
 
 Tất cả trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng

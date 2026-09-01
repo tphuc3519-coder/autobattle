@@ -1,7 +1,7 @@
 /* Ghi hình: kiểm đường CFR (WebCodecs + tự dựng MP4) và đường lui MediaRecorder.
    - MP4 xuất ra phải có bảng stts đúng MỘT dòng, mỗi mẫu dài bằng nhau -> CFR thật
    - timescale = fps*1000, mỗi khung 1000 nhịp -> đúng 60 fps
-   - track tiếng phải phủ hết độ dài hình (đừng cụt đoạn cuối)
+   - track tiếng phải phủ hết độ dài hình (đừng cụt đoạn cuối) VÀ giải mã ra tiếng thật
    - file phải phát lại được, đúng bề ngang/cao đã chọn
    - bỏ WebCodecs thì lui về MediaRecorder và nói rõ là nhịp khung thay đổi */
 const { openGame } = require('./probe.js');
@@ -47,7 +47,16 @@ async function record(page, ms) {
       v.src = URL.createObjectURL(b);
       setTimeout(() => res({ err: 'het gio' }), 8000);
     });
-    return { type: b.type, size: b.size, b64: btoa(s), play, log: (window.__G().logs.find(l => /^Đã lưu|^Trình duyệt/.test(l.m)) || {}).m };
+    // giải mã thật track tiếng: có mặt trong file chưa chắc đã kêu
+    let aud = { err: 'khong co' };
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const ab = await ctx.decodeAudioData(await b.arrayBuffer());
+      let peak = 0; const d = ab.getChannelData(0);
+      for (let i = 0; i < d.length; i += 17) peak = Math.max(peak, Math.abs(d[i]));
+      aud = { dur: ab.duration, ch: ab.numberOfChannels, rate: ab.sampleRate, peak: +peak.toFixed(4) };
+    } catch (e) { aud = { err: e.name }; }
+    return { type: b.type, size: b.size, b64: btoa(s), play, aud, log: (window.__G().logs.find(l => /^Đã lưu|^Trình duyệt/.test(l.m)) || {}).m };
   });
 }
 
@@ -77,8 +86,23 @@ async function record(page, ms) {
     'tieng phu het hinh': aDur >= vDur - 0.15,
     'stco nam trong file': m.stco.every(o => o < cfr.size),
     'phat lai duoc 720x1280': cfr.play.w === 720 && cfr.play.h === 1280,
-    'nhat ky noi CFR': /CFR/.test(cfr.log || '')
+    'nhat ky noi CFR': /CFR/.test(cfr.log || ''),
+    'tieng giai ma duoc': !cfr.aud.err && cfr.aud.dur >= vDur - 0.2,
+    'tieng khong cam': !cfr.aud.err && cfr.aud.peak > 0.001
   };
+
+  // lột ADTS và tự dựng AudioSpecificConfig (nhánh AAC của Chrome, máy test không có AAC)
+  const aac = await page.evaluate(() => {
+    const adts = new Uint8Array([0xFF, 0xF1, 0x4C, 0x80, 0x02, 0x1F, 0xFC, 9, 9, 9, 9]);
+    const raw = window.__aacRaw([{ data: adts, ts: 0 }])[0].data;
+    const keep = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    return { stripped: Array.from(raw), giuNguyen: Array.from(window.__aacRaw([{ data: keep, ts: 0 }])[0].data),
+             asc48: Array.from(window.__aacAsc(48000, 2)), asc44: Array.from(window.__aacAsc(44100, 2)) };
+  });
+  ok['lot dung 7 byte ADTS'] = JSON.stringify(aac.stripped) === JSON.stringify([9, 9, 9, 9]);
+  ok['khung khong ADTS thi giu nguyen'] = aac.giuNguyen.length === 10;
+  ok['ASC 48k stereo = 11 90'] = JSON.stringify(aac.asc48) === JSON.stringify([0x11, 0x90]);
+  ok['ASC 44.1k stereo = 12 10'] = JSON.stringify(aac.asc44) === JSON.stringify([0x12, 0x10]);
 
   await page.evaluate(() => { delete window.VideoEncoder; });
   const vfr = await record(page, 2500);
@@ -86,7 +110,8 @@ async function record(page, ms) {
 
   await browser.close();
   for (const k of Object.keys(ok)) console.log((ok[k] ? 'DAT ' : 'HONG') + '  ' + k);
-  console.log(`hinh ${vStts[0][0]} khung / ${vDur.toFixed(2)}s · tieng ${aDur.toFixed(2)}s · ${m.stsd.join('+')} · ${(cfr.size / 1048576).toFixed(1)} MB`);
+  console.log(`hinh ${vStts[0][0]} khung / ${vDur.toFixed(2)}s · tieng ${aDur.toFixed(2)}s ` +
+    `(giai ma ${cfr.aud.err || cfr.aud.dur.toFixed(2) + 's, dinh ' + cfr.aud.peak}) · ${m.stsd.join('+')} · ${(cfr.size / 1048576).toFixed(1)} MB`);
   console.log('loi trang:', errors.length ? errors : 'khong co');
   process.exit(Object.values(ok).every(Boolean) && !errors.length ? 0 : 1);
 })();
