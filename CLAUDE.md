@@ -153,7 +153,7 @@ Nhân vật cận chiến, đi theo **ba form** — đây là cả tính cách n
 |---|---|---|
 | 1 | Đã dám vung tay nhưng còn rụt rè | chỉ có chiêu 1, **10 dmg** mỗi đòn và ra chậm hơn form 2 **1.6 lần** (`SUZ.f1`, `SUZ.f1Slow`); **chưa có chiêu 2**, chưa tích điểm lớp, chưa có cửa hồi máu. Đứng thì dáng `scared` (hai tay chụm trước ngực, mắt mở to, giọt mồ hôi), trúng đòn thì dáng `block` (hai tay bắt chéo chữ X). AI nhích vào đủ tầm rồi lùi ngay |
 | 2 | Dám đánh nhưng còn sai | chiêu 1 đấm/đá, chiêu 2 Decision Making |
-| 3 | Tự đứng một mình | như form 2 nhưng mạnh hơn và cộng dồn theo điểm lớp |
+| 3 | Tự đứng một mình | như form 2 nhưng mạnh hơn và cộng dồn theo điểm lớp. **Có ô dán ảnh đứng riêng** `stand3` (`SETS`, nhãn "Thủ thế (form 3)"); ô `idle` từ đây chỉ còn là dáng đứng của form 2. Dáng vector đi kèm: đứng hẳn thế thủ như võ sĩ — khuỷu ép sườn, nắm đấm dẫn đường ngang cằm, vẽ **sau tóc** như hai dáng của form 1. Thiếu ảnh `stand3` thì `sprite()` lùi về ô `idle` |
 
 **Chuyển form 1 → 2**: máu tụt xuống **85%** (`SUZ.guardHp`) thì Ayanokouji hiện ra.
 Phân cảnh đóng băng 1.6s, anh nói *"Stand up and fight."*, rồi **đỡ đạn thay đúng 5 giây
@@ -197,9 +197,9 @@ chiêu; form 1 nhân thêm `f1Slow = 1.6` nữa. **Hồi chiêu phải đọc qu
 **3.5 giây nữa** (`decCd`) mới nghĩ tiếp. Nên `think()` đặt
 `f.cds.s2 = decThink + decCd`, đừng đặt mỗi `decCd`.
 
-Đúng (**62.5%** ở form 2, **70%** ở form 3) thì câu nói biến thành **bong bóng phóng thẳng
+Đúng (**65%** ở form 2, **70%** ở form 3) thì câu nói biến thành **bong bóng phóng thẳng
 vào mặt địch**, tích **đúng bằng lượng sát thương vừa gây**, kèm cửa hồi máu 25%/3%
-(form 3: 35%/8%). Sai (37.5% / 30%) thì **trừ 5~60 điểm**; điểm thủng xuống âm thì cô **tự
+(form 3: 35%/8%). Sai (35% / 30%) thì **trừ 5~60 điểm**; điểm thủng xuống âm thì cô **tự
 chịu đúng phần âm đó** (không né được, không giảm nhẹ) rồi tích lại từ 0.
 
 **Mỗi quyết định đúng còn được chấm mức độ** theo chính lượng sát thương nó gây ra — bảng
@@ -247,6 +247,14 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
 - **Taunt đi qua `aimTarget(f)`**, không đụng tới `foeOf()`. `foeOf` vẫn là quan hệ phe;
   `aimTarget` chỉ trả lời "đang nhắm vào ai". Mọi chỗ NHẮM (aiVec, think, cú lao, đạn dò)
   đọc `aimTarget`, mọi chỗ tính phe vẫn đọc `foeOf`.
+
+> **Cú cước chia tay không được nện vào lớp miễn thương.** Konohamaru tự miễn thương 0.75 giây
+> người chơi mỗi lần tung Sexy no Jutsu; cú cước rơi trúng quãng đó thì `hurt()` trả về false
+> ngay từ đầu hàm — mất sạch 150 dmg lẫn 2 giây choáng, nhật ký còn báo nhầm thành "bị né".
+> Cách xử: **không phá miễn thương của người ta**, mà giữ anh treo ngay trước mặt địch (bám
+> theo địch qua `ayaGuardAim`), hết miễn thương mới tung. Có trần chờ `SUZ.guardKickWait`
+> (2 giây người chơi) để chuỗi phân cảnh không bao giờ kẹt lại. Đo được: 14/14 lần cú cước
+> ăn đủ 150 dmg, trước đó cứ 10 lần thì hụt 1.
 
 **Chuyển form 2 → 3**: anh về 0 máu thì **KHÔNG chết**. `a.alive` vẫn `true`, không có
 `finish()`, không có hiệu ứng gục. Anh nói *"This is where I take my leave."* rồi **đi bộ ra
@@ -482,7 +490,8 @@ node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, 
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
-node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn
+node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
+                        # cước chia tay không nện vào miễn thương, ô thủ thế form 3
 ```
 
 Tất cả trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng
@@ -531,13 +540,14 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 | Chữ thò ra ngoài khung sàn | mọi float vẽ đúng tại `f.x/f.y`, không ai đo bề ngang chữ | đo khối chữ trước rồi kéo vào **khung đang nhìn thấy** (`W/z × H/z` quanh tâm camera), không phải cả sàn — lúc phân cảnh zoom, chỗ nằm trong sàn vẫn có thể nằm ngoài màn hình. Dòng trạng thái dưới thanh máu cũng canh theo bề ngang của chính nó |
 | Mũi tên bong bóng quyết định tụt vào trong khung | lấy `min(bw/2,bh/2)` làm mép | tính giao điểm của tia với hình chữ nhật |
 | Cú cước chia tay đo ra 160 thay vì 150 | test cộng dồn mọi lượng máu địch mất, mà Horikita vẫn đấm 10 dmg ở form 1 | đo **cú sụt lớn nhất trong một nhịp**, đừng cộng dồn |
+| Cước chia tay của Ayanokouji thỉnh thoảng không gây dmg | rơi trúng 0.75 giây tự miễn thương của Sexy no Jutsu, `hurt()` trả false ngay từ đầu hàm | treo cú lao lại trước mặt địch cho tới khi hết miễn thương (`SUZ.guardKickWait` làm trần chờ), và sửa dòng nhật ký báo nhầm thành "bị né" |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---
 
 ## 10. Quy trình git
 
-- Nhánh làm việc: `claude/horikita-suzune-character-rjccp0`. **Không đẩy sang nhánh khác.**
+- Nhánh làm việc: `claude/suzune-success-rate-skills-ws3a96`. **Không đẩy sang nhánh khác.**
 - `git push -u origin <nhánh>`; lỗi mạng thì thử lại 4 lần, giãn 2s/4s/8s/16s.
 - Người dùng thường merge rất nhanh rồi hỏi luôn "pr?" / "merge đâu" — làm xong một việc thì
   **mở PR ngay**. Nếu PR trước đã merge thì mở PR mới, đừng chồng lên nhánh đã merge.

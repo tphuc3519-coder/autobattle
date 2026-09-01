@@ -28,6 +28,8 @@ window.__suzStrike=suzStrike; window.__aimTarget=aimTarget; window.__suzThink=su
 window.__SUZ_ASK=()=>SUZ_ASK;
 window.__suzDecisionHit=suzDecisionHit; window.__ayaStrike=ayaStrike; window.__suzHeal=suzHeal;
 window.__suzTier=suzTier; window.__SUZ_TIERS=SUZ_TIERS;
+window.__ayaGuardKick=ayaGuardKick; window.__ayaGuardKickHit=ayaGuardKickHit;
+window.__SETS=SETS; window.__getCtx=()=>ctx;
 window.__DECISIONS=SUZ_DECISIONS; window.__WRONGS=SUZ_WRONG;
 `;
 

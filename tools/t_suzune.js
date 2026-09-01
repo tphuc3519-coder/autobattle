@@ -148,7 +148,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     const f = G.fighters.find(x => x.key === 'suzune'), e = G.fighters.find(x => x.key === 'kono');
     f.cp = 0; f.hp = f.maxHp; e.hp = e.maxHp; e.evade = 0;
     G.proj.length = 0;
-    const r = Math.random; Math.random = () => .1;              // .1 < .625 -> quyet dinh dung
+    const r = Math.random; Math.random = () => .1;              // .1 < .65 -> quyet dinh dung
     window.__suzDecide(f, e);
     Math.random = r;
     const p = G.proj.find(x => x.type === 'decision');
@@ -156,7 +156,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
              tier: p ? p.tier : '', odds: window.__suzTune(f).decOdds,
              lo: window.__suzTune(f).decLo, hi: window.__suzTune(f).decHi };
   });
-  gan(dung.odds, .625, 0.001, 'form 2: ti le quyet dinh dung 62.5%');
+  gan(dung.odds, .65, 0.001, 'form 2: ti le quyet dinh dung 65%');
   gan(dung.lo, 30, 0.001, 'form 2: san sat thuong quyet dinh la 30');
   gan(dung.hi, 80, 0.001, 'form 2: tran sat thuong quyet dinh la 80');
   ok(dung.co, 'quyet dinh dung sinh ra mot bong bong phong thang vao dich');
@@ -215,6 +215,64 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
      `form 2: 30-40 acceptable, 41-60 good, 61-70 great, 71-80 best (${thang.f2.join(' / ')})`);
   ok(JSON.stringify(thang.f3) === JSON.stringify(mong2),
      `form 3: 40-70 acceptable, 71-90 good, 91-110 great, 111-120 best (${thang.f3.join(' / ')})`);
+
+  /* ---- cú cước chia tay không được nện vào lớp miễn thương ----
+     Konohamaru tự miễn thương 0.75 giây người chơi mỗi lần tung Sexy no Jutsu; cú cước
+     rơi trúng quãng đó thì hurt() trả false và mất sạch 150 dmg lẫn 2 giây choáng. */
+  const mien = await doc(() => {
+    const G = window.__G(), S = window.__SUZ;
+    const f = G.fighters.find(x => x.key === 'suzune'), e = G.fighters.find(x => x.key === 'kono');
+    const goc = f.form;
+    e.hp = e.maxHp; e.alive = true; e.evade = 0; e.stun = 0; e.invuln = 0.2;
+    f.ayaG = { ph: 'kick', t: 0, x: e.x - 40, y: e.y, face: 1, flash: 0, hits: 0, taken: 0,
+               born: 0, ghost: 0, tx: e.x - 40, ty: e.y, kickT0: 0 };
+    const truoc = e.hp;
+    window.__ayaGuardKickHit(f);                       // địch đang miễn thương: phải treo lại
+    const cho = { ph: f.ayaG.ph, mat: truoc - e.hp };
+    e.invuln = 0;
+    f.ayaG.born = 0.01;
+    window.__ayaGuardKickHit(f);                       // hết miễn thương: tung thật
+    const tung = { ph: f.ayaG ? f.ayaG.ph : 'null', mat: truoc - e.hp, stun: e.stun * window.__RT };
+    // dọn sạch để phần sau chạy tiếp như cũ
+    G.timers.length = 0; G.freeze = 0; f.ayaG = null; f.form = goc; e.stun = 0; e.hp = e.maxHp;
+    return { cho, tung };
+  });
+  ok(mien.cho.ph === 'kick' && mien.cho.mat === 0,
+     'dich dang mien thuong thi cu cuoc treo lai cho, chua tung');
+  gan(mien.tung.mat, 150, 0.5, 'het mien thuong thi cu cuoc an dung 150 dmg');
+  gan(mien.tung.stun, 2, 0.02, 'va van choang dung 2 giay nguoi choi');
+  ok(mien.tung.ph === 'done', 'tung xong thi chuyen sang pha ket');
+
+  /* ---- form 3 có ô dán ảnh thủ thế riêng, và dáng vector cũng khác form 2 ---- */
+  const oAnh = await doc(() => {
+    const S = window.__SETS.find(s => s.key === 'suzune');
+    const p = S.poses.map(x => x[0]);
+    return { co: p.indexOf('stand3') >= 0, nhan: (S.poses.find(x => x[0] === 'stand3') || [])[1],
+             idle: (S.poses.find(x => x[0] === 'idle') || [])[1] };
+  });
+  ok(oAnh.co, `co o dan anh rieng cho the thu form 3 ("${oAnh.nhan}")`);
+  ok(/form 2/.test(oAnh.idle || ''), `o dung cu ghi ro la cua form 2 ("${oAnh.idle}")`);
+
+  const dang = await doc(() => {
+    const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
+    const cv = document.createElement('canvas'); cv.width = 140; cv.height = 140;
+    const c2 = cv.getContext('2d');
+    const cu = window.__getCtx(), goc = f.form, gocPose = f.pose, gocMove = f.moving;
+    const ve = form => {                       // vẽ cùng một khung hình, chỉ đổi form
+      f.form = form; f.pose = 'idle'; f.moving = false;
+      c2.setTransform(1, 0, 0, 1, 0, 0); c2.clearRect(0, 0, 140, 140);
+      c2.save(); c2.translate(70, 100); window.__setCtx(c2); window.__vector(f); c2.restore();
+      return Array.from(c2.getImageData(0, 0, 140, 140).data);
+    };
+    const a = ve(2), b = ve(3);
+    window.__setCtx(cu); f.form = goc; f.pose = gocPose; f.moving = gocMove;
+    let khac = 0;
+    for (let i = 3; i < a.length; i += 4) if (a[i] !== b[i]) khac++;   // đếm điểm ảnh lệch nhau
+    const day = a.filter((v, i) => i % 4 === 3 && v > 0).length;
+    return { khac, day };
+  });
+  ok(dang.day > 200, 've duoc dang dung cua Horikita ra canvas phu');
+  ok(dang.khac > 40, `the thu form 3 nhin khac han form 2 (${dang.khac} diem anh lech)`);
 
   /* ---- 150 điểm lớp: Ayanokouji vào sân làm đồng minh thật ---- */
   const join = await doc(() => {
