@@ -265,6 +265,10 @@ làm:
      trống đúng bằng khoảng trễ đó.
    - Máy không có bộ mã hoá AAC thì lui về Opus-trong-MP4 và **báo cho người dùng biết**:
      Chrome/VLC nghe được nhưng vài phần mềm dựng phim thì không.
+   - **Hộp mô tả codec (`esds`/`dOps`) phải nằm TRONG sample entry.** Từng dựng nó ra rồi quên
+     gắn vào: Chromium vẫn giải mã Opus như thường nên test cũ báo đạt, còn Chrome giải mã AAC
+     thì im tiếng hoàn toàn. `t_rec.js` giờ soi thẳng byte của `mp4a` (esds, objType 0x40,
+     streamType 0x15, ASC) vì máy test không có AAC để chạy thật.
 
 Không có WebCodecs (Firefox, Safari cũ) thì lui về `MediaRecorder` — vẫn ghi được nhưng là
 VFR, và nhật ký nói rõ điều đó.
@@ -325,6 +329,7 @@ Nút test bấm tay có sẵn trong game: `#testEagle`, `#testForest`, `#testTwi
 
 | Lỗi | Nguyên nhân | Cách sửa |
 |---|---|---|
+| Video quay ra không có tiếng | `mAudioEntry()` dựng `esds`/`dOps` rồi quên gắn vào sample entry | gắn `cfg` vào cuối `mBox(type,…)`, và test soi byte thay vì chỉ đếm track |
 | Gohan bắn vào chính ChiChi | `summonHelp` cắm cứng `team:1` | `team:c.team` + `master:c`, `foeOf` đi qua `master` |
 | Mọi đòn đều thành "né" | `hurt()` thiếu `return true` | thêm lại, và kiểm giá trị trả về ở mọi nơi gọi |
 | `GRUMBLE_LIFE is not defined` | khai sau chỗ `SFX_MAXLEN` dùng nó | dời hằng số lên trên |
