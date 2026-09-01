@@ -4062,20 +4062,57 @@ async function cfrPickVideo(w,h){
   }
   return null;
 }
-async function cfrPickAudio(rate,ch){
-  if(typeof AudioEncoder==='undefined'||typeof MediaStreamTrackProcessor==='undefined') return null;
+/* Bộ mã hoá tiếng được cấu hình theo ĐÚNG mẻ PCM đầu tiên đọc được, không theo
+   track.getSettings(): thông số của track có khi lệch với dữ liệu thật, encode() ném lỗi
+   và mất sạch tiếng mà không ai hay — đúng kiểu lỗi "ghi hình không có âm thanh". */
+async function cfrAudioOpen(st,rate,ch){
   for(const codec of ['mp4a.40.2','opus']){
     const cfg={codec,sampleRate:rate,numberOfChannels:ch,bitrate:128000};
-    try{ const s=await AudioEncoder.isConfigSupported(cfg); if(s&&s.supported) return cfg; }catch(e){}
+    if(codec.startsWith('mp4a')) cfg.aac={format:'aac'};   // cần AudioSpecificConfig, đừng ADTS
+    try{
+      const sup=await AudioEncoder.isConfigSupported(cfg);
+      if(!sup||!sup.supported) continue;
+      const enc=new AudioEncoder({
+        output:(chunk,meta)=>{
+          const dd=meta&&meta.decoderConfig&&meta.decoderConfig.description;
+          if(dd&&!st.adesc) st.adesc=new Uint8Array(dd);
+          const b=new Uint8Array(chunk.byteLength); chunk.copyTo(b);
+          if(st.aTs0===null) st.aTs0=chunk.timestamp;
+          st.a.push({data:b,ts:chunk.timestamp});
+        },
+        error:e=>{ if(!st.aerr){ st.aerr=1; say('Lỗi mã hoá tiếng: '+e.message,'m'); } }
+      });
+      enc.configure(cfg);
+      st.aenc=enc; st.acodec=codec; st.arate=rate; st.ach=ch;
+      if(codec==='opus') say('Máy không có bộ mã hoá AAC — tiếng lưu bằng Opus trong MP4. '+
+                             'Chrome và VLC nghe được, vài phần mềm dựng phim thì không.','m');
+      return true;
+    }catch(e){}
   }
-  return null;
+  say('Không có bộ mã hoá tiếng nào chạy được — video sẽ không có tiếng.','m');
+  return false;
+}
+/* Nếu bộ mã hoá trả về khung AAC bọc ADTS thì phải lột 7~9 byte đầu, vì trong MP4 mẫu
+   AAC là dữ liệu trần, thông số nằm ở hộp esds. */
+function aacRaw(samples){
+  return samples.map(s=>{
+    const d=s.data;
+    if(d.length>9&&d[0]===0xFF&&(d[1]&0xF6)===0xF0) return {data:d.subarray((d[1]&1)?7:9),ts:s.ts};
+    return s;
+  });
+}
+/* AudioSpecificConfig tự dựng, dùng khi bộ mã hoá không đưa description */
+function aacAsc(rate,ch){
+  const R=[96000,88200,64000,48000,44100,32000,24000,22050,16000,12000,11025,8000,7350];
+  const i=Math.max(0,R.indexOf(rate));
+  return new Uint8Array([(2<<3)|(i>>1), ((i&1)<<7)|(ch<<3)]);   // AAC-LC
 }
 async function cfrStart(src,w,h){
   const vcfg=await cfrPickVideo(w,h);
   if(!vcfg) return false;
   const st={src,w,h,fps:REC_FPS,codec:vcfg.codec,v:[],a:[],n:0,vdesc:null,adesc:null,
             acodec:null,arate:0,ach:0,t0:0,stopping:false,areader:null,aenc:null,
-            aWall0:0,aTs0:null};
+            aWall0:0,aTs0:null,aerr:0,awarn:0};
   st.enc=new VideoEncoder({
     output:(chunk,meta)=>{
       const d=meta&&meta.decoderConfig&&meta.decoderConfig.description;
@@ -4090,39 +4127,33 @@ async function cfrStart(src,w,h){
   try{
     ac(); const d=recDest();
     const track=d&&d.stream.getAudioTracks()[0];
-    if(track){
-      const set=track.getSettings?track.getSettings():{};
-      const rate=set.sampleRate||(AC&&AC.sampleRate)||48000, ch=set.channelCount||2;
-      const acfg=await cfrPickAudio(rate,ch);
-      if(acfg){
-        st.acodec=acfg.codec; st.arate=rate; st.ach=ch;
-        st.aenc=new AudioEncoder({
-          output:(chunk,meta)=>{
-            const dd=meta&&meta.decoderConfig&&meta.decoderConfig.description;
-            if(dd&&!st.adesc) st.adesc=new Uint8Array(dd);
-            const b=new Uint8Array(chunk.byteLength); chunk.copyTo(b);
-            if(st.aTs0===null) st.aTs0=chunk.timestamp;
-            st.a.push({data:b,ts:chunk.timestamp});
-          },
-          error:()=>{}
-        });
-        st.aenc.configure(acfg);
-        const proc=new MediaStreamTrackProcessor({track});
-        st.areader=proc.readable.getReader();
-        (async()=>{
-          try{
-            for(;;){
-              const {value,done}=await st.areader.read();
-              if(done)break;
-              if(st.aWall0===0) st.aWall0=performance.now();   // lúc mẻ PCM đầu tiên về tới
-              if(st.aenc&&st.aenc.state==='configured') st.aenc.encode(value);
-              value.close();
+    if(!track) say('Không lấy được luồng tiếng của game — video sẽ không có tiếng.','m');
+    else if(typeof AudioEncoder==='undefined'||typeof MediaStreamTrackProcessor==='undefined')
+      say('Trình duyệt thiếu AudioEncoder/MediaStreamTrackProcessor — video sẽ không có tiếng.','m');
+    else{
+      const proc=new MediaStreamTrackProcessor({track});
+      st.areader=proc.readable.getReader();
+      (async()=>{
+        try{
+          for(;;){
+            const {value,done}=await st.areader.read();
+            if(done)break;
+            if(!st.aenc){
+              const ok=await cfrAudioOpen(st,value.sampleRate,value.numberOfChannels);
+              st.aWall0=performance.now();                 // lúc mẻ PCM đầu tiên về tới
+              if(!ok){ value.close(); break; }
             }
-          }catch(e){}
-        })();
-      }
+            try{ st.aenc.encode(value); }
+            catch(e){
+              if(!st.aerr){ st.aerr=1; say('Bộ mã hoá tiếng từ chối dữ liệu: '+e.message,'m'); }
+              value.close(); break;
+            }
+            value.close();
+          }
+        }catch(e){}
+      })();
     }
-  }catch(e){}
+  }catch(e){ say('Không mở được đường tiếng: '+e.message,'m'); }
   st.t0=performance.now();
   CFR=st;
   return true;
@@ -4135,6 +4166,9 @@ function cfrPump(){
   const want=Math.floor((performance.now()-CFR.t0)*1000/step);
   if(want<=CFR.n) return;
   if(CFR.enc.encodeQueueSize>60){ CFR.t0=performance.now()-CFR.n*step/1000; return; }
+  if(!CFR.awarn&&CFR.n>CFR.fps*1.5&&!CFR.a.length){
+    CFR.awarn=1; say('Chưa nhận được mẫu tiếng nào sau 1.5 giây — video có thể không có tiếng.','m');
+  }
   let budget=8;                                  // bù tối đa 8 khung mỗi lượt cho khỏi dồn cục
   while(CFR.n<want&&budget-- >0){
     const f=new VideoFrame(CFR.src,{timestamp:Math.round(CFR.n*step),duration:Math.round(step)});
@@ -4151,7 +4185,7 @@ async function cfrStop(){
   const st=CFR;
   // vòng đọc PCM hay bị bỏ đói lúc mã hoá hình nên tiếng về trễ: chờ nó đuổi kịp
   // độ dài hình rồi mới cắt, nếu không đoạn cuối video sẽ mất tiếng.
-  if(st.a.length||st.areader){
+  if(st.aenc&&st.a.length){
     const target=st.n*1e6/st.fps, wait=performance.now()+2500;
     while(performance.now()<wait){
       const last=st.a[st.a.length-1];
@@ -4167,13 +4201,18 @@ async function cfrStop(){
   CFR=null; recBusy=false;
   recLabel('⏺ Ghi hình sàn đấu');
   if(!st.v.length){ say('Không ghi được khung hình nào.','m'); recTall=false; return; }
-  const buf=mp4Build({codec:st.codec,w:st.w,h:st.h,desc:st.vdesc,fps:st.fps,samples:st.v},
-                     st.a.length?{codec:st.acodec,rate:st.arate,ch:st.ach,desc:st.adesc,samples:st.a,
-                                   delayMs:clamp(Math.round(st.aWall0-st.t0),0,1000)}:null);
+  const aac=st.acodec&&st.acodec.startsWith('mp4a');
+  const aud=st.a.length?{codec:st.acodec,rate:st.arate,ch:st.ach,
+                         desc:st.adesc||(aac?aacAsc(st.arate,st.ach):null),
+                         samples:aac?aacRaw(st.a):st.a,
+                         delayMs:clamp(Math.round(st.aWall0-st.t0),0,1000)}:null;
+  const buf=mp4Build({codec:st.codec,w:st.w,h:st.h,desc:st.vdesc,fps:st.fps,samples:st.v},aud);
   const blob=new Blob([buf],{type:'video/mp4'});
   recSave(blob,'.mp4');
   say(`Đã lưu video ${recTall?`khung dọc 9:16 (${REC916.w}×${REC916.h})`:'khung nguyên bản'} — `+
-      `${st.v.length} khung, nhịp cố định ${st.fps} fps (CFR), ${(blob.size/1048576).toFixed(1)} MB.`,'g');
+      `${st.v.length} khung, nhịp cố định ${st.fps} fps (CFR), `+
+      `${aud?`tiếng ${st.acodec} ${st.a.length} mẫu`:'KHÔNG có tiếng'}, ${(blob.size/1048576).toFixed(1)} MB.`,
+      aud?'g':'m');
   recTall=false;
 }
 function recSave(blob,ext){
