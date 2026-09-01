@@ -1,0 +1,274 @@
+/* Ba form của Horikita Suzune, đi hết một lượt như trong trận thật:
+     form 1 sợ không dám đánh -> Ayanokouji đỡ thay 4s -> form 2 -> đủ 150 điểm lớp
+     -> Ayanokouji vào sân làm đồng minh -> anh cạn máu và RỜI SÀN (không chết) -> form 3.
+   Kiểm luôn mấy con số dễ trôi: 15/20 dmg mỗi đòn, 15/20 điểm lớp, quyết định đúng tích
+   đúng bằng sát thương, quyết định sai âm điểm thì tự ăn dmg rồi reset về 0.
+   Chạy: node tools/t_suzune.js */
+const { openGame } = require('./probe');
+
+const loi = [];
+const ok = (dk, msg) => { console.log(`${dk ? ' dat ' : ' HONG'}  ${msg}`); if (!dk) loi.push(msg); };
+const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof a === 'number' ? a.toFixed(3) : a}, mong ${b})`);
+
+(async () => {
+  const { browser, page, errors } = await openGame('suzune', 'kono');
+  await page.selectOption('#speed', '1');
+  await page.waitForTimeout(200);
+
+  /* Chờ theo GIỜ TRONG TRẬN, đừng chờ theo đồng hồ thật: chạy headless thì mỗi giây
+     thật chỉ trôi được một phần giây trong trận. */
+  const doi = (giay, tran = 40000) => page.evaluate(([g, tr]) => new Promise((res, rej) => {
+    const G = window.__G(), t0 = G.t;
+    const id = setInterval(() => { if (window.__G().t - t0 >= g) { clearInterval(id); res(window.__G().t - t0); } }, 25);
+    setTimeout(() => { clearInterval(id); rej(new Error('qua gio cho ' + g + 's trong tran')); }, tr);
+  }), [giay, tran]);
+
+  const doc = fn => page.evaluate(fn);
+
+  /* ---- form 1: không ra đòn nào, và AI thì lùi chứ không lao vào ---- */
+  const f1 = await doc(() => {
+    const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
+    f.hp = f.maxHp;                       // giữ trên ngưỡng 85% để chưa sang form
+    return { form: f.form, ehp: G.fighters.find(x => x.key === 'kono').hp };
+  });
+  ok(f1.form === 1, 'vao tran la form 1');
+  await doi(4);
+  const f1b = await doc(() => {
+    const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
+    f.hp = f.maxHp;
+    return { ehp: G.fighters.find(x => x.key === 'kono').hp, poses: f.pose, cp: f.cp };
+  });
+  ok(f1b.ehp >= f1.ehp - 0.001, 'form 1 khong gay mot diem sat thuong nao cho doi thu');
+  ok(f1b.cp === 0, 'form 1 khong tich duoc diem lop nao');
+
+  /* ---- ngưỡng 85%: Ayanokouji nhảy vào đỡ thay ---- */
+  const g0 = await doc(() => {
+    const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
+    f.hp = f.maxHp * window.__SUZ.guardHp;       // chạm đúng ngưỡng
+    return 1;
+  });
+  await doi(0.4);
+  const g1 = await doc(() => {
+    const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
+    return { co: !!f.ayaG, t: f.ayaG ? f.ayaG.t : 0, form: f.form,
+             thoai: G.floats.some(fl => /stand\s+up\s+and\s+fight/i.test(fl.txt || '')) };
+  });
+  ok(g1.co, 'cham 85% mau thi Ayanokouji hien ra do don thay');
+  ok(g1.form === 1, 'trong luc anh do thi Horikita van con o form 1');
+
+  /* thời lượng đỡ đúng 4 giây người chơi, và trong quãng đó cô không mất máu */
+  const chan = await doc(() => {
+    const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
+    const truoc = f.hp;
+    const tra = window.__hurt(f, 500, null, false);      // đòn nặng ném thẳng vào cô
+    return { tra, mat: truoc - f.hp, hits: f.ayaG ? f.ayaG.hits : -1,
+             tong: f.ayaG ? f.ayaG.taken : -1, du: f.ayaG ? f.ayaG.t * window.__RT : -1 };
+  });
+  ok(chan.tra === false, 'don danh vao Horikita bi Ayanokouji chan lai (hurt tra ve false)');
+  gan(chan.mat, 0, 0.001, 'Horikita khong mat mot giot mau nao trong luc duoc do');
+  ok(chan.hits === 1 && Math.abs(chan.tong - 500) < .01, 'don do duoc ghi lai dung so luong');
+  ok(chan.du <= 4.01 && chan.du > 3, `quang do keo dai 4 giay nguoi choi (con ${chan.du.toFixed(2)}s)`);
+
+  // Đồng hồ 4 giây chỉ chạy SAU phân cảnh đóng băng (step() return sớm lúc G.freeze>0),
+  // nên phải chờ cả 1.6s phân cảnh lẫn 2s trong trận của quãng đỡ.
+  await doi(4.4);
+  const f2 = await doc(() => {
+    const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
+    return { form: f.form, aya: !!f.ayaG };
+  });
+  ok(!f2.aya, 'het 4 giay thi Ayanokouji lui ra');
+  ok(f2.form === 2, 'het quang do thi Horikita sang form 2');
+
+  /* ---- form 2: đòn tay 15 dmg / 15 điểm, quyết định đúng tích bằng sát thương ---- */
+  const s1 = await doc(() => {
+    const G = window.__G(), S = window.__SUZ;
+    const f = G.fighters.find(x => x.key === 'suzune'), e = G.fighters.find(x => x.key === 'kono');
+    f.cp = 0; e.hp = e.maxHp; e.evade = 0; f.hp = f.maxHp;      // chặn hồi máu làm nhiễu số
+    const r = Math.random; Math.random = () => .99;             // trượt cửa hồi máu
+    const truoc = e.hp;
+    window.__suzStrike(f, e);
+    Math.random = r;
+    return { dmg: truoc - e.hp, cp: f.cp, cd: S.atkCd, atkCd2: S.atkCd };
+  });
+  gan(s1.dmg, 15, 0.001, 'form 2: moi don tay an 15 dmg');
+  gan(s1.cp, 15, 0.001, 'form 2: moi don tay tich 15 diem lop');
+  // ChiChi đánh mỗi cm(.25); Horikita phải chậm hơn đúng 2.5 lần
+  const nhip = await doc(() => window.__SUZ.atkCd);
+  gan(nhip / (0.25 * 1.8), 2.5, 0.001, 'nhip danh cham hon ChiChi dung 2.5 lan');
+
+  const dung = await doc(() => {
+    const G = window.__G();
+    const f = G.fighters.find(x => x.key === 'suzune'), e = G.fighters.find(x => x.key === 'kono');
+    f.cp = 0; f.hp = f.maxHp; e.hp = e.maxHp; e.evade = 0;
+    G.proj.length = 0;
+    const r = Math.random; Math.random = () => .1;              // .1 < .50 -> quyet dinh dung
+    window.__suzDecide(f, e);
+    Math.random = r;
+    const p = G.proj.find(x => x.type === 'decision');
+    return { co: !!p, dmg: p ? p.dmg : 0, txt: p ? p.txt : '', cp: f.cp };
+  });
+  ok(dung.co, 'quyet dinh dung sinh ra mot bong bong phong thang vao dich');
+  ok(dung.dmg >= 20 && dung.dmg <= 80, `sat thuong quyet dinh nam trong 20~80 (duoc ${dung.dmg})`);
+  ok(dung.txt.length > 0, 'bong bong mang mot cau thoai');
+  ok(dung.cp === 0, 'chua cham nguoi thi chua tich diem');
+
+  const trung = await doc(() => {
+    const G = window.__G();
+    const f = G.fighters.find(x => x.key === 'suzune'), e = G.fighters.find(x => x.key === 'kono');
+    const p = G.proj.find(x => x.type === 'decision');
+    f.cp = 0; e.hp = e.maxHp; e.evade = 0; f.hp = f.maxHp;
+    const r = Math.random; Math.random = () => .99;             // truot cua hoi mau
+    const truoc = e.hp;
+    window.__suzDecisionHit ? window.__suzDecisionHit(p, e) : 0;
+    Math.random = r;
+    return { dmg: truoc - e.hp, cp: f.cp, pd: p.dmg };
+  }).catch(() => null);
+  if (trung) {
+    gan(trung.dmg, trung.pd, 0.001, 'quyet dinh trung dung bang sat thuong da boc');
+    gan(trung.cp, trung.pd, 0.001, 'tich dung bang luong sat thuong vua gay');
+  }
+
+  const sai = await doc(() => {
+    const G = window.__G();
+    const f = G.fighters.find(x => x.key === 'suzune'), e = G.fighters.find(x => x.key === 'kono');
+    f.cp = 10; f.hp = f.maxHp;
+    G.proj.length = 0;
+    // .9 > .50 -> quyet dinh sai; rnd(5,60) voi .9 ra 54.5 -> lam tron 55
+    const r = Math.random; Math.random = () => .9;
+    const truoc = f.hp;
+    window.__suzDecide(f, e);
+    Math.random = r;
+    return { cp: f.cp, tuAn: truoc - f.hp, proj: G.proj.filter(x => x.type === 'decision').length };
+  });
+  ok(sai.proj === 0, 'quyet dinh sai thi khong ban gi ca');
+  gan(sai.cp, 0, 0.001, 'diem lop thung xuong am thi reset ve 0');
+  gan(sai.tuAn, 45, 0.001, 'am 45 diem thi tu chiu dung 45 dmg (10 - 55)');
+
+  /* ---- 150 điểm lớp: Ayanokouji vào sân làm đồng minh thật ---- */
+  const join = await doc(() => {
+    const G = window.__G(), S = window.__SUZ;
+    const f = G.fighters.find(x => x.key === 'suzune');
+    f.hp = Math.round(f.maxHp * .8);
+    f.cp = 0;
+    window.__suzCp(f, S.cpMax);
+    return { cp: f.cp, roi: f.ayaDone, mongHp: Math.round(f.hp * S.ayaHp) };
+  });
+  ok(join.roi, 'cham 150 diem lop thi goi Ayanokouji ra san');
+  await doi(2.4);
+  const ally = await doc(() => {
+    const G = window.__G();
+    const f = G.fighters.find(x => x.key === 'suzune');
+    const a = G.fighters.find(x => x.ally);
+    return { co: !!a, hp: a ? a.maxHp : 0, cast: f.castBuff, chet: a ? a.summon : null,
+             mong: Math.round(f.hp * window.__SUZ.ayaHp) };
+  });
+  ok(ally.co, 'Ayanokouji dung tren san nhu mot nhan vat that');
+  ok(ally.hp > 0 && Math.abs(ally.hp - join.mongHp) <= 2, `mau anh bang 35% mau Horikita luc do (${ally.hp} vs ${join.mongHp})`);
+  gan(ally.cast, 2, 0.001, 'Horikita duoc buff +100% toc ra chieu');
+
+  /* đòn đột kích: 40 dmg + choáng 1.25 giây người chơi */
+  const dk = await doc(() => {
+    const G = window.__G();
+    const a = G.fighters.find(x => x.ally), e = G.fighters.find(x => x.key === 'kono');
+    e.hp = e.maxHp; e.evade = 0; e.stun = 0; e.eagle = false; e.prewing = false; e.ccRes = 0;
+    const truoc = e.hp;
+    window.__ayaStrike ? window.__ayaStrike(a, e) : (a.strikeCd = 0);
+    return { dmg: truoc - e.hp, stun: e.stun * window.__RT };
+  }).catch(() => null);
+  if (dk && dk.dmg > 0) {
+    gan(dk.dmg, 40, 0.001, 'don dot kich an 40 dmg');
+    gan(dk.stun, 1.25, 0.02, 'don dot kich choang 1.25 giay nguoi choi');
+  } else {
+    // chưa móc được ayaStrike thì chờ đúng chu kỳ 4.5 giây người chơi cho anh tự tung
+    const tu = await doc(() => {
+      const G = window.__G(), a = G.fighters.find(x => x.ally), e = G.fighters.find(x => x.key === 'kono');
+      e.hp = e.maxHp; e.evade = 0; a.strikeCd = 0.02;
+      return e.hp;
+    });
+    await doi(0.6);
+    const sau = await doc(() => window.__G().fighters.find(x => x.key === 'kono').hp);
+    ok(tu - sau >= 39, `don dot kich tu tung an it nhat 40 dmg (duoc ${(tu - sau).toFixed(1)})`);
+  }
+
+  /* ---- anh cạn máu: RỜI SÀN chứ không chết, rồi Horikita sang form 3 ---- */
+  await doc(() => { const a = window.__G().fighters.find(x => x.ally); a.hp = 0; });
+  await doi(0.3);
+  const roi = await doc(() => {
+    const G = window.__G(), a = G.fighters.find(x => x.ally);
+    return { con: !!a, dangDi: a ? a.leaving > 0 : false, song: a ? a.alive : false,
+             thoai: G.floats.some(fl => /take\s+my\s+leave/i.test(fl.txt || '')),
+             thua: !!G.over };
+  });
+  ok(roi.con && roi.dangDi, 'het mau thi anh chuyen sang trang thai roi san');
+  ok(roi.song, 'anh van "alive" — day khong phai hieu ung chet');
+  ok(!roi.thua, 'anh nga khong lam trandau ket thuc');
+  ok(roi.thoai, 'anh noi cau chao truoc khi di');
+
+  const flip = await page.evaluate(() => new Promise((res, rej) => {
+    const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
+    const id = setInterval(() => {
+      if (f.form >= 3) { clearInterval(id); res({ cp: f.cp, stacks: f.stacks }); }
+    }, 8);
+    setTimeout(() => { clearInterval(id); rej(new Error('khong thay form 3')); }, 40000);
+  }));
+  ok(flip.cp === 0 && flip.stacks === 0, 'ngay luc vao form 3 thi diem lop tinh lai tu 0');
+  await doi(1);
+  const f3 = await doc(() => {
+    const G = window.__G(), S = window.__SUZ;
+    const f = G.fighters.find(x => x.key === 'suzune');
+    const T = window.__suzTune(f);
+    return { form: f.form, con: !!G.fighters.find(x => x.ally), cast: f.castBuff,
+             hit: T.hit, cp: T.cp, dec: T.decOdds, heal: T.healOdds, pct: T.healPct,
+             res: f.dmgRes, cc: f.ccRes, cpNow: f.cp, stacks: f.stacks,
+             thoai: G.floats.some(fl => /my\s+own\s+goal/i.test(fl.txt || '')) };
+  });
+  ok(!f3.con, 'anh da di khoi san');
+  ok(f3.form === 3, 'Horikita sang form 3');
+  gan(f3.cast, 1, 0.001, 'buff toc ra chieu tat theo anh');
+  gan(f3.hit, 20, 0.001, 'form 3: don tay len 20 dmg');
+  gan(f3.cp, 20, 0.001, 'form 3: moi don tich 20 diem lop');
+  gan(f3.dec, .70, 0.001, 'form 3: quyet dinh dung 70%');
+  gan(f3.heal, .35, 0.001, 'form 3: ti le hoi mau 35%');
+  gan(f3.pct, .08, 0.001, 'form 3: hoi 8% mau hien tai');
+  gan(f3.res, .10, 0.001, 'form 3: +10% mien thuong');
+  gan(f3.cc, .10, 0.001, 'form 3: +10% khang hieu ung');
+  ok(f3.stacks === 0, 'vua vao form 3 thi chua co bac cong don nao');
+
+  /* ---- form 3: cứ 150 điểm lớp là lên một bậc ---- */
+  const bac = await doc(() => {
+    const G = window.__G(), S = window.__SUZ;
+    const f = G.fighters.find(x => x.key === 'suzune');
+    f.cp = 0; f.stacks = 0;
+    window.__suzCp(f, S.cpMax + 10);
+    const T = window.__suzTune(f);
+    return { stacks: f.stacks, du: f.cp, dec: T.decOdds, heal: T.healOdds, pct: T.healPct,
+             res: f.dmgRes, cc: f.ccRes };
+  });
+  ok(bac.stacks === 1, 'du 150 diem lop o form 3 thi len mot bac');
+  gan(bac.du, 10, 0.001, 'phan du duoc giu lai de tich tiep');
+  gan(bac.dec, .75, 0.001, 'moi bac +5% ti le quyet dinh dung');
+  gan(bac.heal, .40, 0.001, 'moi bac +5% ti le hoi mau');
+  gan(bac.pct, .14, 0.001, 'moi bac +6% luong hoi mau');
+  gan(bac.res, .18, 0.001, 'moi bac +8% mien thuong');
+  gan(bac.cc, .18, 0.001, 'moi bac +8% khang hieu ung');
+
+  /* ---- miễn thương và kháng hiệu ứng có ăn thật vào hurt()/stunFx() không ---- */
+  const thuc = await doc(() => {
+    const G = window.__G();
+    const f = G.fighters.find(x => x.key === 'suzune');
+    f.hp = f.maxHp; f.stun = 0; f.evade = 0; f.invuln = 0; f.ayaG = null;
+    f.dmgRes = .10; f.ccRes = .10; f.stacks = 0;
+    const truoc = f.hp;
+    window.__hurt(f, 100, null, false);
+    const mat = truoc - f.hp;
+    window.__stunFx(f, 1, 'spark');
+    return { mat, stun: f.stun };
+  });
+  gan(thuc.mat, 90, 0.001, 'mien thuong 10% an that vao hurt()');
+  gan(thuc.stun, .9, 0.001, 'khang hieu ung 10% an that vao stunFx()');
+
+  ok(errors.length === 0, `khong co loi trang${errors.length ? ': ' + errors[0] : ''}`);
+  await browser.close();
+  console.log(loi.length ? `\nHONG ${loi.length} muc` : '\nDAT toan bo');
+  process.exit(loi.length ? 1 : 0);
+})().catch(e => { console.error(e); process.exit(1); });
