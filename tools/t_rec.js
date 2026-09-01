@@ -8,7 +8,7 @@ const { openGame } = require('./probe.js');
 
 /* soi thô MP4: trả về các box cần kiểm */
 function parseMp4(buf) {
-  const out = { boxes: [], stts: [], mdhd: [], stsd: [], stsz: [], stco: [], cfgBox: [] };
+  const out = { boxes: [], stts: [], mdhd: [], stsd: [], stsz: [], stco: [], cfgBox: [], stszConst: [], stszCount: [] };
   (function walk(off, end, path) {
     while (off + 8 <= end) {
       const size = buf.readUInt32BE(off), type = buf.toString('latin1', off + 4, off + 8);
@@ -27,7 +27,11 @@ function parseMp4(buf) {
         out.stsd.push(kind);
         out.cfgBox.push(['avcC', 'vpcC', 'esds', 'dOps'].filter(b => ent.includes(b)));
       }
-      if (type === 'stsz') out.stsz.push(buf.readUInt32BE(off + 16));
+      if (type === 'stsz') {
+        out.stszConst.push(buf.readUInt32BE(off + 12));
+        out.stszCount.push(buf.readUInt32BE(off + 16));
+        out.stsz.push(buf.readUInt32BE(off + 16));
+      }
       if (type === 'stco') out.stco.push(buf.readUInt32BE(off + 16));
       if (['moov', 'trak', 'mdia', 'minf', 'stbl', 'dinf', 'edts'].includes(type)) walk(off + 8, off + size, path + '/' + type);
       off += size;
@@ -80,7 +84,7 @@ async function chanApiVanCoTieng(patch) {
   await page.selectOption('#rec916', '720');
   const r = await record(page, 3000);
   await browser.close();
-  return { ok: !r.aud.err && r.aud.peak > 0.001 && !errors.length, aud: r.aud, type: r.type };
+  return { ok: !r.aud.err && r.aud.peak > 0.001 && !errors.length, aud: r.aud, type: r.type, log: r.log, b64: r.b64 };
 }
 
 (async () => {
@@ -160,15 +164,25 @@ async function chanApiVanCoTieng(patch) {
       AudioContext.prototype.createScriptProcessor = undefined;
     }
   };
+  const duong = [];
   for (const [ten, patch] of Object.entries(chan)) {
     const r = await chanApiVanCoTieng(patch.toString());
     ok[`van co tieng khi ${ten}`] = r.ok;
+    if (ten === 'khong AudioEncoder') {          // đường PCM thô: soi thẳng track trong file
+      const p = parseMp4(Buffer.from(r.b64, 'base64'));
+      const i = p.stsd.indexOf('sowt');
+      ok['thieu AudioEncoder van giu duoc CFR'] = /CFR/.test(r.log || '') && p.stts[0].length === 1;
+      ok['track PCM la sowt, co mau bang nhau'] = i === 1 && p.stszConst[i] === 4 && p.stszCount[i] > 1000;
+    }
+    duong.push(`  ${ten}: ${r.type} · ${/CFR/.test(r.log || '') ? 'CFR' : 'VFR'} · tieng ` +
+      (r.aud.err ? r.aud.err : `${r.aud.dur}s dinh ${r.aud.peak}`));
   }
 
   for (const k of Object.keys(ok)) console.log((ok[k] ? 'DAT ' : 'HONG') + '  ' + k);
   console.log(`hinh ${vStts[0][0]} khung / ${vDur.toFixed(2)}s · tieng ${aDur.toFixed(2)}s ` +
     `(giai ma ${cfr.aud.err || cfr.aud.dur.toFixed(2) + 's, dinh ' + cfr.aud.peak}) · ` +
     `${m.stsd.map((k, i) => k + '[' + (m.cfgBox[i] || []).join(',') + ']').join(' + ')} · ${(cfr.size / 1048576).toFixed(1)} MB`);
+  console.log('chan API:'); duong.forEach(d => console.log(d));
   console.log('loi trang:', errors.length ? errors : 'khong co');
   process.exit(Object.values(ok).every(Boolean) && !errors.length ? 0 : 1);
 })();

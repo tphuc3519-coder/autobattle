@@ -3959,11 +3959,16 @@ function mStts(durs){
   }
   return mFull('stts',0,0,b4(ent.length),...ent.map(e=>bCat([b4(e[0]),b4(e[1])])));
 }
-function mStbl(desc,durs,sizes,offset,syncs){
-  const parts=[mFull('stsd',0,0,b4(1),desc), mStts(durs)];
+/* pcm={size,count}: mọi mẫu dài bằng nhau (PCM thô) nên stsz chỉ ghi một con số, khỏi dựng
+   bảng 44100 dòng mỗi giây. */
+function mStbl(desc,durs,sizes,offset,syncs,pcm){
+  const n=pcm?pcm.count:sizes.length;
+  const parts=[mFull('stsd',0,0,b4(1),desc),
+               pcm?mFull('stts',0,0,b4(1),b4(pcm.count),b4(1)):mStts(durs)];
   if(syncs&&syncs.length) parts.push(mFull('stss',0,0,b4(syncs.length),...syncs.map(i=>b4(i))));
-  parts.push(mFull('stsc',0,0,b4(1),b4(1),b4(sizes.length),b4(1)));   // gom cả track vào một chunk
-  parts.push(mFull('stsz',0,0,b4(0),b4(sizes.length),...sizes.map(x=>b4(x))));
+  parts.push(mFull('stsc',0,0,b4(1),b4(1),b4(n),b4(1)));   // gom cả track vào một chunk
+  parts.push(pcm?mFull('stsz',0,0,b4(pcm.size),b4(pcm.count))
+                :mFull('stsz',0,0,b4(0),b4(sizes.length),...sizes.map(x=>b4(x))));
   parts.push(mFull('stco',0,0,b4(1),b4(offset)));
   return mBox('stbl',...parts);
 }
@@ -4000,6 +4005,12 @@ function mVisualEntry(codec,w,h,desc){
 }
 function mAudioEntry(codec,ch,rate,desc){
   let type='mp4a', cfg;
+  if(codec==='pcm'){
+    // 'sowt' = PCM 16-bit little-endian kiểu QuickTime: không cần hộp mô tả, ffmpeg (thứ
+    // TikTok dùng để chuyển mã) và QuickTime đều đọc được. Dùng khi máy không mã hoá nổi
+    // tiếng — nhờ vậy vẫn giữ được đường CFR.
+    return mBox('sowt',new Uint8Array(6),b2(1),b4(0),b4(0),b2(ch),b2(16),b2(0),b2(0),b4(rate*65536));
+  }
   if(codec==='opus'){
     type='Opus';
     // dOps ghi PreSkip kiểu big-endian, còn OpusHead do bộ mã hoá trả về là little-endian
@@ -4025,8 +4036,12 @@ function mp4Build(v,a){
   const vSync=[]; v.samples.forEach((s,i)=>{ if(s.key) vSync.push(i+1); });
   const vBytes=vSizes.reduce((n,x)=>n+x,0);
   const vMs=Math.round(v.samples.length*1000/v.fps);
-  let aSizes=[], aDurs=[], aBytes=0, aMs=0;
-  if(a&&a.samples.length){
+  let aSizes=[], aDurs=[], aBytes=0, aMs=0, aPcm=null;
+  if(a&&a.pcm){
+    aPcm={size:a.ch*2,count:a.pcm.frames};
+    aBytes=a.pcm.bytes.length;
+    aMs=Math.round(a.pcm.frames*1000/a.rate);
+  }else if(a&&a.samples.length){
     aSizes=a.samples.map(s=>s.data.length);
     for(let i=0;i<a.samples.length;i++){
       const nx=a.samples[i+1];
@@ -4036,20 +4051,23 @@ function mp4Build(v,a){
     aBytes=aSizes.reduce((n,x)=>n+x,0);
     aMs=Math.round(aDurs.reduce((n,x)=>n+x,0)*1000/a.rate);
   }
-  const ftyp=mBox('ftyp',bStr('isom'),b4(0x200),bStr('isom'),bStr('iso2'),bStr('mp41'),bStr('avc1'));
+  const ftyp=mBox('ftyp',bStr('isom'),b4(0x200),bStr('isom'),bStr('iso2'),bStr('mp41'),bStr('avc1'),
+                  ...(aPcm?[bStr('qt  ')]:[]));
   const vOff=ftyp.length+8, aOff=vOff+vBytes;      // mdat: hết mẫu hình rồi tới mẫu tiếng
   const vStbl=mStbl(mVisualEntry(v.codec,v.w,v.h,v.desc),vDurs,vSizes,vOff,vSync);
   const traks=[mTrak(1,true,vMs,vts,v.samples.length*vdur,v.w,v.h,0,vStbl,0)];
   if(aBytes){
-    const aStbl=mStbl(mAudioEntry(a.codec,a.ch,a.rate,a.desc),aDurs,aSizes,aOff,null);
-    traks.push(mTrak(2,false,aMs+(a.delayMs||0),a.rate,aDurs.reduce((n,x)=>n+x,0),0,0,a.ch,aStbl,a.delayMs||0));
+    const aStbl=mStbl(mAudioEntry(a.codec,a.ch,a.rate,a.desc),aDurs,aSizes,aOff,null,aPcm);
+    const aTicks=aPcm?aPcm.count:aDurs.reduce((n,x)=>n+x,0);
+    traks.push(mTrak(2,false,aMs+(a.delayMs||0),a.rate,aTicks,0,0,a.ch,aStbl,a.delayMs||0));
   }
   const mvhd=mFull('mvhd',0,0,b4(0),b4(0),b4(1000),b4(Math.max(vMs,aMs)),
     b4(0x00010000),b2(0x0100),b2(0),b4(0),b4(0),MP4_MATRIX,
     b4(0),b4(0),b4(0),b4(0),b4(0),b4(0),b4(traks.length+1));
   const moov=mBox('moov',mvhd,...traks);
   const mdat=bCat([b4(vBytes+aBytes+8),bStr('mdat'),
-    ...v.samples.map(s=>s.data), ...(aBytes?a.samples.map(s=>s.data):[])]);
+    ...v.samples.map(s=>s.data),
+    ...(aBytes?(aPcm?[a.pcm.bytes]:a.samples.map(s=>s.data)):[])]);
   return bCat([ftyp,mdat,moov]);
 }
 
@@ -4167,16 +4185,38 @@ async function cfrAudioTap(st){
   try{
     const c=ac();
     if(!c){ say('Không mở được AudioContext — video sẽ không có tiếng.','m'); return; }
-    if(typeof AudioEncoder==='undefined'||typeof AudioData==='undefined'){
-      say('Trình duyệt không có AudioEncoder — video sẽ không có tiếng.','m'); return;
-    }
     const src=master();
     if(!src){ say('Không lấy được luồng tiếng của game — video sẽ không có tiếng.','m'); return; }
     const rate=c.sampleRate;
-    if(!await cfrAudioOpen(st,rate,2)) return;
+    const canEnc=typeof AudioEncoder!=='undefined'&&typeof AudioData!=='undefined';
+    // Không mã hoá được tiếng (Safari cũ) thì ghép PCM thô vào MP4 — vẫn giữ được CFR.
+    if(!canEnc||!await cfrAudioOpen(st,rate,2)){
+      st.apcm=[]; st.acodec='pcm'; st.arate=rate; st.ach=2;
+      say('Máy không mã hoá được tiếng — ghép tiếng PCM thô vào MP4 (file nặng hơn, '+
+          'nhưng giữ được nhịp khung cố định).','m');
+    }
     const push=chans=>{
-      if(CFR!==st||st.stopping||!st.aenc||st.aenc.state!=='configured') return;
+      if(CFR!==st||st.stopping) return;
       const k=chans.length, n=chans[0].length;
+      if(st.apcm){                       // PCM 16-bit little-endian, xen kẽ hai kênh
+        const out=new Uint8Array(n*k*2), dv=new DataView(out.buffer);
+        for(let f=0;f<n;f++) for(let q=0;q<k;q++){
+          let v=chans[q][f];
+          v=v<-1?-1:(v>1?1:v);
+          dv.setInt16((f*k+q)*2, v<0?v*32768:v*32767, true);
+        }
+        st.apcm.push(out); st.apos+=n;
+        if(st.aWall0===0) st.aWall0=performance.now();
+        return;
+      }
+      if(!st.aenc||st.aenc.state!=='configured'){
+        // bộ mã hoá chết giữa chừng mà chưa ra mẫu nào: quay sang PCM thô, đừng bỏ CFR
+        if(!st.a.length&&!st.apcm){
+          st.apcm=[]; st.acodec='pcm'; st.arate=rate; st.ach=k;
+          say('Bộ mã hoá tiếng không chạy — chuyển sang ghép PCM thô, vẫn giữ nhịp khung cố định.','m');
+        }
+        return;
+      }
       const buf=new Float32Array(n*k);
       for(let q=0;q<k;q++) buf.set(chans[q],q*n);
       try{
@@ -4213,7 +4253,7 @@ async function cfrStart(src,w,h){
   if(!vcfg) return false;
   const st={src,w,h,fps:REC_FPS,codec:vcfg.codec,v:[],a:[],n:0,vdesc:null,adesc:null,
             acodec:null,arate:0,ach:0,t0:0,stopping:false,aenc:null,
-            aWall0:0,aTs0:null,aerr:0,awarn:0,apos:0,atap:null,atapKind:''};
+            aWall0:0,aTs0:null,aerr:0,awarn:0,apos:0,atap:null,atapKind:'',apcm:null};
   st.enc=new VideoEncoder({
     output:(chunk,meta)=>{
       const d=meta&&meta.decoderConfig&&meta.decoderConfig.description;
@@ -4272,7 +4312,7 @@ async function cfrStop(){
   const st=CFR;
   // tin nhắn từ đầu thu xếp hàng ở luồng chính nên tiếng có thể về trễ: chờ nó đuổi kịp
   // độ dài hình rồi mới ngắt, nếu không đoạn cuối video sẽ mất tiếng.
-  if(st.aenc){
+  if(st.aenc||st.apcm){
     const target=st.n/st.fps, wait=performance.now()+2500;
     while(performance.now()<wait&&st.apos/st.arate<target) await new Promise(r=>setTimeout(r,40));
   }
@@ -4285,16 +4325,24 @@ async function cfrStop(){
   recLabel('⏺ Ghi hình sàn đấu');
   if(!st.v.length){ say('Không ghi được khung hình nào.','m'); recTall=false; return; }
   const aac=st.acodec&&st.acodec.startsWith('mp4a');
-  const aud=st.a.length?{codec:st.acodec,rate:st.arate,ch:st.ach,
-                         desc:st.adesc||(aac?aacAsc(st.arate,st.ach):null),
-                         samples:aac?aacRaw(st.a):st.a,
-                         delayMs:clamp(Math.round(st.aWall0-st.t0),0,1000)}:null;
+  const delayMs=clamp(Math.round(st.aWall0-st.t0),0,1000);
+  let aud=null;
+  if(st.apcm&&st.apcm.length){
+    const bytes=bCat(st.apcm);
+    aud={codec:'pcm',rate:st.arate,ch:st.ach,samples:[],delayMs,
+         pcm:{bytes,frames:Math.floor(bytes.length/(st.ach*2))}};
+  }else if(st.a.length){
+    aud={codec:st.acodec,rate:st.arate,ch:st.ach,
+         desc:st.adesc||(aac?aacAsc(st.arate,st.ach):null),
+         samples:aac?aacRaw(st.a):st.a,delayMs};
+  }
   const buf=mp4Build({codec:st.codec,w:st.w,h:st.h,desc:st.vdesc,fps:st.fps,samples:st.v},aud);
   const blob=new Blob([buf],{type:'video/mp4'});
   recSave(blob,'.mp4');
   say(`Đã lưu video ${recTall?`khung dọc 9:16 (${REC916.w}×${REC916.h})`:'khung nguyên bản'} — `+
       `${st.v.length} khung, nhịp cố định ${st.fps} fps (CFR), `+
-      `${aud?`tiếng ${st.acodec} qua ${st.atapKind} (${st.a.length} mẫu)`:'KHÔNG có tiếng'}, `+
+      `${aud?`tiếng ${st.acodec==='pcm'?'PCM 16-bit':st.acodec} qua ${st.atapKind} `+
+             `(${(st.apos/(st.arate||1)).toFixed(1)}s)`:'KHÔNG có tiếng'}, `+
       `${(blob.size/1048576).toFixed(1)} MB.`,
       aud?'g':'m');
   recTall=false;
