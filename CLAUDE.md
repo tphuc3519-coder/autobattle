@@ -156,11 +156,17 @@ Nhân vật cận chiến, đi theo **ba form** — đây là cả tính cách n
 | 3 | Tự đứng một mình | như form 2 nhưng mạnh hơn và cộng dồn theo điểm lớp |
 
 **Chuyển form 1 → 2**: máu tụt xuống **85%** (`SUZ.guardHp`) thì Ayanokouji hiện ra.
-Phân cảnh đóng băng 1.6s, anh nói *"Stand up and fight."*, rồi **đỡ đòn thay đúng 4 giây
+Phân cảnh đóng băng 1.6s, anh nói *"Stand up and fight."*, rồi **đỡ đạn thay đúng 5 giây
 người chơi** (`SUZ.guardT`). Trong quãng đó `hurt()` trả về **false** cho Horikita ngay từ
 đầu hàm nên không chỉ mất máu mà cả choáng / cháy / chảy máu ăn theo cũng không dính.
-Hết 4 giây anh lui ra, cô sang form 2. *(Đồng hồ 4 giây chỉ chạy SAU phân cảnh — `step()`
-return sớm lúc `G.freeze>0`. Test phải chờ cả hai, đây không phải lỗi.)*
+*(Đồng hồ 5 giây chỉ chạy SAU phân cảnh — `step()` return sớm lúc `G.freeze>0`. Test phải
+chờ cả hai, đây không phải lỗi.)*
+
+Hết 5 giây anh **không lặng lẽ biến mất**: `f.ayaG` có ba pha `guard → kick → done`. Sang
+pha `kick` anh lao tới trước mặt địch (`guardKickSpd`, để lại vệt bóng mờ) rồi tung **cước
+chia tay 150 dmg + choáng 2 giây** (`guardKickDmg` / `guardKickStun`), đóng băng 1.1s, xong
+mới poof và Horikita vào form 2. Đòn này **đứng tên Horikita** (`hurt(e,…,f,…)`) để nếu nó
+kết liễu thì `finish()` trao chiến thắng cho cô. Lớp khiên chỉ vẽ ở pha `guard`.
 
 **Cơ chế điểm lớp (class points)** — mới, dùng riêng cho nhân vật này:
 - Mốc là **150** (`SUZ.cpMax`).
@@ -186,12 +192,31 @@ chiêu; form 1 nhân thêm `f1Slow = 1.6` nữa. **Hồi chiêu phải đọc qu
 > giây trong trận (đúng trần lý thuyết 14/1.8); gặp địch đánh xa thì ít hơn hẳn vì bị kéo
 > giãn — đó là chuyện thường của cận chiến, ChiChi cũng vậy.
 
-**Chiêu 2 — Decision Making**: mỗi **6 giây người chơi** cô đứng **bất động 1.5 giây**
-(`f.decT` + `f.lock`) rồi chốt. Đúng (50% ở form 2, 70% ở form 3) thì câu nói biến thành
-**bong bóng phóng thẳng vào mặt địch**, 20~80 dmg ngẫu nhiên và **tích đúng bằng lượng sát
-thương vừa gây**, kèm cửa hồi máu 25%/3% (form 3: 35%/8%). Sai thì **trừ 5~60 điểm**; điểm
-thủng xuống âm thì cô **tự chịu đúng phần âm đó** (không né được, không giảm nhẹ) rồi tích
-lại từ 0.
+**Chiêu 2 — Decision Making**. Vòng đời một quyết định: đứng **bất động 1.5 giây**
+(`decThink`, qua `f.decT` + `f.lock`) → chốt và phóng đi **siêu nhanh** (`decSpd = 1150`) →
+**3.5 giây nữa** (`decCd`) mới nghĩ tiếp. Nên `think()` đặt
+`f.cds.s2 = decThink + decCd`, đừng đặt mỗi `decCd`.
+
+Đúng (**62.5%** ở form 2, **70%** ở form 3) thì câu nói biến thành **bong bóng phóng thẳng
+vào mặt địch**, tích **đúng bằng lượng sát thương vừa gây**, kèm cửa hồi máu 25%/3%
+(form 3: 35%/8%). Sai (37.5% / 30%) thì **trừ 5~60 điểm**; điểm thủng xuống âm thì cô **tự
+chịu đúng phần âm đó** (không né được, không giảm nhẹ) rồi tích lại từ 0.
+
+**Mỗi quyết định đúng còn được chấm mức độ** theo chính lượng sát thương nó gây ra — bảng
+`SUZ_TIERS`, tra bằng `suzTier(f,dmg)`. Tên mức hiện ra bằng **băng-rôn chí mạng** lúc chạm
+người (thay cho chữ `DECISION!` cũ), và màu của mức tô luôn viền bong bóng lẫn mũi tên lúc
+nó đang bay:
+
+| Mức | Form 2 (`f2.decLo~decHi` = 30~80) | Form 3 (40~120) |
+|---|---|---|
+| ACCEPTABLE DECISION | 30–40 | 40–70 |
+| GOOD DECISION | 41–60 | 71–90 |
+| GREAT DECISION | 61–70 | 91–110 |
+| BEST DECISION | 71–80 | 111–120 |
+
+> `SUZ_TIERS` **phải khai trước bảng `CHARS`** vì mảng `skills` đọc nó ngay lúc khai `CHARS`.
+> Từng để nó dưới thân chiêu và dính TDZ: `new Function` biên dịch vẫn qua, mở game mới thấy
+> màn chọn nhân vật trống trơn.
 
 **Bong bóng lúc đứng suy nghĩ luôn là một câu duy nhất** — `SUZ_ASK`
 (*"What should I do in this situation?"*), không phải dấu ba chấm. Bong bóng sống
@@ -505,6 +530,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 | Ayanokouji đứng chồng lên Horikita | chỗ đứng chỉ cách 48px, mà hình rộng ~40px | giãn ra 66px và giãn luôn đội hình lúc chắn cận chiến |
 | Chữ thò ra ngoài khung sàn | mọi float vẽ đúng tại `f.x/f.y`, không ai đo bề ngang chữ | đo khối chữ trước rồi kéo vào **khung đang nhìn thấy** (`W/z × H/z` quanh tâm camera), không phải cả sàn — lúc phân cảnh zoom, chỗ nằm trong sàn vẫn có thể nằm ngoài màn hình. Dòng trạng thái dưới thanh máu cũng canh theo bề ngang của chính nó |
 | Mũi tên bong bóng quyết định tụt vào trong khung | lấy `min(bw/2,bh/2)` làm mép | tính giao điểm của tia với hình chữ nhật |
+| Cú cước chia tay đo ra 160 thay vì 150 | test cộng dồn mọi lượng máu địch mất, mà Horikita vẫn đấm 10 dmg ở form 1 | đo **cú sụt lớn nhất trong một nhịp**, đừng cộng dồn |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---

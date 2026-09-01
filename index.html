@@ -336,23 +336,26 @@ const EAGLE_ACC=.5;               // độ lệch khi sút giảm một nửa, t
    con số cụ thể nên để nguyên, không nhân cm(). */
 const SUZ={
   guardHp:.85,               // tụt xuống mức này thì Ayanokouji nhảy vào đỡ đòn thay
-  guardT:gs(4),              // và đỡ trong 4 giây người chơi
+  guardT:gs(5),              // đỡ đạn giúp cô 5 giây người chơi
+  guardKickDmg:150,          // rồi tung một cước chia tay: 150 dmg
+  guardKickStun:gs(2),       // và choáng 2 giây người chơi
+  guardKickSpd:820,          // tốc độ cú lao trước khi tung cước
   atkCd:cm(.25)*2.5,         // đánh chậm hơn ChiChi đúng 2.5 lần
   atkRange:16,               // tầm tay, cộng vào r+r như ChiChi
-  decCd:gs(6),               // cứ 6 giây người chơi lại đứng lại suy nghĩ một lần
   decThink:gs(1.5),          // bất động suy nghĩ 1.5 giây người chơi
-  decSpd:760,                // bong bóng quyết định phóng thẳng, rất nhanh
-  decLo:20, decHi:80,        // quyết định đúng: 20~80 dmg ngẫu nhiên
+  decCd:gs(3.5),             // chốt xong thì 3.5 giây người chơi nữa mới nghĩ tiếp
+  decSpd:1150,               // bong bóng quyết định phóng đi siêu nhanh
   decPenLo:5, decPenHi:60,   // quyết định sai: trừ 5~60 điểm lớp
   cpMax:150,                 // mốc điểm lớp
   /* form 1: đã dám vung tay nhưng còn rụt rè — đòn nhẹ, ra chậm, và CHƯA có chiêu 2.
      Chưa dám ra quyết định thì cũng chưa có điểm lớp lẫn cửa hồi máu: cả hai thứ đó
      là phần thưởng của sự tự tin, mở ra từ form 2. */
-  f1:{hit:10, cp:0, healOdds:0, healPct:0, decHealPct:0, decOdds:0},
+  f1:{hit:10, cp:0, healOdds:0, healPct:0, decHealPct:0, decOdds:0, decLo:0, decHi:0},
   f1Slow:1.6,                // ra đòn chậm hơn form 2 thêm 1.6 lần nữa
   /* form 2: dám đánh nhưng còn sai nhiều · form 3: đã đủ bản lĩnh tự đứng */
-  f2:{hit:15, cp:15, healOdds:.25, healPct:.05, decHealPct:.03, decOdds:.50},
-  f3:{hit:20, cp:20, healOdds:.35, healPct:.08, decHealPct:.08, decOdds:.70, dmgRes:.10, ccRes:.10},
+  f2:{hit:15, cp:15, healOdds:.25, healPct:.05, decHealPct:.03, decOdds:.625, decLo:30, decHi:80},
+  f3:{hit:20, cp:20, healOdds:.35, healPct:.08, decHealPct:.08, decOdds:.70, decLo:40, decHi:120,
+      dmgRes:.10, ccRes:.10},
   /* form 3: mỗi 150 điểm lớp tích thêm được thì cộng dồn một bậc */
   st:{dec:.05, healOdds:.05, healPct:.06, dmgRes:.08, ccRes:.08, max:5},
   ayaHp:.35,                 // máu Ayanokouji = 35% máu Horikita lúc anh bước ra
@@ -363,6 +366,24 @@ const SUZ={
   ayaGuardR:230,             // trong tầm này coi như địch đang áp sát Horikita
   ayaLeaveT:gs(2.4)          // rời sàn trong bấy nhiêu giây người chơi
 };
+/* Một quyết định đúng còn được chấm mức độ theo chính lượng sát thương nó gây ra.
+   Mỗi form một thang riêng vì dải sát thương khác nhau; mỗi dòng là [mốc trên, tên, màu]. */
+const SUZ_TIERS={
+  f2:[[40,'ACCEPTABLE DECISION','#A9BDD6'],
+      [60,'GOOD DECISION','#7FC8FF'],
+      [70,'GREAT DECISION','#7DEBAB'],
+      [80,'BEST DECISION','#FFE100']],
+  f3:[[70,'ACCEPTABLE DECISION','#A9BDD6'],
+      [90,'GOOD DECISION','#7FC8FF'],
+      [110,'GREAT DECISION','#7DEBAB'],
+      [120,'BEST DECISION','#FFE100']]
+};
+function suzTier(f,dmg){
+  const bang=(f.form>=3)?SUZ_TIERS.f3:SUZ_TIERS.f2;
+  for(const [moc,ten,mau] of bang) if(dmg<=moc) return {ten,mau};
+  const cuoi=bang[bang.length-1];
+  return {ten:cuoi[1],mau:cuoi[2]};
+}
 /* Tuổi thọ bong bóng thoại của Horikita / Ayanokouji — SFX_SEG bên dưới bám theo,
    để câu tiếng không sống lâu hơn bong bóng đang treo. */
 const SUZ_BUBBLE=1.9;
@@ -456,14 +477,15 @@ const CHARS={
     role:'melee', speed:100, dodge:.6, male:false,
     skills:[
       `<b>Form 1</b> Too Afraid — she throws a punch or a kick but only for ${SUZ.f1.hit} dmg, one blow every ${rts(SUZ.atkCd*SUZ.f1Slow)}s, and no Decision Making yet; crosses both arms whenever she is hit`,
-      `<b>At ${Math.round(SUZ.guardHp*100)}% HP</b> Ayanokouji steps in — "Stand up and fight." and eats every hit for ${rts(SUZ.guardT)}s, then Form 2 begins`,
+      `<b>At ${Math.round(SUZ.guardHp*100)}% HP</b> Ayanokouji steps in — "Stand up and fight.", eats every hit for ${rts(SUZ.guardT)}s, then leaves with one farewell kick for ${SUZ.guardKickDmg} + ${rts(SUZ.guardKickStun)}s stun; Form 2 begins`,
       `<b>Form 2 · 1</b> Punch &amp; Kick (random) — ${SUZ.f2.hit} dmg, ${rts(SUZ.atkCd)}s between blows (2.5× slower than ChiChi) · +${SUZ.f2.cp} class points · ${Math.round(SUZ.f2.healOdds*100)}% to heal ${Math.round(SUZ.f2.healPct*100)}% of current HP`,
-      `<b>Form 2 · 2</b> Decision Making — every ${rts(SUZ.decCd)}s she freezes for ${rts(SUZ.decThink)}s; ${Math.round(SUZ.f2.decOdds*100)}% right = a verdict flies straight in for ${SUZ.decLo}–${SUZ.decHi} dmg and the same number of class points, ${Math.round((1-SUZ.f2.decOdds)*100)}% wrong = −${SUZ.decPenLo}~${SUZ.decPenHi} points (going negative costs her that much HP, then resets to 0)`,
+      `<b>Form 2 · 2</b> Decision Making — she freezes to think for ${rts(SUZ.decThink)}s, fires, then waits ${rts(SUZ.decCd)}s before thinking again; <b>${SUZ.f2.decOdds*100}% right</b> = a verdict flies straight in for ${SUZ.f2.decLo}–${SUZ.f2.decHi} dmg and the same number of class points, ${(1-SUZ.f2.decOdds)*100}% wrong = −${SUZ.decPenLo}~${SUZ.decPenHi} points (going negative costs her that much HP, then resets to 0)`,
+      `<b>Every right call is graded</b> by the damage it deals — Form 2: ${SUZ.f2.decLo}–${SUZ_TIERS.f2[0][0]} acceptable, ${SUZ_TIERS.f2[0][0]+1}–${SUZ_TIERS.f2[1][0]} good, ${SUZ_TIERS.f2[1][0]+1}–${SUZ_TIERS.f2[2][0]} great, ${SUZ_TIERS.f2[2][0]+1}–${SUZ_TIERS.f2[3][0]} best · Form 3: ${SUZ.f3.decLo}–${SUZ_TIERS.f3[0][0]} / ${SUZ_TIERS.f3[0][0]+1}–${SUZ_TIERS.f3[1][0]} / ${SUZ_TIERS.f3[1][0]+1}–${SUZ_TIERS.f3[2][0]} / ${SUZ_TIERS.f3[2][0]+1}–${SUZ_TIERS.f3[3][0]}`,
       `<b>${SUZ.cpMax} class points</b> Ayanokouji joins for real — ${Math.round(SUZ.ayaHp*100)}% of her current HP, ambush for ${SUZ.ayaDmg} + ${rts(SUZ.ayaStun)}s stun every ${rts(SUZ.ayaCd)}s, +100% cast speed for her, body-blocks incoming damage and taunts melee foes off her`,
-      `<b>Form 3</b> He walks away (never dies) — hits ${SUZ.f3.hit} / +${SUZ.f3.cp} points, decisions ${Math.round(SUZ.f3.decOdds*100)}% right, ${Math.round(SUZ.f3.healOdds*100)}% to heal ${Math.round(SUZ.f3.healPct*100)}%, +${Math.round(SUZ.f3.dmgRes*100)}% damage resist &amp; ${Math.round(SUZ.f3.ccRes*100)}% CC resist`,
+      `<b>Form 3</b> He walks away (never dies) — hits ${SUZ.f3.hit} / +${SUZ.f3.cp} points, decisions ${Math.round(SUZ.f3.decOdds*100)}% right and hit for ${SUZ.f3.decLo}–${SUZ.f3.decHi}, ${Math.round(SUZ.f3.healOdds*100)}% to heal ${Math.round(SUZ.f3.healPct*100)}%, +${Math.round(SUZ.f3.dmgRes*100)}% damage resist &amp; ${Math.round(SUZ.f3.ccRes*100)}% CC resist`,
       `<b>Form 3 · stacking</b> every ${SUZ.cpMax} class points: +${Math.round(SUZ.st.dec*100)}% decision accuracy, +${Math.round(SUZ.st.healOdds*100)}% heal chance, +${Math.round(SUZ.st.healPct*100)}% heal amount, +${Math.round(SUZ.st.dmgRes*100)}% damage resist, +${Math.round(SUZ.st.ccRes*100)}% CC resist (up to ×${SUZ.st.max})`],
     init(f){
-      f.cds={s1:SUZ.atkCd*SUZ.f1Slow,s2:SUZ.decCd};
+      f.cds={s1:SUZ.atkCd*SUZ.f1Slow,s2:SUZ.decThink+SUZ.decCd};
       f.form=1; f.cp=0; f.stacks=0; f.decT=0;
       f.ayaG=null; f.ayaAlly=null; f.ayaShieldDone=false; f.ayaDone=false;
       f.castBuff=1; f.dmgRes=0; f.ccRes=0;
@@ -471,7 +493,8 @@ const CHARS={
     think(f,e,d,auto){
       if(f.decT>0)return;                                  // đang đứng suy nghĩ
       // Chiêu 2 là chiêu của người dám ra quyết định — form 1 chưa có.
-      if(f.form>=2&&f.cds.s2<=0&&(auto||keys['k'])){ f.cds.s2=SUZ.decCd; suzThink(f,e); return; }
+      // Vòng đời một quyết định: đứng nghĩ decThink, chốt, rồi decCd nữa mới nghĩ lại.
+      if(f.form>=2&&f.cds.s2<=0&&(auto||keys['k'])){ f.cds.s2=SUZ.decThink+SUZ.decCd; suzThink(f,e); return; }
       if(f.cds.s1<=0&&d<f.r+e.r+SUZ.atkRange&&(auto||keys['j'])){
         f.cds.s1=suzTune(f).atkCd; suzStrike(f,e);
       }
@@ -2175,6 +2198,7 @@ function suzTune(f){
   const b=(f.form>=3)?SUZ.f3:(f.form>=2?SUZ.f2:SUZ.f1), st=(f.form>=3)?(f.stacks||0):0;
   return {
     hit:b.hit, cp:b.cp,
+    decLo:b.decLo, decHi:b.decHi,
     atkCd:SUZ.atkCd*(f.form<2?SUZ.f1Slow:1),
     healOdds:Math.min(.95, b.healOdds+SUZ.st.healOdds*st),
     healPct:b.healPct+SUZ.st.healPct*st,
@@ -2255,16 +2279,17 @@ function suzDecide(f,e){
   if(chance(T.decOdds)){
     // quyết định đúng: câu nói biến thành một mũi lao thẳng vào mặt đối phương
     const txt=pickLine(SUZ_DECISIONS,'d');
-    const dmg=Math.round(rnd(SUZ.decLo,SUZ.decHi));
+    const dmg=Math.round(rnd(T.decLo,T.decHi));
+    const tier=suzTier(f,dmg);
     const a=Math.atan2(bodyCY(e)-bodyCY(f), e.x-f.x);
     aim(f,e,1.1);
     sfx('suz_decide');
-    ring(f.x,f.y,84,'#7FC8FF',.38);
-    G.proj.push({type:'decision',team:f.team,owner:f,tgt:e,txt,
+    ring(f.x,f.y,84,tier.mau,.38);
+    G.proj.push({type:'decision',team:f.team,owner:f,tgt:e,txt,tier:tier.ten,tcol:tier.mau,
       x:f.x+Math.cos(a)*26, y:bodyCY(f)+Math.sin(a)*26,
       vx:Math.cos(a)*SUZ.decSpd, vy:Math.sin(a)*SUZ.decSpd,
       r:16,dmg,life:2.2,straight:true,bounce:0,maxBounce:0,noReflect:true});
-    say(`Quyết định đúng — "${txt}"`,'s');
+    say(`${tier.ten} — "${txt}"`,'s');
   }else{
     // quyết định sai: mất điểm, và nếu điểm thủng xuống âm thì cô tự gánh đúng phần âm đó
     const txt=pickLine(SUZ_WRONG,'w');
@@ -2293,14 +2318,15 @@ function suzDecide(f,e){
 /* Mũi quyết định chạm người: sát thương, và tích đúng bằng chính lượng sát thương đó. */
 function suzDecisionHit(p,t){
   const f=p.owner; if(!f)return;
-  ring(t.x,t.y,96,'#7FC8FF',.45);
+  ring(t.x,t.y,96,p.tcol||'#7FC8FF',.45);
   G.flashScreen=Math.max(G.flashScreen,.07);
-  if(!hurt(t,p.dmg,f,'DECISION!','big')){ say('Quyết định bị né mất.','s'); return; }
+  // băng-rôn chí mạng nói luôn quyết định vừa rồi ở mức nào
+  if(!hurt(t,p.dmg,f,p.tier||'DECISION!','big')){ say('Quyết định bị né mất.','s'); return; }
   sfx('suz_hit');
   const T=suzTune(f);
   suzCp(f,p.dmg);
   if(chance(T.healOdds)) suzHeal(f,T.decHealPct);
-  say(`Quyết định đâm trúng — ${p.dmg} dmg và đúng ${p.dmg} điểm lớp.`,'s');
+  say(`${p.tier||'DECISION'} — ${p.dmg} dmg và đúng ${p.dmg} điểm lớp.`,'s');
 }
 
 /* ---- Ayanokouji: lần đỡ thay đầu tiên (form 1 -> form 2) ---- */
@@ -2311,7 +2337,8 @@ function ayaShield(f){
   f.ayaShieldDone=true;
   const e=foeOf(f);
   const side=(e&&e.x>f.x)?1:-1;
-  f.ayaG={t:SUZ.guardT, x:f.x+side*34, y:f.y+4, face:side, flash:0, hits:0, taken:0, born:0};
+  f.ayaG={ph:'guard', t:SUZ.guardT, x:f.x+side*34, y:f.y+4, face:side,
+           flash:0, hits:0, taken:0, born:0, ghost:0, tx:0, ty:0};
   f.lock=Math.max(f.lock,gs(1));
   setPose(f,'block',gs(1.4));
   f.dash=null;
@@ -2534,21 +2561,72 @@ function suzPassive(f,dt){
     A.born+=dt;
     if(A.flash>0) A.flash=Math.max(0,A.flash-dt*4);
     const e=foeOf(f);
-    if(e){                                    // luôn đứng chen vào giữa cô và đối thủ
-      const d=dist(f,e)||1;
-      const tx=f.x+(e.x-f.x)/d*36, ty=f.y+(e.y-f.y)/d*22;
-      A.x+=(tx-A.x)*Math.min(1,dt*6);
-      A.y+=(ty-A.y)*Math.min(1,dt*6);
-      A.face=e.x>=A.x?1:-1;
-    }
-    A.t-=dt;
-    if(A.t<=0){
-      G.fx.push({type:'poof',x:A.x,y:A.y-18,life:.75,ml:.75});
-      say(`Ayanokouji đỡ hộ ${A.hits} đòn, tổng ${Math.round(A.taken)} dmg, rồi lùi lại.`,'s');
-      f.ayaG=null;
-      suzForm2(f);
+    if(A.ph==='guard'){
+      if(e){                                  // luôn đứng chen vào giữa cô và đối thủ
+        const d=dist(f,e)||1;
+        const tx=f.x+(e.x-f.x)/d*36, ty=f.y+(e.y-f.y)/d*22;
+        A.x+=(tx-A.x)*Math.min(1,dt*6);
+        A.y+=(ty-A.y)*Math.min(1,dt*6);
+        A.face=e.x>=A.x?1:-1;
+      }
+      A.t-=dt;
+      if(A.t<=0){ A.t=0; ayaGuardKick(f); }
+    }else if(A.ph==='kick'){
+      // lao thẳng tới trước mặt địch rồi mới tung chân
+      const d=Math.hypot(A.tx-A.x,A.ty-A.y)||1;
+      const buoc=Math.min(d, SUZ.guardKickSpd*dt);
+      A.x+=(A.tx-A.x)/d*buoc; A.y+=(A.ty-A.y)/d*buoc;
+      A.ghost-=dt;
+      if(A.ghost<=0){
+        A.ghost=.05;
+        G.fx.push({type:'ghost',x:A.x,y:A.y,face:A.face,key:'ayanokouji',pose:'strike',
+          h:126,life:.32,ml:.32});
+      }
+      if(d<=buoc+1) ayaGuardKickHit(f);
     }
   }
+}
+/* Hết 5 giây đỡ đạn, anh không lặng lẽ biến mất: lao tới tung một cước chia tay
+   150 dmg kèm choáng 2 giây, xong mới lui và nhường sàn cho Horikita. */
+function ayaGuardKick(f){
+  const A=f.ayaG; if(!A)return;
+  const e=foeOf(f);
+  if(!e||!e.alive){ ayaGuardEnd(f); return; }
+  A.ph='kick';
+  const d=dist({x:A.x,y:A.y},e)||1;
+  A.tx=clamp(e.x-(e.x-A.x)/d*(e.r+24),PAD,W-PAD);
+  A.ty=clamp(e.y-(e.y-A.y)/d*(e.r+24),PAD+50,H-PAD-10);
+  A.face=e.x>=A.x?1:-1;
+  sfx('aya_strike');
+  ring(A.x,A.y-20,96,'#BFD4FF',.4);
+  say(`Ayanokouji đỡ hộ ${A.hits} đòn, tổng ${Math.round(A.taken)} dmg — rồi bật người tung một cước.`,'s');
+}
+function ayaGuardKickHit(f){
+  const A=f.ayaG; if(!A)return;
+  A.ph='done';
+  const e=foeOf(f);
+  ring(e?e.x:A.x, e?e.y:A.y, 150,'#BFD4FF',.55);
+  G.flashScreen=Math.max(G.flashScreen,.3);
+  sfx('aya_strike');
+  if(e&&e.alive){
+    // đứng tên Horikita: đây là đòn anh đánh thay cô, và nếu nó kết liễu thì cô thắng
+    const landed=hurt(e,SUZ.guardKickDmg,f,'FAREWELL KICK!','big');
+    if(landed){
+      const st=stunFx(e,SUZ.guardKickStun,'spin');
+      sfx('stun');
+      say(st?`Cước chia tay — ${SUZ.guardKickDmg} dmg và choáng ${rts(SUZ.guardKickStun)} giây.`
+            :`Cước chia tay — ${SUZ.guardKickDmg} dmg, nhưng đối thủ miễn khống chế.`,'s');
+    }else say('Cước chia tay bị né mất.','s');
+    G.freeze=1.1; G.freezeAt=e;
+  }
+  later(.85,()=>ayaGuardEnd(f),true);
+}
+function ayaGuardEnd(f){
+  if(f.ayaG){
+    G.fx.push({type:'poof',x:f.ayaG.x,y:f.ayaG.y-18,life:.75,ml:.75});
+    f.ayaG=null;
+  }
+  if(f.alive&&!G.over) suzForm2(f);
 }
 
 /* ---------- AI ---------- */
@@ -4107,7 +4185,8 @@ function drawProj(p){
     const edge=Math.min(Math.abs(ca)>1e-4?Math.abs(bw/2/ca):1e9,
                         Math.abs(sa)>1e-4?Math.abs(bh/2/sa):1e9);
     ctx.save();
-    ctx.globalAlpha=.45; ctx.strokeStyle='#7FC8FF'; ctx.lineWidth=2.6; ctx.lineCap='round';
+    const tc=p.tcol||'#7FC8FF';
+    ctx.globalAlpha=.45; ctx.strokeStyle=tc; ctx.lineWidth=2.6; ctx.lineCap='round';
     ctx.rotate(a);
     for(let i=0;i<3;i++){
       const o=(i-1)*8, L=34+i*16;
@@ -4116,14 +4195,14 @@ function drawProj(p){
     ctx.restore();
     ctx.save();
     ctx.rotate(a); ctx.translate(edge+2,0);
-    ctx.fillStyle='#7FC8FF'; ctx.strokeStyle='#000'; ctx.lineWidth=3;
+    ctx.fillStyle=tc; ctx.strokeStyle='#000'; ctx.lineWidth=3;
     ctx.beginPath(); ctx.moveTo(17,0); ctx.lineTo(-4,-9); ctx.lineTo(-4,9); ctx.closePath();
     ctx.fill(); ctx.stroke();
     ctx.restore();
     const box=()=>{ ctx.beginPath();
       if(ctx.roundRect)ctx.roundRect(-bw/2,-bh/2,bw,bh,9); else ctx.rect(-bw/2,-bh/2,bw,bh); };
     ctx.fillStyle='#FFFFFF'; ctx.strokeStyle='#000'; ctx.lineWidth=6; box(); ctx.stroke();
-    ctx.strokeStyle='#7FC8FF'; ctx.lineWidth=3; box(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle=tc; ctx.lineWidth=3; box(); ctx.fill(); ctx.stroke();
     ctx.fillStyle='#16203A';
     const ty=4-(ls.length-1)*7.5;
     ls.forEach((L,i)=>ctx.fillText(L,0,ty+i*15));
@@ -4544,21 +4623,26 @@ function drawAyaGuard(){
   for(const f of G.fighters){
     const A=f.ayaG; if(!A)continue;
     const set=SPR.ayanokouji||{};
-    const arr=(set.guard&&set.guard.length)?set.guard:((set.idle&&set.idle.length)?set.idle:null);
+    const uu=A.ph==='guard'?['guard','idle']:['strike','guard','idle'];
+    let arr=null;
+    for(const k of uu){ if(set[k]&&set[k].length){ arr=set[k]; break; } }
     const img=arr?arr[Math.floor(G.t*8)%arr.length]:null;
     const app=clamp(A.born*4,0,1);
     ctx.save(); ctx.globalAlpha=.25*app; ctx.fillStyle='#000';
     ctx.beginPath(); ctx.ellipse(A.x,A.y+22,20,6,0,0,7); ctx.fill(); ctx.restore();
-    ctx.save();                                    // lớp khiên, loé lên mỗi lần chắn được một đòn
-    ctx.globalAlpha=app*(.28+A.flash*.62);
-    ctx.strokeStyle='#BFD4FF'; ctx.lineWidth=3+A.flash*4.5;
-    ctx.beginPath(); ctx.ellipse(A.x,A.y-26,30+A.flash*9,50+A.flash*9,0,0,7); ctx.stroke();
-    ctx.restore();
+    if(A.ph==='guard'){                            // lớp khiên, loé lên mỗi lần chắn được một đòn
+      ctx.save();
+      ctx.globalAlpha=app*(.28+A.flash*.62);
+      ctx.strokeStyle='#BFD4FF'; ctx.lineWidth=3+A.flash*4.5;
+      ctx.beginPath(); ctx.ellipse(A.x,A.y-26,30+A.flash*9,50+A.flash*9,0,0,7); ctx.stroke();
+      ctx.restore();
+    }
     ctx.save();
     ctx.globalAlpha=app;
     ctx.translate(A.x,A.y+20); ctx.scale(A.face<0?-1:1,1);
     if(img){ const h=126,w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
-    else vector({key:'ayanokouji',face:1,moving:false,pose:'guard',poseT:0});
+    else vector({key:'ayanokouji',face:1,moving:false,
+      pose:A.ph==='guard'?'guard':'strike', poseT:A.ph==='guard'?0:.5});
     ctx.restore();
   }
 }

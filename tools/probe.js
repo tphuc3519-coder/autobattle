@@ -27,6 +27,7 @@ window.__suzForm2=suzForm2; window.__suzForm3=suzForm3; window.__suzDecide=suzDe
 window.__suzStrike=suzStrike; window.__aimTarget=aimTarget; window.__suzThink=suzThink;
 window.__SUZ_ASK=()=>SUZ_ASK;
 window.__suzDecisionHit=suzDecisionHit; window.__ayaStrike=ayaStrike; window.__suzHeal=suzHeal;
+window.__suzTier=suzTier; window.__SUZ_TIERS=SUZ_TIERS;
 window.__DECISIONS=SUZ_DECISIONS; window.__WRONGS=SUZ_WRONG;
 `;
 
