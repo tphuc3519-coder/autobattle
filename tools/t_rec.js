@@ -93,6 +93,7 @@ async function record(page, ms) {
     'stco nam trong file': m.stco.every(o => o < cfr.size),
     'phat lai duoc 720x1280': cfr.play.w === 720 && cfr.play.h === 1280,
     'nhat ky noi CFR': /CFR/.test(cfr.log || ''),
+    'thu tieng qua dau thu PCM': /qua (AudioWorklet|ScriptProcessor)/.test(cfr.log || ''),
     'tieng giai ma duoc': !cfr.aud.err && cfr.aud.dur >= vDur - 0.2,
     'tieng khong cam': !cfr.aud.err && cfr.aud.peak > 0.001,
     'entry hinh co hop mo ta codec': (m.cfgBox[0] || []).length === 1,
