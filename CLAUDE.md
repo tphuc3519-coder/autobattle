@@ -20,14 +20,15 @@ File dài ~4100 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên --
 | *(ngay sau `<script>`)* | canvas, `BASE_SPEED` / `RT` / `rts`, vòng lặp bước cố định |
 | `sprite slots` | `SPR`, `COLORS`, `HP`, `SETS` — danh sách ô dán ảnh |
 | `bảng nhân vật chơi được` | mọi hằng số cân bằng của Kono / ChiChi / Tsubasa |
+| `Horikita Suzune` (khối hằng) | cả cụm `SUZ`, `SUZ_BUBBLE` |
 | `Shikamaru` (khối hằng) | `gs()`, cả cụm `SHIKA`, các hằng tuổi thọ hình (`GRUMBLE_LIFE`…) |
-| *(kế đó)* | `CHARS` — `init` / `think` / `gauge` / mảng `skills` của bốn nhân vật |
+| *(kế đó)* | `CHARS` — `init` / `think` / `gauge` / mảng `skills` của năm nhân vật |
 | *(kế đó)* | `Store` — IndexedDB, khoá `spr_*` / `sfx_*`, nạp và xoá ảnh |
 | `âm thanh` | `SFX_EVENTS`, `synth()`, `SFX_FULL/MAXLEN/SEG/POS/ACTIVE`, `sfx()`, `playBuffer()` |
 | `nhạc nền` | nhạc nền tự sinh |
 | `state` | `mk()`, `mkChar()`, `foeOf()`, `newGame()`, `later()`, `pop()`, `setPose()` |
 | `damage` | `stunFx()`, `tryEvade()`, **`hurt()`**, `counters()`, `finish()` |
-| `Konohamaru` / `ChiChi` / `Shikamaru` / `Ozora Tsubasa` | thân các chiêu thức |
+| `Konohamaru` / `ChiChi` / `Shikamaru` / `Ozora Tsubasa` / `Horikita Suzune` | thân các chiêu thức |
 | `AI` | `aiVec()`, `dodgeVec()`, `playerVec()` |
 | `step` | một hàm to — toàn bộ mô phỏng một bước 1/120 giây |
 | `draw` | `vector()`, `sprite()`, `drawFighter()`, `drawGarden()`, `drawForestGrip()`, `bombAt()`, `tendril()`, phân cảnh, băng-rôn |
@@ -71,9 +72,9 @@ while (acc >= 1/120) { step(1/120); acc -= 1/120; }
 
 ---
 
-## 2. Bốn nhân vật và những con số đã chốt
+## 2. Năm nhân vật và những con số đã chốt
 
-Cả bốn đều **1000 máu** (`HP`). Bảng `CHARS` là nơi khai tất cả: mỗi nhân vật có
+Cả năm đều **1000 máu** (`HP`). Bảng `CHARS` là nơi khai tất cả: mỗi nhân vật có
 `init(f)`, `think(f,e,d,auto)`, `gauge(f)` và mảng `skills` (chuỗi HTML hiển thị trong
 màn chọn nhân vật — nhớ cập nhật khi đổi số).
 
@@ -138,6 +139,72 @@ Toàn bộ trong hằng `SHIKA`. Những điểm người dùng chốt riêng:
 - Ultimate **Nara Clan Forest** (dưới 20% máu): thời lượng = chakra/100 giây người chơi. Địch
   bị kiệt sức, gây sát thương giảm 50%, ăn 35~215 dmg/giây. Xong lãnh địa: mất chiêu 2, chiêu 1
   yếu đi 30%, không tích chakra nữa (`f.weak`).
+
+### Horikita Suzune (`suzune`)
+Toàn bộ trong hằng `SUZ`, khai theo lối của Shikamaru (giây người chơi bọc `gs()`).
+Nhân vật cận chiến, đi theo **ba form** — đây là cả tính cách nhân vật, đừng gộp lại:
+
+| Form | Là ai | Có gì |
+|---|---|---|
+| 1 | Sợ, không dám đánh | **không tấn công gì cả**; đứng thì dáng `scared` (hai tay chụm trước ngực, mắt mở to, giọt mồ hôi), trúng đòn thì dáng `block` (hai tay bắt chéo chữ X). AI chỉ lùi ra và né, không lao vào |
+| 2 | Dám đánh nhưng còn sai | chiêu 1 đấm/đá, chiêu 2 Decision Making |
+| 3 | Tự đứng một mình | như form 2 nhưng mạnh hơn và cộng dồn theo điểm lớp |
+
+**Chuyển form 1 → 2**: máu tụt xuống **85%** (`SUZ.guardHp`) thì Ayanokouji hiện ra.
+Phân cảnh đóng băng 1.6s, anh nói *"Stand up and fight."*, rồi **đỡ đòn thay đúng 4 giây
+người chơi** (`SUZ.guardT`). Trong quãng đó `hurt()` trả về **false** cho Horikita ngay từ
+đầu hàm nên không chỉ mất máu mà cả choáng / cháy / chảy máu ăn theo cũng không dính.
+Hết 4 giây anh lui ra, cô sang form 2. *(Đồng hồ 4 giây chỉ chạy SAU phân cảnh — `step()`
+return sớm lúc `G.freeze>0`. Test phải chờ cả hai, đây không phải lỗi.)*
+
+**Cơ chế điểm lớp (class points)** — mới, dùng riêng cho nhân vật này:
+- Mốc là **150** (`SUZ.cpMax`).
+- Form 2: chạm 150 là **chặn ở đó** và gọi Ayanokouji ra làm đồng minh thật.
+- Form 3: cứ đủ 150 thì đổi thành **một bậc cộng dồn** rồi tính lại từ 0 (trần 5 bậc).
+
+**Chiêu 1** — áp sát rồi bốc ngẫu nhiên đấm hoặc đá, **hai dáng tách hẳn** (`punch` / `kick`).
+15 dmg + 15 điểm ở form 2, 20 dmg + 20 điểm ở form 3. Hồi chiêu `cm(.25)*2.5`, tức
+**chậm hơn ChiChi đúng 2.5 lần** và vẫn co giãn theo thanh tốc độ ra chiêu. Mỗi đòn trúng
+có **25%** hồi **5%** máu hiện tại (form 3: 35% / 8%).
+
+**Chiêu 2 — Decision Making**: mỗi **6 giây người chơi** cô đứng **bất động 1.5 giây**
+(`f.decT` + `f.lock`) rồi chốt. Đúng (50% ở form 2, 70% ở form 3) thì câu nói biến thành
+**bong bóng phóng thẳng vào mặt địch**, 20~80 dmg ngẫu nhiên và **tích đúng bằng lượng sát
+thương vừa gây**, kèm cửa hồi máu 25%/3% (form 3: 35%/8%). Sai thì **trừ 5~60 điểm**; điểm
+thủng xuống âm thì cô **tự chịu đúng phần âm đó** (không né được, không giảm nhẹ) rồi tích
+lại từ 0.
+
+> Hai ô tiếng `suz_decide` và `suz_wrong` dùng kiểu **đọc nối tiếp** (`SFX_SEG`): dán nguyên
+> một file thu sẵn cả chục câu vào là mỗi lần ra quyết định game đọc tiếp một câu. Danh sách
+> câu nằm ở `SUZ_DECISIONS` (15 câu) và `SUZ_WRONG` (6 câu) — **sửa file tiếng thì phải sửa
+> luôn hai mảng này cho khớp thứ tự.**
+
+**Ayanokouji làm đồng minh thật** (đủ 150 điểm ở form 2). Anh là fighter duy nhất mang cờ
+`ally:true`; `summon:true` để `hurt()` không gọi `finish()` khi anh cạn máu, nhưng
+`ally` lại cho anh **ăn được đạn** (vòng va chạm bỏ qua `f.summon&&!f.ally`).
+- Máu = **35% máu hiện tại của Horikita** lúc anh bước ra.
+- **Đột kích** mỗi 4.5 giây người chơi: 40 dmg + choáng 1.25 giây.
+- Buff Horikita **+100% tốc ra chiêu** (`f.castBuff`, nhân vào nhịp trôi hồi chiêu).
+- Tự dịch chuyển chắn đạn (`ayaIntercept`) và, khi địch **cận chiến** áp sát, đứng hẳn giữa
+  hai người, **bật taunt** rồi **đẩy Horikita vòng ra sau lưng địch** để cô rảnh tay đánh.
+- **Taunt đi qua `aimTarget(f)`**, không đụng tới `foeOf()`. `foeOf` vẫn là quan hệ phe;
+  `aimTarget` chỉ trả lời "đang nhắm vào ai". Mọi chỗ NHẮM (aiVec, think, cú lao, đạn dò)
+  đọc `aimTarget`, mọi chỗ tính phe vẫn đọc `foeOf`.
+
+**Chuyển form 2 → 3**: anh về 0 máu thì **KHÔNG chết**. `a.alive` vẫn `true`, không có
+`finish()`, không có hiệu ứng gục. Anh nói *"This is where I take my leave."* rồi **đi bộ ra
+khỏi mép sàn** và mờ dần (`a.leaving` / `a.fade`). Đi hẳn rồi Horikita mới nói *"From here on
+I fight for my own goal — alone."* và vào form 3.
+
+**Form 3**: đòn tay 20 / +20 điểm, quyết định đúng 70%, hồi máu 35% × 8% máu hiện tại,
+**+10% miễn thương** (`f.dmgRes`, ăn trong `hurt()`) và **10% kháng hiệu ứng** (`f.ccRes`,
+rút ngắn thời gian choáng trong `stunFx()`). Mỗi 150 điểm lớp tích thêm được thì **+5% tỉ lệ
+quyết định đúng, +5% tỉ lệ hồi máu, +6% lượng hồi máu, +8% miễn thương, +8% kháng hiệu ứng**.
+
+> **Chỗ đã tự quyết, nói rõ để sau này khỏi cãi nhau:** bản mô tả gốc ghi *"+8% miễn thương,
+> +8% miễn thương"* hai lần. Hiểu là **+8% miễn thương và +8% kháng hiệu ứng** — vì form 3
+> vốn có sẵn cặp 10%/10%, cộng dồn theo cặp mới cân. Trần 5 bậc để miễn thương không chạy
+> tới 100%. Nếu người dùng muốn khác thì sửa `SUZ.st`.
 
 ---
 
@@ -344,11 +411,12 @@ nên đổi độ phân giải không phải tính lại toạ độ. `recCanvas
 Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 
 ```bash
-node tools/t_reg.js     # 10 cặp đấu song song, bắt lỗi trang, xem cơ chế lớn có nổ không
+node tools/t_reg.js     # 15 cặp đấu song song, bắt lỗi trang, xem cơ chế lớn có nổ không
 node tools/t_wake.js    # đo nhịp Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
+node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn
 ```
 
 Tất cả trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng
@@ -376,7 +444,8 @@ Vài điều đã học khi viết test:
   **Đừng chạy `playwright install`.**
 
 Nút test bấm tay có sẵn trong game: `#testEagle`, `#testForest`, `#testTwin`, `#testGoku`,
-`#testGohan`.
+`#testGohan`, `#testSuz2` (ép Ayanokouji đỡ đòn → form 2), `#testSuzAya` (nạp đủ 150 điểm
+lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 
 ## 9. Lỗi đã sửa — đừng làm lại
 
@@ -390,12 +459,15 @@ Nút test bấm tay có sẵn trong game: `#testEagle`, `#testForest`, `#testTwi
 | Shikamaru ngồi bị bẹt | mẹo `sy*.68` vốn dành cho ảnh đứng | chỉ áp dụng khi **không** có ảnh `lazy` do người dùng nạp |
 | fps tụt khi cache khung cảnh | blit full màn hình đắt hơn vẽ vector | bỏ cache |
 | Dải bóng bị khói bom che | vẽ chung với nền | tách ra `drawForestGrip()`, gọi sau nhân vật |
+| Dáng thủ chéo tay của Horikita nhìn không ra | vẽ tay trước tóc, hai lọn tóc dài che mất | vẽ hai tay **sau** đầu và tóc, ở cuối khối vector |
+| Câu thoại dài tràn ra ngoài sàn | bong bóng thoại chỉ vẽ được một dòng | `wrapTxt()` + nhánh bong bóng nhận `\n` nhiều dòng; dùng qua `talk()` |
+| Ayanokouji đứng chồng lên Horikita | chỗ đứng chỉ cách 48px, mà hình rộng ~40px | giãn ra 66px và giãn luôn đội hình lúc chắn cận chiến |
 
 ---
 
 ## 10. Quy trình git
 
-- Nhánh làm việc: `claude/third-character-design-rxoda8`. **Không đẩy sang nhánh khác.**
+- Nhánh làm việc: `claude/horikita-suzune-character-rjccp0`. **Không đẩy sang nhánh khác.**
 - `git push -u origin <nhánh>`; lỗi mạng thì thử lại 4 lần, giãn 2s/4s/8s/16s.
 - Người dùng thường merge rất nhanh rồi hỏi luôn "pr?" / "merge đâu" — làm xong một việc thì
   **mở PR ngay**. Nếu PR trước đã merge thì mở PR mới, đừng chồng lên nhánh đã merge.
@@ -408,6 +480,8 @@ Nút test bấm tay có sẵn trong game: `#testEagle`, `#testForest`, `#testTwi
 
 - Người dùng có lần nói tiếng bật dậy là ở **75% máu**, nhưng bản mô tả gốc và code đang để
   **80%** (`SHIKA.wakeHp = .80`). Đã hỏi hai lần chưa có câu trả lời — hiện giữ 80%.
-- Bộ 4 ảnh thẻ nhân vật (dựng bằng script trong thư mục nháp, chụp bằng Playwright,
+- Bộ ảnh thẻ nhân vật (dựng bằng script trong thư mục nháp, chụp bằng Playwright,
   `deviceScaleFactor: 2`, font **Liberation Sans** — DejaVu Sans Mono thiếu chữ tiếng Việt có dấu)
-  đang cũ: chưa có Shikamaru và chưa cập nhật vài con số của Tsubasa/ChiChi.
+  đang cũ: chưa có Shikamaru lẫn Horikita, và chưa cập nhật vài con số của Tsubasa/ChiChi.
+- Ô tiếng của Horikita/Ayanokouji mới chỉ có tiếng tự tạo trong `synth()`; hai ô đọc nối tiếp
+  (`suz_decide`, `suz_wrong`) đang chờ người dùng thu file TTS theo `SUZ_DECISIONS` / `SUZ_WRONG`.

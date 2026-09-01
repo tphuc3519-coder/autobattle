@@ -21,6 +21,12 @@ window.__sexy=sexy; window.__shadowBind=shadowBind; window.__tryEvade=tryEvade;
 window.__driveShot=driveShot; window.__eagleAwaken=eagleAwaken;
 window.__recCanvas=()=>RECV; window.__recFrame=()=>recFrame(); window.__CFR=()=>CFR;
 window.__aacRaw=aacRaw; window.__aacAsc=aacAsc; window.__mAudioEntry=mAudioEntry;
+window.__SUZ=SUZ; window.__suzTune=suzTune; window.__suzCp=suzCp;
+window.__ayaShield=ayaShield; window.__ayaJoin=ayaJoin; window.__ayaLeave=ayaLeave;
+window.__suzForm2=suzForm2; window.__suzForm3=suzForm3; window.__suzDecide=suzDecide;
+window.__suzStrike=suzStrike; window.__aimTarget=aimTarget;
+window.__suzDecisionHit=suzDecisionHit; window.__ayaStrike=ayaStrike; window.__suzHeal=suzHeal;
+window.__DECISIONS=SUZ_DECISIONS; window.__WRONGS=SUZ_WRONG;
 `;
 
 /* Trả về đường dẫn file probe. Ghi ra thư mục tạm để không bẩn repo. */

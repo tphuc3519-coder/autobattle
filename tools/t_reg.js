@@ -1,9 +1,9 @@
-/* Chạy đủ 10 cặp đấu (6 cặp khác nhau + 4 trận gương) song song, xem có trận nào
+/* Chạy đủ 15 cặp đấu (10 cặp khác nhau + 5 trận gương) song song, xem có trận nào
    ném lỗi trang không và các cơ chế lớn có thật sự nổ ra không.
    Chạy: node tools/t_reg.js */
 const { build, playwright } = require('./probe');
 
-const K = ['kono', 'chichi', 'tsubasa', 'shika'];
+const K = ['kono', 'chichi', 'tsubasa', 'shika', 'suzune'];
 const MOC = 60;          // giây trong trận, đủ để một trận ngã ngũ
 
 (async () => {
@@ -48,6 +48,11 @@ const MOC = 60;          // giây trong trận, đủ để một trận ngã ng
           if (f.prewing) seen.add('prewing');
           if (f.summon) seen.add('summon');
           if (f.exhaust > 0) seen.add('exhaust');
+          if (f.ayaG) seen.add('aya-guard');
+          if (f.ally) seen.add('aya-ally');
+          if (f.key === 'suzune' && f.form >= 2) seen.add('suz-f2');
+          if (f.key === 'suzune' && f.form >= 3) seen.add('suz-f3');
+          if (f.decT > 0) seen.add('decision');
         }
         if (G.over || G.t - t0 > moc) { clearInterval(id); xong(); }
       }, 60);

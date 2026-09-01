@@ -147,6 +147,9 @@
     <button id="testTwin" title="Nạp đủ goal để xem Victory Twin Shot">🧪 Test Twin Shot</button>
     <button id="testEagle" title="Ép Tsubasa vào trạng thái Wings of the Eagle">🧪 Test Eagle</button>
     <button id="testForest" title="Ép Shikamaru mở khu rừng nhà Nara">🧪 Test lãnh địa</button>
+    <button id="testSuz2" title="Ép Ayanokouji nhảy vào đỡ đòn, sang form 2">🧪 Test Horikita F2</button>
+    <button id="testSuzAya" title="Nạp đủ 150 điểm lớp để Ayanokouji vào sân">🧪 Test Ayanokouji</button>
+    <button id="testSuz3" title="Ép Ayanokouji rời sàn để Horikita sang form 3">🧪 Test Horikita F3</button>
   </div>
 
   <div class="stage"><canvas id="arena" width="620" height="620"></canvas></div>
@@ -249,9 +252,9 @@ let G=null, running=false, speedMul=BASE_SPEED, mode='auto', autoSkill=true;
 const keys={};
 
 /* ---------- sprite slots ---------- */
-const SPR={kono:{},chichi:{},tsubasa:{},shika:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
-const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF'};
-const HP={kono:1000,chichi:1000,tsubasa:1000,shika:1000};
+const SPR={kono:{},chichi:{},tsubasa:{},shika:{},suzune:{},ayanokouji:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
+const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',suzune:'#7FC8FF'};
+const HP={kono:1000,chichi:1000,tsubasa:1000,shika:1000,suzune:1000};
 const CAST={mul:1.8};
 const cm=v=>v*CAST.mul;
 const SETS=[
@@ -259,6 +262,8 @@ const SETS=[
   {key:'chichi', name:'ChiChi', poses:[['idle','Thủ thế'],['atk1','Đấm đá'],['atk2','Mắng'],['skill','Hăng máu'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc gọi)'],['call','Dáng gọi viện binh']]},
   {key:'tsubasa', name:'Ozora Tsubasa', poses:[['idle','Thủ thế'],['atk1','Sút bóng'],['bicycle','Overhead kick'],['atk2','Drive shot'],['wings','Đôi cánh đại bàng'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc kích hoạt nội tại)']]},
   {key:'shika', name:'Shikamaru', poses:[['idle','Thủ thế'],['lazy','Ngồi lười (đầu trận)'],['atk1','Phóng shuriken'],['stab','Đâm sau lưng'],['atk2','Kết ấn trói bóng'],['ulti','Mở lãnh địa'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
+  {key:'suzune', name:'Horikita Suzune', poses:[['idle','Thủ thế (form 2/3)'],['scared','Thủ thế sợ hãi (form 1)'],['block','Thủ chéo hai tay (chịu đòn)'],['punch','Đấm'],['kick','Đá'],['think','Đứng suy nghĩ'],['decide','Ra quyết định'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
+  {key:'ayanokouji', name:'Ayanokouji', poses:[['idle','Đứng'],['guard','Đỡ đòn thay Horikita'],['strike','Đòn đột kích'],['leave','Rời sàn đấu']]},
   {key:'nara', name:'Con nai nhà Nara', poses:[['idle','Đứng cạnh Shikamaru trong lãnh địa']]},
   {key:'garden', name:'Phong cảnh lãnh địa', poses:[['idle','Ảnh nền khu rừng nhà Nara']]},
   {key:'goku', name:'Son Goku', poses:[['idle','Đứng'],['skill','Dồn khí'],['atk1','Kamehameha']]},
@@ -322,6 +327,39 @@ const SEXY_STUN=1.25;             // Sexy no Jutsu choáng nhân vật nam (2.5 
 const SEXY_IMMUNE=.375;           // Konohamaru tự miễn nhiễm sau khi tung (0.75 giây người chơi)
 const EXHAUST_MUL=.75;            // kiệt sức: giảm 25% tốc chạy và 25% tốc ra chiêu
 const EAGLE_ACC=.5;               // độ lệch khi sút giảm một nửa, tức chuẩn xác gấp đôi
+
+/* ---------- Horikita Suzune ----------
+   Khai theo lối của Shikamaru: mọi mốc thời gian viết bằng giây người chơi rồi bọc gs()
+   để đổi sang giây trong trận. Riêng hồi chiêu đòn tay bám thẳng theo ChiChi (cm(.25))
+   nên vẫn co giãn theo thanh "tốc độ ra chiêu"; các mốc còn lại người dùng chốt bằng
+   con số cụ thể nên để nguyên, không nhân cm(). */
+const SUZ={
+  guardHp:.85,               // tụt xuống mức này thì Ayanokouji nhảy vào đỡ đòn thay
+  guardT:gs(4),              // và đỡ trong 4 giây người chơi
+  atkCd:cm(.25)*2.5,         // đánh chậm hơn ChiChi đúng 2.5 lần
+  atkRange:16,               // tầm tay, cộng vào r+r như ChiChi
+  decCd:gs(6),               // cứ 6 giây người chơi lại đứng lại suy nghĩ một lần
+  decThink:gs(1.5),          // bất động suy nghĩ 1.5 giây người chơi
+  decSpd:760,                // bong bóng quyết định phóng thẳng, rất nhanh
+  decLo:20, decHi:80,        // quyết định đúng: 20~80 dmg ngẫu nhiên
+  decPenLo:5, decPenHi:60,   // quyết định sai: trừ 5~60 điểm lớp
+  cpMax:150,                 // mốc điểm lớp
+  /* form 2: dám đánh nhưng còn sai nhiều · form 3: đã đủ bản lĩnh tự đứng */
+  f2:{hit:15, cp:15, healOdds:.25, healPct:.05, decHealPct:.03, decOdds:.50},
+  f3:{hit:20, cp:20, healOdds:.35, healPct:.08, decHealPct:.08, decOdds:.70, dmgRes:.10, ccRes:.10},
+  /* form 3: mỗi 150 điểm lớp tích thêm được thì cộng dồn một bậc */
+  st:{dec:.05, healOdds:.05, healPct:.06, dmgRes:.08, ccRes:.08, max:5},
+  ayaHp:.35,                 // máu Ayanokouji = 35% máu Horikita lúc anh bước ra
+  ayaCd:gs(4.5),             // đòn đột kích mỗi 4.5 giây người chơi
+  ayaDmg:40, ayaStun:gs(1.25),
+  ayaSpd:150,                // anh chạy nhanh hơn Horikita để kịp chắn
+  ayaCast:2,                 // đứng cạnh anh thì Horikita ra chiêu nhanh gấp đôi
+  ayaGuardR:230,             // trong tầm này coi như địch đang áp sát Horikita
+  ayaLeaveT:gs(2.4)          // rời sàn trong bấy nhiêu giây người chơi
+};
+/* Tuổi thọ bong bóng thoại của Horikita / Ayanokouji — SFX_SEG bên dưới bám theo,
+   để câu tiếng không sống lâu hơn bong bóng đang treo. */
+const SUZ_BUBBLE=1.9;
 const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
@@ -403,6 +441,35 @@ const CHARS={
          txt:`FOREST ${(f.domain.t*RT).toFixed(1)}s`}
       : {pct:clamp(f.chakra/600,0,1), fill:'#8E7BFF',
          txt:f.weak?'Chakra: spent':`Chakra: ${Math.round(f.chakra)}`}
+  }
+  ,suzune:{
+    name:'Horikita Suzune', short:'Horikita', tag:'Class Rep · Melee', emoji:'📘', color:'#7FC8FF', alt:'#BFE4FF',
+    role:'melee', speed:100, dodge:.6, male:false,
+    skills:[
+      `<b>Form 1</b> Too Afraid To Fight — no attacks at all; crosses both arms whenever she is hit`,
+      `<b>At ${Math.round(SUZ.guardHp*100)}% HP</b> Ayanokouji steps in — "Stand up and fight." and eats every hit for ${rts(SUZ.guardT)}s, then Form 2 begins`,
+      `<b>Form 2 · 1</b> Punch &amp; Kick (random) — ${SUZ.f2.hit} dmg, ${rts(SUZ.atkCd)}s between blows (2.5× slower than ChiChi) · +${SUZ.f2.cp} class points · ${Math.round(SUZ.f2.healOdds*100)}% to heal ${Math.round(SUZ.f2.healPct*100)}% of current HP`,
+      `<b>Form 2 · 2</b> Decision Making — every ${rts(SUZ.decCd)}s she freezes for ${rts(SUZ.decThink)}s; ${Math.round(SUZ.f2.decOdds*100)}% right = a verdict flies straight in for ${SUZ.decLo}–${SUZ.decHi} dmg and the same number of class points, ${Math.round((1-SUZ.f2.decOdds)*100)}% wrong = −${SUZ.decPenLo}~${SUZ.decPenHi} points (going negative costs her that much HP, then resets to 0)`,
+      `<b>${SUZ.cpMax} class points</b> Ayanokouji joins for real — ${Math.round(SUZ.ayaHp*100)}% of her current HP, ambush for ${SUZ.ayaDmg} + ${rts(SUZ.ayaStun)}s stun every ${rts(SUZ.ayaCd)}s, +100% cast speed for her, body-blocks incoming damage and taunts melee foes off her`,
+      `<b>Form 3</b> He walks away (never dies) — hits ${SUZ.f3.hit} / +${SUZ.f3.cp} points, decisions ${Math.round(SUZ.f3.decOdds*100)}% right, ${Math.round(SUZ.f3.healOdds*100)}% to heal ${Math.round(SUZ.f3.healPct*100)}%, +${Math.round(SUZ.f3.dmgRes*100)}% damage resist &amp; ${Math.round(SUZ.f3.ccRes*100)}% CC resist`,
+      `<b>Form 3 · stacking</b> every ${SUZ.cpMax} class points: +${Math.round(SUZ.st.dec*100)}% decision accuracy, +${Math.round(SUZ.st.healOdds*100)}% heal chance, +${Math.round(SUZ.st.healPct*100)}% heal amount, +${Math.round(SUZ.st.dmgRes*100)}% damage resist, +${Math.round(SUZ.st.ccRes*100)}% CC resist (up to ×${SUZ.st.max})`],
+    init(f){
+      f.cds={s1:SUZ.atkCd,s2:SUZ.decCd};
+      f.form=1; f.cp=0; f.stacks=0; f.decT=0;
+      f.ayaG=null; f.ayaAlly=null; f.ayaShieldDone=false; f.ayaDone=false;
+      f.castBuff=1; f.dmgRes=0; f.ccRes=0;
+    },
+    think(f,e,d,auto){
+      if(f.form<2)return;                                  // form 1: sợ quá, không đánh gì cả
+      if(f.decT>0)return;                                  // đang đứng suy nghĩ
+      if(f.cds.s2<=0&&(auto||keys['k'])){ f.cds.s2=SUZ.decCd; suzThink(f,e); return; }
+      if(f.cds.s1<=0&&d<f.r+e.r+SUZ.atkRange&&(auto||keys['j'])){ f.cds.s1=SUZ.atkCd; suzStrike(f,e); }
+    },
+    gauge:f=>f.form<2
+      ? {pct:0, fill:'#8FA6C8', txt:'Form 1 · too afraid'}
+      : {pct:clamp(f.cp/SUZ.cpMax,0,1), fill:'#7FC8FF',
+         txt:f.form>=3?`Class pts: ${Math.round(f.cp)}/${SUZ.cpMax} · Rank ×${f.stacks}`
+                      :`Class pts: ${Math.round(f.cp)}/${SUZ.cpMax}`}
   }
 };
 const CKEYS=Object.keys(CHARS);
@@ -562,7 +629,12 @@ const SFX_EVENTS=[
   ['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt'],
   ['shika_lazy','Shikamaru ngồi than thở'],['shika_wake','Shikamaru bật dậy đánh'],
   ['shika_stab','Đâm sau lưng'],['shika_stab_hit','Mũi đâm trúng người địch'],['shika_bind','Trói bóng khoá cổ'],['shika_grab','Bóng siết lấy cổ'],
-  ['shika_garden','Mở khu rừng nhà Nara']
+  ['shika_garden','Mở khu rừng nhà Nara'],
+  ['suz_punch','Horikita đấm'],['suz_kick','Horikita đá'],['suz_block','Horikita đỡ đòn / Ayanokouji chắn thay'],
+  ['suz_think','Horikita đứng suy nghĩ'],['suz_decide','Horikita đọc quyết định (file dài: mỗi lần một câu)'],
+  ['suz_hit','Quyết định đâm trúng địch'],['suz_wrong','Quyết định sai (file dài: mỗi lần một câu)'],
+  ['suz_heal','Horikita hồi máu'],['suz_form2','Horikita đứng lên đánh trả'],['suz_form3','Horikita tự mình chiến đấu'],
+  ['aya_appear','Ayanokouji xuất hiện'],['aya_line','Ayanokouji nói'],['aya_strike','Ayanokouji đột kích'],['aya_leave','Ayanokouji rời sàn']
 ];
 const SFXBUF={};
 let AC=null, volume=.6, muted=false, lastSfx={};
@@ -743,6 +815,32 @@ function synth(name,c,g){
       [.35,.9,1.6,2.4].forEach(dl=>tone(c,g,{type:'sine',f0:1500,f1:2300,dur:.32,vol:.05,delay:dl}));
       break;
     }
+    case 'suz_punch': tone(c,g,{type:'square',f0:230,f1:90,dur:.12,vol:.22});
+                      noise(c,g,{dur:.1,f0:1400,f1:400,vol:.16}); break;
+    case 'suz_kick':  tone(c,g,{type:'sawtooth',f0:180,f1:68,dur:.17,vol:.24});
+                      noise(c,g,{dur:.15,f0:900,f1:260,vol:.18}); break;
+    case 'suz_block': noise(c,g,{dur:.2,f0:620,f1:180,vol:.2,type:'lowpass'});
+                      tone(c,g,{type:'triangle',f0:300,f1:165,dur:.22,vol:.14}); break;
+    case 'suz_think': [0,.22,.44].forEach((d,i)=>tone(c,g,{type:'sine',f0:520+i*95,f1:520+i*95,dur:.12,vol:.11,delay:d})); break;
+    case 'suz_decide':tone(c,g,{type:'square',f0:660,f1:1320,dur:.22,vol:.2});
+                      noise(c,g,{dur:.26,f0:1800,f1:600,vol:.12,q:1.2}); break;
+    case 'suz_hit':   tone(c,g,{type:'square',f0:900,f1:220,dur:.26,vol:.24});
+                      noise(c,g,{dur:.2,f0:2200,f1:500,vol:.16}); break;
+    case 'suz_wrong': tone(c,g,{type:'sawtooth',f0:340,f1:130,dur:.34,vol:.2});
+                      tone(c,g,{type:'sawtooth',f0:300,f1:110,dur:.36,vol:.14,delay:.05}); break;
+    case 'suz_heal':  [523.25,659.25,783.99].forEach((f,i)=>tone(c,g,{type:'sine',f0:f,f1:f,dur:.16,vol:.1,delay:i*.07})); break;
+    case 'suz_form2': [392,523.25,659.25].forEach((f,i)=>tone(c,g,{type:'triangle',f0:f,f1:f,dur:i===2?.5:.16,vol:.16,delay:i*.13}));
+                      noise(c,g,{dur:.6,f0:400,f1:1800,vol:.1}); break;
+    case 'suz_form3': [523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(c,g,{type:'triangle',f0:f,f1:f,dur:i===3?.8:.16,vol:.17,delay:i*.12}));
+                      noise(c,g,{dur:1,f0:500,f1:2400,vol:.11}); break;
+    case 'aya_appear':tone(c,g,{type:'sine',f0:90,f1:225,dur:.7,vol:.24});
+                      noise(c,g,{dur:.7,f0:300,f1:1600,vol:.14,q:.8}); break;
+    case 'aya_line':  tone(c,g,{type:'triangle',f0:300,f1:300,dur:.2,vol:.12});
+                      tone(c,g,{type:'triangle',f0:240,f1:240,dur:.24,vol:.1,delay:.16}); break;
+    case 'aya_strike':tone(c,g,{type:'sawtooth',f0:520,f1:120,dur:.24,vol:.26});
+                      noise(c,g,{dur:.22,f0:2600,f1:500,vol:.2,q:1.4}); break;
+    case 'aya_leave': tone(c,g,{type:'sine',f0:330,f1:110,dur:.9,vol:.16});
+                      noise(c,g,{dur:.8,f0:900,f1:200,vol:.09,type:'lowpass'}); break;
     default:        noise(c,g,{dur:.1,f0:1200,vol:.2});
   }
 }
@@ -754,7 +852,10 @@ const SFX_MAXLEN={
   kame:5, masenko:5, wings:5,
   callgoku:CALL_BANNER_LIFE*RT,                 // hết băng-rôn gọi là hết
   callgohan:CALL_BANNER_LIFE*RT,
-  summon:SUMMON_CHARGE*RT                       // viện binh hiện ra tới lúc bắn
+  summon:SUMMON_CHARGE*RT,                      // viện binh hiện ra tới lúc bắn
+  aya_line:SUZ_BUBBLE*1.4*RT,                   // câu thoại của Ayanokouji tắt cùng bong bóng
+  aya_leave:SUZ_BUBBLE*RT,
+  suz_form2:2.4, suz_form3:2.8
 };
 /* File dài thì đọc nối tiếp từng đoạn, hết file thì quay lại đầu. Mặc định mỗi đoạn
    2.2 giây; hai ô dưới đây lấy độ dài đoạn theo đúng thứ giới hạn chúng.
@@ -765,7 +866,12 @@ const SFX_SEG={
   // Câu mắng bị cắt bởi câu kế tiếp chứ không phải bởi bong bóng, nên đoạn đọc bám
   // theo nhịp hét: ra chiêu nhanh thì đoạn ngắn lại, chậm thì dài ra, không còn
   // cảnh cắt ngang giữa chừng hay im lặng chờ. Vẫn chặn trên bằng tuổi thọ bong bóng.
-  scold:()=>Math.min(cm(.6)*RT, SCOLD_BUBBLE*RT)
+  scold:()=>Math.min(cm(.6)*RT, SCOLD_BUBBLE*RT),
+  /* Hai ô này là chỗ dán nguyên file thu sẵn cả chục câu quyết định: mỗi lần Horikita
+     ra quyết định thì đọc tiếp một đoạn, hết file mới quay lại đầu — khớp đúng với
+     danh sách câu trong SUZ_DECISIONS / SUZ_WRONG. */
+  suz_decide:SUZ_BUBBLE*RT,
+  suz_wrong:SUZ_BUBBLE*RT
 };
 const SFX_POS={}, SFX_ACTIVE={};
 /* Cắt ngang một tiếng đang phát dở. Dùng khi cảnh đi kèm nó kết thúc sớm hơn
@@ -1119,6 +1225,14 @@ function foeOf(f){
   if(f.master)return foeOf(f.master);   // viện binh nhắm đúng đối thủ của người gọi
   return f.team===0?G.c:G.k;
 }
+/* Ai là người mà f đang nhắm vào. Bình thường là đối thủ, nhưng khi Ayanokouji bật
+   khiêu khích thì mọi thứ f tung ra đều dồn vào anh — đó chính là cách anh gánh đòn
+   thay Horikita. Chỉ dùng cho việc NHẮM; quan hệ phe vẫn đọc bằng foeOf(). */
+function aimTarget(f){
+  const t=f&&f.tauntBy;
+  if(t&&t.alive&&t.hp>0&&!t.leaving&&G.fighters.indexOf(t)>=0) return t;
+  return foeOf(f);
+}
 function newGame(){
   G={t:0,proj:[],waves:[],fx:[],floats:[],conf:[],timers:[],logs:[],over:null,winner:null,endT:0,announced:false,cam:{x:W/2,y:H/2,z:1},freeze:0,freezeAt:null,callBanner:null,loserFx:null,fighters:[],mates:[],flashback:null,flashScreen:0};
   G.k=mkChar(PICK.a,0,W/2,PAD+120);
@@ -1158,6 +1272,7 @@ function stunFx(f,dur,kind){
     return false;
   }
   if(f.prewing) dur*=PREWING_STUN;               // Pre-Wings: gồng được, choáng ngắn lại
+  if(f.ccRes>0) dur*=(1-f.ccRes);                // Horikita form 3: kháng hiệu ứng, choáng ngắn lại
   if(f.key==='shika'&&f.bind&&f.bind.guard){     // lần bù: đứng vững, không cắt được
     G.floats.push({x:f.x,y:f.y-104,txt:'UNBREAKABLE',color:'#CFC6FF',
       life:.9,ml:.9,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
@@ -1197,6 +1312,9 @@ function tryEvade(t,kind){
    sau cú đánh thì phải xem giá trị này, nếu không né xong vẫn dính phần đuôi. */
 function hurt(t,amt,src,crit,kind,tint){
   if(!t.alive||G.over)return false;
+  if(t.leaving>0)return false;              // Ayanokouji đang rời sàn: không ăn đòn nữa
+  // Ayanokouji nhảy vào đỡ thay: suốt quãng này Horikita không mất một giọt máu nào
+  if(t.ayaG&&t.ayaG.t>0){ ayaBlock(t,amt,src); return false; }
   if(t.invuln>0){
     pop(t.x,t.y,'IMMUNE',t.color||'#FFF3C4',false);
     ring(t.x,t.y,52,'#FF9AD5',.3);
@@ -1207,6 +1325,7 @@ function hurt(t,amt,src,crit,kind,tint){
   if(t.vuln>0) amt*=1.5;                    // dính Twin Shot: nhận thêm 50% sát thương
   if(t.eagle) amt*=.3;                      // Wings of the Eagle: miễn 70% sát thương
   else if(t.prewing) amt*=PREWING_RES;      // Pre-Wings: miễn 35% sát thương
+  if(t.dmgRes>0) amt*=(1-t.dmgRes);         // Horikita form 3: miễn thương cộng dồn theo mốc điểm lớp
   if(t.dash&&t.dash.guard) amt*=CHICHI_DASH_RES;   // đang lao tới: nhận ít sát thương hơn
   t.hp=Math.max(0,t.hp-amt);
   t.flash=crit?.2:.12; t.recoil=crit?1.4:1;
@@ -1246,7 +1365,9 @@ function finish(w){
   G.over=win.name.toUpperCase();
   G.winner=win; G.endT=0; G.announced=false;
   G.mates.length=0; G.flashback=null;
-  for(const f of G.fighters){ f.hidden=false; f.unhideT=0; }
+  // đồng minh (Ayanokouji) rời sàn cùng lúc trận kết thúc, không đứng trơ ra đó
+  for(let i=G.fighters.length-1;i>=0;i--) if(G.fighters[i].ally) G.fighters.splice(i,1);
+  for(const f of G.fighters){ f.hidden=false; f.unhideT=0; f.tauntBy=null; f.ayaG=null; }
   const loser = (win===G.k)?G.c:G.k;
   if(loser){
     loser.pose='hurt'; loser.poseT=0; loser.flash=0; loser.recoil=0; loser.lunge=0;
@@ -1960,6 +2081,460 @@ function summonFire(s,e){
   }
 }
 
+
+/* ================= Horikita Suzune ================= */
+/* Ba chặng, mỗi chặng là một con người khác:
+     form 1 — sợ tới mức không dám ra đòn nào, trúng đòn thì chỉ biết thủ chéo hai tay
+     form 2 — Ayanokouji đỡ thay một lần, cô dám đánh nhưng quyết định còn sai một nửa
+     form 3 — anh rời đi (không phải chết), từ đây cô tự đứng, tự quyết, tự mạnh lên
+   Cơ chế xuyên suốt là ĐIỂM LỚP (class points): đánh trúng thì tích, quyết định đúng thì
+   tích đúng bằng sát thương, quyết định sai thì bị trừ — âm bao nhiêu tự ăn bấy nhiêu dmg. */
+
+/* Mười lăm câu quyết định của Horikita — dán file thu sẵn vào ô 'suz_decide' thì mỗi
+   lần ra quyết định game đọc tiếp một câu (xem SFX_SEG), hết file mới quay lại đầu. */
+const SUZ_DECISIONS=[
+  'Ban him. He is a liability to this class.',
+  'No. We keep him — he still has value.',
+  'Nobody is being expelled today. Not on my watch.',
+  'Cut the dead weight. Now.',
+  'Follow my lead. I have already run the numbers.',
+  'That is the wrong move. We do it my way.',
+  'We carry the weakest link. That is how a class wins.',
+  'I will take responsibility. Do exactly as I say.',
+  'Read the situation properly. You have already lost.',
+  'Points are earned, never given.',
+  'Stand aside. I will handle this myself.',
+  'Your class has no discipline. Mine does.',
+  'I have calculated every outcome. This one is yours to lose.',
+  'Vote him out. The class comes before anyone in it.',
+  'Hold the line. Nobody drops out of Class D.'
+];
+/* Sáu câu cho lúc cô tính sai — ô 'suz_wrong' cũng đọc nối tiếp như trên. */
+const SUZ_WRONG=[
+  '...No. That was a mistake.',
+  'I misread the situation.',
+  'That was not the right call.',
+  'I let emotion decide. Careless.',
+  'I overlooked something obvious.',
+  'Wrong. Recalculating.'
+];
+/* Bẻ câu dài thành nhiều dòng cho vừa bề ngang sàn đấu. */
+function wrapTxt(txt,per){
+  const out=[]; let cur='';
+  for(const w of String(txt).split(' ')){
+    if(cur && (cur+' '+w).length>per){ out.push(cur); cur=w; }
+    else cur=cur?cur+' '+w:w;
+  }
+  if(cur) out.push(cur);
+  return out.join('\n');
+}
+/* Bong bóng thoại của Horikita / Ayanokouji: khung trắng chữ đậm cho dễ đọc, khác hẳn
+   kiểu chữ vàng viền vốn dành cho tên chiêu. Câu dài tự bẻ dòng. */
+function talk(x,y,txt,life,big){
+  G.floats.push({x,y,txt:wrapTxt(txt,big?24:30),color:'#22304F',
+    life,ml:life,banner:true,bubble:true,big:!!big,tilt:rnd(-.03,.03)});
+}
+const AYA_STAND='Stand up and fight.';
+const AYA_LAST='You are strong enough to face this on your own now. This is the last time I stand beside you.';
+const AYA_BYE='This is where I take my leave.';
+const SUZ_ALONE='From here on I fight for my own goal — alone.';
+const SUZ_RISE='I can fight. I will fight.';
+let lastDecision=-1, lastWrong=-1;
+function pickLine(arr,which){
+  let i; do{ i=Math.floor(Math.random()*arr.length); }
+  while(arr.length>1 && i===(which==='w'?lastWrong:lastDecision));
+  if(which==='w') lastWrong=i; else lastDecision=i;
+  return arr[i];
+}
+
+/* Bảng chỉ số theo form, cộng thêm phần dồn được ở form 3. Mọi chỗ đọc chung một nguồn
+   để đổi cân bằng chỉ phải sửa hằng SUZ. */
+function suzTune(f){
+  const b=(f.form>=3)?SUZ.f3:SUZ.f2, st=(f.form>=3)?(f.stacks||0):0;
+  return {
+    hit:b.hit, cp:b.cp,
+    healOdds:Math.min(.95, b.healOdds+SUZ.st.healOdds*st),
+    healPct:b.healPct+SUZ.st.healPct*st,
+    decHealPct:b.decHealPct+SUZ.st.healPct*st,
+    decOdds:Math.min(.98, b.decOdds+SUZ.st.dec*st)
+  };
+}
+/* Miễn thương và kháng hiệu ứng chỉ có từ form 3, và dày lên theo từng mốc 150 điểm. */
+function suzApply(f){
+  const st=f.stacks||0;
+  f.dmgRes=(f.form>=3)?Math.min(.75, SUZ.f3.dmgRes+SUZ.st.dmgRes*st):0;
+  f.ccRes =(f.form>=3)?Math.min(.75, SUZ.f3.ccRes +SUZ.st.ccRes *st):0;
+}
+function suzHeal(f,pct){
+  const amt=Math.min(f.maxHp-f.hp, f.hp*pct);
+  if(amt<=0)return;
+  f.hp+=amt;
+  G.floats.push({x:f.x-34,y:f.y-52,txt:'+'+Math.round(amt),color:'#7DEBAB',life:.95,ml:.95,sc:.62});
+  ring(f.x,f.y,58,'#7DEBAB',.3);
+  sfx('suz_heal');
+}
+/* Tích điểm lớp. Form 2 chặn ở 150 và chính lúc chạm trần là Ayanokouji bước ra;
+   form 3 thì cứ đủ 150 lại đổi thành một bậc cộng dồn rồi tính lại từ 0. */
+function suzCp(f,n){
+  if(n<=0)return;
+  f.cp+=n;
+  G.floats.push({x:f.x+36,y:f.y-46,txt:'+'+Math.round(n)+' CP',color:'#7FC8FF',life:.9,ml:.9,sc:.55});
+  if(f.form>=3){
+    while(f.cp>=SUZ.cpMax){
+      if(f.stacks>=SUZ.st.max){ f.cp=SUZ.cpMax; break; }
+      f.cp-=SUZ.cpMax; f.stacks++; suzApply(f); suzRankUp(f);
+    }
+  }else if(f.cp>=SUZ.cpMax){
+    f.cp=SUZ.cpMax;
+    if(!f.ayaDone) ayaJoin(f);
+  }
+}
+function suzRankUp(f){
+  const T=suzTune(f);
+  ring(f.x,f.y,132,'#7FC8FF',.5);
+  G.flashScreen=Math.max(G.flashScreen,.1);
+  G.floats.push({x:f.x,y:f.y-118,txt:`CLASS POINTS ${SUZ.cpMax} · RANK UP ×${f.stacks}`,
+    color:'#7FC8FF',life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.04,.04)});
+  G.floats.push({x:f.x,y:f.y-92,
+    txt:`DECISION ${Math.round(T.decOdds*100)}% · HEAL ${Math.round(T.healOdds*100)}%/${Math.round(T.healPct*100)}% · RES ${Math.round(f.dmgRes*100)}%/${Math.round(f.ccRes*100)}%`,
+    color:'#BFE4FF',life:1.7,ml:1.7,banner:true,sc:.58});
+  sfx('suz_form3');
+  say(`Đủ ${SUZ.cpMax} điểm lớp — Horikita lên bậc ×${f.stacks}: quyết định đúng ${Math.round(T.decOdds*100)}%, miễn thương ${Math.round(f.dmgRes*100)}%, kháng hiệu ứng ${Math.round(f.ccRes*100)}%.`,'s');
+}
+
+/* Chiêu 1 — áp sát rồi tung đấm hoặc đá, bốc ngẫu nhiên. Hai dáng tách hẳn nhau
+   (pose 'punch' và 'kick') để ai nạp ảnh cũng thấy rõ hai đòn khác nhau. */
+function suzStrike(f,e){
+  const T=suzTune(f), kick=chance(.5);
+  setPose(f,kick?'kick':'punch',cm(.3));
+  aim(f,e,.9);
+  sfx(kick?'suz_kick':'suz_punch');
+  G.fx.push({type:'punch',x:(f.x+e.x)/2,y:(f.y+e.y)/2,life:.16,ml:.16});
+  if(!hurt(e,T.hit,f,false))return;
+  suzCp(f,T.cp);
+  if(chance(T.healOdds)) suzHeal(f,T.healPct);
+}
+
+/* Chiêu 2 — Decision Making. Cô đứng khựng lại đúng 1.5 giây người chơi (khoá cả
+   chân lẫn tay bằng f.lock) rồi mới chốt. Bấm giờ bằng f.decT chứ không dùng later()
+   để test soi được, và để đòn choáng ăn vào giữa chừng vẫn không làm mất lượt. */
+function suzThink(f,e){
+  f.decT=SUZ.decThink;
+  f.lock=Math.max(f.lock,SUZ.decThink);
+  setPose(f,'think',SUZ.decThink);
+  f.vx=0; f.vy=0; f.dvx=0; f.dvy=0; f.moving=false;
+  sfx('suz_think');
+  G.floats.push({x:f.x,y:f.y-96,txt:'. . .',color:'#BFE4FF',
+    life:SUZ.decThink*1.15,ml:SUZ.decThink*1.15,banner:true,bubble:true,sc:.8});
+  say(`Horikita đứng lại tính toán — Decision Making, ${rts(SUZ.decThink)} giây.`,'s');
+}
+function suzDecide(f,e){
+  const T=suzTune(f);
+  setPose(f,'decide',cm(.5));
+  if(!e||!e.alive){ say('Không còn ai để ra quyết định.','m'); return; }
+  if(chance(T.decOdds)){
+    // quyết định đúng: câu nói biến thành một mũi lao thẳng vào mặt đối phương
+    const txt=pickLine(SUZ_DECISIONS,'d');
+    const dmg=Math.round(rnd(SUZ.decLo,SUZ.decHi));
+    const a=Math.atan2(bodyCY(e)-bodyCY(f), e.x-f.x);
+    aim(f,e,1.1);
+    sfx('suz_decide');
+    ring(f.x,f.y,84,'#7FC8FF',.38);
+    G.proj.push({type:'decision',team:f.team,owner:f,tgt:e,txt,
+      x:f.x+Math.cos(a)*26, y:bodyCY(f)+Math.sin(a)*26,
+      vx:Math.cos(a)*SUZ.decSpd, vy:Math.sin(a)*SUZ.decSpd,
+      r:16,dmg,life:2.2,straight:true,bounce:0,maxBounce:0,noReflect:true});
+    say(`Quyết định đúng — "${txt}"`,'s');
+  }else{
+    // quyết định sai: mất điểm, và nếu điểm thủng xuống âm thì cô tự gánh đúng phần âm đó
+    const txt=pickLine(SUZ_WRONG,'w');
+    const pen=Math.round(rnd(SUZ.decPenLo,SUZ.decPenHi));
+    sfx('suz_wrong');
+    talk(f.x, f.y-102, txt, SUZ_BUBBLE, false);
+    G.floats.push({x:f.x+38,y:f.y-58,txt:'−'+pen+' CP',color:'#FF9AAE',life:1.1,ml:1.1,sc:.58});
+    f.cp-=pen;
+    if(f.cp<0){
+      const self=-f.cp;
+      f.cp=0;
+      // tự chịu đúng bằng phần âm: không né được, không giảm nhẹ, vì là đòn tự gây
+      f.hp=Math.max(0,f.hp-self);
+      f.flash=Math.max(f.flash,.3); f.flashCol='pink';
+      setPose(f,'hurt',.24);
+      f.recoil=1;
+      G.floats.push({x:f.x,y:f.y-18,txt:'-'+self,color:'#FF6A8A',life:.95,ml:.95,sc:.62});
+      ring(f.x,f.y,74,'#FF6A8A',.35);
+      say(`Quyết định sai — điểm lớp âm ${self}, Horikita tự gánh ${self} dmg rồi tích lại từ 0.`,'s');
+      if(f.hp<=0){ f.alive=false; finish(foeOf(f)); }
+    }else{
+      say(`Quyết định sai — mất ${pen} điểm lớp, còn ${Math.round(f.cp)}.`,'s');
+    }
+  }
+}
+/* Mũi quyết định chạm người: sát thương, và tích đúng bằng chính lượng sát thương đó. */
+function suzDecisionHit(p,t){
+  const f=p.owner; if(!f)return;
+  ring(t.x,t.y,96,'#7FC8FF',.45);
+  G.flashScreen=Math.max(G.flashScreen,.07);
+  if(!hurt(t,p.dmg,f,'DECISION!','big')){ say('Quyết định bị né mất.','s'); return; }
+  sfx('suz_hit');
+  const T=suzTune(f);
+  suzCp(f,p.dmg);
+  if(chance(T.healOdds)) suzHeal(f,T.decHealPct);
+  say(`Quyết định đâm trúng — ${p.dmg} dmg và đúng ${p.dmg} điểm lớp.`,'s');
+}
+
+/* ---- Ayanokouji: lần đỡ thay đầu tiên (form 1 -> form 2) ---- */
+/* Đây là đoạn người dùng dặn phải làm kỹ: anh hiện ra, nói một câu, rồi ăn trọn mọi
+   đòn giùm cô trong 4 giây người chơi. Suốt quãng đó hurt() trả về false cho Horikita
+   nên không chỉ mất máu mà cả choáng, cháy, chảy máu ăn theo cũng không dính. */
+function ayaShield(f){
+  f.ayaShieldDone=true;
+  const e=foeOf(f);
+  const side=(e&&e.x>f.x)?1:-1;
+  f.ayaG={t:SUZ.guardT, x:f.x+side*34, y:f.y+4, face:side, flash:0, hits:0, taken:0, born:0};
+  f.lock=Math.max(f.lock,gs(1));
+  setPose(f,'block',gs(1.4));
+  f.dash=null;
+  G.freeze=1.6; G.freezeAt=f;
+  G.flashScreen=Math.max(G.flashScreen,.6);
+  sfx('aya_appear');
+  ring(f.x,f.y,124,'#8FA6C8',.55);
+  G.callBanner={txt:'AYANOKOUJI',color:'#8FA6C8',life:CALL_BANNER_LIFE,ml:CALL_BANNER_LIFE};
+  G.fx.push({type:'poof',x:f.ayaG.x,y:f.ayaG.y-18,life:.8,ml:.8});
+  later(.5,()=>{
+    if(G.over||!f.ayaG)return;
+    sfx('aya_line');
+    talk(f.ayaG.x, f.y-114, AYA_STAND, SUZ_BUBBLE*1.4, true);
+  },true);
+  say(`Horikita tụt xuống ${Math.round(SUZ.guardHp*100)}% máu — Ayanokouji bước ra đỡ đòn thay ${rts(SUZ.guardT)} giây.`,'s');
+}
+function ayaBlock(t,amt,src){
+  const A=t.ayaG;
+  A.flash=1; A.hits++; A.taken+=amt;
+  setPose(t,'block',.32);
+  G.floats.push({x:A.x,y:A.y-74,txt:'BLOCKED',color:'#DCE6F5',life:.85,ml:.85,banner:true,sc:.58});
+  G.floats.push({x:A.x+rnd(-12,12),y:A.y-36,txt:'-'+Math.round(amt),color:'#8FA6C8',life:.8,ml:.8,sc:.5});
+  ring(A.x,A.y-24,68,'#BFD4FF',.3);
+  sfx('suz_block');
+}
+function suzForm2(f){
+  if(f.form>=2)return;
+  f.form=2;
+  f.cds.s1=SUZ.atkCd*.5; f.cds.s2=gs(1.5);
+  f.lock=0;
+  setPose(f,'punch',gs(.6));
+  sfx('suz_form2');
+  ring(f.x,f.y,132,'#7FC8FF',.5);
+  G.flashScreen=Math.max(G.flashScreen,.25);
+  talk(f.x, f.y-118, SUZ_RISE, SUZ_BUBBLE, true);
+  G.floats.push({x:f.x,y:f.y-88,txt:'FORM 2 · RESOLVE',color:'#7FC8FF',life:1.9,ml:1.9,banner:true,sc:.66});
+  say('Ayanokouji lùi lại — Horikita bước lên: Form 2, từ giờ cô đánh trả.','s');
+}
+
+/* ---- Ayanokouji: bước ra làm đồng minh thật (đủ 150 điểm lớp) ---- */
+function ayaJoin(f){
+  f.ayaDone=true;
+  const e=foeOf(f);
+  const side=(e&&e.x>f.x)?-1:1;
+  let px=clamp(f.x+side*74,PAD+34,W-PAD-34);
+  const py=clamp(f.y+rnd(-10,20),PAD+60,H-PAD-20);
+  G.freeze=1.8; G.freezeAt=f;
+  G.flashScreen=1;
+  sfx('aya_appear');
+  G.callBanner={txt:'AYANOKOUJI JOINS',color:'#8FA6C8',life:CALL_BANNER_LIFE,ml:CALL_BANNER_LIFE};
+  later(.45,()=>{
+    if(G.over)return;
+    sfx('aya_line');
+    talk(px, py-124, AYA_LAST, 2.5, false);
+  },true);
+  later(1.55,()=>{
+    if(G.over||!f.alive)return;
+    const hp=Math.max(1,Math.round(f.hp*SUZ.ayaHp));
+    const a=mk({key:'ayanokouji',name:'Ayanokouji',team:f.team,master:f,male:true,
+      summon:true,ally:true,x:px,y:py,r:24,hp,maxHp:hp,speed:SUZ.ayaSpd,dodge:0,
+      color:'#8FA6C8',spriteH:126});
+    a.strikeCd=SUZ.ayaCd; a.taunt=0; a.leaving=0; a.pose='idle';
+    f.ayaAlly=a; f.castBuff=SUZ.ayaCast;
+    G.fighters.push(a);
+    G.fx.push({type:'poof',x:px,y:py-18,life:.85,ml:.85});
+    ring(px,py,122,a.color,.55);
+    sfx('summon');
+    say(`Ayanokouji vào sân với ${hp} máu (${Math.round(SUZ.ayaHp*100)}% máu hiện tại của Horikita) — cô ra chiêu nhanh gấp đôi.`,'s');
+  },true);
+  say(`Đủ ${SUZ.cpMax} điểm lớp — Ayanokouji bước ra sát cánh lần cuối.`,'s');
+}
+
+/* Có quả nào của địch đang lao về phía Horikita không. Có thì trả về chỗ nên đứng
+   chắn: nằm trên đường bay, ngay sát trước mặt cô. */
+function ayaIntercept(f){
+  let best=null, bd=1e9;
+  for(const p of G.proj){
+    if(p.team===f.team||!(p.dmg>0))continue;
+    const sp=Math.hypot(p.vx,p.vy)||1;
+    const dx=f.x-p.x, dy=bodyCY(f)-p.y, d=Math.hypot(dx,dy)||1;
+    if(d>340)continue;
+    if((dx*p.vx+dy*p.vy)/(sp*d)<.72)continue;       // không hướng về cô thì mặc kệ
+    if(d<bd){ bd=d; best=p; }
+  }
+  if(!best)return null;
+  const dx=f.x-best.x, dy=f.y-best.y, d=Math.hypot(dx,dy)||1;
+  const off=Math.max(12,Math.min(d-8,48));
+  return {x:clamp(f.x-dx/d*off,PAD,W-PAD), y:clamp(f.y-dy/d*off,PAD+50,H-PAD-10)};
+}
+/* Một nhịp của Ayanokouji-đồng-minh. Anh không dùng AI chung: cả đời anh trên sàn chỉ
+   xoay quanh việc đứng đúng chỗ để đòn rơi vào mình chứ đừng rơi vào cô. */
+function ayaTick(a,dt){
+  const f=a.master;
+  if(!f||!f.alive||G.over){ ayaRemove(a); return; }
+  if(a.leaving>0){ ayaLeaveTick(a,dt); return; }
+  if(a.hp<=0){ ayaLeave(a); return; }
+  const e=foeOf(a);
+
+  let tx=a.x, ty=a.y, mode='follow';
+  if(e&&e.alive){
+    const dd=Math.hypot(e.x-f.x,e.y-f.y)||1;
+    const ux=(e.x-f.x)/dd, uy=(e.y-f.y)/dd;
+    if(e.role==='melee'&&dd<SUZ.ayaGuardR){
+      // địch cận chiến áp sát: chắn hẳn giữa hai người
+      mode='tank';
+      const gap=e.r+a.r+26;
+      tx=e.x-ux*gap; ty=e.y-uy*gap;
+    }else{
+      const iv=ayaIntercept(f);
+      if(iv){ mode='block'; tx=iv.x; ty=iv.y; }
+      // đứng chếch về phía địch một khoảng đủ rộng để hai hình không chồng lên nhau
+      else{ mode='screen'; tx=f.x+ux*66; ty=f.y+uy*66; }
+    }
+  }else{ tx=f.x+30; ty=f.y+18; }
+
+  const md=Math.hypot(tx-a.x,ty-a.y);
+  if(md>4){
+    const step=Math.min(md, SUZ.ayaSpd*dt);
+    a.x=clamp(a.x+(tx-a.x)/md*step,PAD,W-PAD);
+    a.y=clamp(a.y+(ty-a.y)/md*step,PAD+50,H-PAD-10);
+  }
+  a.moving=md>20;
+  a.moveAmt+=((a.moving?1:0)-a.moveAmt)*Math.min(1,dt*4);
+  if(e&&Math.abs(e.x-a.x)>12) a.face=e.x>=a.x?1:-1;
+
+  if(mode==='tank'&&e){
+    // bật khiêu khích: mọi thứ địch tung ra đều nhắm vào anh chứ không vào cô
+    a.taunt=.6;
+    e.tauntBy=a;
+    // và đẩy cô vòng ra sau lưng địch để cô rảnh tay đánh
+    const bd=Math.hypot(e.x-a.x,e.y-a.y)||1;
+    const back=e.r+f.r+56;                     // đứng hẳn ra sau lưng, không dính vào người địch
+    const bx=clamp(e.x+(e.x-a.x)/bd*back,PAD,W-PAD);
+    const by=clamp(e.y+(e.y-a.y)/bd*back,PAD+50,H-PAD-10);
+    const kf=Math.min(1,dt*1.7);
+    f.x+=(bx-f.x)*kf; f.y+=(by-f.y)*kf;
+  }else{
+    a.taunt=Math.max(0,a.taunt-dt);
+    if(a.taunt<=0&&e&&e.tauntBy===a) e.tauntBy=null;
+  }
+
+  a.strikeCd-=dt;
+  if(a.strikeCd<=0&&e&&e.alive){ a.strikeCd=SUZ.ayaCd; ayaStrike(a,e); }
+}
+function ayaStrike(a,e){
+  setPose(a,'strike',gs(.9));
+  sfx('aya_strike');
+  const d=dist(a,e)||1;
+  const bx=clamp(e.x+(e.x-a.x)/d*(e.r+a.r+14),PAD,W-PAD);
+  const by=clamp(e.y+(e.y-a.y)/d*(e.r+a.r+14),PAD+50,H-PAD-10);
+  for(let i=1;i<=4;i++){
+    const t=i/5;
+    G.fx.push({type:'ghost',x:a.x+(bx-a.x)*t,y:a.y+(by-a.y)*t,face:a.face,
+      key:'ayanokouji',pose:'strike',h:a.spriteH,life:.3+i*.03,ml:.3+i*.03});
+  }
+  a.x=bx; a.y=by;
+  a.face=e.x>=a.x?1:-1;
+  ring(e.x,e.y,104,'#8FA6C8',.45);
+  G.flashScreen=Math.max(G.flashScreen,.08);
+  if(!hurt(e,SUZ.ayaDmg,a,'AMBUSH!','big')){ say('Đòn đột kích của Ayanokouji bị né.','s'); return; }
+  const st=stunFx(e,SUZ.ayaStun,'spark');
+  sfx('stun');
+  say(st?`Ayanokouji đột kích — ${SUZ.ayaDmg} dmg, choáng ${rts(SUZ.ayaStun)} giây.`
+       :`Ayanokouji đột kích — ${SUZ.ayaDmg} dmg, nhưng đối thủ miễn khống chế.`,'s');
+}
+/* Hết máu KHÔNG phải là chết. Anh đứng thẳng, nói một câu rồi đi bộ ra khỏi sàn. */
+function ayaLeave(a){
+  if(a.leaving>0)return;
+  a.leaving=SUZ.ayaLeaveT;
+  a.hp=0; a.stun=0; a.taunt=0; a.dots.length=0;
+  const e=foeOf(a);
+  if(e&&e.tauntBy===a) e.tauntBy=null;
+  setPose(a,'leave',SUZ.ayaLeaveT);
+  sfx('aya_leave');
+  ring(a.x,a.y,110,'#8FA6C8',.5);
+  talk(a.x, a.y-118, AYA_BYE, 2.2, true);
+  a.exitX=(a.x<W/2)?-70:W+70;
+  say('Ayanokouji cạn máu — anh không gục xuống, anh chào Horikita rồi rời sàn.','s');
+}
+function ayaLeaveTick(a,dt){
+  a.leaving-=dt;
+  const dx=a.exitX-a.x;
+  a.x+=(dx>=0?1:-1)*Math.min(Math.abs(dx), SUZ.ayaSpd*.85*dt);
+  a.face=dx>=0?1:-1;
+  a.moving=true; a.moveAmt=1;
+  a.fade=clamp(a.leaving/(SUZ.ayaLeaveT*.55),0,1);
+  if(chance(dt*10)) G.fx.push({type:'dust',x:a.x,y:a.y+20,r:4,life:.4,ml:.4});
+  if(a.leaving<=0||a.x<-50||a.x>W+50){
+    const f=a.master;
+    ayaRemove(a);
+    if(f&&f.alive) suzForm3(f);
+  }
+}
+function ayaRemove(a){
+  const f=a.master, e=foeOf(a);
+  if(e&&e.tauntBy===a) e.tauntBy=null;
+  if(f){ if(f.ayaAlly===a) f.ayaAlly=null; f.castBuff=1; }
+  a.alive=false;
+  const i=G.fighters.indexOf(a);
+  if(i>=0) G.fighters.splice(i,1);
+}
+function suzForm3(f){
+  if(f.form>=3)return;
+  f.form=3; f.cp=0; f.stacks=0;
+  suzApply(f);
+  f.castBuff=1;
+  sfx('suz_form3');
+  ring(f.x,f.y,150,'#7FC8FF',.55);
+  G.flashScreen=Math.max(G.flashScreen,.35);
+  talk(f.x, f.y-124, SUZ_ALONE, 2.5, true);
+  G.floats.push({x:f.x,y:f.y-90,txt:'FORM 3 · STANDING ALONE',color:'#7FC8FF',life:2.1,ml:2.1,banner:true,sc:.66});
+  say(`Form 3 — đòn tay ${SUZ.f3.hit} dmg, quyết định đúng ${Math.round(SUZ.f3.decOdds*100)}%, hồi máu ${Math.round(SUZ.f3.healOdds*100)}%/${Math.round(SUZ.f3.healPct*100)}%, miễn thương và kháng hiệu ứng ${Math.round(SUZ.f3.dmgRes*100)}%.`,'s');
+}
+
+/* Nhịp riêng của Horikita: đếm giờ suy nghĩ, nuôi Ayanokouji lúc anh đứng đỡ thay,
+   và chốt chuyển form khi hết 4 giây đó. */
+function suzPassive(f,dt){
+  if(f.decT>0){
+    f.decT-=dt;
+    if(f.decT<=0){ f.decT=0; suzDecide(f,aimTarget(f)); }
+  }
+  const A=f.ayaG;
+  if(A){
+    A.born+=dt;
+    if(A.flash>0) A.flash=Math.max(0,A.flash-dt*4);
+    const e=foeOf(f);
+    if(e){                                    // luôn đứng chen vào giữa cô và đối thủ
+      const d=dist(f,e)||1;
+      const tx=f.x+(e.x-f.x)/d*36, ty=f.y+(e.y-f.y)/d*22;
+      A.x+=(tx-A.x)*Math.min(1,dt*6);
+      A.y+=(ty-A.y)*Math.min(1,dt*6);
+      A.face=e.x>=A.x?1:-1;
+    }
+    A.t-=dt;
+    if(A.t<=0){
+      G.fx.push({type:'poof',x:A.x,y:A.y-18,life:.75,ml:.75});
+      say(`Ayanokouji đỡ hộ ${A.hits} đòn, tổng ${Math.round(A.taken)} dmg.`,'s');
+      f.ayaG=null;
+      suzForm2(f);
+    }
+  }
+}
+
 /* ---------- AI ---------- */
 const isPlayer=f=>!!G&&((mode==='p1'&&f===G.k)||(mode==='p2'&&f===G.c));
 function playerVec(){
@@ -1994,6 +2569,13 @@ function aiVec(f,e){
   const d=dist(f,e)||1, ux=(e.x-f.x)/d, uy=(e.y-f.y)/d;
   const wd=Math.hypot(f.wx-f.x,f.wy-f.y)||1, wxu=(f.wx-f.x)/wd, wyu=(f.wy-f.y)/wd;
   let x=0,y=0;
+  // Horikita form 1: sợ tới mức không dám lại gần, chỉ lùi ra và né
+  if(f.key==='suzune'&&f.form<2){
+    x-=ux*1.25; y-=uy*1.25;
+    x+=wxu*.5;  y+=wyu*.5;
+    const dv0=dodgeVec(f); x+=dv0.x*1.6; y+=dv0.y*1.6;
+    return {x,y};
+  }
   if(f.role==='ranged'){
     const want=f.want||215;
     if(d<want-45){ x-=ux*1.15; y-=uy*1.15; }
@@ -2060,7 +2642,7 @@ function step(dt){
   for(const f of G.fighters){
     if(f.stun>0)f.stun-=dt;
     if(f.flash>0)f.flash-=dt;
-    if(f.poseT>0){ f.poseT-=dt; if(f.poseT<=0&&!f.dash) f.pose = f.summon&&f.fired?'atk1':(f.summon?'skill':'idle'); }
+    if(f.poseT>0){ f.poseT-=dt; if(f.poseT<=0&&!f.dash) f.pose = f.ally?'idle':(f.summon&&f.fired?'atk1':(f.summon?'skill':'idle')); }
     if(f.lazy) f.pose='lazy';
     if(f.bind) f.pose='atk2';
     f.strafeT-=dt; if(f.strafeT<=0){ f.strafe=chance(.5)?1:-1; f.strafeT=rnd(.9,2.2); }
@@ -2078,6 +2660,9 @@ function step(dt){
     if(f.unhideT>0){ f.unhideT-=dt; if(f.unhideT<=0){ f.hidden=false; f.lock=0; } }
     if(f.eagle) eagleTick(f,dt);
     if(f.key==='shika'&&!f.summon&&f.alive){ shikaPassive(f,dt); bindTick(f,dt); domainTick(f,dt); }
+    if(f.key==='suzune'&&!f.summon&&f.alive) suzPassive(f,dt);
+    // người khiêu khích rời sàn thì đối thủ nhắm lại vào mục tiêu thật
+    if(f.tauntBy&&(!f.tauntBy.alive||f.tauntBy.hp<=0||f.tauntBy.leaving>0||G.fighters.indexOf(f.tauntBy)<0)) f.tauntBy=null;
     if(f.outCut>0&&!(foeOf(f)&&foeOf(f).domain)) f.outCut=0;
     f.domainA=clamp(f.domainA+dt*(f.domain?3:-2.5),0,1);
     if(!f.summon && f.hp<=f.maxHp*.20) f.injured=true;   // đã tơi tả là giữ luôn
@@ -2141,7 +2726,7 @@ function step(dt){
     let v={x:0,y:0};
     if(f.stun>0||f.lock>0||f.dash||f.lazy) v={x:0,y:0};   // ngồi lười thì không nhúc nhích
     else if(isPlayer(f)) v=playerVec();
-    else v=aiVec(f,e);
+    else v=aiVec(f,aimTarget(f)||e);
     if(f.lunge>.35 && !isPlayer(f)){ v.x=f.ax; v.y=f.ay; }
     const m=Math.hypot(v.x,v.y);
     // vùng chết: ý định quá yếu thì đứng yên hẳn, không rung
@@ -2179,12 +2764,12 @@ function step(dt){
     const want=clamp(spNow/(f.speed*.7),0,1);
     f.moveAmt+=(want-f.moveAmt)*Math.min(1,dt*4);
     f.moving=f.moveAmt>.25;
-    { const dx=e.x-f.x; if(Math.abs(dx)>18) f.face = dx>=0?1:-1; }
+    { const tg=aimTarget(f)||e; const dx=tg.x-f.x; if(Math.abs(dx)>18) f.face = dx>=0?1:-1; }
   }
 
   for(const f of [k,c]){
     if(!f.dash||!f.alive)continue;
-    const e=foeOf(f);
+    const e=aimTarget(f)||foeOf(f);
     const D=f.dash;
     D.t-=dt;
     // đích đến: thường là người địch, riêng cú đâm của Shikamaru là điểm sau lưng địch
@@ -2218,7 +2803,7 @@ function step(dt){
   }
 
   for(const f of [k,c]){                        // kiệt sức thì hồi chiêu chạy chậm 25%
-    const rate=dt*(f.exhaust>0?EXHAUST_MUL:1)*(f.prewing?PREWING_CAST:1);
+    const rate=dt*(f.exhaust>0?EXHAUST_MUL:1)*(f.prewing?PREWING_CAST:1)*(f.castBuff||1);
     for(const key in f.cds) f.cds[key]=Math.max(0,f.cds[key]-rate);
   }
   const d=dist(k,c);
@@ -2227,7 +2812,8 @@ function step(dt){
     if(!f.alive||f.stun>0||f.lock>0)continue;
     const auto=!isPlayer(f)||autoSkill;
     const C=CHARS[f.key];
-    if(C&&C.think) C.think(f,foeOf(f),d,auto);
+    const tg=aimTarget(f);
+    if(C&&C.think&&tg) C.think(f,tg,tg===foeOf(f)?d:dist(f,tg),auto);
   }
 
   // nội tại kích hoạt theo ngưỡng máu
@@ -2253,6 +2839,9 @@ function step(dt){
       }
       f.prewing=on;
     }
+    if(f.key==='suzune' && f.form<2 && !f.ayaShieldDone && f.hp<=f.maxHp*SUZ.guardHp){
+      ayaShield(f);
+    }
     if(f.key==='shika' && !f.domainDone && f.hp<=f.maxHp*SHIKA.domainHp){
       naraDomain(f,foeOf(f));
     }
@@ -2266,6 +2855,7 @@ function step(dt){
   for(let i=G.fighters.length-1;i>=0;i--){
     const s=G.fighters[i];
     if(!s||!s.summon)continue;
+    if(s.ally){ ayaTick(s,dt); continue; }
     // luôn xoay người về phía đối thủ
     const tg=foeOf(s);
     if(tg&&tg.alive){
@@ -2332,7 +2922,7 @@ function step(dt){
       }
     }
     if(p.homing){
-      const tg=(p.tgt&&p.tgt.alive)?p.tgt:foeOf(p.owner);
+      const tg=(p.tgt&&p.tgt.alive&&!p.tgt.leaving)?p.tgt:(aimTarget(p.owner)||foeOf(p.owner));
       if(tg&&tg.alive){
         const sp=Math.hypot(p.vx,p.vy)||1;
         let want=Math.atan2(tg.y-p.y,tg.x-p.x);
@@ -2413,7 +3003,9 @@ function step(dt){
       dead=p.x<-40||p.x>W+40||p.y<-40||p.y>H+40;
     }
     if(!dead && !(p.dmg<=0)) for(const f of G.fighters){
-      if(f.team===p.team||!f.alive||f.summon)continue;
+      // đồng minh (Ayanokouji) là thứ duy nhất trong nhóm summon ăn được đạn — chắn thay là việc của anh
+      if(f.team===p.team||!f.alive||f.leaving>0||(f.summon&&!f.ally))continue;
+      if(p.type==='decision'&&hitsBody(p,f)){ suzDecisionHit(p,f); dead=true; break; }
       if(p.type==='kunai'&&hitsBody(p,f)){ explode(p); dead=true; break; }
       if((p.type==='ball'||p.type==='drive'||p.type==='twin')&&hitsBody(p,f)){ ballHit(p,f); dead=true; break; }
       if(hitsBody(p,f)){
@@ -2545,6 +3137,113 @@ function vector(f){
       ctx.beginPath(); ctx.moveTo(-8,y+1); ctx.lineTo(-1,y+8); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(3,y-3); ctx.lineTo(9,y+3); ctx.stroke();
     }
+  }else if(f.key==='suzune'){
+    const blazer='#2A3350', skirt='#3E4A6B';
+    const scared=(f.pose==='scared'||f.pose==='block');   // form 1: thủ chéo hai tay, mặt sợ
+    const kick=(f.pose==='kick'), punch=(f.pose==='punch');
+    const kk=(kick||punch)?Math.sin(clamp(f.poseT||0,0,1)*Math.PI):0;
+    // chân, chân phải hất lên khi đá
+    ctx.fillStyle='#2E2E44';
+    ctx.fillRect(-9,y+14,7,8+sw);
+    if(kick){ ctx.save(); ctx.translate(6,y+14); ctx.rotate(-kk*1.15); ctx.fillRect(-3,0,7,9-sw); ctx.restore(); }
+    else ctx.fillRect(3,y+14,7,8-sw);
+    ctx.fillStyle=skirt;                                   // váy xếp ly
+    ctx.beginPath(); ctx.moveTo(-13,y+5); ctx.lineTo(13,y+5); ctx.lineTo(10,y+16); ctx.lineTo(-10,y+16); ctx.closePath(); ctx.fill();
+    torso(0,y-9,22,16,blazer);
+    ctx.fillStyle='#EFF3FA'; ctx.fillRect(-4,y-9,8,11);    // cổ áo sơ mi
+    ctx.fillStyle='#D8314F';                                // nơ đỏ
+    ctx.beginPath(); ctx.moveTo(0,y-5); ctx.lineTo(-6,y-9); ctx.lineTo(-6,y-1); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(0,y-5); ctx.lineTo(6,y-9);  ctx.lineTo(6,y-1);  ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#F5CFA8';
+    if(scared){ /* hai tay thủ chéo vẽ sau cùng, xem cuối khối */ }
+    else if(punch){
+      ctx.fillRect(11,y-7,11+kk*14,7);                      // nắm đấm phóng ra
+      ctx.fillRect(-18,y-2,7,12);
+    }else{
+      ctx.fillRect(11,y-5+sw*1.5,7,13); ctx.fillRect(-18,y-5-sw*1.5,7,13);
+    }
+    head(0,y-19,12);
+    ctx.fillStyle='#171326';                                // tóc đen dài, hai lọn xoã xuống vai
+    ctx.beginPath(); ctx.arc(0,y-22,13,Math.PI,2*Math.PI); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-13,y-23); ctx.lineTo(-15,y+3); ctx.lineTo(-7,y+1); ctx.lineTo(-8,y-23); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(13,y-23);  ctx.lineTo(15,y+3);  ctx.lineTo(7,y+1);  ctx.lineTo(8,y-23);  ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='#1B1428'; ctx.lineWidth=1.4; ctx.lineCap='round';
+    if(scared){                                             // mắt mở to, chân mày cụp, giọt mồ hôi
+      ctx.fillStyle='#1B1428';
+      ctx.beginPath(); ctx.arc(-.5,y-19,2.7,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(6.5,y-19,2.7,0,7); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-4,y-24); ctx.lineTo(1,y-23); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(9,y-24);  ctx.lineTo(4,y-23); ctx.stroke();
+      ctx.fillStyle='#8FD8FF';
+      ctx.beginPath(); ctx.arc(11,y-25+Math.sin(G.t*4)*1.3,2.3,0,7); ctx.fill();
+    }else{                                                  // mắt sắc, chân mày nhíu lên
+      ctx.fillStyle='#1B1428';
+      ctx.fillRect(-2,y-20,3,3); ctx.fillRect(5,y-20,3,3);
+      ctx.beginPath(); ctx.moveTo(-4,y-24); ctx.lineTo(1,y-25); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(9,y-24);  ctx.lineTo(4,y-25); ctx.stroke();
+    }
+    // Hai dáng của form 1, vẽ SAU tóc và mặt — nếu vẽ trước thì hai lọn tóc dài che mất hẳn.
+    if(f.pose==='block'){
+      // Chịu đòn: hai cánh tay bắt chéo thành chữ X chắn trước ngực và cằm.
+      const arm=(fill,len,off)=>{
+        ctx.save(); ctx.translate(0,y+1); ctx.fillStyle=fill;
+        ctx.rotate(-.52); ctx.fillRect(off,-5,len,9);
+        ctx.rotate(1.04); ctx.fillRect(-off-len,-5,len,9);
+        ctx.restore();
+      };
+      arm('#2A3350',20,-4);                                  // tay áo blazer
+      arm('#F5CFA8',7,11);                                   // bàn tay nắm chặt ở hai đầu
+    }else if(f.pose==='scared'){
+      // Đứng thủ: hai cẳng tay chụm vào trước ngực như đang ôm lấy mình, run nhè nhẹ.
+      const tr=Math.sin(G.t*13)*.06;
+      const arm=(fill,len,off)=>{
+        ctx.save(); ctx.translate(0,y+2); ctx.fillStyle=fill;
+        ctx.rotate(-.95+tr); ctx.fillRect(off,-4,len,8);
+        ctx.rotate(1.90-tr*2); ctx.fillRect(-off-len,-4,len,8);
+        ctx.restore();
+      };
+      arm('#2A3350',16,-3);
+      arm('#F5CFA8',6,9);
+    }
+    if(f.pose==='think'||f.pose==='decide'){                // dấu hỏi lơ lửng lúc cân nhắc
+      ctx.save();
+      ctx.fillStyle=f.pose==='decide'?'#FFE100':'#BFE4FF';
+      ctx.font='900 16px "Be Vietnam Pro",sans-serif'; ctx.textAlign='center';
+      ctx.fillText(f.pose==='decide'?'!':'?', 17, y-34+Math.sin(G.t*5)*2);
+      ctx.restore();
+    }
+    if(f.injured){
+      ctx.strokeStyle='#8E1023'; ctx.lineWidth=2.4; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-8,y+1); ctx.lineTo(-1,y+8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(3,y-3); ctx.lineTo(9,y+3); ctx.stroke();
+      ctx.fillStyle='#E8E2F0'; ctx.fillRect(-11,y-16,8,3);
+    }
+  }else if(f.key==='ayanokouji'){
+    const guard=(f.pose==='guard'), strike=(f.pose==='strike');
+    const kk=strike?Math.sin(clamp(f.poseT||0,0,1)*Math.PI):0;
+    ctx.fillStyle='#23283A';
+    ctx.fillRect(-9,y+13,8,10+sw); ctx.fillRect(3,y+13,8,10-sw);
+    torso(0,y-8,24,22,'#39414F');
+    ctx.fillStyle='#EFF3FA'; ctx.fillRect(-4,y-8,8,13);     // sơ mi trắng
+    ctx.fillStyle='#2E6B58'; ctx.fillRect(-2,y-7,5,12);     // cà vạt xanh rêu
+    ctx.fillStyle='#F5CFA8';
+    if(guard){                                              // hai tay dang ngang, chắn kín phía trước
+      ctx.fillRect(10,y-11,9,21); ctx.fillRect(-19,y-11,9,21);
+    }else if(strike){
+      ctx.fillRect(11,y-9,12+kk*17,8);
+      ctx.fillRect(-18,y-2,7,12);
+    }else{
+      ctx.fillRect(12,y-5+sw*1.5,7,13); ctx.fillRect(-19,y-5-sw*1.5,7,13);
+    }
+    head(0,y-20,12.5);
+    ctx.fillStyle='#A8916E';                                // tóc nâu, cắt bằng ngang trán
+    ctx.beginPath(); ctx.arc(0,y-23,13,Math.PI,2*Math.PI); ctx.fill();
+    ctx.fillRect(-13,y-26,26,5);
+    ctx.strokeStyle='#1B1428'; ctx.lineWidth=1.3; ctx.lineCap='round';   // chân mày phẳng lì
+    ctx.beginPath(); ctx.moveTo(-5,y-20.5); ctx.lineTo(1,y-20.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10,y-20.5); ctx.lineTo(4,y-20.5); ctx.stroke();
+    ctx.fillStyle='#1B1428';                                // mắt hẹp, không cảm xúc
+    ctx.fillRect(-4,y-18,5,2.4); ctx.fillRect(4,y-18,5,2.4);
   }else if(f.key==='tsubasa'||FRIEND_KIT[f.key]){
     const kit=FRIEND_KIT[f.key]||{shirt:'#2B6BE4',short:'#F2F4FA',hair:'#171326',sock:'#2B6BE4'};
     const kicking=(f.pose==='atk1'||f.pose==='atk2'||f.pose==='bicycle');
@@ -2646,11 +3345,25 @@ function sprite(f){
   if(inj && (pk==='idle'||pk==='hurt')) pk='injured';
   // lúc này: ảnh đứng đổi sang dáng có cánh
   if(f.eagle && set.wings && set.wings.length && (pk==='idle'||pk==='hurt'||pk==='injured')) pk='wings';
+  // Horikita form 1: đứng thì sợ hãi, trúng đòn thì thủ chéo hai tay
+  if(f.key==='suzune' && f.form<2){
+    if(pk==='idle') pk='scared';
+    else if(pk==='hurt'||pk==='injured') pk='block';
+  }
   let arr=set[pk];
   if(!arr||!arr.length){
     if(pk==='bicycle') arr=set.atk1||set.idle;
     else if(pk==='stab') arr=set.atk1||set.idle;          // chưa có ảnh đâm thì mượn ảnh phóng shuriken
     else if(pk==='lazy') arr=set.hurt||set.idle;          // chưa có ảnh nằm lười thì mượn ảnh đứng
+    else if(pk==='scared') arr=set.block||set.idle;
+    else if(pk==='block') arr=set.scared||set.hurt||set.idle;
+    else if(pk==='punch') arr=set.kick||set.atk1||set.idle;
+    else if(pk==='kick') arr=set.punch||set.atk1||set.idle;
+    else if(pk==='think') arr=set.decide||set.idle;
+    else if(pk==='decide') arr=set.think||set.idle;
+    else if(pk==='strike') arr=set.atk1||set.idle;
+    else if(pk==='guard') arr=set.idle;
+    else if(pk==='leave') arr=set.idle;
     else if(pk==='wings') arr=set.injured||set.idle;
     else if(pk==='call') arr=set.wounded||set.injured||set.skill||set.idle;
     else if(pk==='wounded') arr=set.injured||set.hurt||set.idle;
@@ -3042,7 +3755,26 @@ function fireText(txt,cx,y,size,seed){
   ctx.restore();
 }
 function drawBars(f){
-  if(f.summon)return;
+  if(f.summon&&!f.ally)return;
+  if(f.ally){
+    // đồng minh dùng thanh nhỏ hơn hẳn, để ba người đứng sát nhau vẫn đọc được ai là ai
+    const w=84,h=16,x=clamp(f.x-w/2,12,W-w-12),y=f.y+28;
+    ctx.textAlign='center';
+    ctx.font='900 10px "Space Mono",monospace';
+    ctx.lineWidth=3; ctx.strokeStyle='#000';
+    ctx.strokeText(f.name.toUpperCase(),x+w/2,y-4);
+    ctx.fillStyle=f.color; ctx.fillText(f.name.toUpperCase(),x+w/2,y-4);
+    bar(x,y,w,h,f.hp/f.maxHp,f.color,String(Math.ceil(f.hp)));
+    const note=f.leaving>0?['LEAVING THE ARENA','#DCE6F5']
+             :(f.taunt>0?['TAUNT · DRAWING FIRE','#FFD9A0']:null);
+    if(note){
+      ctx.font='900 9px "Space Mono",monospace';
+      ctx.lineWidth=3; ctx.strokeStyle='#000';
+      ctx.strokeText(note[0],x+w/2,y+h+12);
+      ctx.fillStyle=note[1]; ctx.fillText(note[0],x+w/2,y+h+12);
+    }
+    return;
+  }
   const w=112,h=24,x=clamp(f.x-w/2,12,W-w-12),y=f.y+30;
   ctx.textAlign='center';
   if(f.eagle){
@@ -3081,6 +3813,17 @@ function drawBars(f){
   if(f.key==='shika'&&f.weak) lines.push({t:'CHAKRA SPENT · NO STRANGLE · −30% SHURIKEN', c:'#A79BD6', s:9});
   if(f.outCut>0) lines.push({t:`IN THE FOREST · −${Math.round(SHIKA.domainOutCut*100)}% DAMAGE DEALT`, c:'#B7A6FF', s:9});
   if(f.dash&&f.dash.guard) lines.push({t:'FLYING KICK · CC IMMUNE · −30% DMG', c:'#FFC0CE', s:10});
+  if(f.key==='suzune'){
+    const nm=['','TOO AFRAID TO FIGHT','RESOLVE','STANDING ALONE'][f.form]||'';
+    lines.push({t:`FORM ${f.form} · ${nm}`, c:'#BFE4FF', s:10});
+    if(f.form>=3){
+      const T=suzTune(f);
+      lines.push({t:`DECISION ${Math.round(T.decOdds*100)}% · HEAL ${Math.round(T.healOdds*100)}%/${Math.round(T.healPct*100)}% · RES ${Math.round(f.dmgRes*100)}%/${Math.round(f.ccRes*100)}%`, c:'#7FC8FF', s:9});
+    }
+  }
+  if(f.ayaG) lines.push({t:`AYANOKOUJI TANKING (${(Math.max(0,f.ayaG.t)*RT).toFixed(1)}s)`, c:'#DCE6F5', s:10});
+  if(f.castBuff>1) lines.push({t:'AYANOKOUJI SUPPORT · +100% CAST SPEED', c:'#DCE6F5', s:9});
+  if(f.tauntBy) lines.push({t:'TAUNTED · LOCKED ONTO AYANOKOUJI', c:'#FFD9A0', s:9});
   if(f.invuln>0) lines.push({t:`IMMUNE (${(f.invuln*RT).toFixed(1)}s)`, c:'#FF9AD5', s:11});
   ctx.lineWidth=3; ctx.strokeStyle='#000';
   lines.forEach(L=>{
@@ -3333,6 +4076,38 @@ function drawProj(p){
     ctx.fillStyle='#E23B57'; ctx.fillRect(-27,-2+wob*.6,10,3);
     ctx.save(); ctx.globalAlpha=.55+Math.sin(G.t*22)*.35; ctx.fillStyle='#FF7A2B';
     ctx.beginPath(); ctx.arc(-6,0,7,0,7); ctx.fill(); ctx.restore();
+  }else if(p.type==='decision'){
+    // Bong bóng thoại phóng thẳng vào mặt đối phương. Khung luôn nằm ngang cho dễ đọc,
+    // chỉ mũi nhọn và vệt tốc độ mới xoay theo hướng bay.
+    const a=Math.atan2(p.vy,p.vx);
+    ctx.translate(p.x,p.y);
+    ctx.font='800 12px "Be Vietnam Pro",sans-serif'; ctx.textAlign='center';
+    const ls=wrapTxt(p.txt,30).split('\n');
+    let tw=0; for(const L of ls) tw=Math.max(tw,ctx.measureText(L).width);
+    const bw=tw+24, bh=20+ls.length*15;
+    ctx.save();
+    ctx.globalAlpha=.45; ctx.strokeStyle='#7FC8FF'; ctx.lineWidth=2.6; ctx.lineCap='round';
+    for(let i=0;i<3;i++){
+      const o=(i-1)*8, L=34+i*16;
+      ctx.beginPath();
+      ctx.moveTo(-Math.cos(a)*(bw/2)-Math.sin(a)*o, -Math.sin(a)*(bh/2)+Math.cos(a)*o);
+      ctx.lineTo(-Math.cos(a)*(bw/2+L)-Math.sin(a)*o, -Math.sin(a)*(bh/2+L)+Math.cos(a)*o);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.save();
+    ctx.rotate(a); ctx.translate(Math.min(bw/2,bh/2)+3,0);
+    ctx.fillStyle='#7FC8FF'; ctx.strokeStyle='#000'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(17,0); ctx.lineTo(-4,-9); ctx.lineTo(-4,9); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+    const box=()=>{ ctx.beginPath();
+      if(ctx.roundRect)ctx.roundRect(-bw/2,-bh/2,bw,bh,9); else ctx.rect(-bw/2,-bh/2,bw,bh); };
+    ctx.fillStyle='#FFFFFF'; ctx.strokeStyle='#000'; ctx.lineWidth=6; box(); ctx.stroke();
+    ctx.strokeStyle='#7FC8FF'; ctx.lineWidth=3; box(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#16203A';
+    const ty=4-(ls.length-1)*7.5;
+    ls.forEach((L,i)=>ctx.fillText(L,0,ty+i*15));
   }else if(p.type==='clone'){
     ctx.globalAlpha=.95;
     const arr=SPR.kono.clone||SPR.kono.atk2||SPR.kono.idle;
@@ -3628,7 +4403,11 @@ function draw(){
   }
   for(const m of G.mates) drawMate(m);
   const order=[...G.fighters].filter(f=>f.alive).sort((a,b)=>a.y-b.y);
-  for(const f of order) drawFighter(f);
+  for(const f of order){
+    if(f.fade!==undefined&&f.fade<1){ ctx.save(); ctx.globalAlpha=f.fade; drawFighter(f); ctx.restore(); }
+    else drawFighter(f);
+  }
+  drawAyaGuard();
   drawNaraDeer();
   drawForestGrip();
   drawBindShadow();
@@ -3644,7 +4423,10 @@ function draw(){
     if(f.banner&&f.bubble&&!f.gold){
       ctx.rotate((f.tilt||0)+Math.sin(age*16)*.03);
       ctx.font=(f.big?'900 23px':'800 16px')+' "Be Vietnam Pro",sans-serif';
-      const tw=ctx.measureText(f.txt).width, bw=tw+(f.big?30:22), bh=f.big?40:30;
+      // câu dài đã bẻ sẵn bằng \n thì khung cao theo số dòng, không để chữ tràn ra khỏi sàn
+      const ls=String(f.txt).split('\n'), lh=(f.big?26:19);
+      let tw=0; for(const L of ls) tw=Math.max(tw,ctx.measureText(L).width);
+      const bw=tw+(f.big?30:22), bh=(f.big?40:30)+(ls.length-1)*lh;
       const box=()=>{ ctx.beginPath();
         if(ctx.roundRect)ctx.roundRect(-bw/2,-bh/2-5,bw,bh,10); else ctx.rect(-bw/2,-bh/2-5,bw,bh); };
       const tail=()=>{ ctx.beginPath(); ctx.moveTo(-7,bh/2-5); ctx.lineTo(2,bh/2+7); ctx.lineTo(7,bh/2-5); ctx.closePath(); };
@@ -3658,7 +4440,9 @@ function draw(){
         ctx.fillStyle='#fff'; ctx.strokeStyle='#000'; ctx.lineWidth=3;
         box(); ctx.fill(); ctx.stroke(); tail(); ctx.fill(); ctx.stroke();
       }
-      ctx.fillStyle=f.color; ctx.fillText(f.txt,0,f.big?7:5);
+      ctx.fillStyle=f.color;
+      const y0=(f.big?7:5)-(ls.length-1)*lh/2;
+      ls.forEach((L,i)=>ctx.fillText(L,0,y0+i*lh));
     }else if(f.banner){
       ctx.rotate((f.tilt||0)+Math.sin(age*22)*.04);
       ctx.font=`900 ${Math.round((f.big?27:21)*(f.sc||1))}px "Be Vietnam Pro",sans-serif`;
@@ -3701,6 +4485,38 @@ function draw(){
   if(G.flashScreen>0){ ctx.save(); ctx.globalAlpha=clamp(G.flashScreen*4,0,.85); ctx.fillStyle='#fff'; ctx.fillRect(10,10,W-20,H-20); ctx.restore(); }
   if(!running&&!G.over) overlay('PRESS START','Space: pause  ·  R: restart');
   if(G.over&&G.announced) winnerBanner();
+}
+/* Ayanokouji trong quãng đỡ đòn thay: chưa phải một đấu thủ trên sàn, chỉ là một
+   khối hình đứng chắn trước mặt Horikita cộng một lớp khiên nhấp nháy mỗi lần ăn đòn
+   và một đồng hồ đếm ngược cho thấy còn được đỡ bao lâu nữa. */
+function drawAyaGuard(){
+  for(const f of G.fighters){
+    const A=f.ayaG; if(!A)continue;
+    const set=SPR.ayanokouji||{};
+    const arr=(set.guard&&set.guard.length)?set.guard:((set.idle&&set.idle.length)?set.idle:null);
+    const img=arr?arr[Math.floor(G.t*8)%arr.length]:null;
+    const app=clamp(A.born*4,0,1);
+    ctx.save(); ctx.globalAlpha=.25*app; ctx.fillStyle='#000';
+    ctx.beginPath(); ctx.ellipse(A.x,A.y+22,20,6,0,0,7); ctx.fill(); ctx.restore();
+    ctx.save();                                    // lớp khiên, loé lên mỗi lần chắn được một đòn
+    ctx.globalAlpha=app*(.28+A.flash*.62);
+    ctx.strokeStyle='#BFD4FF'; ctx.lineWidth=3+A.flash*4.5;
+    ctx.beginPath(); ctx.ellipse(A.x,A.y-26,30+A.flash*9,50+A.flash*9,0,0,7); ctx.stroke();
+    ctx.restore();
+    ctx.save();
+    ctx.globalAlpha=app;
+    ctx.translate(A.x,A.y+20); ctx.scale(A.face<0?-1:1,1);
+    if(img){ const h=126,w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
+    else vector({key:'ayanokouji',face:1,moving:false,pose:'guard',poseT:0});
+    ctx.restore();
+    ctx.save();
+    ctx.globalAlpha=app;
+    ctx.font='900 10px "Space Mono",monospace'; ctx.textAlign='center';
+    ctx.lineWidth=3; ctx.strokeStyle='#000';
+    const t=`AYANOKOUJI GUARDS ${(Math.max(0,A.t)*RT).toFixed(1)}s`;
+    ctx.strokeText(t,A.x,A.y+40); ctx.fillStyle='#DCE6F5'; ctx.fillText(t,A.x,A.y+40);
+    ctx.restore();
+  }
 }
 function drawMate(m){
   const set=SPR[m.key]||{};
@@ -4585,6 +5401,44 @@ function testTwin(){
   t.goals=GOAL_MAX;
   say(`[Thử nghiệm] Nạp đủ ${GOAL_MAX} goal cho Tsubasa.`,'m');
 }
+function testSuz2(){
+  if(G.over){ newGame(); }
+  const f=findFighter('suzune');
+  if(!f){ say('Cần có Horikita trong trận mới thử được.','m'); return; }
+  if(f.form>=2){ say('Horikita đã qua form 1 rồi.','m'); return; }
+  ac(); if(MUSIC.on) startMusic();
+  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  f.hp=Math.min(f.hp,Math.round(f.maxHp*SUZ.guardHp));
+  ayaShield(f);
+  say('[Thử nghiệm] Ép Ayanokouji nhảy vào đỡ đòn thay.','m');
+}
+function testSuzAya(){
+  if(G.over){ newGame(); }
+  const f=findFighter('suzune');
+  if(!f){ say('Cần có Horikita trong trận mới thử được.','m'); return; }
+  if(f.ayaDone){ say('Ayanokouji đã bước ra một lần rồi.','m'); return; }
+  ac(); if(MUSIC.on) startMusic();
+  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(f.form<2){ f.ayaG=null; f.ayaShieldDone=true; suzForm2(f); }
+  f.cp=0; suzCp(f,SUZ.cpMax);
+  say('[Thử nghiệm] Nạp đủ 150 điểm lớp — Ayanokouji vào sân.','m');
+}
+function testSuz3(){
+  if(G.over){ newGame(); }
+  const f=findFighter('suzune');
+  if(!f){ say('Cần có Horikita trong trận mới thử được.','m'); return; }
+  if(f.form>=3){ say('Horikita đã ở form 3 rồi.','m'); return; }
+  ac(); if(MUSIC.on) startMusic();
+  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(f.ayaAlly){ f.ayaAlly.hp=0; say('[Thử nghiệm] Ép Ayanokouji rời sàn.','m'); return; }
+  if(f.form<2){ f.ayaG=null; f.ayaShieldDone=true; suzForm2(f); }
+  f.ayaDone=true;
+  suzForm3(f);
+  say('[Thử nghiệm] Ép Horikita sang form 3.','m');
+}
+el('testSuz2').addEventListener('click',testSuz2);
+el('testSuzAya').addEventListener('click',testSuzAya);
+el('testSuz3').addEventListener('click',testSuz3);
 el('testGoku').addEventListener('click',()=>testSummon('goku'));
 el('testGohan').addEventListener('click',()=>testSummon('gohan'));
 el('testTwin').addEventListener('click',testTwin);
@@ -4599,7 +5453,7 @@ function cselRefresh(){
     const list=el(slot==='a'?'listA':'listB');
     [...list.children].forEach(t=>t.classList.toggle('on',t.dataset.key===key));
     el(slot==='a'?'pickNameA':'pickNameB').textContent='· '+C.name;
-    // chỉ nhân vật đang chọn mới trải kỹ năng ra, ba người còn lại chỉ là ô nhỏ
+    // chỉ nhân vật đang chọn mới trải kỹ năng ra, những người còn lại chỉ là ô nhỏ
     el(slot==='a'?'detailA':'detailB').innerHTML=
       `<span class="cName" style="color:${C.color}">${C.name}</span>`+
       `<span class="cTag">${C.tag}</span>`+
