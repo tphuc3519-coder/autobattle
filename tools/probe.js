@@ -20,7 +20,7 @@ window.__hurt=hurt; window.__stunFx=stunFx; window.__explode=explode;
 window.__sexy=sexy; window.__shadowBind=shadowBind; window.__tryEvade=tryEvade;
 window.__driveShot=driveShot; window.__eagleAwaken=eagleAwaken;
 window.__recCanvas=()=>RECV; window.__recFrame=()=>recFrame(); window.__CFR=()=>CFR;
-window.__aacRaw=aacRaw; window.__aacAsc=aacAsc;
+window.__aacRaw=aacRaw; window.__aacAsc=aacAsc; window.__mAudioEntry=mAudioEntry;
 `;
 
 /* Trả về đường dẫn file probe. Ghi ra thư mục tạm để không bẩn repo. */

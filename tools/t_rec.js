@@ -8,7 +8,7 @@ const { openGame } = require('./probe.js');
 
 /* soi thô MP4: trả về các box cần kiểm */
 function parseMp4(buf) {
-  const out = { boxes: [], stts: [], mdhd: [], stsd: [], stsz: [], stco: [] };
+  const out = { boxes: [], stts: [], mdhd: [], stsd: [], stsz: [], stco: [], cfgBox: [] };
   (function walk(off, end, path) {
     while (off + 8 <= end) {
       const size = buf.readUInt32BE(off), type = buf.toString('latin1', off + 4, off + 8);
@@ -20,7 +20,13 @@ function parseMp4(buf) {
         out.stts.push(ent);
       }
       if (type === 'mdhd') out.mdhd.push({ timescale: buf.readUInt32BE(off + 20), duration: buf.readUInt32BE(off + 24) });
-      if (type === 'stsd') out.stsd.push(buf.toString('latin1', off + 20, off + 24));
+      if (type === 'stsd') {
+        const kind = buf.toString('latin1', off + 20, off + 24);
+        // sample entry nằm ngay sau: soi bên trong xem có hộp mô tả codec không
+        const entEnd = off + size, ent = buf.toString('latin1', off + 24, entEnd);
+        out.stsd.push(kind);
+        out.cfgBox.push(['avcC', 'vpcC', 'esds', 'dOps'].filter(b => ent.includes(b)));
+      }
       if (type === 'stsz') out.stsz.push(buf.readUInt32BE(off + 16));
       if (type === 'stco') out.stco.push(buf.readUInt32BE(off + 16));
       if (['moov', 'trak', 'mdia', 'minf', 'stbl', 'dinf', 'edts'].includes(type)) walk(off + 8, off + size, path + '/' + type);
@@ -88,7 +94,9 @@ async function record(page, ms) {
     'phat lai duoc 720x1280': cfr.play.w === 720 && cfr.play.h === 1280,
     'nhat ky noi CFR': /CFR/.test(cfr.log || ''),
     'tieng giai ma duoc': !cfr.aud.err && cfr.aud.dur >= vDur - 0.2,
-    'tieng khong cam': !cfr.aud.err && cfr.aud.peak > 0.001
+    'tieng khong cam': !cfr.aud.err && cfr.aud.peak > 0.001,
+    'entry hinh co hop mo ta codec': (m.cfgBox[0] || []).length === 1,
+    'entry tieng co hop mo ta codec': (m.cfgBox[1] || []).length === 1
   };
 
   // lột ADTS và tự dựng AudioSpecificConfig (nhánh AAC của Chrome, máy test không có AAC)
@@ -104,6 +112,21 @@ async function record(page, ms) {
   ok['ASC 48k stereo = 11 90'] = JSON.stringify(aac.asc48) === JSON.stringify([0x11, 0x90]);
   ok['ASC 44.1k stereo = 12 10'] = JSON.stringify(aac.asc44) === JSON.stringify([0x12, 0x10]);
 
+  // nhánh AAC không chạy được trên máy test (thiếu codec), nên soi thẳng byte của sample entry
+  const ent = Buffer.from(await page.evaluate(() =>
+    Array.from(window.__mAudioEntry('mp4a.40.2', 2, 48000, new Uint8Array([0x11, 0x90])))));
+  const es = ent.indexOf(Buffer.from('esds'));
+  const d = es >= 0 ? ent.subarray(es + 8) : Buffer.alloc(0);   // bỏ 4 byte version/flags
+  ok['entry AAC la mp4a'] = ent.toString('latin1', 4, 8) === 'mp4a';
+  ok['AAC: co esds'] = es > 0;
+  ok['AAC: so kenh & tan so dung'] = ent.readUInt16BE(24) === 2 && ent.readUInt16BE(26) === 16
+    && ent.readUInt32BE(32) === 48000 * 65536;
+  ok['AAC: ES_Descr 0x03 dung do dai'] = d[0] === 3 && d[1] === d.length - 2;
+  ok['AAC: DecoderConfig 0x04 dung do dai'] = d[5] === 4 && d[6] === d.length - 7 - 3;
+  ok['AAC: objType 0x40, streamType 0x15'] = d[7] === 0x40 && d[8] === 0x15;
+  ok['AAC: DecSpecificInfo mang dung ASC'] = d[20] === 5 && d[21] === 2 && d[22] === 0x11 && d[23] === 0x90;
+  ok['AAC: SLConfig 0x06'] = d[24] === 6 && d[25] === 1 && d[26] === 2;
+
   await page.evaluate(() => { delete window.VideoEncoder; });
   const vfr = await record(page, 2500);
   ok['bo WebCodecs thi lui MediaRecorder'] = /webm|mp4/.test(vfr.type) && /nhịp khung thay đổi/.test(vfr.log || '');
@@ -111,7 +134,8 @@ async function record(page, ms) {
   await browser.close();
   for (const k of Object.keys(ok)) console.log((ok[k] ? 'DAT ' : 'HONG') + '  ' + k);
   console.log(`hinh ${vStts[0][0]} khung / ${vDur.toFixed(2)}s · tieng ${aDur.toFixed(2)}s ` +
-    `(giai ma ${cfr.aud.err || cfr.aud.dur.toFixed(2) + 's, dinh ' + cfr.aud.peak}) · ${m.stsd.join('+')} · ${(cfr.size / 1048576).toFixed(1)} MB`);
+    `(giai ma ${cfr.aud.err || cfr.aud.dur.toFixed(2) + 's, dinh ' + cfr.aud.peak}) · ` +
+    `${m.stsd.map((k, i) => k + '[' + (m.cfgBox[i] || []).join(',') + ']').join(' + ')} · ${(cfr.size / 1048576).toFixed(1)} MB`);
   console.log('loi trang:', errors.length ? errors : 'khong co');
   process.exit(Object.values(ok).every(Boolean) && !errors.length ? 0 : 1);
 })();

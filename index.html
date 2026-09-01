@@ -4008,12 +4008,14 @@ function mAudioEntry(codec,ch,rate,desc){
     cfg=mBox('dOps',b1(0),b1(ch),b2(pre),b4(rate),b2(0),b1(0));
   }else{
     const dsi=desc&&desc.length?bCat([b1(5),b1(desc.length),desc]):new Uint8Array(0);
-    const dcd=bCat([b1(4),b1(13+dsi.length),b1(0x40),b1(0x15),b3(0),b4(0),b4(0),dsi]);
+    // objType 0x40 = AAC, streamType 0x15 = luồng tiếng; ghi luôn tốc độ bit cho player khó tính
+    const dcd=bCat([b1(4),b1(13+dsi.length),b1(0x40),b1(0x15),b3(0),b4(128000),b4(128000),dsi]);
     const sl=bCat([b1(6),b1(1),b1(2)]);
     cfg=mFull('esds',0,0,bCat([b1(3),b1(3+dcd.length+sl.length),b2(1),b1(0),dcd,sl]));
   }
-  return mBox(type,new Uint8Array(6),b2(1),b4(0),b4(0),b2(ch),b2(16),b2(0),b2(0),b4(rate*65536));
-  }
+  // cfg PHẢI nằm trong sample entry: thiếu esds là Chrome không giải mã nổi AAC -> im tiếng
+  return mBox(type,new Uint8Array(6),b2(1),b4(0),b4(0),b2(ch),b2(16),b2(0),b2(0),b4(rate*65536),cfg);
+}
 /* v = {codec,w,h,desc,fps,samples:[{data,key}]}
    a = {codec,rate,ch,desc,samples:[{data,ts}]} hoặc null */
 function mp4Build(v,a){
