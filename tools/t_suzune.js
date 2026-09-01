@@ -246,33 +246,43 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   /* ---- form 3 có ô dán ảnh thủ thế riêng, và dáng vector cũng khác form 2 ---- */
   const oAnh = await doc(() => {
     const S = window.__SETS.find(s => s.key === 'suzune');
-    const p = S.poses.map(x => x[0]);
-    return { co: p.indexOf('stand3') >= 0, nhan: (S.poses.find(x => x[0] === 'stand3') || [])[1],
-             idle: (S.poses.find(x => x[0] === 'idle') || [])[1] };
+    const nhan = k => (S.poses.find(x => x[0] === k) || [])[1];
+    return { stand3: nhan('stand3'), punch3: nhan('punch3'), kick3: nhan('kick3'),
+             think3: nhan('think3'), idle: nhan('idle'), think: nhan('think') };
   });
-  ok(oAnh.co, `co o dan anh rieng cho the thu form 3 ("${oAnh.nhan}")`);
+  for (const [k, mong] of [['stand3', 'Thủ thế'], ['punch3', 'Đấm'], ['kick3', 'Đá'], ['think3', 'Đứng suy nghĩ']])
+    ok(!!oAnh[k] && /form 3/.test(oAnh[k]) && oAnh[k].indexOf(mong) === 0,
+       `co o dan anh rieng '${k}' cho form 3 ("${oAnh[k]}")`);
   ok(/form 2/.test(oAnh.idle || ''), `o dung cu ghi ro la cua form 2 ("${oAnh.idle}")`);
+  ok(/form 2/.test(oAnh.think || ''), `o dung nghi cu ghi ro la cua form 2 ("${oAnh.think}")`);
 
+  /* Bốn dáng form 3 phải vẽ ra KHÁC hẳn form 2 — nếu ai đó lỡ xoá nhánh vẽ thì chỗ này
+     đổ ngay, chứ nhìn bằng mắt trong trận thì rất dễ bỏ sót. */
   const dang = await doc(() => {
     const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
-    const cv = document.createElement('canvas'); cv.width = 140; cv.height = 140;
+    const cv = document.createElement('canvas'); cv.width = 160; cv.height = 160;
     const c2 = cv.getContext('2d');
-    const cu = window.__getCtx(), goc = f.form, gocPose = f.pose, gocMove = f.moving;
-    const ve = form => {                       // vẽ cùng một khung hình, chỉ đổi form
-      f.form = form; f.pose = 'idle'; f.moving = false;
-      c2.setTransform(1, 0, 0, 1, 0, 0); c2.clearRect(0, 0, 140, 140);
-      c2.save(); c2.translate(70, 100); window.__setCtx(c2); window.__vector(f); c2.restore();
-      return Array.from(c2.getImageData(0, 0, 140, 140).data);
+    const cu = window.__getCtx(), goc = f.form, gocPose = f.pose, gocT = f.poseT, gocMove = f.moving;
+    const ve = (form, pose) => {                 // vẽ cùng một khung hình, chỉ đổi form
+      f.form = form; f.pose = pose; f.poseT = .5; f.moving = false;
+      c2.setTransform(1, 0, 0, 1, 0, 0); c2.clearRect(0, 0, 160, 160);
+      c2.save(); c2.translate(80, 110); window.__setCtx(c2); window.__vector(f); c2.restore();
+      return Array.from(c2.getImageData(0, 0, 160, 160).data);
     };
-    const a = ve(2), b = ve(3);
-    window.__setCtx(cu); f.form = goc; f.pose = gocPose; f.moving = gocMove;
-    let khac = 0;
-    for (let i = 3; i < a.length; i += 4) if (a[i] !== b[i]) khac++;   // đếm điểm ảnh lệch nhau
-    const day = a.filter((v, i) => i % 4 === 3 && v > 0).length;
-    return { khac, day };
+    const r = {};
+    for (const pose of ['idle', 'punch', 'kick', 'think']) {
+      const a = ve(2, pose), b = ve(3, pose);
+      let khac = 0;
+      for (let i = 3; i < a.length; i += 4) if (a[i] !== b[i]) khac++;   // đếm điểm ảnh lệch nhau
+      r[pose] = { khac, day: a.filter((v, i) => i % 4 === 3 && v > 0).length };
+    }
+    window.__setCtx(cu); f.form = goc; f.pose = gocPose; f.poseT = gocT; f.moving = gocMove;
+    return r;
   });
-  ok(dang.day > 200, 've duoc dang dung cua Horikita ra canvas phu');
-  ok(dang.khac > 40, `the thu form 3 nhin khac han form 2 (${dang.khac} diem anh lech)`);
+  for (const [pose, ten] of [['idle', 'the thu'], ['punch', 'dam'], ['kick', 'da'], ['think', 'dung suy nghi']]) {
+    ok(dang[pose].day > 200, `ve duoc dang ${ten} cua Horikita ra canvas phu`);
+    ok(dang[pose].khac > 40, `${ten} form 3 nhin khac han form 2 (${dang[pose].khac} diem anh lech)`);
+  }
 
   /* ---- 150 điểm lớp: Ayanokouji vào sân làm đồng minh thật ---- */
   const join = await doc(() => {

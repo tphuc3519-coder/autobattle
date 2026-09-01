@@ -153,7 +153,7 @@ Nhân vật cận chiến, đi theo **ba form** — đây là cả tính cách n
 |---|---|---|
 | 1 | Đã dám vung tay nhưng còn rụt rè | chỉ có chiêu 1, **10 dmg** mỗi đòn và ra chậm hơn form 2 **1.6 lần** (`SUZ.f1`, `SUZ.f1Slow`); **chưa có chiêu 2**, chưa tích điểm lớp, chưa có cửa hồi máu. Đứng thì dáng `scared` (hai tay chụm trước ngực, mắt mở to, giọt mồ hôi), trúng đòn thì dáng `block` (hai tay bắt chéo chữ X). AI nhích vào đủ tầm rồi lùi ngay |
 | 2 | Dám đánh nhưng còn sai | chiêu 1 đấm/đá, chiêu 2 Decision Making |
-| 3 | Tự đứng một mình | như form 2 nhưng mạnh hơn và cộng dồn theo điểm lớp. **Có ô dán ảnh đứng riêng** `stand3` (`SETS`, nhãn "Thủ thế (form 3)"); ô `idle` từ đây chỉ còn là dáng đứng của form 2. Dáng vector đi kèm: đứng hẳn thế thủ như võ sĩ — khuỷu ép sườn, nắm đấm dẫn đường ngang cằm, vẽ **sau tóc** như hai dáng của form 1. Thiếu ảnh `stand3` thì `sprite()` lùi về ô `idle` |
+| 3 | Tự đứng một mình | như form 2 nhưng mạnh hơn và cộng dồn theo điểm lớp. **Có hẳn bốn ô dán ảnh riêng**: `stand3` / `punch3` / `kick3` / `think3` (xem mục dưới) |
 
 **Chuyển form 1 → 2**: máu tụt xuống **85%** (`SUZ.guardHp`) thì Ayanokouji hiện ra.
 Phân cảnh đóng băng 1.6s, anh nói *"Stand up and fight."*, rồi **đỡ đạn thay đúng 5 giây
@@ -255,6 +255,23 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
 > theo địch qua `ayaGuardAim`), hết miễn thương mới tung. Có trần chờ `SUZ.guardKickWait`
 > (2 giây người chơi) để chuỗi phân cảnh không bao giờ kẹt lại. Đo được: 14/14 lần cú cước
 > ăn đủ 150 dmg, trước đó cứ 10 lần thì hụt 1.
+
+**Bốn ô dán ảnh riêng của form 3.** `stand3` / `punch3` / `kick3` / `think3` (nhãn trong `SETS`:
+"Thủ thế (form 3)", "Đấm (form 3)", "Đá (form 3)", "Đứng suy nghĩ (form 3)"). Bốn ô cũ đổi nhãn
+cho khỏi lẫn: `idle` = "Thủ thế (form 2)", `punch`/`kick` = "(form 1/2)", `think` = "(form 2)".
+`sprite()` đổi ô theo form ngay chỗ đã đổi cho form 1; thiếu ảnh thì lùi về đúng ô cùng nghĩa của
+form 2. Ô `decide` và `hurt`/`injured` vẫn dùng chung cho mọi form.
+
+Dáng vector đi kèm — tất cả đều **vẽ sau tóc**, vẽ trước thì hai lọn tóc dài che mất:
+- `stand3` đứng hẳn thế thủ như võ sĩ, khuỷu ép sát sườn, nắm đấm dẫn đường ngang cằm.
+- `punch3` như đấm của form 2 nhưng tay còn lại **không buông xuôi**, thủ ngay quai hàm.
+- `kick3` đá **cao hơn** (góc `1.5` thay vì `1.15`), tay sau thủ cằm, tay trước chìa ra giữ đà.
+- `think3` một tay ngang bụng chống lấy khuỷu, tay kia đỡ cằm — nghĩ mà vẫn đứng vững, khác hẳn
+  kiểu ôm lấy mình của form 1 và kiểu buông thõng của form 2.
+
+Nắm đấm thủ sát quai hàm dùng chung qua hàm `thuCam()`, đoạn chi vẽ qua `tay()` — cả hai khai ở
+đầu khối vẽ của Horikita. `t_suzune.js` chấm bằng cách vẽ từng dáng ra canvas phụ rồi **đếm điểm
+ảnh lệch** giữa form 2 và form 3, nên xoá mất một nhánh vẽ là test đổ ngay.
 
 **Chuyển form 2 → 3**: anh về 0 máu thì **KHÔNG chết**. `a.alive` vẫn `true`, không có
 `finish()`, không có hiệu ứng gục. Anh nói *"This is where I take my leave."* rồi **đi bộ ra
@@ -491,7 +508,7 @@ node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choán
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
-                        # cước chia tay không nện vào miễn thương, ô thủ thế form 3
+                        # cước chia tay không nện vào miễn thương, bốn ô dáng riêng của form 3
 ```
 
 Tất cả trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng
