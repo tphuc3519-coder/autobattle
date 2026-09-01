@@ -66,6 +66,23 @@ async function record(page, ms) {
   });
 }
 
+/* Bảo đảm "luôn có tiếng": chặn từng API rồi kiểm file ra vẫn giải mã được tiếng.
+   Trình duyệt nào thiếu đồ thì đường CFR phải tự nhường cho MediaRecorder. */
+async function chanApiVanCoTieng(patch) {
+  const { browser, page, errors } = await openGame('tsubasa', 'shika');
+  await page.evaluate(`(${patch})()`);
+  await page.evaluate(() => {
+    window.__blobObj = null;
+    const orig = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = b => { if (b instanceof Blob && b.type.includes('video')) window.__blobObj = b; return orig(b); };
+    document.addEventListener('click', e => { if (e.target.tagName === 'A') e.preventDefault(); }, true);
+  });
+  await page.selectOption('#rec916', '720');
+  const r = await record(page, 3000);
+  await browser.close();
+  return { ok: !r.aud.err && r.aud.peak > 0.001 && !errors.length, aud: r.aud, type: r.type };
+}
+
 (async () => {
   const { browser, page, errors } = await openGame('tsubasa', 'shika');
   await page.evaluate(() => {
@@ -133,6 +150,21 @@ async function record(page, ms) {
   ok['bo WebCodecs thi lui MediaRecorder'] = /webm|mp4/.test(vfr.type) && /nhịp khung thay đổi/.test(vfr.log || '');
 
   await browser.close();
+
+  const chan = {
+    'khong AudioEncoder': () => { delete window.AudioEncoder; },
+    'khong AudioData': () => { delete window.AudioData; },
+    'AudioEncoder khong nhan codec nao': () => { window.AudioEncoder.isConfigSupported = async () => ({ supported: false }); },
+    'khong AudioWorklet lan ScriptProcessor': () => {
+      delete window.AudioWorkletNode; delete AudioContext.prototype.audioWorklet;
+      AudioContext.prototype.createScriptProcessor = undefined;
+    }
+  };
+  for (const [ten, patch] of Object.entries(chan)) {
+    const r = await chanApiVanCoTieng(patch.toString());
+    ok[`van co tieng khi ${ten}`] = r.ok;
+  }
+
   for (const k of Object.keys(ok)) console.log((ok[k] ? 'DAT ' : 'HONG') + '  ' + k);
   console.log(`hinh ${vStts[0][0]} khung / ${vDur.toFixed(2)}s · tieng ${aDur.toFixed(2)}s ` +
     `(giai ma ${cfr.aud.err || cfr.aud.dur.toFixed(2) + 's, dinh ' + cfr.aud.peak}) · ` +

@@ -282,6 +282,16 @@ làm:
 Không có WebCodecs (Firefox, Safari cũ) thì lui về `MediaRecorder` — vẫn ghi được nhưng là
 VFR, và nhật ký nói rõ điều đó.
 
+> **Luật: thà VFR còn hơn câm.** Sau 1.2 giây mà chưa có mẫu PCM nào vào bộ mã hoá
+> (`st.apos === 0`), `cfrNoAudio()` huỷ đường CFR và ghi lại từ đầu bằng `MediaRecorder` —
+> bộ ghi đó lấy tiếng qua `MediaStream` nên chạy ở mọi trình duyệt. Xét theo `st.apos` chứ
+> đừng xét `st.a`: máy yếu thì đầu ra bộ mã hoá về trễ, PCM vẫn chảy, đó không phải là câm.
+> `t_rec.js` chặn lần lượt `AudioEncoder`, `AudioData`, mọi codec tiếng, rồi cả
+> `AudioWorklet` + `ScriptProcessor` — cả bốn trường hợp file ra vẫn phải giải mã được tiếng.
+
+Lúc bắt đầu ghi, nhật ký in một dòng chẩn đoán: `VideoEncoder <codec> · AudioEncoder <codec>
+· đầu thu <AudioWorklet|ScriptProcessor>` — hỏi người dùng dòng này là biết ngay khâu nào hỏng.
+
 Đo trên máy test không có GPU (fps trong lúc đang ghi): **1080p 55.9 · 720p 60.1 · khung
 nguyên bản 59.5** (không ghi: 60.2). Đường WebCodecs còn nhẹ hơn `MediaRecorder` trước đây
 (1080p chỉ được 37~45 fps). Hai chỗ vẫn phải giữ cho nhẹ:

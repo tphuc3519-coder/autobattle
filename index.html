@@ -4208,7 +4208,23 @@ async function cfrStart(src,w,h){
   await cfrAudioTap(st);
   st.t0=performance.now();
   CFR=st;
+  // Bảo đảm luôn có tiếng: 0.9 giây mà chưa có mẫu tiếng nào thì bỏ đường CFR, ghi lại từ
+  // đầu bằng MediaRecorder — video có tiếng mà nhịp khung thay đổi vẫn hơn video câm.
+  // Xét theo st.apos (số mẫu PCM đã vào bộ mã hoá) chứ đừng xét st.a: máy yếu thì đầu ra
+  // của bộ mã hoá về trễ, nhưng PCM vẫn chảy — đó không phải là câm.
+  setTimeout(()=>{ if(CFR===st&&!st.stopping&&!st.apos&&!st.a.length) cfrNoAudio(st); },1200);
   return true;
+}
+/* Đường CFR câm tiếng thì huỷ, ghi lại bằng MediaRecorder cho chắc có tiếng. */
+function cfrNoAudio(st){
+  say('Đường CFR không thu được tiếng — ghi lại bằng bộ ghi thường để video có tiếng '+
+      '(đổi lại nhịp khung không cố định).','m');
+  try{ if(st.atap) st.atap(); }catch(e){}
+  try{ st.enc.close(); }catch(e){}
+  try{ if(st.aenc) st.aenc.close(); }catch(e){}
+  CFR=null;
+  clearInterval(recTimer); recTimer=null;
+  recFallback(st.src,true);
 }
 /* Mỗi lượt vẽ bù cho đủ số khung lẽ ra đã trôi qua: máy có khựng thì khung trước được
    mã hoá lại chứ mốc thời gian không xê dịch, nhờ vậy file luôn đúng REC_FPS. */
@@ -4299,13 +4315,16 @@ function toggleRec(){
       recClock();
       say(`Bắt đầu ghi hình ${recTall?`khung dọc 9:16 ${REC916.w}×${REC916.h}`:'khung nguyên bản'} — `+
           `MP4 nhịp khung cố định ${REC_FPS} fps.`,'g');
+      say(`Máy có: VideoEncoder ${CFR?CFR.codec:'?'} · AudioEncoder `+
+          `${typeof AudioEncoder==='undefined'?'KHÔNG':(CFR&&CFR.acodec)||'chưa mở được'} · đầu thu `+
+          `${(CFR&&CFR.atapKind)||'chưa có'}.`,'m');
       return;
     }
     recFallback(src);          // không có WebCodecs thì lui về MediaRecorder
   }).catch(()=>{ recBusy=false; recFallback(src); });
 }
 /* Đường lui: MediaRecorder. Nhịp khung do trình duyệt tự gắn nên là VFR. */
-function recFallback(src){
+function recFallback(src,quiet){
   if(!src.captureStream||typeof MediaRecorder==='undefined'){
     say('Trình duyệt này không hỗ trợ ghi hình.','m'); recTall=false; return;
   }
@@ -4333,7 +4352,9 @@ function recFallback(src){
   };
   REC.start(300);
   recClock();
-  say('Trình duyệt không có WebCodecs — ghi bằng MediaRecorder, nhịp khung thay đổi (VFR).','m');
+  if(!quiet) say('Trình duyệt không có WebCodecs — ghi bằng MediaRecorder, nhịp khung thay đổi (VFR).','m');
+  const at=stream.getAudioTracks().length;
+  say(`Bộ ghi thường đang chạy: ${mime||'mặc định'}, ${at?at+' luồng tiếng':'KHÔNG có luồng tiếng'}.`,at?'g':'m');
 }
 
 const el=id=>document.getElementById(id);
