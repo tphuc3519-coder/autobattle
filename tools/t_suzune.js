@@ -91,16 +91,39 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   ok(chan.tra === false, 'don danh vao Horikita bi Ayanokouji chan lai (hurt tra ve false)');
   gan(chan.mat, 0, 0.001, 'Horikita khong mat mot giot mau nao trong luc duoc do');
   ok(chan.hits === 1 && Math.abs(chan.tong - 500) < .01, 'don do duoc ghi lai dung so luong');
-  ok(chan.du <= 4.01 && chan.du > 3, `quang do keo dai 4 giay nguoi choi (con ${chan.du.toFixed(2)}s)`);
+  ok(chan.du <= 5.01 && chan.du > 4, `quang do keo dai 5 giay nguoi choi (con ${chan.du.toFixed(2)}s)`);
 
-  // Đồng hồ 4 giây chỉ chạy SAU phân cảnh đóng băng (step() return sớm lúc G.freeze>0),
-  // nên phải chờ cả 1.6s phân cảnh lẫn 2s trong trận của quãng đỡ.
-  await doi(4.4);
+  // Đồng hồ 5 giây chỉ chạy SAU phân cảnh đóng băng (step() return sớm lúc G.freeze>0),
+  // nên phải chờ cả 1.6s phân cảnh lẫn 2.5s trong trận của quãng đỡ. Bắt luôn cú cước
+  // chia tay: máu địch tụt đúng 150 và dính choáng 2 giây người chơi.
+  const cuoc = await page.evaluate(() => new Promise((res, rej) => {
+    const G = window.__G(), S = window.__SUZ, RT = window.__RT;
+    const f = G.fighters.find(x => x.key === 'suzune'), e = G.fighters.find(x => x.key === 'kono');
+    e.hp = e.maxHp; e.evade = 0; e.stun = 0;
+    /* Đo CÚ SỤT LỚN NHẤT trong một nhịp, đừng cộng dồn: Horikita vẫn đấm 10 dmg ở form 1
+       nên tổng máu địch mất trong cùng cửa sổ đo có thể ra 160 dù cú cước đúng 150. */
+    let truoc = e.hp, sut = 0, stun = 0, pha = null;
+    const id = setInterval(() => {
+      if (f.ayaG && f.ayaG.ph !== 'guard') pha = f.ayaG.ph;
+      if (e.hp < truoc) {
+        const d = truoc - e.hp;
+        if (d > sut) { sut = d; stun = e.stun * RT; }
+      }
+      truoc = e.hp;
+      if (sut >= S.guardKickDmg - .5) { clearInterval(id); res({ mat: Math.round(sut), stun: +stun.toFixed(2), pha }); }
+    }, 16);
+    setTimeout(() => { clearInterval(id); rej(new Error('khong thay cu cuoc chia tay')); }, 40000);
+  }));
+  ok(!!cuoc.pha, 'het 5 giay thi Ayanokouji chuyen sang pha tung cuoc');
+  gan(cuoc.mat, 150, 0.5, 'cuoc chia tay an dung 150 dmg');
+  gan(cuoc.stun, 2, 0.06, 'cuoc chia tay choang dung 2 giay nguoi choi (doc tre mot khung)');
+
+  await doi(2.2);
   const f2 = await doc(() => {
     const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
     return { form: f.form, aya: !!f.ayaG };
   });
-  ok(!f2.aya, 'het 4 giay thi Ayanokouji lui ra');
+  ok(!f2.aya, 'tung cuoc xong thi Ayanokouji lui ra');
   ok(f2.form === 2, 'het quang do thi Horikita sang form 2');
 
   /* ---- form 2: đòn tay 15 dmg / 15 điểm, quyết định đúng tích bằng sát thương ---- */
@@ -125,14 +148,20 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     const f = G.fighters.find(x => x.key === 'suzune'), e = G.fighters.find(x => x.key === 'kono');
     f.cp = 0; f.hp = f.maxHp; e.hp = e.maxHp; e.evade = 0;
     G.proj.length = 0;
-    const r = Math.random; Math.random = () => .1;              // .1 < .50 -> quyet dinh dung
+    const r = Math.random; Math.random = () => .1;              // .1 < .625 -> quyet dinh dung
     window.__suzDecide(f, e);
     Math.random = r;
     const p = G.proj.find(x => x.type === 'decision');
-    return { co: !!p, dmg: p ? p.dmg : 0, txt: p ? p.txt : '', cp: f.cp };
+    return { co: !!p, dmg: p ? p.dmg : 0, txt: p ? p.txt : '', cp: f.cp,
+             tier: p ? p.tier : '', odds: window.__suzTune(f).decOdds,
+             lo: window.__suzTune(f).decLo, hi: window.__suzTune(f).decHi };
   });
+  gan(dung.odds, .625, 0.001, 'form 2: ti le quyet dinh dung 62.5%');
+  gan(dung.lo, 30, 0.001, 'form 2: san sat thuong quyet dinh la 30');
+  gan(dung.hi, 80, 0.001, 'form 2: tran sat thuong quyet dinh la 80');
   ok(dung.co, 'quyet dinh dung sinh ra mot bong bong phong thang vao dich');
-  ok(dung.dmg >= 20 && dung.dmg <= 80, `sat thuong quyet dinh nam trong 20~80 (duoc ${dung.dmg})`);
+  ok(dung.dmg >= 30 && dung.dmg <= 80, `sat thuong quyet dinh nam trong 30~80 (duoc ${dung.dmg})`);
+  ok(/DECISION$/.test(dung.tier || ''), `quyet dinh duoc cham muc do: "${dung.tier}"`);
   ok(dung.txt.length > 0, 'bong bong mang mot cau thoai');
   ok(dung.cp === 0, 'chua cham nguoi thi chua tich diem');
 
@@ -167,6 +196,25 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   ok(sai.proj === 0, 'quyet dinh sai thi khong ban gi ca');
   gan(sai.cp, 0, 0.001, 'diem lop thung xuong am thi reset ve 0');
   gan(sai.tuAn, 45, 0.001, 'am 45 diem thi tu chiu dung 45 dmg (10 - 55)');
+
+  /* ---- thang chấm mức độ quyết định, cả hai form ---- */
+  const thang = await doc(() => {
+    const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
+    const goc = f.form;
+    const doc1 = (form, ds) => { f.form = form; return ds.map(d => window.__suzTier(f, d).ten); };
+    const r = {
+      f2: doc1(2, [30, 40, 41, 60, 61, 70, 71, 80]),
+      f3: doc1(3, [40, 70, 71, 90, 91, 110, 111, 120])
+    };
+    f.form = goc;
+    return r;
+  });
+  const mong2 = ['ACCEPTABLE DECISION','ACCEPTABLE DECISION','GOOD DECISION','GOOD DECISION',
+                 'GREAT DECISION','GREAT DECISION','BEST DECISION','BEST DECISION'];
+  ok(JSON.stringify(thang.f2) === JSON.stringify(mong2),
+     `form 2: 30-40 acceptable, 41-60 good, 61-70 great, 71-80 best (${thang.f2.join(' / ')})`);
+  ok(JSON.stringify(thang.f3) === JSON.stringify(mong2),
+     `form 3: 40-70 acceptable, 71-90 good, 91-110 great, 111-120 best (${thang.f3.join(' / ')})`);
 
   /* ---- 150 điểm lớp: Ayanokouji vào sân làm đồng minh thật ---- */
   const join = await doc(() => {
@@ -243,6 +291,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     const T = window.__suzTune(f);
     return { form: f.form, con: !!G.fighters.find(x => x.ally), cast: f.castBuff,
              hit: T.hit, cp: T.cp, dec: T.decOdds, heal: T.healOdds, pct: T.healPct,
+             lo: T.decLo, hi: T.decHi,
              res: f.dmgRes, cc: f.ccRes, cpNow: f.cp, stacks: f.stacks,
              thoai: G.floats.some(fl => /my\s+own\s+goal/i.test(fl.txt || '')) };
   });
@@ -252,6 +301,8 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   gan(f3.hit, 20, 0.001, 'form 3: don tay len 20 dmg');
   gan(f3.cp, 20, 0.001, 'form 3: moi don tich 20 diem lop');
   gan(f3.dec, .70, 0.001, 'form 3: quyet dinh dung 70%');
+  gan(f3.lo, 40, 0.001, 'form 3: san sat thuong quyet dinh len 40');
+  gan(f3.hi, 120, 0.001, 'form 3: tran sat thuong quyet dinh len 120');
   gan(f3.heal, .35, 0.001, 'form 3: ti le hoi mau 35%');
   gan(f3.pct, .08, 0.001, 'form 3: hoi 8% mau hien tai');
   gan(f3.res, .10, 0.001, 'form 3: +10% mien thuong');
