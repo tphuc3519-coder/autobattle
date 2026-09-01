@@ -4091,7 +4091,26 @@ async function cfrAudioOpen(st,rate,ch){
       return true;
     }catch(e){}
   }
-  say('Không có bộ mã hoá tiếng nào chạy được — video sẽ không có tiếng.','m');
+  // Safari có lúc trả false ở isConfigSupported nhưng configure() lại chạy: thử liều một lần
+  for(const codec of ['mp4a.40.2','opus']){
+    try{
+      const cfg={codec,sampleRate:rate,numberOfChannels:ch,bitrate:128000};
+      const enc=new AudioEncoder({
+        output:(chunk,meta)=>{
+          const dd=meta&&meta.decoderConfig&&meta.decoderConfig.description;
+          if(dd&&!st.adesc) st.adesc=new Uint8Array(dd);
+          const b=new Uint8Array(chunk.byteLength); chunk.copyTo(b);
+          if(st.aTs0===null) st.aTs0=chunk.timestamp;
+          st.a.push({data:b,ts:chunk.timestamp});
+        },
+        error:e=>{ if(!st.aerr){ st.aerr=1; say('Lỗi mã hoá tiếng: '+e.message,'m'); } }
+      });
+      enc.configure(cfg);
+      st.aenc=enc; st.acodec=codec; st.arate=rate; st.ach=ch;
+      return true;
+    }catch(e){}
+  }
+  say('Không có bộ mã hoá tiếng nào chạy được — sẽ ghi lại bằng bộ ghi thường để có tiếng.','m');
   return false;
 }
 /* Nếu bộ mã hoá trả về khung AAC bọc ADTS thì phải lột 7~9 byte đầu, vì trong MP4 mẫu
@@ -4281,11 +4300,16 @@ async function cfrStop(){
   recTall=false;
 }
 function recSave(blob,ext){
+  const name='tran-dau-'+(recTall?'9x16-':'')+Date.now()+ext;
+  const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='tran-dau-'+(recTall?'9x16-':'')+Date.now()+ext;
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  a.href=url; a.download=name;
+  document.body.appendChild(a);
+  try{ a.click(); }catch(e){}
+  a.remove();
+  // Safari đôi khi chặn cú bấm tự động: để sẵn một đường dẫn trong nhật ký cho bấm tay
+  say(`Nếu trình duyệt không tự tải: <a href="${url}" download="${name}" style="color:#FFC542">bấm vào đây để lưu ${name}</a>`,'g');
+  setTimeout(()=>URL.revokeObjectURL(url),300000);
 }
 function recClock(){
   recStart=performance.now();
@@ -4330,11 +4354,17 @@ function recFallback(src,quiet){
   }
   let stream;
   try{ stream=src.captureStream(REC_FPS); }catch(e){ recTall=false; say('Không mở được luồng hình.','m'); return; }
+  // Gộp hình và tiếng thành một MediaStream mới: Safari không chịu addTrack vào luồng canvas
   try{
     ac(); const d=recDest();
-    if(d) d.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
+    const at=d?d.stream.getAudioTracks():[];
+    if(at.length){
+      const vt=stream.getVideoTracks();
+      try{ stream=new MediaStream([...vt,...at]); }
+      catch(e){ at.forEach(t=>{ try{stream.addTrack(t);}catch(e2){} }); }
+    }
   }catch(e){}
-  const types=['video/mp4;codecs=avc1','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+  const types=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
   const mime=types.find(t=>{try{return MediaRecorder.isTypeSupported(t)}catch(e){return false}});
   try{
     REC=new MediaRecorder(stream, mime?{mimeType:mime,videoBitsPerSecond:REC_BPS}:undefined);
