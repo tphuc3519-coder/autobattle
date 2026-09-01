@@ -19,7 +19,7 @@ window.__setCtx=c=>{ ctx=c; };            // ctx khai bằng let chính vì đ�
 window.__hurt=hurt; window.__stunFx=stunFx; window.__explode=explode;
 window.__sexy=sexy; window.__shadowBind=shadowBind; window.__tryEvade=tryEvade;
 window.__driveShot=driveShot; window.__eagleAwaken=eagleAwaken;
-window.__recCanvas=()=>RECV; window.__recFrame=()=>recFrame();
+window.__recCanvas=()=>RECV; window.__recFrame=()=>recFrame(); window.__CFR=()=>CFR;
 `;
 
 /* Trả về đường dẫn file probe. Ghi ra thư mục tạm để không bẩn repo. */
