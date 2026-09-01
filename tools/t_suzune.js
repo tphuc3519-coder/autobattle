@@ -25,21 +25,45 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
 
   const doc = fn => page.evaluate(fn);
 
-  /* ---- form 1: không ra đòn nào, và AI thì lùi chứ không lao vào ---- */
+  /* ---- form 1: có đánh, nhưng đòn nhẹ, nhịp chậm và chưa có chiêu 2 ---- */
   const f1 = await doc(() => {
     const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
     f.hp = f.maxHp;                       // giữ trên ngưỡng 85% để chưa sang form
-    return { form: f.form, ehp: G.fighters.find(x => x.key === 'kono').hp };
+    return { form: f.form, cd: f.cds.s1 };
   });
   ok(f1.form === 1, 'vao tran la form 1');
+
+  const f1hit = await doc(() => {
+    const G = window.__G(), S = window.__SUZ;
+    const f = G.fighters.find(x => x.key === 'suzune'), e = G.fighters.find(x => x.key === 'kono');
+    f.hp = f.maxHp; f.cp = 0; e.hp = e.maxHp; e.evade = 0;
+    const truoc = e.hp;
+    window.__suzStrike(f, e);
+    return { dmg: truoc - e.hp, cp: f.cp, hp: f.hp,
+             cd: window.__suzTune(f).atkCd, cd2: S.atkCd };
+  });
+  gan(f1hit.dmg, 10, 0.001, 'form 1: don dam/da chi an 10 dmg');
+  gan(f1hit.cd / f1hit.cd2, 1.6, 0.001, 'form 1: ra don cham hon form 2 dung 1.6 lan');
+  ok(f1hit.cp === 0, 'form 1 chua tich duoc diem lop nao');
+
+  // chiêu 2 chưa mở: hồi chiêu về 0 mà gọi think() vẫn không có ai đứng lại suy nghĩ
+  const f1dec = await doc(() => {
+    const G = window.__G(), C = window.__CHARS;
+    const f = G.fighters.find(x => x.key === 'suzune'), e = G.fighters.find(x => x.key === 'kono');
+    f.hp = f.maxHp; f.cds.s2 = 0; f.decT = 0; f.lock = 0;
+    G.proj.length = 0;
+    for (let i = 0; i < 40; i++) C.suzune.think(f, e, 999, true);
+    return { decT: f.decT, proj: G.proj.filter(p => p.type === 'decision').length };
+  });
+  ok(f1dec.decT === 0 && f1dec.proj === 0, 'form 1 chua co chieu 2 Decision Making');
+
   await doi(4);
   const f1b = await doc(() => {
     const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
     f.hp = f.maxHp;
-    return { ehp: G.fighters.find(x => x.key === 'kono').hp, poses: f.pose, cp: f.cp };
+    return { cp: f.cp, form: f.form };
   });
-  ok(f1b.ehp >= f1.ehp - 0.001, 'form 1 khong gay mot diem sat thuong nao cho doi thu');
-  ok(f1b.cp === 0, 'form 1 khong tich duoc diem lop nao');
+  ok(f1b.cp === 0 && f1b.form === 1, 'danh mot hoi o form 1 van khong tich duoc diem lop');
 
   /* ---- ngưỡng 85%: Ayanokouji nhảy vào đỡ thay ---- */
   const g0 = await doc(() => {

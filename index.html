@@ -297,6 +297,7 @@ const CHICHI_DASH_CD=5;           // ChiChi lao tới mỗi 5 giây trong trận
 const gs=sec=>sec/RT;             // giây người chơi -> giây trong trận
 const SHIKA={
   lazyRate:12*RT,                 // ngồi lười: 12 chakra mỗi giây người chơi
+  lazyCap:1000,                   // trần của quãng ngồi lười: đủ 1000 là tự đứng dậy
   fightRate:4*RT,                 // đã vào trận: 4 chakra mỗi giây người chơi
   wakeHp:.80,                     // tụt xuống mức này thì bật dậy đánh
   evadeBase:.10, evadeStep:.025, evadeMax:.70,   // né được thì không cộng dồn, chỉ ăn đòn mới cộng
@@ -344,6 +345,11 @@ const SUZ={
   decLo:20, decHi:80,        // quyết định đúng: 20~80 dmg ngẫu nhiên
   decPenLo:5, decPenHi:60,   // quyết định sai: trừ 5~60 điểm lớp
   cpMax:150,                 // mốc điểm lớp
+  /* form 1: đã dám vung tay nhưng còn rụt rè — đòn nhẹ, ra chậm, và CHƯA có chiêu 2.
+     Chưa dám ra quyết định thì cũng chưa có điểm lớp lẫn cửa hồi máu: cả hai thứ đó
+     là phần thưởng của sự tự tin, mở ra từ form 2. */
+  f1:{hit:10, cp:0, healOdds:0, healPct:0, decHealPct:0, decOdds:0},
+  f1Slow:1.6,                // ra đòn chậm hơn form 2 thêm 1.6 lần nữa
   /* form 2: dám đánh nhưng còn sai nhiều · form 3: đã đủ bản lĩnh tự đứng */
   f2:{hit:15, cp:15, healOdds:.25, healPct:.05, decHealPct:.03, decOdds:.50},
   f3:{hit:20, cp:20, healOdds:.35, healPct:.08, decHealPct:.08, decOdds:.70, dmgRes:.10, ccRes:.10},
@@ -418,7 +424,7 @@ const CHARS={
       `<b>1</b> Twin Shuriken — ${SHIKA.shurikenDmg} dmg each + bleed ${SHIKA.bleedDps/RT}/s each · half Konohamaru's attack speed, far better aim`,
       `<b>1+</b> Shadow Stab — blink behind for ${SHIKA.stabDmg} + bleed, stun ${rts(SHIKA.stabStun)}s · every ${rts(SHIKA.stabCd)}s`,
       `<b>2</b> Shadow Strangle Jutsu — 45 dmg/s for ${rts(SHIKA.bindT)}s, then stun ${rts(SHIKA.bindStun)}s`,
-      `<b>Passive</b> Lazy start: ${SHIKA.lazyRate/RT} chakra/s sitting out, ${SHIKA.fightRate/RT}/s once hurt to ${Math.round(SHIKA.wakeHp*100)}%`,
+      `<b>Passive</b> Lazy start: ${SHIKA.lazyRate/RT} chakra/s sitting out — until ${SHIKA.lazyCap} chakra or hurt to ${Math.round(SHIKA.wakeHp*100)}%, then he gets up and banks ${SHIKA.fightRate/RT}/s like anyone else`,
       `<b>Passive</b> Evasion ${Math.round(SHIKA.evadeBase*100)}% vs every direct hit — ultimates included, Sexy no Jutsu excepted; +${+(SHIKA.evadeStep*100).toFixed(1)}% per basic hit taken, up to ${Math.round(SHIKA.evadeMax*100)}%`,
       `<b>Below ${Math.round(SHIKA.domainHp*100)}% HP</b> Nara Clan Forest — chakra spent as duration`],
     init(f){
@@ -439,14 +445,14 @@ const CHARS={
     gauge:f=>f.domain
       ? {pct:clamp(f.domain.t/f.domain.max,0,1), fill:'#B7A6FF',
          txt:`FOREST ${(f.domain.t*RT).toFixed(1)}s`}
-      : {pct:clamp(f.chakra/600,0,1), fill:'#8E7BFF',
+      : {pct:clamp(f.chakra/SHIKA.lazyCap,0,1), fill:'#8E7BFF',
          txt:f.weak?'Chakra: spent':`Chakra: ${Math.round(f.chakra)}`}
   }
   ,suzune:{
     name:'Horikita Suzune', short:'Horikita', tag:'Class Rep · Melee', emoji:'📘', color:'#7FC8FF', alt:'#BFE4FF',
     role:'melee', speed:100, dodge:.6, male:false,
     skills:[
-      `<b>Form 1</b> Too Afraid To Fight — no attacks at all; crosses both arms whenever she is hit`,
+      `<b>Form 1</b> Too Afraid — she throws a punch or a kick but only for ${SUZ.f1.hit} dmg, one blow every ${rts(SUZ.atkCd*SUZ.f1Slow)}s, and no Decision Making yet; crosses both arms whenever she is hit`,
       `<b>At ${Math.round(SUZ.guardHp*100)}% HP</b> Ayanokouji steps in — "Stand up and fight." and eats every hit for ${rts(SUZ.guardT)}s, then Form 2 begins`,
       `<b>Form 2 · 1</b> Punch &amp; Kick (random) — ${SUZ.f2.hit} dmg, ${rts(SUZ.atkCd)}s between blows (2.5× slower than ChiChi) · +${SUZ.f2.cp} class points · ${Math.round(SUZ.f2.healOdds*100)}% to heal ${Math.round(SUZ.f2.healPct*100)}% of current HP`,
       `<b>Form 2 · 2</b> Decision Making — every ${rts(SUZ.decCd)}s she freezes for ${rts(SUZ.decThink)}s; ${Math.round(SUZ.f2.decOdds*100)}% right = a verdict flies straight in for ${SUZ.decLo}–${SUZ.decHi} dmg and the same number of class points, ${Math.round((1-SUZ.f2.decOdds)*100)}% wrong = −${SUZ.decPenLo}~${SUZ.decPenHi} points (going negative costs her that much HP, then resets to 0)`,
@@ -454,16 +460,18 @@ const CHARS={
       `<b>Form 3</b> He walks away (never dies) — hits ${SUZ.f3.hit} / +${SUZ.f3.cp} points, decisions ${Math.round(SUZ.f3.decOdds*100)}% right, ${Math.round(SUZ.f3.healOdds*100)}% to heal ${Math.round(SUZ.f3.healPct*100)}%, +${Math.round(SUZ.f3.dmgRes*100)}% damage resist &amp; ${Math.round(SUZ.f3.ccRes*100)}% CC resist`,
       `<b>Form 3 · stacking</b> every ${SUZ.cpMax} class points: +${Math.round(SUZ.st.dec*100)}% decision accuracy, +${Math.round(SUZ.st.healOdds*100)}% heal chance, +${Math.round(SUZ.st.healPct*100)}% heal amount, +${Math.round(SUZ.st.dmgRes*100)}% damage resist, +${Math.round(SUZ.st.ccRes*100)}% CC resist (up to ×${SUZ.st.max})`],
     init(f){
-      f.cds={s1:SUZ.atkCd,s2:SUZ.decCd};
+      f.cds={s1:SUZ.atkCd*SUZ.f1Slow,s2:SUZ.decCd};
       f.form=1; f.cp=0; f.stacks=0; f.decT=0;
       f.ayaG=null; f.ayaAlly=null; f.ayaShieldDone=false; f.ayaDone=false;
       f.castBuff=1; f.dmgRes=0; f.ccRes=0;
     },
     think(f,e,d,auto){
-      if(f.form<2)return;                                  // form 1: sợ quá, không đánh gì cả
       if(f.decT>0)return;                                  // đang đứng suy nghĩ
-      if(f.cds.s2<=0&&(auto||keys['k'])){ f.cds.s2=SUZ.decCd; suzThink(f,e); return; }
-      if(f.cds.s1<=0&&d<f.r+e.r+SUZ.atkRange&&(auto||keys['j'])){ f.cds.s1=SUZ.atkCd; suzStrike(f,e); }
+      // Chiêu 2 là chiêu của người dám ra quyết định — form 1 chưa có.
+      if(f.form>=2&&f.cds.s2<=0&&(auto||keys['k'])){ f.cds.s2=SUZ.decCd; suzThink(f,e); return; }
+      if(f.cds.s1<=0&&d<f.r+e.r+SUZ.atkRange&&(auto||keys['j'])){
+        f.cds.s1=suzTune(f).atkCd; suzStrike(f,e);
+      }
     },
     // Thanh điểm lớp thôi, đúng kiểu Rage / Crit / Goal / Chakra của mấy nhân vật kia.
     // Không ghi form, không ghi bậc: người chơi tự thấy cô đổi khác qua dáng và đòn đánh.
@@ -1671,21 +1679,30 @@ function shikaPassive(f,dt){
     f.lazyTalk-=dt;
     if(f.lazyTalk<=0){ f.lazyTalk=rnd(gs(6),gs(11)); grumble(f); }
   }
-  if(f.lazy&&f.hp<=f.maxHp*SHIKA.wakeHp){
-    f.lazy=false; f.awake=true;
-    // đang than dở mà bị chọc dậy thì câm ngay, và bỏ luôn bong bóng còn treo —
-    // không để câu càu nhàu vắt sang lúc đã đứng lên đánh
-    stopSfx('shika_lazy');
-    for(let i=G.floats.length-1;i>=0;i--) if(G.floats[i].grumble) G.floats.splice(i,1);
-    f.wakeT=gs(SHIKA.wakeDelay);              // đứng lên rồi mới thủng thẳng ra đòn
-    setPose(f,'hurt',.4);
-    sfx('shika_wake');
-    ring(f.x,f.y,110,f.color,.45);
-    G.floats.push({x:f.x,y:f.y-108,txt:'FINE. I\'M UP.',color:f.color,life:1.6,ml:1.6,
-      banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
-    say(`Bị chọc tới ${Math.round(SHIKA.wakeHp*100)}% máu — Shikamaru đứng dậy, chakra chỉ còn ${SHIKA.fightRate/RT} mỗi giây.`,'s');
-  }
   f.chakra+=(f.lazy?SHIKA.lazyRate:SHIKA.fightRate)*dt;
+  // Hai lối rời ghế: bị đánh tới ngưỡng máu, hoặc ngồi đủ lâu để chạm trần chakra.
+  if(f.lazy){
+    if(f.chakra>=SHIKA.lazyCap) shikaWake(f,'full');
+    else if(f.hp<=f.maxHp*SHIKA.wakeHp) shikaWake(f,'hurt');
+  }
+}
+/* Đứng dậy khỏi quãng ngồi lười. Dù vì lý do gì thì phần dọn dẹp cũng y nhau:
+   câm tiếng than thở ngay, bỏ bong bóng còn treo, rồi thở một nhịp mới ra đòn. */
+function shikaWake(f,why){
+  f.lazy=false; f.awake=true;
+  // Trần chỉ chặn quãng ngồi lười. Đứng dậy rồi thì tích tiếp như thường, chỉ chậm hơn.
+  if(why==='full') f.chakra=Math.min(f.chakra,SHIKA.lazyCap);
+  stopSfx('shika_lazy');
+  for(let i=G.floats.length-1;i>=0;i--) if(G.floats[i].grumble) G.floats.splice(i,1);
+  f.wakeT=gs(SHIKA.wakeDelay);
+  setPose(f,why==='full'?'idle':'hurt',.4);
+  sfx('shika_wake');
+  ring(f.x,f.y,110,f.color,.45);
+  G.floats.push({x:f.x,y:f.y-108,txt:why==='full'?'THAT\'S ENOUGH. LET\'S GO.':'FINE. I\'M UP.',
+    color:f.color,life:1.6,ml:1.6,banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
+  say(why==='full'
+    ? `Đủ ${SHIKA.lazyCap} chakra — Shikamaru thôi ngồi, vào trận và tích lại như thường, ${SHIKA.fightRate/RT} mỗi giây.`
+    : `Bị chọc tới ${Math.round(SHIKA.wakeHp*100)}% máu — Shikamaru đứng dậy, chakra chỉ còn ${SHIKA.fightRate/RT} mỗi giây.`,'s');
 }
 
 const SCOLDS=[
@@ -2149,9 +2166,10 @@ function pickLine(arr,which){
 /* Bảng chỉ số theo form, cộng thêm phần dồn được ở form 3. Mọi chỗ đọc chung một nguồn
    để đổi cân bằng chỉ phải sửa hằng SUZ. */
 function suzTune(f){
-  const b=(f.form>=3)?SUZ.f3:SUZ.f2, st=(f.form>=3)?(f.stacks||0):0;
+  const b=(f.form>=3)?SUZ.f3:(f.form>=2?SUZ.f2:SUZ.f1), st=(f.form>=3)?(f.stacks||0):0;
   return {
     hit:b.hit, cp:b.cp,
+    atkCd:SUZ.atkCd*(f.form<2?SUZ.f1Slow:1),
     healOdds:Math.min(.95, b.healOdds+SUZ.st.healOdds*st),
     healPct:b.healPct+SUZ.st.healPct*st,
     decHealPct:b.decHealPct+SUZ.st.healPct*st,
@@ -2317,7 +2335,7 @@ function ayaBlock(t,amt,src){
 function suzForm2(f){
   if(f.form>=2)return;
   f.form=2;
-  f.cds.s1=SUZ.atkCd*.5; f.cds.s2=gs(1.5);
+  f.cds.s1=SUZ.atkCd*.5; f.cds.s2=gs(1.5);   // nhịp tay nhanh hẳn lên, và chiêu 2 mở ra
   f.lock=0;
   setPose(f,'punch',gs(.6));
   sfx('suz_form2');
@@ -2564,10 +2582,15 @@ function aiVec(f,e){
   const d=dist(f,e)||1, ux=(e.x-f.x)/d, uy=(e.y-f.y)/d;
   const wd=Math.hypot(f.wx-f.x,f.wy-f.y)||1, wxu=(f.wx-f.x)/wd, wyu=(f.wy-f.y)/wd;
   let x=0,y=0;
-  // Horikita form 1: sợ tới mức không dám lại gần, chỉ lùi ra và né
+  // Horikita form 1: đã dám vung tay nhưng vẫn nhát — nhích vào đủ tầm rồi lùi ngay,
+  // nên cô đánh được nhưng không bao giờ trụ lại ăn đòn như một nhân vật cận chiến thật.
   if(f.key==='suzune'&&f.form<2){
-    x-=ux*1.25; y-=uy*1.25;
-    x+=wxu*.5;  y+=wyu*.5;
+    // Điểm lượn phải nằm HẲN trong tầm tay (r+r+16 = 68), nếu không cô cứ đứng ngay
+    // mép tầm và phần lớn lượt hồi chiêu rơi vào lúc vừa lùi ra — nhìn như không đánh.
+    if(d>50){ x+=ux*.85; y+=uy*.85; }
+    else    { x-=ux*.75; y-=uy*.75; }
+    x+=wxu*.5-uy*f.strafe*.5;
+    y+=wyu*.5+ux*f.strafe*.5;
     const dv0=dodgeVec(f); x+=dv0.x*1.6; y+=dv0.y*1.6;
     return {x,y};
   }

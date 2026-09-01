@@ -53,13 +53,41 @@ const { openGame } = require('./probe');
     return out;
   });
 
+  /* Lối rời ghế thứ hai: ngồi đủ lâu chạm trần 1000 chakra thì tự đứng dậy, không cần
+     ai đánh. Sau đó tích nội tại lại như thường, tức là chakra vượt được qua trần. */
+  const cap = await page.evaluate(() => new Promise(res => {
+    const G = window.__G(), S = window.__SHIKA, RT = window.__RT;
+    const k = G.fighters.find(f => f.key === 'shika' && !f.summon);
+    // dựng lại đúng cảnh đầu trận: ngồi lười, máu đầy nên ngưỡng máu không thể kích hoạt
+    k.lazy = true; k.awake = false; k.weak = false; k.domain = null;
+    k.hp = k.maxHp; k.chakra = S.lazyCap - 40;
+    const t0 = G.t;
+    let luc = null, chakraLuc = 0;
+    const id = setInterval(() => {
+      k.hp = k.maxHp;                       // chặn hẳn lối bật dậy vì bị đánh
+      if (luc === null && !k.lazy) { luc = G.t - t0; chakraLuc = k.chakra; }
+      if (luc !== null && G.t - t0 > luc + 1.2) {
+        clearInterval(id);
+        res({ day: k.chakra, luc: chakraLuc, cap: S.lazyCap, lazy: k.lazy, awake: k.awake,
+              rate: S.fightRate });
+      }
+      if (G.t - t0 > 12) { clearInterval(id); res(null); }
+    }, 20);
+  }));
+
   console.log(`bong bong than tho : ${r.bubbleTruoc} truoc -> ${r.bubbleSau} sau`);
   console.log(`tieng bi cat ngay  : ${r.tiengBiCat}`);
   console.log(`nhip cho sau khi dung len: ${r.choGiay}s  (moc ${r.moc}s, doc tre 120ms nen hut mot chut)`);
   console.log(`don danh dau tien sau    : ${r.giayToiDonDau}s  (dai hon moc vi con phai di vao tam)`);
+  const capOk = !!cap && !cap.lazy && cap.awake
+             && Math.abs(cap.luc - cap.cap) < 1        // chốt đúng ở trần, không vượt
+             && cap.day > cap.cap;                     // đứng dậy rồi vẫn tích tiếp
+  console.log(cap
+    ? `tran chakra ${cap.cap}: dung day luc ${cap.luc.toFixed(1)}, 1.2s sau len ${cap.day.toFixed(1)} (tich tiep nhu thuong)`
+    : 'tran chakra: KHONG dung day trong 12s trong tran');
   console.log('loi trang:', errors.length ? errors.slice(0, 3) : 'khong co');
   await browser.close();
-  const ok = r.bubbleSau === 0 && r.tiengBiCat && r.choGiay > r.moc - .3 && !errors.length;
+  const ok = r.bubbleSau === 0 && r.tiengBiCat && r.choGiay > r.moc - .3 && capOk && !errors.length;
   console.log(ok ? 'DAT' : 'HONG');
   process.exit(ok ? 0 : 1);
 })();
