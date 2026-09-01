@@ -201,6 +201,15 @@ I fight for my own goal — alone."* và vào form 3.
 rút ngắn thời gian choáng trong `stunFx()`). Mỗi 150 điểm lớp tích thêm được thì **+5% tỉ lệ
 quyết định đúng, +5% tỉ lệ hồi máu, +6% lượng hồi máu, +8% miễn thương, +8% kháng hiệu ứng**.
 
+> **Không dán chữ giải thích form lên sàn.** Người dùng đã bác: bỏ hẳn dòng
+> `FORM n · …` dưới thanh máu, bỏ băng-rôn `FORM 2 · RESOLVE` / `FORM 3 · STANDING ALONE`,
+> bỏ bảng chỉ số lúc lên bậc, bỏ đồng hồ `AYANOKOUJI GUARDS …s`, bỏ luôn mấy dòng
+> `AYANOKOUJI SUPPORT` / `TAUNT` / `TAUNTED`. Đổi form thì chỉ nói bằng **hình và câu
+> thoại**: dáng đứng khác, vòng sáng, chớp màn, một tiếng. Thanh phụ chỉ còn
+> `Class pts: n/150`, đúng kiểu Rage / Crit / Goal / Chakra của mấy nhân vật kia.
+> Chỗ duy nhất được phép giải thích là **mảng `skills` trong màn chọn nhân vật**.
+> Nhật ký cũng kể chuyện chứ không đọc bảng chỉ số.
+
 > **Chỗ đã tự quyết, nói rõ để sau này khỏi cãi nhau:** bản mô tả gốc ghi *"+8% miễn thương,
 > +8% miễn thương"* hai lần. Hiểu là **+8% miễn thương và +8% kháng hiệu ứng** — vì form 3
 > vốn có sẵn cặp 10%/10%, cộng dồn theo cặp mới cân. Trần 5 bậc để miễn thương không chạy
@@ -462,6 +471,8 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 | Dáng thủ chéo tay của Horikita nhìn không ra | vẽ tay trước tóc, hai lọn tóc dài che mất | vẽ hai tay **sau** đầu và tóc, ở cuối khối vector |
 | Câu thoại dài tràn ra ngoài sàn | bong bóng thoại chỉ vẽ được một dòng | `wrapTxt()` + nhánh bong bóng nhận `\n` nhiều dòng; dùng qua `talk()` |
 | Ayanokouji đứng chồng lên Horikita | chỗ đứng chỉ cách 48px, mà hình rộng ~40px | giãn ra 66px và giãn luôn đội hình lúc chắn cận chiến |
+| Chữ thò ra ngoài khung sàn | mọi float vẽ đúng tại `f.x/f.y`, không ai đo bề ngang chữ | đo khối chữ trước rồi kéo vào **khung đang nhìn thấy** (`W/z × H/z` quanh tâm camera), không phải cả sàn — lúc phân cảnh zoom, chỗ nằm trong sàn vẫn có thể nằm ngoài màn hình. Dòng trạng thái dưới thanh máu cũng canh theo bề ngang của chính nó |
+| Mũi tên bong bóng quyết định tụt vào trong khung | lấy `min(bw/2,bh/2)` làm mép | tính giao điểm của tia với hình chữ nhật |
 
 ---
 

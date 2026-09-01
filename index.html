@@ -465,11 +465,10 @@ const CHARS={
       if(f.cds.s2<=0&&(auto||keys['k'])){ f.cds.s2=SUZ.decCd; suzThink(f,e); return; }
       if(f.cds.s1<=0&&d<f.r+e.r+SUZ.atkRange&&(auto||keys['j'])){ f.cds.s1=SUZ.atkCd; suzStrike(f,e); }
     },
-    gauge:f=>f.form<2
-      ? {pct:0, fill:'#8FA6C8', txt:'Form 1 · too afraid'}
-      : {pct:clamp(f.cp/SUZ.cpMax,0,1), fill:'#7FC8FF',
-         txt:f.form>=3?`Class pts: ${Math.round(f.cp)}/${SUZ.cpMax} · Rank ×${f.stacks}`
-                      :`Class pts: ${Math.round(f.cp)}/${SUZ.cpMax}`}
+    // Thanh điểm lớp thôi, đúng kiểu Rage / Crit / Goal / Chakra của mấy nhân vật kia.
+    // Không ghi form, không ghi bậc: người chơi tự thấy cô đổi khác qua dáng và đòn đánh.
+    gauge:f=>({pct:clamp(f.cp/SUZ.cpMax,0,1), fill:'#7FC8FF',
+               txt:`Class pts: ${Math.round(f.cp)}/${SUZ.cpMax}`})
   }
 };
 const CKEYS=Object.keys(CHARS);
@@ -2189,17 +2188,15 @@ function suzCp(f,n){
     if(!f.ayaDone) ayaJoin(f);
   }
 }
+/* Lên bậc thì chỉ nói bằng hình: vòng sáng, chớp màn và một tiếng. Không dán chữ giải
+   thích lên sàn — người chơi thấy cô đánh đau hơn, ít mất máu hơn là tự hiểu. */
 function suzRankUp(f){
-  const T=suzTune(f);
   ring(f.x,f.y,132,'#7FC8FF',.5);
-  G.flashScreen=Math.max(G.flashScreen,.1);
-  G.floats.push({x:f.x,y:f.y-118,txt:`CLASS POINTS ${SUZ.cpMax} · RANK UP ×${f.stacks}`,
-    color:'#7FC8FF',life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.04,.04)});
-  G.floats.push({x:f.x,y:f.y-92,
-    txt:`DECISION ${Math.round(T.decOdds*100)}% · HEAL ${Math.round(T.healOdds*100)}%/${Math.round(T.healPct*100)}% · RES ${Math.round(f.dmgRes*100)}%/${Math.round(f.ccRes*100)}%`,
-    color:'#BFE4FF',life:1.7,ml:1.7,banner:true,sc:.58});
+  ring(f.x,f.y,86,'#BFE4FF',.4);
+  G.flashScreen=Math.max(G.flashScreen,.12);
+  for(let i=0;i<10;i++) G.fx.push({type:'dust',x:f.x+rnd(-24,24),y:f.y+rnd(-40,16),r:4,life:.55,ml:.55});
   sfx('suz_form3');
-  say(`Đủ ${SUZ.cpMax} điểm lớp — Horikita lên bậc ×${f.stacks}: quyết định đúng ${Math.round(T.decOdds*100)}%, miễn thương ${Math.round(f.dmgRes*100)}%, kháng hiệu ứng ${Math.round(f.ccRes*100)}%.`,'s');
+  say(`Đủ ${SUZ.cpMax} điểm lớp — Horikita chắc tay hẳn lên.`,'s');
 }
 
 /* Chiêu 1 — áp sát rồi tung đấm hoặc đá, bốc ngẫu nhiên. Hai dáng tách hẳn nhau
@@ -2226,7 +2223,7 @@ function suzThink(f,e){
   sfx('suz_think');
   G.floats.push({x:f.x,y:f.y-96,txt:'. . .',color:'#BFE4FF',
     life:SUZ.decThink*1.15,ml:SUZ.decThink*1.15,banner:true,bubble:true,sc:.8});
-  say(`Horikita đứng lại tính toán — Decision Making, ${rts(SUZ.decThink)} giây.`,'s');
+  say('Horikita đứng lại tính toán.','s');
 }
 function suzDecide(f,e){
   const T=suzTune(f);
@@ -2306,7 +2303,7 @@ function ayaShield(f){
     sfx('aya_line');
     talk(f.ayaG.x, f.y-114, AYA_STAND, SUZ_BUBBLE*1.4, true);
   },true);
-  say(`Horikita tụt xuống ${Math.round(SUZ.guardHp*100)}% máu — Ayanokouji bước ra đỡ đòn thay ${rts(SUZ.guardT)} giây.`,'s');
+  say('Horikita loạng choạng — Ayanokouji bước ra, đứng chắn trước mặt cô.','s');
 }
 function ayaBlock(t,amt,src){
   const A=t.ayaG;
@@ -2327,8 +2324,7 @@ function suzForm2(f){
   ring(f.x,f.y,132,'#7FC8FF',.5);
   G.flashScreen=Math.max(G.flashScreen,.25);
   talk(f.x, f.y-118, SUZ_RISE, SUZ_BUBBLE, true);
-  G.floats.push({x:f.x,y:f.y-88,txt:'FORM 2 · RESOLVE',color:'#7FC8FF',life:1.9,ml:1.9,banner:true,sc:.66});
-  say('Ayanokouji lùi lại — Horikita bước lên: Form 2, từ giờ cô đánh trả.','s');
+  say('Ayanokouji lùi lại — Horikita siết nắm tay: từ giờ cô đánh trả.','s');
 }
 
 /* ---- Ayanokouji: bước ra làm đồng minh thật (đủ 150 điểm lớp) ---- */
@@ -2359,9 +2355,9 @@ function ayaJoin(f){
     G.fx.push({type:'poof',x:px,y:py-18,life:.85,ml:.85});
     ring(px,py,122,a.color,.55);
     sfx('summon');
-    say(`Ayanokouji vào sân với ${hp} máu (${Math.round(SUZ.ayaHp*100)}% máu hiện tại của Horikita) — cô ra chiêu nhanh gấp đôi.`,'s');
+    say(`Ayanokouji vào sân với ${hp} máu — đứng cạnh anh, Horikita ra đòn nhanh hẳn lên.`,'s');
   },true);
-  say(`Đủ ${SUZ.cpMax} điểm lớp — Ayanokouji bước ra sát cánh lần cuối.`,'s');
+  say('Ayanokouji bước ra sát cánh lần cuối.','s');
 }
 
 /* Có quả nào của địch đang lao về phía Horikita không. Có thì trả về chỗ nên đứng
@@ -2502,8 +2498,7 @@ function suzForm3(f){
   ring(f.x,f.y,150,'#7FC8FF',.55);
   G.flashScreen=Math.max(G.flashScreen,.35);
   talk(f.x, f.y-124, SUZ_ALONE, 2.5, true);
-  G.floats.push({x:f.x,y:f.y-90,txt:'FORM 3 · STANDING ALONE',color:'#7FC8FF',life:2.1,ml:2.1,banner:true,sc:.66});
-  say(`Form 3 — đòn tay ${SUZ.f3.hit} dmg, quyết định đúng ${Math.round(SUZ.f3.decOdds*100)}%, hồi máu ${Math.round(SUZ.f3.healOdds*100)}%/${Math.round(SUZ.f3.healPct*100)}%, miễn thương và kháng hiệu ứng ${Math.round(SUZ.f3.dmgRes*100)}%.`,'s');
+  say('Còn lại một mình trên sàn — đòn của Horikita nặng hơn, và cô không còn do dự nữa.','s');
 }
 
 /* Nhịp riêng của Horikita: đếm giờ suy nghĩ, nuôi Ayanokouji lúc anh đứng đỡ thay,
@@ -2528,7 +2523,7 @@ function suzPassive(f,dt){
     A.t-=dt;
     if(A.t<=0){
       G.fx.push({type:'poof',x:A.x,y:A.y-18,life:.75,ml:.75});
-      say(`Ayanokouji đỡ hộ ${A.hits} đòn, tổng ${Math.round(A.taken)} dmg.`,'s');
+      say(`Ayanokouji đỡ hộ ${A.hits} đòn, tổng ${Math.round(A.taken)} dmg, rồi lùi lại.`,'s');
       f.ayaG=null;
       suzForm2(f);
     }
@@ -3765,14 +3760,6 @@ function drawBars(f){
     ctx.strokeText(f.name.toUpperCase(),x+w/2,y-4);
     ctx.fillStyle=f.color; ctx.fillText(f.name.toUpperCase(),x+w/2,y-4);
     bar(x,y,w,h,f.hp/f.maxHp,f.color,String(Math.ceil(f.hp)));
-    const note=f.leaving>0?['LEAVING THE ARENA','#DCE6F5']
-             :(f.taunt>0?['TAUNT · DRAWING FIRE','#FFD9A0']:null);
-    if(note){
-      ctx.font='900 9px "Space Mono",monospace';
-      ctx.lineWidth=3; ctx.strokeStyle='#000';
-      ctx.strokeText(note[0],x+w/2,y+h+12);
-      ctx.fillStyle=note[1]; ctx.fillText(note[0],x+w/2,y+h+12);
-    }
     return;
   }
   const w=112,h=24,x=clamp(f.x-w/2,12,W-w-12),y=f.y+30;
@@ -3813,23 +3800,15 @@ function drawBars(f){
   if(f.key==='shika'&&f.weak) lines.push({t:'CHAKRA SPENT · NO STRANGLE · −30% SHURIKEN', c:'#A79BD6', s:9});
   if(f.outCut>0) lines.push({t:`IN THE FOREST · −${Math.round(SHIKA.domainOutCut*100)}% DAMAGE DEALT`, c:'#B7A6FF', s:9});
   if(f.dash&&f.dash.guard) lines.push({t:'FLYING KICK · CC IMMUNE · −30% DMG', c:'#FFC0CE', s:10});
-  if(f.key==='suzune'){
-    const nm=['','TOO AFRAID TO FIGHT','RESOLVE','STANDING ALONE'][f.form]||'';
-    lines.push({t:`FORM ${f.form} · ${nm}`, c:'#BFE4FF', s:10});
-    if(f.form>=3){
-      const T=suzTune(f);
-      lines.push({t:`DECISION ${Math.round(T.decOdds*100)}% · HEAL ${Math.round(T.healOdds*100)}%/${Math.round(T.healPct*100)}% · RES ${Math.round(f.dmgRes*100)}%/${Math.round(f.ccRes*100)}%`, c:'#7FC8FF', s:9});
-    }
-  }
-  if(f.ayaG) lines.push({t:`AYANOKOUJI TANKING (${(Math.max(0,f.ayaG.t)*RT).toFixed(1)}s)`, c:'#DCE6F5', s:10});
-  if(f.castBuff>1) lines.push({t:'AYANOKOUJI SUPPORT · +100% CAST SPEED', c:'#DCE6F5', s:9});
-  if(f.tauntBy) lines.push({t:'TAUNTED · LOCKED ONTO AYANOKOUJI', c:'#FFD9A0', s:9});
   if(f.invuln>0) lines.push({t:`IMMUNE (${(f.invuln*RT).toFixed(1)}s)`, c:'#FF9AD5', s:11});
   ctx.lineWidth=3; ctx.strokeStyle='#000';
   lines.forEach(L=>{
     ctx.font=`900 ${L.s}px "Space Mono",monospace`;
-    ctx.strokeText(L.t,x+w/2,ly);
-    ctx.fillStyle=L.c; ctx.fillText(L.t,x+w/2,ly);
+    // Dòng nào dài hơn thanh máu thì canh lại theo bề ngang của chính nó, nếu không
+    // chữ sẽ thò hẳn ra ngoài khung sàn.
+    const tx=clamp(x+w/2, ctx.measureText(L.t).width/2+10, W-ctx.measureText(L.t).width/2-10);
+    ctx.strokeText(L.t,tx,ly);
+    ctx.fillStyle=L.c; ctx.fillText(L.t,tx,ly);
     ly+=13;
   });
 }
@@ -4080,23 +4059,26 @@ function drawProj(p){
     // Bong bóng thoại phóng thẳng vào mặt đối phương. Khung luôn nằm ngang cho dễ đọc,
     // chỉ mũi nhọn và vệt tốc độ mới xoay theo hướng bay.
     const a=Math.atan2(p.vy,p.vx);
-    ctx.translate(p.x,p.y);
     ctx.font='800 12px "Be Vietnam Pro",sans-serif'; ctx.textAlign='center';
     const ls=wrapTxt(p.txt,30).split('\n');
     let tw=0; for(const L of ls) tw=Math.max(tw,ctx.measureText(L).width);
     const bw=tw+24, bh=20+ls.length*15;
+    ctx.translate(clamp(p.x,bw/2+12,W-bw/2-12), p.y);
+    // Mép khung theo đúng hướng bay: khung nằm ngang cho dễ đọc nên phải tính giao điểm
+    // của tia với hình chữ nhật, không lấy bừa nửa chiều nhỏ hơn (mũi tên sẽ tụt vào trong).
+    const ca=Math.cos(a), sa=Math.sin(a);
+    const edge=Math.min(Math.abs(ca)>1e-4?Math.abs(bw/2/ca):1e9,
+                        Math.abs(sa)>1e-4?Math.abs(bh/2/sa):1e9);
     ctx.save();
     ctx.globalAlpha=.45; ctx.strokeStyle='#7FC8FF'; ctx.lineWidth=2.6; ctx.lineCap='round';
+    ctx.rotate(a);
     for(let i=0;i<3;i++){
       const o=(i-1)*8, L=34+i*16;
-      ctx.beginPath();
-      ctx.moveTo(-Math.cos(a)*(bw/2)-Math.sin(a)*o, -Math.sin(a)*(bh/2)+Math.cos(a)*o);
-      ctx.lineTo(-Math.cos(a)*(bw/2+L)-Math.sin(a)*o, -Math.sin(a)*(bh/2+L)+Math.cos(a)*o);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-edge,o); ctx.lineTo(-edge-L,o); ctx.stroke();
     }
     ctx.restore();
     ctx.save();
-    ctx.rotate(a); ctx.translate(Math.min(bw/2,bh/2)+3,0);
+    ctx.rotate(a); ctx.translate(edge+2,0);
     ctx.fillStyle='#7FC8FF'; ctx.strokeStyle='#000'; ctx.lineWidth=3;
     ctx.beginPath(); ctx.moveTo(17,0); ctx.lineTo(-4,-9); ctx.lineTo(-4,9); ctx.closePath();
     ctx.fill(); ctx.stroke();
@@ -4418,8 +4400,40 @@ function draw(){
     const s=1+Math.max(0,.55-age*4);
     ctx.save();
     ctx.globalAlpha=clamp(f.life*1.4,0,1);
-    ctx.translate(f.x,f.y); ctx.scale(s,s);
     ctx.textAlign='center';
+    /* Đo trước khối chữ rồi kéo cả cụm vào trong sàn. Đứng sát mép mà nói câu dài thì
+       trước đây chữ thò hẳn ra ngoài khung — cả bề ngang lẫn bề dọc. Khối nào rộng hơn
+       cả sàn thì canh giữa, chứ đừng để cận trên nhỏ hơn cận dưới. */
+    const lns=String(f.txt).split('\n');
+    let bw=0, bh;
+    if(f.banner&&f.bubble&&!f.gold){
+      ctx.font=(f.big?'900 23px':'800 16px')+' "Be Vietnam Pro",sans-serif';
+      bh=(f.big?40:30)+(lns.length-1)*(f.big?26:19);
+    }else if(f.banner){
+      const px=(f.big?27:21)*(f.sc||1);
+      ctx.font=`900 ${Math.round(px)}px "Be Vietnam Pro",sans-serif`;
+      bh=px+12;
+    }else if(f.big){
+      const px=34*(f.sc||1);
+      ctx.font=`900 ${Math.round(px)}px "Be Vietnam Pro",sans-serif`;
+      bh=px+10;
+    }else{
+      const px=22*(f.sc||1);
+      ctx.font=`900 ${Math.round(px)}px "Be Vietnam Pro",sans-serif`;
+      bh=px+10;
+    }
+    for(const L of lns) bw=Math.max(bw,ctx.measureText(L).width);
+    bw=(bw+((f.banner&&f.bubble&&!f.gold)?(f.big?30:22):16))*s;
+    bh*=s;
+    /* Kéo vào KHUNG ĐANG NHÌN THẤY chứ không phải cả sàn: lúc phân cảnh camera zoom vào
+       thì cửa sổ nhìn chỉ còn W/z × H/z quanh tâm camera, một chỗ nằm trong sàn vẫn có
+       thể nằm ngoài màn hình. Zoom bằng 1 thì công thức này trùng với cả sàn. */
+    const cz=G.cam.z||1, vw=W/cz, vh=H/cz;
+    const vx0=G.cam.x-vw/2, vx1=G.cam.x+vw/2, vy0=G.cam.y-vh/2, vy1=G.cam.y+vh/2;
+    const px=10/cz, py=12/cz;
+    const fx=clamp(f.x, Math.min(G.cam.x,vx0+bw/2+px), Math.max(G.cam.x,vx1-bw/2-px));
+    const fy=clamp(f.y, Math.min(G.cam.y,vy0+bh/2+py), Math.max(G.cam.y,vy1-bh/2-py));
+    ctx.translate(fx,fy); ctx.scale(s,s);
     if(f.banner&&f.bubble&&!f.gold){
       ctx.rotate((f.tilt||0)+Math.sin(age*16)*.03);
       ctx.font=(f.big?'900 23px':'800 16px')+' "Be Vietnam Pro",sans-serif';
@@ -4508,13 +4522,6 @@ function drawAyaGuard(){
     ctx.translate(A.x,A.y+20); ctx.scale(A.face<0?-1:1,1);
     if(img){ const h=126,w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
     else vector({key:'ayanokouji',face:1,moving:false,pose:'guard',poseT:0});
-    ctx.restore();
-    ctx.save();
-    ctx.globalAlpha=app;
-    ctx.font='900 10px "Space Mono",monospace'; ctx.textAlign='center';
-    ctx.lineWidth=3; ctx.strokeStyle='#000';
-    const t=`AYANOKOUJI GUARDS ${(Math.max(0,A.t)*RT).toFixed(1)}s`;
-    ctx.strokeText(t,A.x,A.y+40); ctx.fillStyle='#DCE6F5'; ctx.fillText(t,A.x,A.y+40);
     ctx.restore();
   }
 }
