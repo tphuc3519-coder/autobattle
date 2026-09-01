@@ -53,13 +53,51 @@ const { openGame } = require('./probe');
     return out;
   });
 
+  /* Lối rời ghế thứ hai: ngồi đủ lâu chạm trần 1000 chakra thì tự đứng dậy, không cần
+     ai đánh. Ba thứ phải đúng cùng lúc: thôi ngồi, THẬT SỰ RA ĐÒN, và chakra vẫn tích
+     tiếp như một Shikamaru đã vào trận (fightRate) — tức là vượt qua được trần. */
+  const cap = await page.evaluate(() => new Promise(res => {
+    const G = window.__G(), S = window.__SHIKA;
+    const k = G.fighters.find(f => f.key === 'shika' && !f.summon);
+    // dựng lại đúng cảnh đầu trận: ngồi lười, máu đầy nên ngưỡng máu không thể kích hoạt
+    k.lazy = true; k.awake = false; k.weak = false; k.domain = null;
+    k.hp = k.maxHp; k.chakra = S.lazyCap - 40;
+    const t0 = G.t;
+    let luc = null, chakraLuc = 0, tDon = null, kieuDon = null;
+    const id = setInterval(() => {
+      k.hp = k.maxHp;                       // chặn hẳn lối bật dậy vì bị đánh
+      if (luc === null && !k.lazy) { luc = G.t - t0; chakraLuc = k.chakra; }
+      if (luc !== null && tDon === null) {
+        if (G.proj.some(p => p.owner === k)) { tDon = G.t - t0; kieuDon = 'shuriken'; }
+        else if (k.dash) { tDon = G.t - t0; kieuDon = 'dam sau lung'; }
+        else if (k.bind) { tDon = G.t - t0; kieuDon = 'troi bong'; }
+      }
+      if (tDon !== null && G.t - t0 > tDon + 1.2) {
+        clearInterval(id);
+        res({ day: k.chakra, luc: chakraLuc, cap: S.lazyCap, lazy: k.lazy, awake: k.awake,
+              tDon: +(tDon - luc).toFixed(2), kieuDon,
+              toc: +((k.chakra - chakraLuc) / (G.t - t0 - luc)).toFixed(2), rate: S.fightRate });
+      }
+      if (G.t - t0 > 16) { clearInterval(id); res(null); }
+    }, 20);
+  }));
+
   console.log(`bong bong than tho : ${r.bubbleTruoc} truoc -> ${r.bubbleSau} sau`);
   console.log(`tieng bi cat ngay  : ${r.tiengBiCat}`);
   console.log(`nhip cho sau khi dung len: ${r.choGiay}s  (moc ${r.moc}s, doc tre 120ms nen hut mot chut)`);
   console.log(`don danh dau tien sau    : ${r.giayToiDonDau}s  (dai hon moc vi con phai di vao tam)`);
+  const capOk = !!cap && !cap.lazy && cap.awake
+             && Math.abs(cap.luc - cap.cap) < 1        // thôi ngồi đúng ở trần
+             && !!cap.kieuDon                          // và thật sự ra đòn, không đứng trơ
+             && cap.day > cap.cap                      // chakra vượt qua trần, vẫn tích tiếp
+             && Math.abs(cap.toc - cap.rate) < .6;     // đúng nhịp của một Shikamaru đã vào trận
+  console.log(cap
+    ? `tran chakra ${cap.cap}: thoi ngoi luc ${cap.luc.toFixed(1)} · ra don "${cap.kieuDon}" sau ${cap.tDon}s`
+      + ` · chakra len ${cap.day.toFixed(1)}, nhip ${cap.toc}/giay trong tran (fightRate ${cap.rate})`
+    : 'tran chakra: KHONG thoi ngoi / KHONG ra don trong 16s trong tran');
   console.log('loi trang:', errors.length ? errors.slice(0, 3) : 'khong co');
   await browser.close();
-  const ok = r.bubbleSau === 0 && r.tiengBiCat && r.choGiay > r.moc - .3 && !errors.length;
+  const ok = r.bubbleSau === 0 && r.tiengBiCat && r.choGiay > r.moc - .3 && capOk && !errors.length;
   console.log(ok ? 'DAT' : 'HONG');
   process.exit(ok ? 0 : 1);
 })();

@@ -116,6 +116,11 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
 Toàn bộ trong hằng `SHIKA`. Những điểm người dùng chốt riêng:
 - **Ngồi lười** (không phải nằm) đầu trận, tích 12 chakra/giây người chơi; bật dậy khi máu
   tụt xuống **80%** (`wakeHp:.80`) rồi chỉ còn 4/giây.
+- **Trần của quãng ngồi lười là 1000 chakra** (`lazyCap`). Không ai đánh thì cứ ngồi tới khi
+  đủ 1000 là **tự đứng dậy** đánh như bình thường. Trần này **chỉ chặn quãng ngồi**, không
+  phải trần tuyệt đối: đứng dậy rồi vẫn tích tiếp 4/giây và **vượt qua 1000 được**. Hai lối
+  rời ghế đi chung hàm `shikaWake(f, why)` để phần dọn dẹp (câm tiếng than, xoá bong bóng,
+  chờ `wakeDelay`) không bị chép thành hai bản. Thanh chakra canh theo `lazyCap`.
 - Bật dậy: **cắt tiếng than thở ngay lập tức**, xoá bong bóng đang treo, rồi **chờ 1.5 giây
   người chơi** (`wakeDelay:1.5`) mới vận chiêu. Vẫn phải đi vào tầm nên đòn đầu tiên thực tế
   rơi vào khoảng 4 giây — đó là bình thường, không phải lỗi.
@@ -146,7 +151,7 @@ Nhân vật cận chiến, đi theo **ba form** — đây là cả tính cách n
 
 | Form | Là ai | Có gì |
 |---|---|---|
-| 1 | Sợ, không dám đánh | **không tấn công gì cả**; đứng thì dáng `scared` (hai tay chụm trước ngực, mắt mở to, giọt mồ hôi), trúng đòn thì dáng `block` (hai tay bắt chéo chữ X). AI chỉ lùi ra và né, không lao vào |
+| 1 | Đã dám vung tay nhưng còn rụt rè | chỉ có chiêu 1, **10 dmg** mỗi đòn và ra chậm hơn form 2 **1.6 lần** (`SUZ.f1`, `SUZ.f1Slow`); **chưa có chiêu 2**, chưa tích điểm lớp, chưa có cửa hồi máu. Đứng thì dáng `scared` (hai tay chụm trước ngực, mắt mở to, giọt mồ hôi), trúng đòn thì dáng `block` (hai tay bắt chéo chữ X). AI nhích vào đủ tầm rồi lùi ngay |
 | 2 | Dám đánh nhưng còn sai | chiêu 1 đấm/đá, chiêu 2 Decision Making |
 | 3 | Tự đứng một mình | như form 2 nhưng mạnh hơn và cộng dồn theo điểm lớp |
 
@@ -163,9 +168,23 @@ return sớm lúc `G.freeze>0`. Test phải chờ cả hai, đây không phải 
 - Form 3: cứ đủ 150 thì đổi thành **một bậc cộng dồn** rồi tính lại từ 0 (trần 5 bậc).
 
 **Chiêu 1** — áp sát rồi bốc ngẫu nhiên đấm hoặc đá, **hai dáng tách hẳn** (`punch` / `kick`).
-15 dmg + 15 điểm ở form 2, 20 dmg + 20 điểm ở form 3. Hồi chiêu `cm(.25)*2.5`, tức
-**chậm hơn ChiChi đúng 2.5 lần** và vẫn co giãn theo thanh tốc độ ra chiêu. Mỗi đòn trúng
-có **25%** hồi **5%** máu hiện tại (form 3: 35% / 8%).
+**10 dmg + 0 điểm ở form 1**, 15 dmg + 15 điểm ở form 2, 20 dmg + 20 điểm ở form 3. Hồi chiêu
+gốc `cm(.25)*2.5`, tức **chậm hơn ChiChi đúng 2.5 lần** và vẫn co giãn theo thanh tốc độ ra
+chiêu; form 1 nhân thêm `f1Slow = 1.6` nữa. **Hồi chiêu phải đọc qua `suzTune(f).atkCd`**,
+đừng đọc thẳng `SUZ.atkCd`. Mỗi đòn trúng có **25%** hồi **5%** máu hiện tại
+(form 1: không có, form 3: 35% / 8%).
+
+> **Form 1 không tích điểm lớp và không có cửa hồi máu** — chỗ này người dùng không nói rõ,
+> tôi chốt vậy vì hai thứ đó là phần thưởng của sự tự tin, mà bản mô tả gốc chỉ nêu chúng từ
+> form 2. Quan trọng hơn: cho tích điểm ở form 1 thì cô có thể chạm 150 trước khi Ayanokouji
+> kịp đỡ đòn, `suzCp()` sẽ gọi `ayaJoin()` lúc cô còn chưa qua form 2 — vỡ cả mạch truyện.
+> Muốn đổi thì sửa `SUZ.f1`.
+
+> **Điểm lượn của AI form 1 phải nằm hẳn trong tầm tay** (`d > 50` thì tiến, dưới thì lùi;
+> tầm tay là `r+r+16 = 68`). Để mốc sát mép tầm thì phần lớn lượt hồi chiêu rơi đúng lúc cô
+> vừa lùi ra, nhìn như không thèm đánh. Đo được: gặp địch cận chiến cô ra đủ 7 đòn trong 14
+> giây trong trận (đúng trần lý thuyết 14/1.8); gặp địch đánh xa thì ít hơn hẳn vì bị kéo
+> giãn — đó là chuyện thường của cận chiến, ChiChi cũng vậy.
 
 **Chiêu 2 — Decision Making**: mỗi **6 giây người chơi** cô đứng **bất động 1.5 giây**
 (`f.decT` + `f.lock`) rồi chốt. Đúng (50% ở form 2, 70% ở form 3) thì câu nói biến thành
@@ -421,7 +440,7 @@ Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 
 ```bash
 node tools/t_reg.js     # 15 cặp đấu song song, bắt lỗi trang, xem cơ chế lớn có nổ không
-node tools/t_wake.js    # đo nhịp Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây
+node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần 1000 chakra
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
