@@ -256,9 +256,9 @@ làm:
    - **Đừng quay lại `MediaStreamTrackProcessor`.** API đó chỉ có trên Chrome desktop; trên
      Safari/Firefox thì không, và video quay ra chỉ có mỗi track hình — người dùng gửi đúng
      một file như vậy (`avc1` một track, CFR chuẩn, không có tiếng).
-   - Thứ tự thử: `AudioWorklet` (chạy trên luồng âm thanh, không bị đói lúc mã hoá hình),
-     không được thì `ScriptProcessor`. Mở game bằng `file://` thì worklet **luôn** hỏng
-     (`addModule` với blob URL: `AbortError`), nên thực tế chạy `ScriptProcessor` — vẫn tốt.
+   - Thứ tự thử: `AudioWorklet` (chạy trên luồng âm thanh, không rơi mẫu), không được thì
+     `ScriptProcessor` (đệm 16384 cho đỡ rơi). Nạp worklet bằng **`data:` URL** — blob URL bị
+     chặn khi mở game bằng `file://` (`AbortError`).
    - Đầu thu phải nối vào một `GainNode` gain 0 rồi ra `destination`, không thì đồ thị không
      được kéo.
    - Mốc thời gian của mẫu tiếng tính theo **số mẫu đã đi qua** (`st.apos`), không theo đồng
@@ -298,9 +298,22 @@ Người dùng quay bằng **Safari**. Safari có `VideoEncoder` (ra `avc1`) nh�
 `MediaStreamTrackProcessor`**, và tuỳ đời máy có thể không có `AudioEncoder`/`AudioData` —
 hai file họ gửi đều chỉ có mỗi track hình. Vì vậy:
 
-- Thiếu `AudioEncoder`/`AudioData`, hoặc bộ mã hoá chết giữa chừng ⇒ **ghép tiếng PCM thô**
-  (`sowt`, 16-bit little-endian) vào MP4 thay vì bỏ CFR. Người dùng cần CFR để up TikTok nên
-  đây là ưu tiên; đổi lại file nặng thêm ~10 MB mỗi phút.
+- Thiếu `AudioEncoder`/`AudioData`, hoặc bộ mã hoá không nhả mẫu ⇒ **ghép tiếng PCM thô**
+  (`sowt`) thay vì bỏ CFR. Người dùng cần CFR để up TikTok nên đây là ưu tiên; đổi lại file
+  nặng thêm ~10 MB mỗi phút.
+- Có PCM thì **xuất hẳn file QuickTime `.mov`** (major brand `qt  `) và sample entry `sowt`
+  phải là **version 1** (kèm `samplesPerPacket`/`bytesPerPacket`/`bytesPerFrame`/
+  `bytesPerSample`). Nhét `sowt` version 0 vào MP4 brand `isom` thì Safari **im tiếng** dù
+  dữ liệu tiếng nằm đủ trong file — người dùng đã gửi đúng một file như vậy. TikTok nhận
+  `.mov` bình thường.
+- **Luôn gom PCM song song từ giây đầu**; 1.5 giây sau mới chốt: bộ mã hoá có nhả mẫu thì bỏ
+  bản PCM, không thì dùng nó (đủ tiếng từ đầu trận, không hụt mấy giây đầu).
+- **Số kênh của `AudioData` phải đúng bằng lúc `configure()`.** Mọi nguồn tiếng trong game
+  đều mono nên đầu thu hay trả 1 kênh; cấu hình 2 kênh mà đưa 1 kênh thì `encode()` ném
+  "Input audio buffer is incompatible with codec parameters" và mất sạch tiếng.
+- `ScriptProcessor` **bỏ hẳn lượt gọi** khi luồng chính bận mã hoá hình (file người dùng gửi:
+  tiếng 4.7s / hình 8.7s). Đo theo `e.playbackTime` để biết hụt bao nhiêu rồi **chèn im lặng
+  bù** — tiếng mới không ngắn hơn hình và không trôi dần.
 - Chỉ khi **không tạo nổi đầu thu PCM** (không có cả AudioWorklet lẫn ScriptProcessor) mới
   nhường cho `MediaRecorder` — VFR nhưng có tiếng.
 - `cfrAudioOpen()` thử `isConfigSupported` trước, không được thì **liều `configure()` luôn**:
