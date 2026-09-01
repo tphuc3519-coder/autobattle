@@ -248,6 +248,9 @@ làm:
 3. `mp4Build()` tự dựng file MP4: `ftyp + mdat + moov`, mỗi track gom vào **một chunk** nên
    `stsc`/`stco` chỉ có một dòng. Track hình timescale `60*1000`, mỗi mẫu **1000 nhịp** ⇒
    bảng `stts` đúng **một dòng** = CFR thật.
+   - Track PCM (`sowt`) khai `stsz` **cỡ mẫu cố định** (`ch*2`) và `stts` một dòng
+     `[số mẫu, 1]` với timescale = tần số, nếu không bảng sẽ phình ra 44100 dòng mỗi giây.
+     Có PCM thì `ftyp` thêm brand `qt  `.
 4. Tiếng: **đầu thu PCM cắm thẳng vào đồ thị âm thanh** (`cfrAudioTap`) → `AudioEncoder`
    (`mp4a.40.2`, không thì `opus`) → track thứ hai (`esds` cho AAC, `dOps` cho Opus).
    - **Đừng quay lại `MediaStreamTrackProcessor`.** API đó chỉ có trên Chrome desktop; trên
@@ -282,7 +285,7 @@ làm:
 Không có WebCodecs (Firefox, Safari cũ) thì lui về `MediaRecorder` — vẫn ghi được nhưng là
 VFR, và nhật ký nói rõ điều đó.
 
-> **Luật: thà VFR còn hơn câm.** Sau 1.2 giây mà chưa có mẫu PCM nào vào bộ mã hoá
+> **Thứ tự ưu tiên: CFR + AAC/Opus → CFR + PCM thô → VFR có tiếng.** Đừng bao giờ để ra file câm. Sau 1.2 giây mà chưa có mẫu PCM nào vào bộ mã hoá
 > (`st.apos === 0`), `cfrNoAudio()` huỷ đường CFR và ghi lại từ đầu bằng `MediaRecorder` —
 > bộ ghi đó lấy tiếng qua `MediaStream` nên chạy ở mọi trình duyệt. Xét theo `st.apos` chứ
 > đừng xét `st.a`: máy yếu thì đầu ra bộ mã hoá về trễ, PCM vẫn chảy, đó không phải là câm.
@@ -295,8 +298,11 @@ Người dùng quay bằng **Safari**. Safari có `VideoEncoder` (ra `avc1`) nh�
 `MediaStreamTrackProcessor`**, và tuỳ đời máy có thể không có `AudioEncoder`/`AudioData` —
 hai file họ gửi đều chỉ có mỗi track hình. Vì vậy:
 
-- Đường CFR chỉ chạy đủ hình + tiếng khi trình duyệt có `AudioEncoder`; không thì
-  `cfrNoAudio()` nhường cho `MediaRecorder` (Safari xuất MP4 có AAC) — **VFR nhưng có tiếng**.
+- Thiếu `AudioEncoder`/`AudioData`, hoặc bộ mã hoá chết giữa chừng ⇒ **ghép tiếng PCM thô**
+  (`sowt`, 16-bit little-endian) vào MP4 thay vì bỏ CFR. Người dùng cần CFR để up TikTok nên
+  đây là ưu tiên; đổi lại file nặng thêm ~10 MB mỗi phút.
+- Chỉ khi **không tạo nổi đầu thu PCM** (không có cả AudioWorklet lẫn ScriptProcessor) mới
+  nhường cho `MediaRecorder` — VFR nhưng có tiếng.
 - `cfrAudioOpen()` thử `isConfigSupported` trước, không được thì **liều `configure()` luôn**:
   Safari có lúc báo false nhưng vẫn cấu hình được.
 - Bộ ghi thường gộp hình + tiếng bằng `new MediaStream([...])`, **đừng `addTrack` vào luồng
