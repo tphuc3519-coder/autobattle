@@ -366,6 +366,9 @@ const SUZ={
 /* Tuổi thọ bong bóng thoại của Horikita / Ayanokouji — SFX_SEG bên dưới bám theo,
    để câu tiếng không sống lâu hơn bong bóng đang treo. */
 const SUZ_BUBBLE=1.9;
+/* Bong bóng câu tự hỏi phải sống lâu hơn quãng đứng im một nhịp: đứng im 1.5 giây người
+   chơi mà đọc một câu hỏi thì không kịp, và tiếng không được sống lâu hơn hình đi kèm. */
+const SUZ_THINK_LIFE=SUZ.decThink+gs(.9);
 const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
@@ -638,10 +641,12 @@ const SFX_EVENTS=[
   ['shika_stab','Đâm sau lưng'],['shika_stab_hit','Mũi đâm trúng người địch'],['shika_bind','Trói bóng khoá cổ'],['shika_grab','Bóng siết lấy cổ'],
   ['shika_garden','Mở khu rừng nhà Nara'],
   ['suz_punch','Horikita đấm'],['suz_kick','Horikita đá'],['suz_block','Horikita đỡ đòn / Ayanokouji chắn thay'],
-  ['suz_think','Horikita đứng suy nghĩ'],['suz_decide','Horikita đọc quyết định (file dài: mỗi lần một câu)'],
-  ['suz_hit','Quyết định đâm trúng địch'],['suz_wrong','Quyết định sai (file dài: mỗi lần một câu)'],
+  ['suz_think','🎙 GIỌNG · Horikita tự hỏi bản thân (một câu duy nhất)'],
+  ['suz_decide','🎙 GIỌNG · Horikita quyết định ĐÚNG (file dài: mỗi lần đọc tiếp một câu)'],
+  ['suz_wrong','🎙 GIỌNG · Horikita quyết định SAI (file dài: mỗi lần đọc tiếp một câu)'],
+  ['suz_hit','Quyết định đâm trúng địch'],
   ['suz_heal','Horikita hồi máu'],['suz_form2','Horikita đứng lên đánh trả'],['suz_form3','Horikita tự mình chiến đấu'],
-  ['aya_appear','Ayanokouji xuất hiện'],['aya_line','Ayanokouji nói'],['aya_strike','Ayanokouji đột kích'],['aya_leave','Ayanokouji rời sàn']
+  ['aya_appear','Ayanokouji xuất hiện'],['aya_strike','Ayanokouji đột kích'],['aya_leave','Ayanokouji rời sàn']
 ];
 const SFXBUF={};
 let AC=null, volume=.6, muted=false, lastSfx={};
@@ -842,8 +847,6 @@ function synth(name,c,g){
                       noise(c,g,{dur:1,f0:500,f1:2400,vol:.11}); break;
     case 'aya_appear':tone(c,g,{type:'sine',f0:90,f1:225,dur:.7,vol:.24});
                       noise(c,g,{dur:.7,f0:300,f1:1600,vol:.14,q:.8}); break;
-    case 'aya_line':  tone(c,g,{type:'triangle',f0:300,f1:300,dur:.2,vol:.12});
-                      tone(c,g,{type:'triangle',f0:240,f1:240,dur:.24,vol:.1,delay:.16}); break;
     case 'aya_strike':tone(c,g,{type:'sawtooth',f0:520,f1:120,dur:.24,vol:.26});
                       noise(c,g,{dur:.22,f0:2600,f1:500,vol:.2,q:1.4}); break;
     case 'aya_leave': tone(c,g,{type:'sine',f0:330,f1:110,dur:.9,vol:.16});
@@ -860,7 +863,7 @@ const SFX_MAXLEN={
   callgoku:CALL_BANNER_LIFE*RT,                 // hết băng-rôn gọi là hết
   callgohan:CALL_BANNER_LIFE*RT,
   summon:SUMMON_CHARGE*RT,                      // viện binh hiện ra tới lúc bắn
-  aya_line:SUZ_BUBBLE*1.4*RT,                   // câu thoại của Ayanokouji tắt cùng bong bóng
+  suz_think:SUZ_THINK_LIFE*RT,                  // câu tự hỏi tắt đúng lúc bong bóng tắt
   aya_leave:SUZ_BUBBLE*RT,
   suz_form2:2.4, suz_form3:2.8
 };
@@ -2150,6 +2153,9 @@ function talk(x,y,txt,life,big){
   G.floats.push({x,y,txt:wrapTxt(txt,big?24:30),color:'#22304F',
     life,ml:life,banner:true,bubble:true,big:!!big,tilt:rnd(-.03,.03)});
 }
+/* Lúc đứng lại cân nhắc, câu hỏi trong đầu cô luôn là một câu duy nhất — đây cũng chính
+   là nội dung của ô giọng 'suz_think'. Sửa câu này thì phải thu lại file tiếng cho khớp. */
+const SUZ_ASK='What should I do in this situation?';
 const AYA_STAND='Stand up and fight.';
 const AYA_LAST='You are strong enough to face this on your own now. This is the last time I stand beside you.';
 const AYA_BYE='This is where I take my leave.';
@@ -2239,9 +2245,8 @@ function suzThink(f,e){
   setPose(f,'think',SUZ.decThink);
   f.vx=0; f.vy=0; f.dvx=0; f.dvy=0; f.moving=false;
   sfx('suz_think');
-  G.floats.push({x:f.x,y:f.y-96,txt:'. . .',color:'#BFE4FF',
-    life:SUZ.decThink*1.15,ml:SUZ.decThink*1.15,banner:true,bubble:true,sc:.8});
-  say('Horikita đứng lại tính toán.','s');
+  talk(f.x, f.y-100, SUZ_ASK, SUZ_THINK_LIFE, false);
+  say(`Horikita đứng lại tính toán — "${SUZ_ASK}"`,'s');
 }
 function suzDecide(f,e){
   const T=suzTune(f);
@@ -2318,7 +2323,6 @@ function ayaShield(f){
   G.fx.push({type:'poof',x:f.ayaG.x,y:f.ayaG.y-18,life:.8,ml:.8});
   later(.5,()=>{
     if(G.over||!f.ayaG)return;
-    sfx('aya_line');
     talk(f.ayaG.x, f.y-114, AYA_STAND, SUZ_BUBBLE*1.4, true);
   },true);
   say('Horikita loạng choạng — Ayanokouji bước ra, đứng chắn trước mặt cô.','s');
@@ -2358,7 +2362,6 @@ function ayaJoin(f){
   G.callBanner={txt:'AYANOKOUJI JOINS',color:'#8FA6C8',life:CALL_BANNER_LIFE,ml:CALL_BANNER_LIFE};
   later(.45,()=>{
     if(G.over)return;
-    sfx('aya_line');
     talk(px, py-124, AYA_LAST, 2.5, false);
   },true);
   later(1.55,()=>{

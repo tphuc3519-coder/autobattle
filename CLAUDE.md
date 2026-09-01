@@ -193,10 +193,23 @@ thương vừa gây**, kèm cửa hồi máu 25%/3% (form 3: 35%/8%). Sai thì *
 thủng xuống âm thì cô **tự chịu đúng phần âm đó** (không né được, không giảm nhẹ) rồi tích
 lại từ 0.
 
-> Hai ô tiếng `suz_decide` và `suz_wrong` dùng kiểu **đọc nối tiếp** (`SFX_SEG`): dán nguyên
-> một file thu sẵn cả chục câu vào là mỗi lần ra quyết định game đọc tiếp một câu. Danh sách
-> câu nằm ở `SUZ_DECISIONS` (15 câu) và `SUZ_WRONG` (6 câu) — **sửa file tiếng thì phải sửa
-> luôn hai mảng này cho khớp thứ tự.**
+**Bong bóng lúc đứng suy nghĩ luôn là một câu duy nhất** — `SUZ_ASK`
+(*"What should I do in this situation?"*), không phải dấu ba chấm. Bong bóng sống
+`SUZ_THINK_LIFE = decThink + gs(.9)` chứ không chỉ bằng quãng đứng im, vì đọc hết một câu
+hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu hơn hình đi kèm.
+
+> **Nhân vật này chỉ có ĐÚNG BA ô giọng**, nhãn có gắn 🎙 trong bảng nạp tiếng:
+> | Ô | Nội dung | Kiểu đọc |
+> |---|---|---|
+> | `suz_think` | một câu duy nhất: `SUZ_ASK` | `SFX_MAXLEN`, cắt đúng lúc bong bóng tắt |
+> | `suz_decide` | 15 câu trong `SUZ_DECISIONS` | `SFX_SEG`, mỗi lần đọc tiếp một câu |
+> | `suz_wrong` | 6 câu trong `SUZ_WRONG` | `SFX_SEG`, mỗi lần đọc tiếp một câu |
+>
+> **Sửa file tiếng thì phải sửa luôn ba chỗ trên cho khớp thứ tự.** Người dùng đã bác ô
+> giọng thứ tư (`aya_line`, để Ayanokouji nói): anh vẫn có bong bóng thoại, chỉ là không
+> có giọng riêng — tiếng `aya_appear` đã kêu ngay lúc anh bước ra rồi. Mấy ô còn lại
+> (`suz_punch` / `suz_kick` / `suz_block` / `suz_hit` / `suz_heal` / `suz_form2` /
+> `suz_form3` / `aya_*`) là tiếng động, không phải giọng, nên giữ nguyên.
 
 **Ayanokouji làm đồng minh thật** (đủ 150 điểm ở form 2). Anh là fighter duy nhất mang cờ
 `ally:true`; `summon:true` để `hurt()` không gọi `finish()` khi anh cạn máu, nhưng
