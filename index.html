@@ -3886,20 +3886,17 @@ let last=performance.now(),acc=0;
 function loop(now){
   const raw=Math.min(.05,(now-last)/1000); last=now;
   if(running){ acc+=raw*speedMul; let guard=0; while(acc>=1/120 && guard++<600){ step(1/120); acc-=1/120; } }
-  draw(); if(REC&&recTall) recFrame();      // khung dọc chỉ dựng lúc đang ghi hình
+  draw(); recTick();                        // khung dọc + đẩy khung vào bộ mã hoá, chỉ khi đang ghi
   requestAnimationFrame(loop);
 }
 /* ---------- ghi hình sàn đấu ---------- */
-/* Mặc định video lưu ra theo khung dọc 9:16 (1080×1920) cho vừa màn hình điện thoại:
-   sàn đấu vuông đặt giữa khung, dải trên ghi tên trận và đồng hồ, dải dưới chạy bốn
-   dòng nhật ký gần nhất. Bỏ tick "Dọc 9:16" thì ghi thẳng canvas như cũ.
-   Khung dọc chỉ được dựng trong lúc đang ghi nên không đụng tới fps lúc chơi thường. */
 /* Khung video dọc 9:16 (vừa TikTok/Reels/Shorts). Chọn ở #rec916: 1080p cho nét,
    720p cho máy yếu — mã hoá 1080×1920 bằng CPU khá nặng. Chữ luôn vẽ theo hệ toạ độ
    RECD 1080×1920 rồi setTransform thu về đúng bề ngang đang chọn. */
 const RECD={w:1080,h:1920,top:355};
+const REC_FPS=60, REC_BPS=8000000;
 let REC916={w:1080,h:1920};
-let REC=null, recChunks=[], recStart=0, recTimer=null, recTall=false;
+let REC=null, recChunks=[], recStart=0, recTimer=null, recTall=false, recBusy=false;
 let RECV=null, RECX=null, recSig='';
 function recWantTall(){                       // 0 = ghi thẳng canvas như cũ
   const c=document.getElementById('rec916');
@@ -3946,15 +3943,300 @@ function recFrame(){
   g.fillText(recFit(g,`${CHARS[PICK.a].name}  vs  ${CHARS[PICK.b].name}${mirror?' II':''}`,w-60), w/2, dy-72);
 }
 function recLabel(txt){ const b=document.getElementById('rec'); if(b)b.textContent=txt; }
-function toggleRec(){
-  if(REC){ try{ REC.stop(); }catch(e){} return; }
-  if(!CV.captureStream || typeof MediaRecorder==='undefined'){
-    say('Trình duyệt này không hỗ trợ ghi hình.','m'); return;
+
+/* ---------- dựng file MP4 ---------- */
+/* MediaRecorder gắn mốc thời gian theo lúc khung tới nên file xuất ra là VFR: khung nào
+   vẽ chậm là giãn ra, phần mềm dựng phim hay bị lệch tiếng. Đường ghi chính vì vậy tự mã
+   hoá bằng WebCodecs với mốc thời gian tính sẵn (khung thứ n luôn ở đúng n/fps giây) rồi
+   tự dựng MP4 — bảng stts chỉ có một dòng "mọi mẫu dài bằng nhau", tức CFR thật.
+   Trình duyệt không có WebCodecs thì lui về MediaRecorder (VFR), có báo trong nhật ký. */
+function b1(n){ return new Uint8Array([n&255]); }
+function b2(n){ const a=new Uint8Array(2); new DataView(a.buffer).setUint16(0,n&65535); return a; }
+function b4(n){ const a=new Uint8Array(4); new DataView(a.buffer).setUint32(0,n>>>0); return a; }
+function b3(n){ return b4(n).subarray(1); }
+function bStr(s){ const a=new Uint8Array(s.length); for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i); return a; }
+function bCat(list){
+  let n=0; for(const p of list)n+=p.length;
+  const a=new Uint8Array(n); let o=0;
+  for(const p of list){ a.set(p,o); o+=p.length; }
+  return a;
+}
+function mBox(type,...parts){ const body=bCat(parts); return bCat([b4(body.length+8),bStr(type),body]); }
+function mFull(type,ver,flags,...parts){ return mBox(type,b1(ver),b3(flags),...parts); }
+const MP4_MATRIX=bCat([b4(0x00010000),b4(0),b4(0),b4(0),b4(0x00010000),b4(0),b4(0),b4(0),b4(0x40000000)]);
+/* stts: gộp các mẫu cùng độ dài thành một dòng. Track hình CFR nên còn đúng một dòng. */
+function mStts(durs){
+  const ent=[];
+  for(const d of durs){
+    const e=ent[ent.length-1];
+    if(e&&e[1]===d) e[0]++; else ent.push([1,d]);
   }
-  let stream, src=CV;
+  return mFull('stts',0,0,b4(ent.length),...ent.map(e=>bCat([b4(e[0]),b4(e[1])])));
+}
+function mStbl(desc,durs,sizes,offset,syncs){
+  const parts=[mFull('stsd',0,0,b4(1),desc), mStts(durs)];
+  if(syncs&&syncs.length) parts.push(mFull('stss',0,0,b4(syncs.length),...syncs.map(i=>b4(i))));
+  parts.push(mFull('stsc',0,0,b4(1),b4(1),b4(sizes.length),b4(1)));   // gom cả track vào một chunk
+  parts.push(mFull('stsz',0,0,b4(0),b4(sizes.length),...sizes.map(x=>b4(x))));
+  parts.push(mFull('stco',0,0,b4(1),b4(offset)));
+  return mBox('stbl',...parts);
+}
+function mTrak(id,vid,msDur,timescale,tsDur,w,h,ch,stbl,delayMs){
+  const tkhd=mFull('tkhd',0,7,b4(0),b4(0),b4(id),b4(0),b4(msDur),
+    b4(0),b4(0),b2(0),b2(0),b2(vid?0:0x0100),b2(0),MP4_MATRIX,
+    b4(vid?(w*65536):0),b4(vid?(h*65536):0));
+  const mdhd=mFull('mdhd',0,0,b4(0),b4(0),b4(timescale),b4(tsDur),b2(0x55C4),b2(0));
+  const hdlr=mFull('hdlr',0,0,b4(0),bStr(vid?'vide':'soun'),b4(0),b4(0),b4(0),bStr(vid?'Video\0':'Audio\0'));
+  const mhd=vid?mFull('vmhd',0,1,b2(0),b2(0),b2(0),b2(0)):mBox('smhd',b1(0),b3(0),b2(0),b2(0));
+  const dinf=mBox('dinf',mFull('dref',0,0,b4(1),mFull('url ',0,1)));
+  const mdia=mBox('mdia',mdhd,hdlr,mBox('minf',mhd,dinf,stbl));
+  if(delayMs>0){    // đoạn trống đầu track: giữ tiếng khớp với hình dù nó vào trễ vài chục ms
+    const elst=mFull('elst',0,0,b4(2),
+      b4(delayMs),b4(0xFFFFFFFF),b2(1),b2(0),
+      b4(msDur),b4(0),b2(1),b2(0));
+    return mBox('trak',tkhd,mBox('edts',elst),mdia);
+  }
+  return mBox('trak',tkhd,mdia);
+}
+function mVisualEntry(codec,w,h,desc){
+  let type='avc1', cfg=null;
+  if(codec.startsWith('vp09')||codec.startsWith('vp8')){
+    const p=codec.split('.');
+    const prof=parseInt(p[1],10)||0, lvl=parseInt(p[2],10)||10, depth=parseInt(p[3],10)||8;
+    type=codec.startsWith('vp09')?'vp09':'vp08';
+    // vpcC: profile, level, (bitDepth<<4 | chromaSubsampling<<1 | fullRange), màu để "không rõ"
+    cfg=mFull('vpcC',1,0,b1(prof),b1(lvl),b1((depth<<4)|(1<<1)),b1(2),b1(2),b1(2),b2(0));
+  }else{
+    cfg=mBox('avcC',desc||new Uint8Array(0));
+  }
+  return mBox(type,new Uint8Array(6),b2(1),new Uint8Array(16),b2(w),b2(h),
+    b4(0x00480000),b4(0x00480000),b4(0),b2(1),new Uint8Array(32),b2(0x0018),b2(0xFFFF),cfg);
+}
+function mAudioEntry(codec,ch,rate,desc){
+  let type='mp4a', cfg;
+  if(codec==='opus'){
+    type='Opus';
+    // dOps ghi PreSkip kiểu big-endian, còn OpusHead do bộ mã hoá trả về là little-endian
+    let pre=312;
+    if(desc&&desc.length>=12) pre=desc[10]|(desc[11]<<8);
+    cfg=mBox('dOps',b1(0),b1(ch),b2(pre),b4(rate),b2(0),b1(0));
+  }else{
+    const dsi=desc&&desc.length?bCat([b1(5),b1(desc.length),desc]):new Uint8Array(0);
+    const dcd=bCat([b1(4),b1(13+dsi.length),b1(0x40),b1(0x15),b3(0),b4(0),b4(0),dsi]);
+    const sl=bCat([b1(6),b1(1),b1(2)]);
+    cfg=mFull('esds',0,0,bCat([b1(3),b1(3+dcd.length+sl.length),b2(1),b1(0),dcd,sl]));
+  }
+  return mBox(type,new Uint8Array(6),b2(1),b4(0),b4(0),b2(ch),b2(16),b2(0),b2(0),b4(rate*65536));
+  }
+/* v = {codec,w,h,desc,fps,samples:[{data,key}]}
+   a = {codec,rate,ch,desc,samples:[{data,ts}]} hoặc null */
+function mp4Build(v,a){
+  const vts=v.fps*1000, vdur=1000;                 // mỗi khung dài đúng 1000 nhịp -> CFR
+  const vDurs=v.samples.map(()=>vdur);
+  const vSizes=v.samples.map(s=>s.data.length);
+  const vSync=[]; v.samples.forEach((s,i)=>{ if(s.key) vSync.push(i+1); });
+  const vBytes=vSizes.reduce((n,x)=>n+x,0);
+  const vMs=Math.round(v.samples.length*1000/v.fps);
+  let aSizes=[], aDurs=[], aBytes=0, aMs=0;
+  if(a&&a.samples.length){
+    aSizes=a.samples.map(s=>s.data.length);
+    for(let i=0;i<a.samples.length;i++){
+      const nx=a.samples[i+1];
+      const d=nx?Math.round((nx.ts-a.samples[i].ts)*a.rate/1e6):(aDurs[i-1]||1024);
+      aDurs.push(Math.max(1,d));
+    }
+    aBytes=aSizes.reduce((n,x)=>n+x,0);
+    aMs=Math.round(aDurs.reduce((n,x)=>n+x,0)*1000/a.rate);
+  }
+  const ftyp=mBox('ftyp',bStr('isom'),b4(0x200),bStr('isom'),bStr('iso2'),bStr('mp41'),bStr('avc1'));
+  const vOff=ftyp.length+8, aOff=vOff+vBytes;      // mdat: hết mẫu hình rồi tới mẫu tiếng
+  const vStbl=mStbl(mVisualEntry(v.codec,v.w,v.h,v.desc),vDurs,vSizes,vOff,vSync);
+  const traks=[mTrak(1,true,vMs,vts,v.samples.length*vdur,v.w,v.h,0,vStbl,0)];
+  if(aBytes){
+    const aStbl=mStbl(mAudioEntry(a.codec,a.ch,a.rate,a.desc),aDurs,aSizes,aOff,null);
+    traks.push(mTrak(2,false,aMs+(a.delayMs||0),a.rate,aDurs.reduce((n,x)=>n+x,0),0,0,a.ch,aStbl,a.delayMs||0));
+  }
+  const mvhd=mFull('mvhd',0,0,b4(0),b4(0),b4(1000),b4(Math.max(vMs,aMs)),
+    b4(0x00010000),b2(0x0100),b2(0),b4(0),b4(0),MP4_MATRIX,
+    b4(0),b4(0),b4(0),b4(0),b4(0),b4(0),b4(traks.length+1));
+  const moov=mBox('moov',mvhd,...traks);
+  const mdat=bCat([b4(vBytes+aBytes+8),bStr('mdat'),
+    ...v.samples.map(s=>s.data), ...(aBytes?a.samples.map(s=>s.data):[])]);
+  return bCat([ftyp,mdat,moov]);
+}
+
+/* ---------- đường ghi CFR bằng WebCodecs ---------- */
+let CFR=null;
+async function cfrPickVideo(w,h){
+  if(typeof VideoEncoder==='undefined') return null;
+  for(const codec of ['avc1.640028','avc1.42E01E','vp09.00.10.08']){
+    const cfg={codec,width:w,height:h,bitrate:REC_BPS,framerate:REC_FPS};
+    if(codec.startsWith('avc1')) cfg.avc={format:'avc'};
+    try{ const s=await VideoEncoder.isConfigSupported(cfg); if(s&&s.supported) return cfg; }catch(e){}
+  }
+  return null;
+}
+async function cfrPickAudio(rate,ch){
+  if(typeof AudioEncoder==='undefined'||typeof MediaStreamTrackProcessor==='undefined') return null;
+  for(const codec of ['mp4a.40.2','opus']){
+    const cfg={codec,sampleRate:rate,numberOfChannels:ch,bitrate:128000};
+    try{ const s=await AudioEncoder.isConfigSupported(cfg); if(s&&s.supported) return cfg; }catch(e){}
+  }
+  return null;
+}
+async function cfrStart(src,w,h){
+  const vcfg=await cfrPickVideo(w,h);
+  if(!vcfg) return false;
+  const st={src,w,h,fps:REC_FPS,codec:vcfg.codec,v:[],a:[],n:0,vdesc:null,adesc:null,
+            acodec:null,arate:0,ach:0,t0:0,stopping:false,areader:null,aenc:null,
+            aWall0:0,aTs0:null};
+  st.enc=new VideoEncoder({
+    output:(chunk,meta)=>{
+      const d=meta&&meta.decoderConfig&&meta.decoderConfig.description;
+      if(d&&!st.vdesc) st.vdesc=new Uint8Array(d);
+      const b=new Uint8Array(chunk.byteLength); chunk.copyTo(b);
+      st.v.push({data:b,key:chunk.type==='key'});
+    },
+    error:()=>{ say('Bộ mã hoá hình gặp lỗi, dừng ghi.','m'); if(CFR)cfrStop(); }
+  });
+  st.enc.configure(vcfg);
+  // tiếng: lấy PCM từ luồng trộn của game rồi mã hoá song song với hình
+  try{
+    ac(); const d=recDest();
+    const track=d&&d.stream.getAudioTracks()[0];
+    if(track){
+      const set=track.getSettings?track.getSettings():{};
+      const rate=set.sampleRate||(AC&&AC.sampleRate)||48000, ch=set.channelCount||2;
+      const acfg=await cfrPickAudio(rate,ch);
+      if(acfg){
+        st.acodec=acfg.codec; st.arate=rate; st.ach=ch;
+        st.aenc=new AudioEncoder({
+          output:(chunk,meta)=>{
+            const dd=meta&&meta.decoderConfig&&meta.decoderConfig.description;
+            if(dd&&!st.adesc) st.adesc=new Uint8Array(dd);
+            const b=new Uint8Array(chunk.byteLength); chunk.copyTo(b);
+            if(st.aTs0===null) st.aTs0=chunk.timestamp;
+            st.a.push({data:b,ts:chunk.timestamp});
+          },
+          error:()=>{}
+        });
+        st.aenc.configure(acfg);
+        const proc=new MediaStreamTrackProcessor({track});
+        st.areader=proc.readable.getReader();
+        (async()=>{
+          try{
+            for(;;){
+              const {value,done}=await st.areader.read();
+              if(done)break;
+              if(st.aWall0===0) st.aWall0=performance.now();   // lúc mẻ PCM đầu tiên về tới
+              if(st.aenc&&st.aenc.state==='configured') st.aenc.encode(value);
+              value.close();
+            }
+          }catch(e){}
+        })();
+      }
+    }
+  }catch(e){}
+  st.t0=performance.now();
+  CFR=st;
+  return true;
+}
+/* Mỗi lượt vẽ bù cho đủ số khung lẽ ra đã trôi qua: máy có khựng thì khung trước được
+   mã hoá lại chứ mốc thời gian không xê dịch, nhờ vậy file luôn đúng REC_FPS. */
+function cfrPump(){
+  if(!CFR||CFR.stopping) return;
+  const step=1e6/CFR.fps;
+  const want=Math.floor((performance.now()-CFR.t0)*1000/step);
+  if(want<=CFR.n) return;
+  if(CFR.enc.encodeQueueSize>60){ CFR.t0=performance.now()-CFR.n*step/1000; return; }
+  let budget=8;                                  // bù tối đa 8 khung mỗi lượt cho khỏi dồn cục
+  while(CFR.n<want&&budget-- >0){
+    const f=new VideoFrame(CFR.src,{timestamp:Math.round(CFR.n*step),duration:Math.round(step)});
+    try{ CFR.enc.encode(f,{keyFrame:CFR.n%(CFR.fps*2)===0}); }catch(e){}
+    f.close(); CFR.n++;
+  }
+  if(CFR.n<want) CFR.t0=performance.now()-CFR.n*step/1000;   // bù không kịp thì bỏ, đừng dồn
+}
+async function cfrStop(){
+  if(!CFR||CFR.stopping) return;
+  CFR.stopping=true; recBusy=true;
+  recLabel('⏳ Đang dựng video…');
+  clearInterval(recTimer); recTimer=null;
+  const st=CFR;
+  // vòng đọc PCM hay bị bỏ đói lúc mã hoá hình nên tiếng về trễ: chờ nó đuổi kịp
+  // độ dài hình rồi mới cắt, nếu không đoạn cuối video sẽ mất tiếng.
+  if(st.a.length||st.areader){
+    const target=st.n*1e6/st.fps, wait=performance.now()+2500;
+    while(performance.now()<wait){
+      const last=st.a[st.a.length-1];
+      if(last&&st.aTs0!==null&&last.ts-st.aTs0>=target) break;
+      await new Promise(r=>setTimeout(r,40));
+    }
+  }
+  try{ if(st.areader) st.areader.cancel().catch(()=>{}); }catch(e){}
+  try{ await st.enc.flush(); }catch(e){}
+  try{ if(st.aenc) await st.aenc.flush(); }catch(e){}
+  try{ st.enc.close(); }catch(e){}
+  try{ if(st.aenc) st.aenc.close(); }catch(e){}
+  CFR=null; recBusy=false;
+  recLabel('⏺ Ghi hình sàn đấu');
+  if(!st.v.length){ say('Không ghi được khung hình nào.','m'); recTall=false; return; }
+  const buf=mp4Build({codec:st.codec,w:st.w,h:st.h,desc:st.vdesc,fps:st.fps,samples:st.v},
+                     st.a.length?{codec:st.acodec,rate:st.arate,ch:st.ach,desc:st.adesc,samples:st.a,
+                                   delayMs:clamp(Math.round(st.aWall0-st.t0),0,1000)}:null);
+  const blob=new Blob([buf],{type:'video/mp4'});
+  recSave(blob,'.mp4');
+  say(`Đã lưu video ${recTall?`khung dọc 9:16 (${REC916.w}×${REC916.h})`:'khung nguyên bản'} — `+
+      `${st.v.length} khung, nhịp cố định ${st.fps} fps (CFR), ${(blob.size/1048576).toFixed(1)} MB.`,'g');
+  recTall=false;
+}
+function recSave(blob,ext){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='tran-dau-'+(recTall?'9x16-':'')+Date.now()+ext;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+function recClock(){
+  recStart=performance.now();
+  recLabel('⏹ Dừng ghi (0:00)');
+  recTimer=setInterval(()=>{
+    const t=Math.floor((performance.now()-recStart)/1000);
+    recLabel(`⏹ Dừng ghi (${Math.floor(t/60)}:${String(t%60).padStart(2,'0')})`);
+  },250);
+}
+/* gọi mỗi lượt vẽ: dựng khung dọc rồi đẩy khung vào bộ mã hoá CFR */
+function recTick(){
+  if(!REC&&!CFR) return;
+  if(recTall) recFrame();
+  cfrPump();
+}
+function toggleRec(){
+  if(recBusy) return;
+  if(CFR){ cfrStop(); return; }
+  if(REC){ try{ REC.stop(); }catch(e){} return; }
   recTall=recWantTall();
-  if(recTall){ src=recCanvas(recTall); recSig=''; recFrame(); }   // có khung đầu tiên rồi mới mở luồng
-  try{ stream=src.captureStream(60); }catch(e){ recTall=false; say('Không mở được luồng hình.','m'); return; }
+  let src=CV;
+  if(recTall){ src=recCanvas(recTall); recSig=''; recFrame(); }
+  recBusy=true;
+  cfrStart(src,src.width,src.height).then(ok=>{
+    recBusy=false;
+    if(ok){
+      recClock();
+      say(`Bắt đầu ghi hình ${recTall?`khung dọc 9:16 ${REC916.w}×${REC916.h}`:'khung nguyên bản'} — `+
+          `MP4 nhịp khung cố định ${REC_FPS} fps.`,'g');
+      return;
+    }
+    recFallback(src);          // không có WebCodecs thì lui về MediaRecorder
+  }).catch(()=>{ recBusy=false; recFallback(src); });
+}
+/* Đường lui: MediaRecorder. Nhịp khung do trình duyệt tự gắn nên là VFR. */
+function recFallback(src){
+  if(!src.captureStream||typeof MediaRecorder==='undefined'){
+    say('Trình duyệt này không hỗ trợ ghi hình.','m'); recTall=false; return;
+  }
+  let stream;
+  try{ stream=src.captureStream(REC_FPS); }catch(e){ recTall=false; say('Không mở được luồng hình.','m'); return; }
   try{
     ac(); const d=recDest();
     if(d) d.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
@@ -3962,31 +4244,22 @@ function toggleRec(){
   const types=['video/mp4;codecs=avc1','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
   const mime=types.find(t=>{try{return MediaRecorder.isTypeSupported(t)}catch(e){return false}});
   try{
-    REC=new MediaRecorder(stream, mime?{mimeType:mime,videoBitsPerSecond:8000000}:undefined);
+    REC=new MediaRecorder(stream, mime?{mimeType:mime,videoBitsPerSecond:REC_BPS}:undefined);
   }catch(e){ say('Không khởi động được bộ ghi.','m'); REC=null; recTall=false; return; }
   recChunks=[];
   REC.ondataavailable=e=>{ if(e.data&&e.data.size)recChunks.push(e.data); };
   REC.onstop=()=>{
     const type=(REC&&REC.mimeType)||'video/webm';
     const blob=new Blob(recChunks,{type});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download='tran-dau-'+(recTall?'9x16-':'')+Date.now()+(type.includes('mp4')?'.mp4':'.webm');
-    a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
     REC=null; clearInterval(recTimer); recTimer=null;
     recLabel('⏺ Ghi hình sàn đấu');
-    say(`Đã lưu video ${recTall?`khung dọc 9:16 (${REC916.w}×${REC916.h})`:'khung nguyên bản'} — ${(blob.size/1048576).toFixed(1)} MB.`,'g');
+    recSave(blob,type.includes('mp4')?'.mp4':'.webm');
+    say(`Đã lưu video ${recTall?'khung dọc 9:16':'khung nguyên bản'} — ${(blob.size/1048576).toFixed(1)} MB (nhịp khung thay đổi).`,'g');
     recTall=false;
   };
   REC.start(300);
-  recStart=performance.now();
-  recLabel('⏹ Dừng ghi (0:00)');
-  recTimer=setInterval(()=>{
-    const t=Math.floor((performance.now()-recStart)/1000);
-    recLabel(`⏹ Dừng ghi (${Math.floor(t/60)}:${String(t%60).padStart(2,'0')})`);
-  },250);
-  say(recTall?'Bắt đầu ghi hình — video sẽ lưu theo khung dọc 9:16.':'Bắt đầu ghi hình sàn đấu (khung nguyên bản).','g');
+  recClock();
+  say('Trình duyệt không có WebCodecs — ghi bằng MediaRecorder, nhịp khung thay đổi (VFR).','m');
 }
 
 const el=id=>document.getElementById(id);

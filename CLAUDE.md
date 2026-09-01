@@ -223,29 +223,52 @@ Máy chạy test không có GPU, nên:
 
 ---
 
-## 7b. Ghi hình — khung dọc 9:16
+## 7b. Ghi hình — khung dọc 9:16, nhịp khung cố định (CFR)
 
 Nút `#rec` quay canvas sàn đấu; ô chọn `#rec916` quyết định khung video:
-**1080p (1080×1920, mặc định)**, **720p (720×1280)**, hoặc khung nguyên bản như cũ. Cách làm:
-một canvas phụ `RECV` đúng cỡ đó, mỗi khung `recFrame()` blit canvas sàn đấu vào giữa;
-`MediaRecorder` quay `RECV.captureStream(60)`.
+**1080p (1080×1920, mặc định)**, **720p (720×1280)**, hoặc khung nguyên bản. Một canvas phụ
+`RECV` đúng cỡ đó, mỗi khung `recFrame()` blit canvas sàn đấu vào giữa.
 
 > **Khung dọc chỉ có ba thứ: nền đen, dòng tên cặp đấu, và sàn đấu.** Người dùng đã bác bản
 > có dải nhật ký tiếng Việt phía dưới và dòng đồng hồ / chữ AUTOBATTLE phía trên — đừng in
 > thêm chữ gì lên video.
 
-Chữ vẽ theo hệ toạ độ thiết kế **1080×1920** (`RECD`) rồi `setTransform` thu về bề ngang đang
-chọn, nên đổi độ phân giải không phải chỉnh lại từng cỡ chữ. `recCanvas(wide)` dựng lại canvas
-khi đổi cỡ (gán `.width` là reset luôn transform lẫn `imageSmoothing*`, nhớ đặt lại).
+### Vì sao không dùng MediaRecorder nữa
 
-Hai chỗ phải làm cho nhẹ, đo trên máy test không có GPU (mã hoá VP9 bằng CPU):
+`MediaRecorder` gắn mốc thời gian theo **lúc khung tới**, nên file xuất ra là **VFR** —
+khung nào vẽ chậm là giãn ra, phần mềm dựng phim hay lệch tiếng. Đường ghi chính vì vậy tự
+làm:
 
-1. **`imageSmoothingQuality='low'` cho `RECX`.** Để `'medium'` hay `'high'` thì cú thu nhỏ sàn
-   đấu mỗi khung kéo fps từ 59 xuống **29** (đo ở 720p). Ở 720p nhìn vẫn nét.
+1. `cfrPump()` chạy mỗi lượt vẽ, bù cho đủ số khung lẽ ra đã trôi qua. Khung thứ n **luôn**
+   mang mốc `n/60` giây; máy khựng thì khung trước được mã hoá lại chứ mốc không xê dịch.
+   Bù tối đa 8 khung mỗi lượt, quá thì dời `t0` chứ không dồn cục.
+2. `VideoEncoder` (WebCodecs) mã hoá: thử `avc1` trước (Chrome thường có → H.264), không
+   thì `vp09`. Khoá hình mỗi 2 giây.
+3. `mp4Build()` tự dựng file MP4: `ftyp + mdat + moov`, mỗi track gom vào **một chunk** nên
+   `stsc`/`stco` chỉ có một dòng. Track hình timescale `60*1000`, mỗi mẫu **1000 nhịp** ⇒
+   bảng `stts` đúng **một dòng** = CFR thật.
+4. Tiếng: `MediaStreamTrackProcessor` lấy PCM từ luồng trộn của game → `AudioEncoder`
+   (`mp4a.40.2`, không thì `opus`) → track thứ hai (`esds` cho AAC, `dOps` cho Opus).
+   - Vòng đọc PCM hay **bị bỏ đói** lúc mã hoá hình, nên lúc dừng phải **chờ tiếng đuổi kịp
+     độ dài hình** (tối đa 2.5s) rồi mới `cancel()`, không thì cụt tiếng đoạn cuối.
+   - Tiếng vào trễ vài chục ms so với hình, nên track tiếng có `edts/elst` chèn một đoạn
+     trống đúng bằng khoảng trễ đó.
+
+Không có WebCodecs (Firefox, Safari cũ) thì lui về `MediaRecorder` — vẫn ghi được nhưng là
+VFR, và nhật ký nói rõ điều đó.
+
+Đo trên máy test không có GPU (fps trong lúc đang ghi): **1080p 55.9 · 720p 60.1 · khung
+nguyên bản 59.5** (không ghi: 60.2). Đường WebCodecs còn nhẹ hơn `MediaRecorder` trước đây
+(1080p chỉ được 37~45 fps). Hai chỗ vẫn phải giữ cho nhẹ:
+
+1. **`imageSmoothingQuality='low'` cho `RECX`.** Để `'medium'`/`'high'` thì cú thu nhỏ sàn
+   đấu mỗi khung kéo fps xuống còn nửa.
 2. **Nền đen và dòng tên chỉ vẽ lại khi tên đổi** (`recSig`): cú blit sàn đấu không đè lên
-   phần đó nên chữ vẫn còn từ khung trước. Bản đầu vẽ gradient toàn khung + chữ mỗi khung chỉ
-   được **14~17 fps** ở 1080p; bỏ hai thứ đó đi thì 1080p lên **37~45 fps**, xấp xỉ bằng quay
-   canvas nguyên bản (36~48), còn 720p **43~48 fps**. Máy có GPU thì nhẹ hơn nữa.
+   phần đó nên chữ vẫn còn từ khung trước.
+
+Chữ vẽ theo hệ toạ độ thiết kế **1080×1920** (`RECD`) rồi `setTransform` thu về bề ngang đang
+chọn. `recCanvas(wide)` dựng lại canvas khi đổi cỡ (gán `.width` là reset luôn transform lẫn
+`imageSmoothing*`, nhớ đặt lại).
 
 ## 8. Kiểm thử
 
@@ -256,6 +279,7 @@ node tools/t_reg.js     # 10 cặp đấu song song, bắt lỗi trang, xem cơ 
 node tools/t_wake.js    # đo nhịp Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
+node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), có tiếng, đường lui MediaRecorder
 ```
 
 Tất cả trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng
