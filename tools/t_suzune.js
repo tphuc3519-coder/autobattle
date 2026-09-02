@@ -271,8 +271,10 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     return { stand3: nhan('stand3'), punch3: nhan('punch3'), kick3: nhan('kick3'),
              think3: nhan('think3'), idle: nhan('idle'), think: nhan('think'),
              right2: nhan('right2'), wrong2: nhan('wrong2'),
-             right3: nhan('right3'), wrong3: nhan('wrong3'), decide: nhan('decide'),
-             injured2: nhan('injured2'), injured3: nhan('injured3'), injured: nhan('injured') };
+             right3: nhan('right3'), wrong3: nhan('wrong3'),
+             injured2: nhan('injured2'), injured3: nhan('injured3'),
+             thinkHurt2: nhan('thinkHurt2'), thinkHurt3: nhan('thinkHurt3'),
+             decide: nhan('decide'), injured: nhan('injured') };
   });
   for (const [k, mong] of [['stand3', 'Thủ thế'], ['punch3', 'Đấm'], ['kick3', 'Đá'], ['think3', 'Đứng suy nghĩ'],
                            ['right3', 'Quyết định đúng'], ['wrong3', 'Quyết định sai'],
@@ -284,10 +286,48 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
        `co o dan anh rieng '${k}' cho form 2 ("${oAnh[k]}")`);
   ok(!!oAnh.injured2 && /form 1\/2/.test(oAnh.injured2),
      `o toi ta cua form 1-2 la 'injured2' ("${oAnh.injured2}")`);
-  ok(!!oAnh.decide, `o 'decide' cu van con lam o lui chung ("${oAnh.decide}")`);
-  ok(!!oAnh.injured, `o 'injured' cu van con lam o lui chung ("${oAnh.injured}")`);
+  // hai ô "lùi chung" cũ (decide / injured) đã bỏ: chúng không phải tư thế nào của cô,
+  // chỗ đó giờ là dáng tơi tả lúc đứng suy nghĩ, tách theo form như mọi ô khác
+  ok(!oAnh.decide && !oAnh.injured, "hai o lui chung 'decide' / 'injured' da bo khoi bang");
+  ok(!!oAnh.thinkHurt2 && /form 2/.test(oAnh.thinkHurt2) && /suy nghĩ/.test(oAnh.thinkHurt2),
+     `co o 'thinkHurt2' — toi ta khi dung suy nghi form 2 ("${oAnh.thinkHurt2}")`);
+  ok(!!oAnh.thinkHurt3 && /form 3/.test(oAnh.thinkHurt3) && /suy nghĩ/.test(oAnh.thinkHurt3),
+     `co o 'thinkHurt3' — toi ta khi dung suy nghi form 3 ("${oAnh.thinkHurt3}")`);
   ok(/form 2/.test(oAnh.idle || ''), `o dung cu ghi ro la cua form 2 ("${oAnh.idle}")`);
   ok(/form 2/.test(oAnh.think || ''), `o dung nghi cu ghi ro la cua form 2 ("${oAnh.think}")`);
+
+  /* sprite() phải chọn đúng ô: dưới 20% máu mà đang đứng nghĩ thì lấy ô tơi tả-suy nghĩ,
+     và ô tơi tả của cô đọc injured2/injured3 chứ không đọc ô 'injured' đã bỏ. */
+  const chon = await doc(() => {
+    const G = window.__G(), SPR = window.__SPR, sprite = window.__sprite;
+    const f = G.fighters.find(x => x.key === 'suzune');
+    const goc = { form: f.form, pose: f.pose, inj: f.injured, spr: SPR.suzune };
+    // ảnh giả: mỗi ô một tấm 1x1 có src nhận ra được bằng tên ô
+    const anh = k => { const i = new Image(); i.src = 'data:,' + k; return [i]; };
+    const dat = ks => { SPR.suzune = {}; ks.forEach(k => SPR.suzune[k] = anh(k)); };
+    const lay = (form, pose, inj) => {
+      f.form = form; f.pose = pose; f.injured = inj;
+      const im = sprite(f);
+      return im ? im.src.replace('data:,', '') : null;
+    };
+    const r = {};
+    dat(['idle', 'think', 'think3', 'injured2', 'injured3', 'thinkHurt2', 'thinkHurt3']);
+    r.nghi2 = lay(2, 'think', false);   r.nghiTa2 = lay(2, 'think', true);
+    r.nghi3 = lay(3, 'think', false);   r.nghiTa3 = lay(3, 'think', true);
+    r.dung2 = lay(2, 'idle', true);     r.dung3 = lay(3, 'idle', true);
+    // chưa nạp ô tơi tả-suy nghĩ thì lùi về ô đứng nghĩ lành lặn của đúng form
+    dat(['idle', 'think', 'think3', 'injured2', 'injured3']);
+    r.lui2 = lay(2, 'think', true);     r.lui3 = lay(3, 'think', true);
+    SPR.suzune = goc.spr; f.form = goc.form; f.pose = goc.pose; f.injured = goc.inj;
+    return r;
+  });
+  ok(chon.nghi2 === 'think' && chon.nghi3 === 'think3', 'con lanh lan thi dung nghi van la o think/think3');
+  ok(chon.nghiTa2 === 'thinkHurt2', `duoi 20% mau, form 2 dung nghi lay o 'thinkHurt2' (ra '${chon.nghiTa2}')`);
+  ok(chon.nghiTa3 === 'thinkHurt3', `duoi 20% mau, form 3 dung nghi lay o 'thinkHurt3' (ra '${chon.nghiTa3}')`);
+  ok(chon.dung2 === 'injured2' && chon.dung3 === 'injured3',
+     'o toi ta doc thang injured2/injured3, khong can o chung');
+  ok(chon.lui2 === 'think' && chon.lui3 === 'think3',
+     'chua nap o toi ta-suy nghi thi lui ve o dung nghi cua dung form');
 
   /* ---- ô tiếng của Ayanokouji: ba câu thoại phải có ô giọng riêng, và bảng nạp tiếng
          phải chia nhóm để mấy ô cuối không chìm nghỉm ---- */
