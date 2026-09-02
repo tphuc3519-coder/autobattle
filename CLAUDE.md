@@ -709,7 +709,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 
 ## 10. Quy trình git
 
-- Nhánh làm việc: `claude/ayanokouji-audio-split-boxes-dqcy9e`. **Không đẩy sang nhánh khác.**
+- Nhánh làm việc: `claude/suzune-horikita-render-jrfqvw`. **Không đẩy sang nhánh khác.**
 - `git push -u origin <nhánh>`; lỗi mạng thì thử lại 4 lần, giãn 2s/4s/8s/16s.
 - Người dùng thường merge rất nhanh rồi hỏi luôn "pr?" / "merge đâu" — làm xong một việc thì
   **mở PR ngay**. Nếu PR trước đã merge thì mở PR mới, đừng chồng lên nhánh đã merge.
@@ -722,8 +722,11 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 
 - Người dùng có lần nói tiếng bật dậy là ở **75% máu**, nhưng bản mô tả gốc và code đang để
   **80%** (`SHIKA.wakeHp = .80`). Đã hỏi hai lần chưa có câu trả lời — hiện giữ 80%.
-- Bộ ảnh thẻ nhân vật (dựng bằng script trong thư mục nháp, chụp bằng Playwright,
-  `deviceScaleFactor: 2`, font **Liberation Sans** — DejaVu Sans Mono thiếu chữ tiếng Việt có dấu)
-  đang cũ: chưa có Shikamaru lẫn Horikita, và chưa cập nhật vài con số của Tsubasa/ChiChi.
+- Bộ ảnh thẻ nhân vật (chụp bằng Playwright, `deviceScaleFactor: 2`, font **Liberation Sans**
+  — DejaVu Sans Mono thiếu chữ tiếng Việt có dấu) mới chỉ có Horikita: script
+  `tools/card_suzune.js` dựng ra `art/suzune_kit_en.png` và `art/suzune_kit_vi.png` (bố cục
+  giống thẻ Shikamaru, ảnh chân dung nhúng data URI, mọi con số chép tay từ `SUZ` — sửa cân
+  bằng thì phải sửa lại hằng `N` trong script). Thẻ của Konohamaru/ChiChi/Tsubasa/Shikamaru
+  dựng bằng script trong thư mục nháp, đang cũ và chưa cập nhật vài con số.
 - Ô tiếng của Horikita/Ayanokouji mới chỉ có tiếng tự tạo trong `synth()`; hai ô đọc nối tiếp
   (`suz_decide`, `suz_wrong`) đang chờ người dùng thu file TTS theo `SUZ_DECISIONS` / `SUZ_WRONG`.
