@@ -482,7 +482,7 @@ const CHARS={
       `<b>Form 2 · 1</b> Punch &amp; Kick (random) — ${SUZ.f2.hit} dmg, ${rts(SUZ.atkCd)}s between blows (2.5× slower than ChiChi) · +${SUZ.f2.cp} class points · ${Math.round(SUZ.f2.healOdds*100)}% to heal ${Math.round(SUZ.f2.healPct*100)}% of current HP`,
       `<b>Form 2 · 2</b> Decision Making — she freezes to think for ${rts(SUZ.decThink)}s, fires, then waits ${rts(SUZ.decCd)}s before thinking again; <b>${Math.round(SUZ.f2.decOdds*100)}% right</b> = a verdict flies straight in for ${SUZ.f2.decLo}–${SUZ.f2.decHi} dmg and the same number of class points, ${Math.round((1-SUZ.f2.decOdds)*100)}% wrong = −${SUZ.decPenLo}~${SUZ.decPenHi} points (going negative costs her that much HP, then resets to 0)`,
       `<b>Every right call is graded</b> by the damage it deals — Form 2: ${SUZ.f2.decLo}–${SUZ_TIERS.f2[0][0]} acceptable, ${SUZ_TIERS.f2[0][0]+1}–${SUZ_TIERS.f2[1][0]} good, ${SUZ_TIERS.f2[1][0]+1}–${SUZ_TIERS.f2[2][0]} great, ${SUZ_TIERS.f2[2][0]+1}–${SUZ_TIERS.f2[3][0]} best · Form 3: ${SUZ.f3.decLo}–${SUZ_TIERS.f3[0][0]} / ${SUZ_TIERS.f3[0][0]+1}–${SUZ_TIERS.f3[1][0]} / ${SUZ_TIERS.f3[1][0]+1}–${SUZ_TIERS.f3[2][0]} / ${SUZ_TIERS.f3[2][0]+1}–${SUZ_TIERS.f3[3][0]}`,
-      `<b>${SUZ.cpMax} class points</b> Ayanokouji joins for real — ${Math.round(SUZ.ayaHp*100)}% of her current HP, ambush for ${SUZ.ayaDmg} + ${rts(SUZ.ayaStun)}s stun every ${rts(SUZ.ayaCd)}s, +100% cast speed for her, body-blocks incoming damage and taunts melee foes off her`,
+      `<b>${SUZ.cpMax} class points</b> Ayanokouji joins for real — ${Math.round(SUZ.ayaHp*100)}% of her current HP, ambush for ${SUZ.ayaDmg} + ${rts(SUZ.ayaStun)}s stun every ${rts(SUZ.ayaCd)}s, +100% cast speed for her, body-blocks incoming damage and <b>taunts the foe onto himself the whole time he stands</b> — every attack, ultimates included, goes to him instead of her — and he is <b>immune to Sexy no Jutsu</b>`,
       `<b>Form 3</b> He walks away (never dies) — hits ${SUZ.f3.hit} / +${SUZ.f3.cp} points, decisions ${Math.round(SUZ.f3.decOdds*100)}% right and hit for ${SUZ.f3.decLo}–${SUZ.f3.decHi}, ${Math.round(SUZ.f3.healOdds*100)}% to heal ${Math.round(SUZ.f3.healPct*100)}%, +${Math.round(SUZ.f3.dmgRes*100)}% damage resist &amp; ${Math.round(SUZ.f3.ccRes*100)}% CC resist`,
       `<b>Form 3 · stacking</b> every ${SUZ.cpMax} class points: +${Math.round(SUZ.st.dec*100)}% decision accuracy, +${Math.round(SUZ.st.healOdds*100)}% heal chance, +${Math.round(SUZ.st.healPct*100)}% heal amount, +${Math.round(SUZ.st.dmgRes*100)}% damage resist, +${Math.round(SUZ.st.ccRes*100)}% CC resist (up to ×${SUZ.st.max})`],
     init(f){
@@ -1259,12 +1259,17 @@ function foeOf(f){
   if(f.master)return foeOf(f.master);   // viện binh nhắm đúng đối thủ của người gọi
   return f.team===0?G.c:G.k;
 }
-/* Ai là người mà f đang nhắm vào. Bình thường là đối thủ, nhưng khi Ayanokouji bật
-   khiêu khích thì mọi thứ f tung ra đều dồn vào anh — đó chính là cách anh gánh đòn
-   thay Horikita. Chỉ dùng cho việc NHẮM; quan hệ phe vẫn đọc bằng foeOf(). */
+/* Ai là người mà f đang nhắm vào. Bình thường là đối thủ, nhưng khi Ayanokouji đứng
+   trên sàn thì anh khiêu khích suốt quãng đó: mọi thứ f tung ra đều dồn vào anh — đó
+   chính là cách anh gánh đòn thay Horikita. Viện binh (Goku / Gohan / phân thân) không
+   có khiêu khích riêng nên nhắm theo đúng người đang khiêu khích chủ của mình, nếu
+   không thì cứ gọi chiêu ra là lách được anh.
+   Chỉ dùng cho việc NHẮM; quan hệ phe vẫn đọc bằng foeOf(). */
 function aimTarget(f){
-  const t=f&&f.tauntBy;
-  if(t&&t.alive&&t.hp>0&&!t.leaving&&G.fighters.indexOf(t)>=0) return t;
+  if(!f)return null;
+  let t=f.tauntBy;
+  if(!t&&f.master&&!f.ally) t=f.master.tauntBy;
+  if(t&&t.alive&&t.hp>0&&!t.leaving&&t.team!==f.team&&G.fighters.indexOf(t)>=0) return t;
   return foeOf(f);
 }
 function newGame(){
@@ -1486,6 +1491,12 @@ function sexy(k,e){
   say('Sexy no Jutsu! Khói hồng lan ra…','k');
   for(const f of G.fighters){
     if(f===k||!f.alive||dist(f,k)>R+f.r)continue;
+    // Ayanokouji miễn nhiễm hẳn: không dính khói, không choáng, không mất một giọt máu.
+    if(f.sexyImmune){
+      ring(f.x,f.y,86,f.color,.4);
+      say(`${f.name} nhìn xuyên qua làn khói hồng — không một chút lay động.`,'s');
+      continue;
+    }
     if(f.summon){ say(`${f.name} đang dồn khí, không hề nao núng.`,'m'); continue; }
     // Khói hồng phủ kín sàn nên không có chỗ mà lách: đây là ngoại lệ duy nhất
     // mà nội tại né đòn của Shikamaru không ăn.
@@ -1653,7 +1664,10 @@ function naraDomain(k,e){
 }
 function domainTick(k,dt){
   const D=k.domain; if(!D)return;
-  const e=D.e;
+  // Lãnh địa dí theo người đang bị nhắm: Ayanokouji bước ra khiêu khích giữa chừng thì
+  // bom rơi vào anh, anh rời sàn thì rừng quay lại dí Horikita.
+  const e=aimTarget(k)||D.e;
+  if(D.e!==e){ if(D.e) D.e.outCut=0; D.e=e; }
   k.domainA=Math.min(1,k.domainA+dt*3);
   D.t-=dt;
   if(e&&e.alive){
@@ -2399,6 +2413,7 @@ function ayaJoin(f){
     const hp=Math.max(1,Math.round(f.hp*SUZ.ayaHp));
     const a=mk({key:'ayanokouji',name:'Ayanokouji',team:f.team,master:f,male:true,
       summon:true,ally:true,x:px,y:py,r:24,hp,maxHp:hp,speed:SUZ.ayaSpd,dodge:0,
+      sexyImmune:true,                       // khói hồng không lay chuyển được anh
       color:'#8FA6C8',spriteH:126});
     a.strikeCd=SUZ.ayaCd; a.taunt=0; a.leaving=0; a.pose='idle';
     f.ayaAlly=a; f.castBuff=SUZ.ayaCast;
@@ -2407,6 +2422,7 @@ function ayaJoin(f){
     ring(px,py,122,a.color,.55);
     sfx('summon');
     say(`Ayanokouji vào sân với ${hp} máu — đứng cạnh anh, Horikita ra đòn nhanh hẳn lên.`,'s');
+    say('Đối thủ chỉ còn thấy mỗi anh: chừng nào anh chưa rời sàn, mọi đòn đều dồn vào anh.','s');
   },true);
   say('Ayanokouji bước ra sát cánh lần cuối.','s');
 }
@@ -2464,20 +2480,24 @@ function ayaTick(a,dt){
   a.moveAmt+=((a.moving?1:0)-a.moveAmt)*Math.min(1,dt*4);
   if(e&&Math.abs(e.x-a.x)>12) a.face=e.x>=a.x?1:-1;
 
-  if(mode==='tank'&&e){
-    // bật khiêu khích: mọi thứ địch tung ra đều nhắm vào anh chứ không vào cô
+  // Khiêu khích chạy suốt quãng anh còn đứng trên sàn, không đợi địch áp sát: chừng nào
+  // anh chưa rời đi thì mọi đòn của địch — chiêu thường, chiêu lớn hay ultimate — đều
+  // rơi vào anh chứ không vào Horikita.
+  if(e&&e.alive){
     a.taunt=.6;
     e.tauntBy=a;
-    // và đẩy cô vòng ra sau lưng địch để cô rảnh tay đánh
+  }else{
+    a.taunt=Math.max(0,a.taunt-dt);
+    if(a.taunt<=0&&e&&e.tauntBy===a) e.tauntBy=null;
+  }
+  if(mode==='tank'&&e){
+    // địch cận chiến đã dính vào anh: đẩy cô vòng ra sau lưng địch để cô rảnh tay đánh
     const bd=Math.hypot(e.x-a.x,e.y-a.y)||1;
     const back=e.r+f.r+56;                     // đứng hẳn ra sau lưng, không dính vào người địch
     const bx=clamp(e.x+(e.x-a.x)/bd*back,PAD,W-PAD);
     const by=clamp(e.y+(e.y-a.y)/bd*back,PAD+50,H-PAD-10);
     const kf=Math.min(1,dt*1.7);
     f.x+=(bx-f.x)*kf; f.y+=(by-f.y)*kf;
-  }else{
-    a.taunt=Math.max(0,a.taunt-dt);
-    if(a.taunt<=0&&e&&e.tauntBy===a) e.tauntBy=null;
   }
 
   a.strikeCd-=dt;
@@ -2959,7 +2979,7 @@ function step(dt){
       ayaShield(f);
     }
     if(f.key==='shika' && !f.domainDone && f.hp<=f.maxHp*SHIKA.domainHp){
-      naraDomain(f,foeOf(f));
+      naraDomain(f,aimTarget(f)||foeOf(f));
     }
     if(f.key==='tsubasa' && !f.eagleDone && f.hp<=f.maxHp*EAGLE_HP){
       ring(f.x,f.y,130,'#FFF3C4',.5);
@@ -2972,8 +2992,8 @@ function step(dt){
     const s=G.fighters[i];
     if(!s||!s.summon)continue;
     if(s.ally){ ayaTick(s,dt); continue; }
-    // luôn xoay người về phía đối thủ
-    const tg=foeOf(s);
+    // luôn xoay người về phía đối thủ — có Ayanokouji khiêu khích thì xoay về phía anh
+    const tg=aimTarget(s)||foeOf(s);
     if(tg&&tg.alive){
       const dd=Math.hypot(tg.x-s.x,tg.y-s.y)||1;
       s.ax=(tg.x-s.x)/dd; s.ay=(tg.y-s.y)/dd;
@@ -3615,6 +3635,17 @@ function drawFighter(f){
   ctx.save(); ctx.globalAlpha=.25*clamp(1-hop/26,.3,1); ctx.fillStyle='#000';
   ctx.beginPath(); ctx.ellipse(f.x+ox,f.y+22,20-hop*.35,6,0,0,7); ctx.fill(); ctx.restore();
 
+  // Vòng khiêu khích dưới chân Ayanokouji: dấu hiệu duy nhất cho biết địch đang bị hút
+  // vào anh. Chỉ là hình, không chữ.
+  if(f.ally&&f.taunt>0&&!(f.leaving>0)){
+    const br=.6+Math.sin(G.t*3.4)*.4;
+    ctx.save();
+    ctx.globalAlpha=.16+.14*br;
+    ctx.strokeStyle=f.color||'#8FA6C8'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.ellipse(f.x+ox,f.y+22,26+br*5,8+br*1.6,0,0,7); ctx.stroke();
+    ctx.restore();
+  }
+
   // Pre-Wings: quầng sáng dâng dần, nhạt hơn hào quang Drive Shot nhưng vẫn thấy rõ
   if(f.prewingA>0&&!f.eagle){
     const al=f.prewingA, cx=f.x+ox, foot=f.y+20-hop;
@@ -4132,7 +4163,9 @@ function drawGarden(){
 function drawForestGrip(){
   const k=G.fighters.find(f=>f.key==='shika'&&!f.summon);
   if(!k||!k.domain||k.domainA<=0)return;
-  const a=k.domainA, T=G.t, e=foeOf(k);
+  // dải bóng bám đúng người mà lãnh địa đang dí (Ayanokouji nếu anh đang khiêu khích),
+  // để hiệu ứng nhìn và quả bom không rơi vào hai người khác nhau
+  const a=k.domainA, T=G.t, e=(k.domain.e&&k.domain.e.alive)?k.domain.e:foeOf(k);
   if(!e||!e.alive)return;
   ctx.save();
     const foot=e.y+18, top=e.y-e.spriteH*.72;

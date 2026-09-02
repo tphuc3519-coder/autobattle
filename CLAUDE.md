@@ -243,10 +243,25 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
 - **Đột kích** mỗi 4.5 giây người chơi: 40 dmg + choáng 1.25 giây.
 - Buff Horikita **+100% tốc ra chiêu** (`f.castBuff`, nhân vào nhịp trôi hồi chiêu).
 - Tự dịch chuyển chắn đạn (`ayaIntercept`) và, khi địch **cận chiến** áp sát, đứng hẳn giữa
-  hai người, **bật taunt** rồi **đẩy Horikita vòng ra sau lưng địch** để cô rảnh tay đánh.
+  hai người rồi **đẩy Horikita vòng ra sau lưng địch** để cô rảnh tay đánh.
+- **Khiêu khích chạy suốt quãng anh còn trên sàn**, không đợi địch áp sát và không phân biệt
+  địch cận chiến hay đánh xa: `ayaTick` đặt `e.tauntBy=a` mỗi nhịp, nên **mọi đòn của địch —
+  chiêu thường, chiêu lớn, ultimate — đều rơi vào anh** chứ không vào Horikita. Anh rời sàn
+  (`leaving>0`) hay cạn máu thì `tauntBy` được xoá và địch nhắm lại vào cô.
+  *(Bản cũ chỉ bật taunt 0.6 giây lúc `mode==='tank'`, tức chỉ khi địch cận chiến vào trong
+  `ayaGuardR` — người dùng bác: "chưa thu hút đối phương".)*
 - **Taunt đi qua `aimTarget(f)`**, không đụng tới `foeOf()`. `foeOf` vẫn là quan hệ phe;
-  `aimTarget` chỉ trả lời "đang nhắm vào ai". Mọi chỗ NHẮM (aiVec, think, cú lao, đạn dò)
-  đọc `aimTarget`, mọi chỗ tính phe vẫn đọc `foeOf`.
+  `aimTarget` chỉ trả lời "đang nhắm vào ai". Mọi chỗ NHẮM (aiVec, think, cú lao, đạn dò,
+  viện binh, cả **lãnh địa Nara** qua `domainTick`) đọc `aimTarget`, mọi chỗ tính phe vẫn
+  đọc `foeOf`.
+- **Viện binh của địch không có khiêu khích riêng** nên `aimTarget` cho chúng đọc luôn
+  `master.tauntBy` — nếu không, Goku / Gohan / phân thân cứ gọi ra là lách được anh và bắn
+  thẳng vào Horikita. Có chặn `t.team!==f.team` để không bao giờ nhắm nhầm vào phe mình.
+- **Miễn nhiễm Sexy no Jutsu** (`sexyImmune:true` lúc `mk`): khói hồng không bám dot, không
+  choáng, không trừ một giọt máu nào của anh. Nhánh này nằm **trước** nhánh `f.summon` trong
+  `sexy()` để anh có dòng nhật ký riêng thay vì mượn câu của Goku/Gohan.
+- Dấu hiệu duy nhất của khiêu khích là **vòng sáng nhấp nháy dưới chân anh** (`drawFighter`,
+  nhánh `f.ally&&f.taunt>0`). **Không dán chữ `TAUNT` / `TAUNTED` lên sàn** — người dùng đã bác.
 
 > **Cú cước chia tay không được nện vào lớp miễn thương.** Konohamaru tự miễn thương 0.75 giây
 > người chơi mỗi lần tung Sexy no Jutsu; cú cước rơi trúng quãng đó thì `hurt()` trả về false
@@ -335,6 +350,9 @@ quyết định đúng, +5% tỉ lệ hồi máu, +6% lượng hồi máu, +8% m
 - Có nút `#testForest` để xem thử lãnh địa mà không cần đánh tới 20% máu.
 - Thứ tự vẽ: `drawForestGrip()` phải gọi **sau** khi vẽ nhân vật, nếu không khói bom sẽ
   che mất dải bóng.
+- Lãnh địa dí theo `aimTarget()` chứ không ghim cứng `foeOf()`: Ayanokouji khiêu khích thì
+  bom rơi vào anh. `domainTick()` đổi `D.e` (nhớ trả `outCut` của người cũ về 0) và
+  `drawForestGrip()` đọc `k.domain.e`, để dải bóng và quả bom không rơi vào hai người khác nhau.
 
 ---
 
@@ -532,6 +550,7 @@ node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choán
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
+                        # khiêu khích kéo địch ở mọi khoảng cách, anh miễn nhiễm Sexy no Jutsu,
                         # cước chia tay không nện vào miễn thương, bốn ô dáng riêng của form 3
 ```
 
@@ -589,7 +608,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 
 ## 10. Quy trình git
 
-- Nhánh làm việc: `claude/suzune-success-rate-skills-ws3a96`. **Không đẩy sang nhánh khác.**
+- Nhánh làm việc: `claude/ayanokoji-sexy-jutsu-immunity-vqhy3i`. **Không đẩy sang nhánh khác.**
 - `git push -u origin <nhánh>`; lỗi mạng thì thử lại 4 lần, giãn 2s/4s/8s/16s.
 - Người dùng thường merge rất nhanh rồi hỏi luôn "pr?" / "merge đâu" — làm xong một việc thì
   **mở PR ngay**. Nếu PR trước đã merge thì mở PR mới, đừng chồng lên nhánh đã merge.
