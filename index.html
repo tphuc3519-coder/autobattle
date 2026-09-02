@@ -665,7 +665,7 @@ async function loadSaved(){
    thì giữ nguyên đời đời — đổi là xoá sạch tiếng người dùng đã nạp. */
 const SFX_GROUPS={
   crit:'Chung', throw:'Konohamaru', punch:'ChiChi', kick:'Ozora Tsubasa',
-  shika_lazy:'Shikamaru', suz_punch:'Horikita Suzune', aya_appear:'Ayanokouji'
+  shika_lazy:'Shikamaru', suz_think:'Horikita Suzune', aya_appear:'Ayanokouji'
 };
 const SFX_EVENTS=[
   ['crit','Chí mạng'],['stun','Choáng'],['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt'],
@@ -685,7 +685,6 @@ const SFX_EVENTS=[
   ['shika_bind','Trói bóng khoá cổ'],['shika_grab','Bóng siết lấy cổ'],
   ['shika_garden','Mở khu rừng nhà Nara'],
 
-  ['suz_punch','Horikita đấm'],['suz_kick','Horikita đá'],['suz_block','Horikita đỡ đòn / Ayanokouji chắn thay'],
   ['suz_think','🎙 GIỌNG · Horikita tự hỏi bản thân (một câu duy nhất)'],
   ['suz_decide','🎙 GIỌNG · Horikita quyết định ĐÚNG (file dài: mỗi lần đọc tiếp một câu)'],
   ['suz_wrong','🎙 GIỌNG · Horikita quyết định SAI (file dài: mỗi lần đọc tiếp một câu)'],
@@ -878,12 +877,6 @@ function synth(name,c,g){
       [.35,.9,1.6,2.4].forEach(dl=>tone(c,g,{type:'sine',f0:1500,f1:2300,dur:.32,vol:.05,delay:dl}));
       break;
     }
-    case 'suz_punch': tone(c,g,{type:'square',f0:230,f1:90,dur:.12,vol:.22});
-                      noise(c,g,{dur:.1,f0:1400,f1:400,vol:.16}); break;
-    case 'suz_kick':  tone(c,g,{type:'sawtooth',f0:180,f1:68,dur:.17,vol:.24});
-                      noise(c,g,{dur:.15,f0:900,f1:260,vol:.18}); break;
-    case 'suz_block': noise(c,g,{dur:.2,f0:620,f1:180,vol:.2,type:'lowpass'});
-                      tone(c,g,{type:'triangle',f0:300,f1:165,dur:.22,vol:.14}); break;
     case 'suz_think': [0,.22,.44].forEach((d,i)=>tone(c,g,{type:'sine',f0:520+i*95,f1:520+i*95,dur:.12,vol:.11,delay:d})); break;
     case 'suz_decide':tone(c,g,{type:'square',f0:660,f1:1320,dur:.22,vol:.2});
                       noise(c,g,{dur:.26,f0:1800,f1:600,vol:.12,q:1.2}); break;
@@ -2330,7 +2323,7 @@ function suzStrike(f,e){
   const T=suzTune(f), kick=chance(.5);
   setPose(f,kick?'kick':'punch',cm(.3));
   aim(f,e,.9);
-  sfx(kick?'suz_kick':'suz_punch');
+  sfx('punch');   // mượn ô đấm của ChiChi, không có ô riêng
   G.fx.push({type:'punch',x:(f.x+e.x)/2,y:(f.y+e.y)/2,life:.16,ml:.16});
   if(!hurt(e,T.hit,f,false))return;
   suzCp(f,T.cp);
@@ -2441,7 +2434,7 @@ function ayaBlock(t,amt,src){
   G.floats.push({x:A.x,y:A.y-74,txt:'BLOCKED',color:'#DCE6F5',life:.85,ml:.85,banner:true,sc:.58});
   G.floats.push({x:A.x+rnd(-12,12),y:A.y-36,txt:'-'+Math.round(amt),color:'#8FA6C8',life:.8,ml:.8,sc:.5});
   ring(A.x,A.y-24,68,'#BFD4FF',.3);
-  sfx('suz_block');
+  sfx('hit');   // tiếng chịu đòn chung, không có ô riêng
 }
 function suzForm2(f){
   if(f.form>=2)return;

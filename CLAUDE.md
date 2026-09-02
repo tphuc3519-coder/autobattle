@@ -234,9 +234,14 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
 > | `suz_wrong` | 6 câu trong `SUZ_WRONG` | `SFX_SEG`, mỗi lần đọc tiếp một câu |
 >
 > **Sửa file tiếng thì phải sửa luôn ba chỗ trên cho khớp thứ tự.** Mấy ô còn lại
-> (`suz_punch` / `suz_kick` / `suz_block` / `suz_hit` / `suz_heal` / `suz_form2` /
-> `suz_form3`) là tiếng động, không phải giọng, nên giữ nguyên.
-
+> (`suz_hit` / `suz_heal` / `suz_form2` / `suz_form3`) là tiếng động, không phải giọng,
+> nên giữ nguyên.
+>
+> **Ba ô `suz_punch` / `suz_kick` / `suz_block` đã BỎ HẲN** (người dùng: đấm/đá thì mượn
+> tiếng của ChiChi, đỡ đòn thì dùng tiếng chịu đòn thường). `suzStrike()` gọi `sfx('punch')`
+> cho cả đấm lẫn đá — ChiChi chỉ có đúng một ô cận chiến — còn `ayaBlock()` gọi `sfx('hit')`.
+> Ô đầu của khu Horikita trong `SFX_GROUPS` vì vậy chuyển sang `suz_think`. Đừng dựng lại ba
+> ô đó.
 > **Ayanokouji có BA ô giọng riêng**, đúng ba câu anh nói trong cả trận:
 > | Ô | Câu | Trần độ dài |
 > |---|---|---|
