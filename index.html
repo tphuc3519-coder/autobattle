@@ -297,7 +297,7 @@ const CHICHI_DASH_CD=5;           // ChiChi lao tới mỗi 5 giây trong trận
 const gs=sec=>sec/RT;             // giây người chơi -> giây trong trận
 const SHIKA={
   lazyRate:12*RT,                 // ngồi lười: 12 chakra mỗi giây người chơi
-  lazyCap:1000,                   // trần của quãng ngồi lười: đủ 1000 là tự đứng dậy
+  lazyCap:700,                    // trần của quãng ngồi lười: đủ 700 là tự đứng dậy
   fightRate:4*RT,                 // đã vào trận: 4 chakra mỗi giây người chơi
   wakeHp:.80,                     // tụt xuống mức này thì bật dậy đánh
   evadeBase:.10, evadeStep:.025, evadeMax:.70,   // né được thì không cộng dồn, chỉ ăn đòn mới cộng
@@ -451,7 +451,7 @@ const CHARS={
       `<b>2</b> Shadow Strangle Jutsu — 45 dmg/s for ${rts(SHIKA.bindT)}s, then stun ${rts(SHIKA.bindStun)}s`,
       `<b>Passive</b> Lazy start: ${SHIKA.lazyRate/RT} chakra/s sitting out — until ${SHIKA.lazyCap} chakra or hurt to ${Math.round(SHIKA.wakeHp*100)}%, then he gets up and banks ${SHIKA.fightRate/RT}/s like anyone else`,
       `<b>Passive</b> Evasion ${Math.round(SHIKA.evadeBase*100)}% vs every direct hit — ultimates included, Sexy no Jutsu excepted; +${+(SHIKA.evadeStep*100).toFixed(1)}% per basic hit taken, up to ${Math.round(SHIKA.evadeMax*100)}%`,
-      `<b>Below ${Math.round(SHIKA.domainHp*100)}% HP</b> Nara Clan Forest — chakra spent as duration`],
+      `<b>Below ${Math.round(SHIKA.domainHp*100)}% HP</b> Nara Clan Forest — chakra spent as duration · the shadows grip <b>every foe with an HP bar</b>, ally included (a taunt cannot pull a whole domain onto one body), and the bombing is <b>split evenly</b> among them: two bodies, half each`],
     init(f){
       f.cds={s1:cm(1),s2:cm(2)};
       f.dashCd=SHIKA.stabCd;
@@ -482,7 +482,7 @@ const CHARS={
       `<b>Form 2 · 1</b> Punch &amp; Kick (random) — ${SUZ.f2.hit} dmg, ${rts(SUZ.atkCd)}s between blows (2.5× slower than ChiChi) · +${SUZ.f2.cp} class points · ${Math.round(SUZ.f2.healOdds*100)}% to heal ${Math.round(SUZ.f2.healPct*100)}% of current HP`,
       `<b>Form 2 · 2</b> Decision Making — she freezes to think for ${rts(SUZ.decThink)}s, fires, then waits ${rts(SUZ.decCd)}s before thinking again; <b>${Math.round(SUZ.f2.decOdds*100)}% right</b> = a verdict flies straight in for ${SUZ.f2.decLo}–${SUZ.f2.decHi} dmg and the same number of class points, ${Math.round((1-SUZ.f2.decOdds)*100)}% wrong = −${SUZ.decPenLo}~${SUZ.decPenHi} points (going negative costs her that much HP, then resets to 0)`,
       `<b>Every right call is graded</b> by the damage it deals — Form 2: ${SUZ.f2.decLo}–${SUZ_TIERS.f2[0][0]} acceptable, ${SUZ_TIERS.f2[0][0]+1}–${SUZ_TIERS.f2[1][0]} good, ${SUZ_TIERS.f2[1][0]+1}–${SUZ_TIERS.f2[2][0]} great, ${SUZ_TIERS.f2[2][0]+1}–${SUZ_TIERS.f2[3][0]} best · Form 3: ${SUZ.f3.decLo}–${SUZ_TIERS.f3[0][0]} / ${SUZ_TIERS.f3[0][0]+1}–${SUZ_TIERS.f3[1][0]} / ${SUZ_TIERS.f3[1][0]+1}–${SUZ_TIERS.f3[2][0]} / ${SUZ_TIERS.f3[2][0]+1}–${SUZ_TIERS.f3[3][0]}`,
-      `<b>${SUZ.cpMax} class points</b> Ayanokouji joins for real — ${Math.round(SUZ.ayaHp*100)}% of her current HP, ambush for ${SUZ.ayaDmg} + ${rts(SUZ.ayaStun)}s stun every ${rts(SUZ.ayaCd)}s, +100% cast speed for her, body-blocks incoming damage and <b>taunts the foe onto himself the whole time he stands</b> — every attack, ultimates included, goes to him instead of her — and he is <b>immune to Sexy no Jutsu</b>`,
+      `<b>${SUZ.cpMax} class points</b> Ayanokouji joins for real — ${Math.round(SUZ.ayaHp*100)}% of her current HP, ambush for ${SUZ.ayaDmg} + ${rts(SUZ.ayaStun)}s stun every ${rts(SUZ.ayaCd)}s, +100% cast speed for her, body-blocks incoming damage and <b>taunts the foe onto himself the whole time he stands</b> — every attack, ultimates included, goes to him instead of her (a domain like Nara Clan Forest is the one thing a taunt cannot pull: it grips both of them and splits its damage between them) — and he is <b>immune to Sexy no Jutsu</b>`,
       `<b>Form 3</b> He walks away (never dies) — hits ${SUZ.f3.hit} / +${SUZ.f3.cp} points, decisions ${Math.round(SUZ.f3.decOdds*100)}% right and hit for ${SUZ.f3.decLo}–${SUZ.f3.decHi}, ${Math.round(SUZ.f3.healOdds*100)}% to heal ${Math.round(SUZ.f3.healPct*100)}%, +${Math.round(SUZ.f3.dmgRes*100)}% damage resist &amp; ${Math.round(SUZ.f3.ccRes*100)}% CC resist`,
       `<b>Form 3 · stacking</b> every ${SUZ.cpMax} class points: +${Math.round(SUZ.st.dec*100)}% decision accuracy, +${Math.round(SUZ.st.healOdds*100)}% heal chance, +${Math.round(SUZ.st.healPct*100)}% heal amount, +${Math.round(SUZ.st.dmgRes*100)}% damage resist, +${Math.round(SUZ.st.ccRes*100)}% CC resist (up to ×${SUZ.st.max})`],
     init(f){
@@ -1660,36 +1660,56 @@ function naraDomain(k,e){
   G.floats.push({x:k.x,y:k.y-118,txt:`${Math.round(secPlayer*SHIKA.chakraPerSec)} CHAKRA · ${secPlayer.toFixed(1)}s`,
     color:'#CFC6FF',life:2,ml:2,banner:true,gold:true});
   say(`Khu rừng nhà Nara mở ra — ${Math.round(secPlayer*SHIKA.chakraPerSec)} chakra đổi lấy ${secPlayer.toFixed(1)} giây.`,'s');
-  say('Trong rừng: địch kiệt sức, chỉ gây một nửa sát thương và ăn bom lẫn bóng liên tục.','m');
+  say('Trong rừng: mọi đối thủ có thanh máu — đồng minh cũng vậy — đều kiệt sức, chỉ gây một nửa sát thương và ăn bom liên tục; trói thêm người thì sát thương chia đều ra, mỗi người một phần.','m');
 }
+/* Ai đang bị lãnh địa trói: mọi đối thủ trên sàn CÓ THANH MÁU — đấu thủ chính và đồng minh
+   (Ayanokouji). Khu rừng là một vùng chứ không phải đòn đơn nên khiêu khích không kéo nó về
+   một người được.
+   Viện binh thuần triệu hồi (Goku / Gohan) thì KHÔNG: họ không có thanh máu, ra chưởng một
+   phát rồi biến — bóng chẳng trói vào đâu được. Cờ nhận diện vẫn là `summon && !ally`, đúng
+   cái cờ mà drawBars() dùng để quyết định có vẽ thanh máu hay không.
+   Đấu thủ chính luôn đứng đầu danh sách. */
+function domainTargets(k){
+  const out=[];
+  for(const f of G.fighters){
+    if(!f||f.team===k.team||!f.alive||f.leaving>0)continue;
+    if(f.summon&&!f.ally)continue;
+    out.push(f);
+  }
+  out.sort((a,b)=>(a.summon?1:0)-(b.summon?1:0));
+  return out;
+}
+/* Sát thương của lãnh địa CHIA ĐỀU cho những người đang bị trói: một người ăn trọn, hai
+   người thì mỗi người một nửa, ba người thì mỗi người một phần ba. Trói thêm người không
+   làm khu rừng mạnh lên, chỉ làm nó dàn mỏng ra. */
+const domainShare=n=>1/Math.max(1,n);
 function domainTick(k,dt){
   const D=k.domain; if(!D)return;
-  // Lãnh địa dí theo người đang bị nhắm: Ayanokouji bước ra khiêu khích giữa chừng thì
-  // bom rơi vào anh, anh rời sàn thì rừng quay lại dí Horikita.
-  const e=aimTarget(k)||D.e;
-  if(D.e!==e){ if(D.e) D.e.outCut=0; D.e=e; }
+  const list=domainTargets(k);
+  if(list.length) D.e=list[0];                        // người chính, để chỗ khác còn đọc
   k.domainA=Math.min(1,k.domainA+dt*3);
   D.t-=dt;
-  if(e&&e.alive){
+  D.acc+=dt;
+  let nhip=false;
+  if(D.acc>=.25){ D.acc-=.25; nhip=true; }
+  // một lượt bốc cho cả nhịp, rồi chia đều cho những người đang bị trói
+  const dps=nhip?rnd(SHIKA.domainLo,SHIKA.domainHi):0;
+  const phan=dps*domainShare(list.length);
+  for(const e of list){
     e.exhaust=Math.max(e.exhaust,.6);                 // kiệt sức y như phân thân Konohamaru
     e.outCut=SHIKA.domainOutCut;
-    D.acc+=dt;
-    if(D.acc>=.25){
-      D.acc-=.25;
-      const dps=rnd(SHIKA.domainLo,SHIKA.domainHi);
-      hurt(e,dps*.25,k,false,'domain','shadow');
-      // quả bom nổ ngay cạnh địch: lõi sáng, sóng xung kích, khói bay
-      const bx=e.x+rnd(-46,46), by=e.y+rnd(-40,22);
-      G.fx.push({type:'gboom',x:bx,y:by,life:.42,ml:.42,seed:rnd(0,9),
-        big:dps>(SHIKA.domainLo+SHIKA.domainHi)/2});
-      for(let q=0;q<3;q++) G.fx.push({type:'dust',x:bx+rnd(-14,14),y:by+rnd(-12,12),r:7,life:.45,ml:.45});
-      G.flashScreen=Math.max(G.flashScreen,.05);
-      sfx('burn');
-    }
+    if(!nhip)continue;
+    hurt(e,phan*.25,k,false,'domain','shadow');
+    // quả bom nổ ngay cạnh địch: lõi sáng, sóng xung kích, khói bay
+    const bx=e.x+rnd(-46,46), by=e.y+rnd(-40,22);
+    G.fx.push({type:'gboom',x:bx,y:by,life:.42,ml:.42,seed:rnd(0,9),
+      big:dps>(SHIKA.domainLo+SHIKA.domainHi)/2});
+    for(let q=0;q<3;q++) G.fx.push({type:'dust',x:bx+rnd(-14,14),y:by+rnd(-12,12),r:7,life:.45,ml:.45});
   }
+  if(nhip){ G.flashScreen=Math.max(G.flashScreen,.05); sfx('burn'); }
   if(D.t<=0){
     k.domain=null; k.weak=true;
-    if(e) e.outCut=0;
+    for(const e of list) e.outCut=0;
     ring(k.x,k.y,320,'#6B5BD6',.5);
     G.floats.push({x:k.x,y:k.y-112,txt:'CHAKRA SPENT',color:'#9B8CFF',life:1.6,ml:1.6,banner:true,gold:true});
     say('Khu rừng khép lại — Shikamaru cạn chakra: mất chiêu trói bóng, shuriken yếu đi 30%.','s');
@@ -2979,7 +2999,7 @@ function step(dt){
       ayaShield(f);
     }
     if(f.key==='shika' && !f.domainDone && f.hp<=f.maxHp*SHIKA.domainHp){
-      naraDomain(f,aimTarget(f)||foeOf(f));
+      naraDomain(f,foeOf(f));
     }
     if(f.key==='tsubasa' && !f.eagleDone && f.hp<=f.maxHp*EAGLE_HP){
       ring(f.x,f.y,130,'#FFF3C4',.5);
@@ -4163,9 +4183,12 @@ function drawGarden(){
 function drawForestGrip(){
   const k=G.fighters.find(f=>f.key==='shika'&&!f.summon);
   if(!k||!k.domain||k.domainA<=0)return;
-  // dải bóng bám đúng người mà lãnh địa đang dí (Ayanokouji nếu anh đang khiêu khích),
-  // để hiệu ứng nhìn và quả bom không rơi vào hai người khác nhau
-  const a=k.domainA, T=G.t, e=(k.domain.e&&k.domain.e.alive)?k.domain.e:foeOf(k);
+  // dải bóng bám lên đúng những người đang bị lãnh địa trói — cả hai bên kia sàn, để
+  // hiệu ứng nhìn và quả bom không rơi vào hai người khác nhau
+  for(const e of domainTargets(k)) forestGripOn(k,e);
+}
+function forestGripOn(k,e){
+  const a=k.domainA, T=G.t;
   if(!e||!e.alive)return;
   ctx.save();
     const foot=e.y+18, top=e.y-e.spriteH*.72;

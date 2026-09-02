@@ -116,9 +116,11 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
 Toàn bộ trong hằng `SHIKA`. Những điểm người dùng chốt riêng:
 - **Ngồi lười** (không phải nằm) đầu trận, tích 12 chakra/giây người chơi; bật dậy khi máu
   tụt xuống **80%** (`wakeHp:.80`) rồi chỉ còn 4/giây.
-- **Trần của quãng ngồi lười là 1000 chakra** (`lazyCap`). Không ai đánh thì cứ ngồi tới khi
-  đủ 1000 là **tự đứng dậy** đánh như bình thường. Trần này **chỉ chặn quãng ngồi**, không
-  phải trần tuyệt đối: đứng dậy rồi vẫn tích tiếp 4/giây và **vượt qua 1000 được**. Hai lối
+- **Trần của quãng ngồi lười là 700 chakra** (`lazyCap`). Không ai đánh thì cứ ngồi tới khi
+  đủ 700 là **tự đứng dậy** đánh như bình thường. Trần này **chỉ chặn quãng ngồi**, không
+  phải trần tuyệt đối: đứng dậy rồi vẫn tích tiếp 4/giây và **vượt qua 700 được**.
+  *(Từng để 1000; người dùng hạ xuống 700 để anh vào trận sớm hơn. Test đọc thẳng
+  `SHIKA.lazyCap` nên đổi con số này là đủ, đừng ghim số vào chỗ khác.)* Hai lối
   rời ghế đi chung hàm `shikaWake(f, why)` để phần dọn dẹp (câm tiếng than, xoá bong bóng,
   chờ `wakeDelay`) không bị chép thành hai bản. Thanh chakra canh theo `lazyCap`.
 - Bật dậy: **cắt tiếng than thở ngay lập tức**, xoá bong bóng đang treo, rồi **chờ 1.5 giây
@@ -252,8 +254,9 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
   `ayaGuardR` — người dùng bác: "chưa thu hút đối phương".)*
 - **Taunt đi qua `aimTarget(f)`**, không đụng tới `foeOf()`. `foeOf` vẫn là quan hệ phe;
   `aimTarget` chỉ trả lời "đang nhắm vào ai". Mọi chỗ NHẮM (aiVec, think, cú lao, đạn dò,
-  viện binh, cả **lãnh địa Nara** qua `domainTick`) đọc `aimTarget`, mọi chỗ tính phe vẫn
-  đọc `foeOf`.
+  viện binh) đọc `aimTarget`, mọi chỗ tính phe vẫn đọc `foeOf`.
+  **Ngoại lệ duy nhất là lãnh địa Nara**: nó là một vùng nên trói cả hai người có thanh máu
+  và chia đều sát thương, đọc thẳng `domainTargets()` chứ không đọc `aimTarget` (xem mục 3).
 - **Viện binh của địch không có khiêu khích riêng** nên `aimTarget` cho chúng đọc luôn
   `master.tauntBy` — nếu không, Goku / Gohan / phân thân cứ gọi ra là lách được anh và bắn
   thẳng vào Horikita. Có chặn `t.team!==f.team` để không bao giờ nhắm nhầm vào phe mình.
@@ -350,9 +353,21 @@ quyết định đúng, +5% tỉ lệ hồi máu, +6% lượng hồi máu, +8% m
 - Có nút `#testForest` để xem thử lãnh địa mà không cần đánh tới 20% máu.
 - Thứ tự vẽ: `drawForestGrip()` phải gọi **sau** khi vẽ nhân vật, nếu không khói bom sẽ
   che mất dải bóng.
-- Lãnh địa dí theo `aimTarget()` chứ không ghim cứng `foeOf()`: Ayanokouji khiêu khích thì
-  bom rơi vào anh. `domainTick()` đổi `D.e` (nhớ trả `outCut` của người cũ về 0) và
-  `drawForestGrip()` đọc `k.domain.e`, để dải bóng và quả bom không rơi vào hai người khác nhau.
+- **Lãnh địa trói mọi đối thủ CÓ THANH MÁU** — đấu thủ chính và đồng minh (Ayanokouji).
+  Khu rừng là một *vùng*, không phải đòn đơn, nên **khiêu khích không kéo nó về một người**:
+  `domainTick()` duyệt `domainTargets(k)`, ai bị trói cũng dính đủ `exhaust` và `outCut`.
+- **Viện binh thuần triệu hồi thì không trói được.** Goku / Gohan / phân thân **không có thanh
+  máu** — bóng chẳng bám vào đâu. Cờ nhận diện là `summon && !ally`, đúng cái cờ `drawBars()`
+  dùng để quyết định có vẽ thanh máu hay không. *(Người dùng: "dạng thuần summon k có thanh máu
+  như goku với gohan, phân thân thì trói sao đc".)*
+- **Sát thương CHIA ĐỀU cho những người đang bị trói**, không phải mỗi người một lượt riêng:
+  một nhịp bốc **một** lượt `rnd(domainLo, domainHi)` rồi nhân `domainShare(n) = 1/n` — một
+  người ăn trọn, hai người mỗi người một nửa, ba người mỗi người một phần ba. Trói thêm người
+  **không** làm khu rừng mạnh lên, chỉ làm nó dàn mỏng ra.
+  `drawForestGrip()` gọi `forestGripOn(k,e)` cho từng người để dải bóng bám đúng ai đang
+  bị trói. Hết giờ thì trả `outCut` của cả danh sách về 0.
+  *(Đường đi của yêu cầu: lúc đầu cho lãnh địa dí theo `aimTarget()` → bác, "trói cả 2" →
+  làm thành giảm dần theo bậc → bác tiếp, chốt là **chia đều** và **chỉ trói ai có thanh máu**.)*
 
 ---
 
@@ -545,12 +560,13 @@ Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 
 ```bash
 node tools/t_reg.js     # 15 cặp đấu song song, bắt lỗi trang, xem cơ chế lớn có nổ không
-node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần 1000 chakra
+node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
                         # khiêu khích kéo địch ở mọi khoảng cách, anh miễn nhiễm Sexy no Jutsu,
+                        # lãnh địa Nara trói ai có thanh máu và chia đều dmg (trận thứ hai: shika vs suzune),
                         # cước chia tay không nện vào miễn thương, bốn ô dáng riêng của form 3
 ```
 
