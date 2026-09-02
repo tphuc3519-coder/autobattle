@@ -249,6 +249,14 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
 > | `aya_join` | `AYA_LAST` — câu lúc vào sân sát cánh lần cuối | `AYA_JOIN_LIFE*RT` |
 > | `aya_bye` | `AYA_BYE` — *"This is where I take my leave."* (lúc rời sàn) | `AYA_BYE_LIFE*RT` |
 >
+> **Lần xuất hiện tách làm hai ô.** `aya_appear` = lần đầu (bước ra chắn đòn),
+> `aya_appear2` = lần 2 (vào sân sát cánh khi đủ 150 điểm lớp). Ô lần 2 **bỏ trống thì
+> mượn hẳn ô `summon`** — đúng tiếng dịch chuyển của viện binh twin shot — qua bảng
+> `SFX_ALIAS`: `sfx()` thấy ô chưa nạp file mà có tên trong bảng thì đổi luôn sang ô kia,
+> nên mượn cả file người dùng đã nạp cho `summon` lẫn tiếng tự tạo của nó. Vì vậy ô có
+> mặt trong `SFX_ALIAS` **không cần** thêm `case` trong `synth()`; nạp file cho chính nó
+> thì file đó thắng.
+
 > Ba hằng `AYA_*_LIFE` khai **trước `SFX_MAXLEN`** (cạnh `SUZ_BUBBLE`) và dùng chung cho cả
 > `talk()` lẫn trần độ dài tiếng — hai chỗ không được lệch nhau. `aya_appear` / `aya_strike` /
 > `aya_leave` vẫn là tiếng động như cũ.

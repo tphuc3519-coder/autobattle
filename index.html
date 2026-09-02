@@ -691,8 +691,9 @@ const SFX_EVENTS=[
   ['suz_hit','Quyết định đâm trúng địch'],
   ['suz_heal','Horikita hồi máu'],['suz_form2','Horikita đứng lên đánh trả'],['suz_form3','Horikita tự mình chiến đấu'],
 
-  ['aya_appear','Ayanokouji xuất hiện'],
+  ['aya_appear','Ayanokouji xuất hiện lần đầu (bước ra chắn đòn)'],
   ['aya_stand','🎙 GIỌNG · "Stand up and fight." (lúc anh bước ra chắn đòn)'],
+  ['aya_appear2','Ayanokouji xuất hiện lần 2 (vào sân sát cánh) — bỏ trống thì mượn tiếng dịch chuyển của viện binh'],
   ['aya_join','🎙 GIỌNG · Câu lúc anh vào sân sát cánh lần cuối'],
   ['aya_strike','Ayanokouji đột kích'],
   ['aya_bye','🎙 GIỌNG · "This is where I take my leave." (lúc anh rời sàn)'],
@@ -904,6 +905,13 @@ function synth(name,c,g){
     default:        noise(c,g,{dur:.1,f0:1200,vol:.2});
   }
 }
+/* Ô chưa nạp file thì mượn HẲN một ô khác — mượn cả file người dùng đã nạp cho ô đó
+   lẫn tiếng tự tạo của nó, chứ không phải chỉ mượn tiếng tự tạo. Nạp file cho chính ô
+   này thì file đó thắng, bảng dưới hết tác dụng. Đây cũng là "tiếng dự phòng" của ô,
+   nên ô nào có mặt ở đây thì không cần thêm case trong synth(). */
+const SFX_ALIAS={
+  aya_appear2:'summon'    // lần 2 anh dịch chuyển vào sân y như viện binh twin shot
+};
 const SFX_FULL=new Set(['ko','win','cheer','twin_hyuga','twin_misaki','shika_garden']);
 // Các tiếng phát từ đầu rồi cắt ở một mốc. Chiêu lớn thì cắt ở 5 giây; mấy tiếng
 // đi kèm một hình cụ thể thì cắt đúng lúc hình đó tắt, để tiếng không nói tiếp khi
@@ -979,6 +987,7 @@ function playBuffer(name,buf,c,g){
 }
 function sfx(name){
   if(muted||volume<=0)return;
+  if(!SFXBUF[name]&&SFX_ALIAS[name]) name=SFX_ALIAS[name];   // chưa nạp thì mượn ô khác
   const now=performance.now();
   if(lastSfx[name] && now-lastSfx[name]<45) return;
   lastSfx[name]=now;
@@ -2458,7 +2467,7 @@ function ayaJoin(f){
   const py=clamp(f.y+rnd(-10,20),PAD+60,H-PAD-20);
   G.freeze=1.8; G.freezeAt=f;
   G.flashScreen=1;
-  sfx('aya_appear');
+  sfx('aya_appear2');
   G.callBanner={txt:'AYANOKOUJI JOINS',color:'#8FA6C8',life:CALL_BANNER_LIFE,ml:CALL_BANNER_LIFE};
   later(.45,()=>{
     if(G.over)return;
