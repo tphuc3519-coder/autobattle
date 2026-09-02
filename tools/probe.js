@@ -14,6 +14,7 @@ window.__G=()=>G; window.__ac=ac; window.__RT=RT; window.__SHIKA=SHIKA;
 window.__SFXBUF=SFXBUF; window.__sfx=n=>sfx(n); window.__SFXE=SFX_EVENTS;
 window.__SFXMAX=SFX_MAXLEN; window.__SFXGROUPS=SFX_GROUPS; window.__SFXALIAS=SFX_ALIAS;
 window.__Store=Store; window.__SPR=SPR; window.__SFXSRC=SFXSRC; window.__SLOT=SLOT;
+window.__talk=talk; window.__CV=CV; window.__S=S; window.__HEADER=HEADER; window.__WH=()=>({W,H});
 /* sfx() nuốt lỗi của synth(), mà switch thiếu case thì cũng không ném — nên muốn biết
    một ô có tiếng tự tạo dự phòng hay không thì phải soi thẳng thân hàm. */
 window.__synthSrc=()=>synth.toString();

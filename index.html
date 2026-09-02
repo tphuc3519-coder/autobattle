@@ -4682,6 +4682,103 @@ function versusBox(){
   ctx.fillStyle=c.color; ctx.fillText(n2,bx+17+w1+wm,cy);
   ctx.textAlign='center'; ctx.textBaseline='alphabetic';
 }
+/* Một dòng chữ nổi: số sát thương, băng-rôn tên chiêu, hay bong bóng thoại.
+   Tách ra khỏi draw() để vẽ được làm nhiều lượt — xem chatFloat(). */
+function drawFloat(f){
+  const age=(f.ml||1)-f.life;
+  const s=1+Math.max(0,.55-age*4);
+  ctx.save();
+  ctx.globalAlpha=clamp(f.life*1.4,0,1);
+  ctx.textAlign='center';
+  /* Đo trước khối chữ rồi kéo cả cụm vào trong sàn. Đứng sát mép mà nói câu dài thì
+     trước đây chữ thò hẳn ra ngoài khung — cả bề ngang lẫn bề dọc. Khối nào rộng hơn
+     cả sàn thì canh giữa, chứ đừng để cận trên nhỏ hơn cận dưới. */
+  const lns=String(f.txt).split('\n');
+  let bw=0, bh;
+  if(f.banner&&f.bubble&&!f.gold){
+    ctx.font=(f.big?'900 23px':'800 16px')+' "Be Vietnam Pro",sans-serif';
+    bh=(f.big?40:30)+(lns.length-1)*(f.big?26:19);
+  }else if(f.banner){
+    const px=(f.big?27:21)*(f.sc||1);
+    ctx.font=`900 ${Math.round(px)}px "Be Vietnam Pro",sans-serif`;
+    bh=px+12;
+  }else if(f.big){
+    const px=34*(f.sc||1);
+    ctx.font=`900 ${Math.round(px)}px "Be Vietnam Pro",sans-serif`;
+    bh=px+10;
+  }else{
+    const px=22*(f.sc||1);
+    ctx.font=`900 ${Math.round(px)}px "Be Vietnam Pro",sans-serif`;
+    bh=px+10;
+  }
+  for(const L of lns) bw=Math.max(bw,ctx.measureText(L).width);
+  bw=(bw+((f.banner&&f.bubble&&!f.gold)?(f.big?30:22):16))*s;
+  bh*=s;
+  /* Kéo vào KHUNG ĐANG NHÌN THẤY chứ không phải cả sàn: lúc phân cảnh camera zoom vào
+     thì cửa sổ nhìn chỉ còn W/z × H/z quanh tâm camera, một chỗ nằm trong sàn vẫn có
+     thể nằm ngoài màn hình. Zoom bằng 1 thì công thức này trùng với cả sàn. */
+  const cz=G.cam.z||1, vw=W/cz, vh=H/cz;
+  const vx0=G.cam.x-vw/2, vx1=G.cam.x+vw/2, vy0=G.cam.y-vh/2, vy1=G.cam.y+vh/2;
+  const px=10/cz, py=12/cz;
+  const fx=clamp(f.x, Math.min(G.cam.x,vx0+bw/2+px), Math.max(G.cam.x,vx1-bw/2-px));
+  const fy=clamp(f.y, Math.min(G.cam.y,vy0+bh/2+py), Math.max(G.cam.y,vy1-bh/2-py));
+  ctx.translate(fx,fy); ctx.scale(s,s);
+  if(f.banner&&f.bubble&&!f.gold){
+    ctx.rotate((f.tilt||0)+Math.sin(age*16)*.03);
+    ctx.font=(f.big?'900 23px':'800 16px')+' "Be Vietnam Pro",sans-serif';
+    // câu dài đã bẻ sẵn bằng \n thì khung cao theo số dòng, không để chữ tràn ra khỏi sàn
+    const ls=String(f.txt).split('\n'), lh=(f.big?26:19);
+    let tw=0; for(const L of ls) tw=Math.max(tw,ctx.measureText(L).width);
+    const bw=tw+(f.big?30:22), bh=(f.big?40:30)+(ls.length-1)*lh;
+    const box=()=>{ ctx.beginPath();
+      if(ctx.roundRect)ctx.roundRect(-bw/2,-bh/2-5,bw,bh,10); else ctx.rect(-bw/2,-bh/2-5,bw,bh); };
+    const tail=()=>{ ctx.beginPath(); ctx.moveTo(-7,bh/2-5); ctx.lineTo(2,bh/2+7); ctx.lineTo(7,bh/2-5); ctx.closePath(); };
+    if(f.gold){
+      ctx.shadowColor='rgba(255,197,66,.9)'; ctx.shadowBlur=16;
+      ctx.fillStyle='#fff'; box(); ctx.fill(); tail(); ctx.fill();
+      ctx.shadowBlur=0;
+      ctx.strokeStyle='#000'; ctx.lineWidth=8; box(); ctx.stroke(); tail(); ctx.stroke();
+      ctx.strokeStyle='#FFC542'; ctx.lineWidth=4; box(); ctx.stroke(); tail(); ctx.stroke();
+    }else{
+      ctx.fillStyle='#fff'; ctx.strokeStyle='#000'; ctx.lineWidth=3;
+      box(); ctx.fill(); ctx.stroke(); tail(); ctx.fill(); ctx.stroke();
+    }
+    ctx.fillStyle=f.color;
+    const y0=(f.big?7:5)-(ls.length-1)*lh/2;
+    ls.forEach((L,i)=>ctx.fillText(L,0,y0+i*lh));
+  }else if(f.banner){
+    ctx.rotate((f.tilt||0)+Math.sin(age*22)*.04);
+    ctx.font=`900 ${Math.round((f.big?27:21)*(f.sc||1))}px "Be Vietnam Pro",sans-serif`;
+    if(f.gold){
+      const k=(f.sc||1);
+      ctx.shadowColor='rgba(255,197,66,.85)'; ctx.shadowBlur=14*k;
+      ctx.lineWidth=11*k; ctx.strokeStyle='#000'; ctx.strokeText(f.txt,0,0);
+      ctx.shadowBlur=0;
+      ctx.lineWidth=6*k; ctx.strokeStyle='#FFC542'; ctx.strokeText(f.txt,0,0);
+      ctx.lineWidth=2*k; ctx.strokeStyle='#FFF3C4'; ctx.strokeText(f.txt,0,0);
+    }else{
+      ctx.lineWidth=7; ctx.strokeStyle='#000'; ctx.strokeText(f.txt,0,0);
+      ctx.lineWidth=3; ctx.strokeStyle='#fff'; ctx.strokeText(f.txt,0,0);
+    }
+    ctx.fillStyle=f.color; ctx.fillText(f.txt,0,0);
+  }else if(f.big){
+    ctx.font=`900 ${Math.round(34*(f.sc||1))}px "Be Vietnam Pro",sans-serif`;
+    ctx.lineWidth=8; ctx.strokeStyle='#000'; ctx.strokeText(f.txt,0,0);
+    ctx.lineWidth=4; ctx.strokeStyle='#fff'; ctx.strokeText(f.txt,0,0);
+    ctx.fillStyle=f.color; ctx.fillText(f.txt,0,0);
+  }else{
+    ctx.font=`900 ${Math.round(22*(f.sc||1))}px "Be Vietnam Pro",sans-serif`;
+    ctx.lineWidth=5; ctx.strokeStyle='#000'; ctx.strokeText(f.txt,0,0);
+    ctx.fillStyle=f.color; ctx.fillText(f.txt,0,0);
+  }
+  ctx.restore();
+
+}
+/* Bong bóng thoại (talk(), tiếng than của Shikamaru, câu mắng của ChiChi): khung trắng
+   bo góc có đuôi nhọn. Băng-rôn tên chiêu cũng là bong bóng nhưng viền vàng (gold), nên
+   cờ gold chính là ranh giới giữa "lời nói" và "hiệu ứng chiêu". */
+function chatFloat(f){ return !!(f.banner&&f.bubble&&!f.gold); }
+
 function draw(){
   ctx.setTransform(S,0,0,S,0,0);
   ctx.fillStyle='#0C0920'; ctx.fillRect(0,0,W,H+HEADER);
@@ -4810,95 +4907,14 @@ function draw(){
   drawBindShadow();
   if(!G.flashback) for(const f of order) drawBars(f);   // hồi tưởng thì giấu thanh máu cho sạch hình
 
-  for(const f of G.floats){
-    const age=(f.ml||1)-f.life;
-    const s=1+Math.max(0,.55-age*4);
-    ctx.save();
-    ctx.globalAlpha=clamp(f.life*1.4,0,1);
-    ctx.textAlign='center';
-    /* Đo trước khối chữ rồi kéo cả cụm vào trong sàn. Đứng sát mép mà nói câu dài thì
-       trước đây chữ thò hẳn ra ngoài khung — cả bề ngang lẫn bề dọc. Khối nào rộng hơn
-       cả sàn thì canh giữa, chứ đừng để cận trên nhỏ hơn cận dưới. */
-    const lns=String(f.txt).split('\n');
-    let bw=0, bh;
-    if(f.banner&&f.bubble&&!f.gold){
-      ctx.font=(f.big?'900 23px':'800 16px')+' "Be Vietnam Pro",sans-serif';
-      bh=(f.big?40:30)+(lns.length-1)*(f.big?26:19);
-    }else if(f.banner){
-      const px=(f.big?27:21)*(f.sc||1);
-      ctx.font=`900 ${Math.round(px)}px "Be Vietnam Pro",sans-serif`;
-      bh=px+12;
-    }else if(f.big){
-      const px=34*(f.sc||1);
-      ctx.font=`900 ${Math.round(px)}px "Be Vietnam Pro",sans-serif`;
-      bh=px+10;
-    }else{
-      const px=22*(f.sc||1);
-      ctx.font=`900 ${Math.round(px)}px "Be Vietnam Pro",sans-serif`;
-      bh=px+10;
-    }
-    for(const L of lns) bw=Math.max(bw,ctx.measureText(L).width);
-    bw=(bw+((f.banner&&f.bubble&&!f.gold)?(f.big?30:22):16))*s;
-    bh*=s;
-    /* Kéo vào KHUNG ĐANG NHÌN THẤY chứ không phải cả sàn: lúc phân cảnh camera zoom vào
-       thì cửa sổ nhìn chỉ còn W/z × H/z quanh tâm camera, một chỗ nằm trong sàn vẫn có
-       thể nằm ngoài màn hình. Zoom bằng 1 thì công thức này trùng với cả sàn. */
-    const cz=G.cam.z||1, vw=W/cz, vh=H/cz;
-    const vx0=G.cam.x-vw/2, vx1=G.cam.x+vw/2, vy0=G.cam.y-vh/2, vy1=G.cam.y+vh/2;
-    const px=10/cz, py=12/cz;
-    const fx=clamp(f.x, Math.min(G.cam.x,vx0+bw/2+px), Math.max(G.cam.x,vx1-bw/2-px));
-    const fy=clamp(f.y, Math.min(G.cam.y,vy0+bh/2+py), Math.max(G.cam.y,vy1-bh/2-py));
-    ctx.translate(fx,fy); ctx.scale(s,s);
-    if(f.banner&&f.bubble&&!f.gold){
-      ctx.rotate((f.tilt||0)+Math.sin(age*16)*.03);
-      ctx.font=(f.big?'900 23px':'800 16px')+' "Be Vietnam Pro",sans-serif';
-      // câu dài đã bẻ sẵn bằng \n thì khung cao theo số dòng, không để chữ tràn ra khỏi sàn
-      const ls=String(f.txt).split('\n'), lh=(f.big?26:19);
-      let tw=0; for(const L of ls) tw=Math.max(tw,ctx.measureText(L).width);
-      const bw=tw+(f.big?30:22), bh=(f.big?40:30)+(ls.length-1)*lh;
-      const box=()=>{ ctx.beginPath();
-        if(ctx.roundRect)ctx.roundRect(-bw/2,-bh/2-5,bw,bh,10); else ctx.rect(-bw/2,-bh/2-5,bw,bh); };
-      const tail=()=>{ ctx.beginPath(); ctx.moveTo(-7,bh/2-5); ctx.lineTo(2,bh/2+7); ctx.lineTo(7,bh/2-5); ctx.closePath(); };
-      if(f.gold){
-        ctx.shadowColor='rgba(255,197,66,.9)'; ctx.shadowBlur=16;
-        ctx.fillStyle='#fff'; box(); ctx.fill(); tail(); ctx.fill();
-        ctx.shadowBlur=0;
-        ctx.strokeStyle='#000'; ctx.lineWidth=8; box(); ctx.stroke(); tail(); ctx.stroke();
-        ctx.strokeStyle='#FFC542'; ctx.lineWidth=4; box(); ctx.stroke(); tail(); ctx.stroke();
-      }else{
-        ctx.fillStyle='#fff'; ctx.strokeStyle='#000'; ctx.lineWidth=3;
-        box(); ctx.fill(); ctx.stroke(); tail(); ctx.fill(); ctx.stroke();
-      }
-      ctx.fillStyle=f.color;
-      const y0=(f.big?7:5)-(ls.length-1)*lh/2;
-      ls.forEach((L,i)=>ctx.fillText(L,0,y0+i*lh));
-    }else if(f.banner){
-      ctx.rotate((f.tilt||0)+Math.sin(age*22)*.04);
-      ctx.font=`900 ${Math.round((f.big?27:21)*(f.sc||1))}px "Be Vietnam Pro",sans-serif`;
-      if(f.gold){
-        const k=(f.sc||1);
-        ctx.shadowColor='rgba(255,197,66,.85)'; ctx.shadowBlur=14*k;
-        ctx.lineWidth=11*k; ctx.strokeStyle='#000'; ctx.strokeText(f.txt,0,0);
-        ctx.shadowBlur=0;
-        ctx.lineWidth=6*k; ctx.strokeStyle='#FFC542'; ctx.strokeText(f.txt,0,0);
-        ctx.lineWidth=2*k; ctx.strokeStyle='#FFF3C4'; ctx.strokeText(f.txt,0,0);
-      }else{
-        ctx.lineWidth=7; ctx.strokeStyle='#000'; ctx.strokeText(f.txt,0,0);
-        ctx.lineWidth=3; ctx.strokeStyle='#fff'; ctx.strokeText(f.txt,0,0);
-      }
-      ctx.fillStyle=f.color; ctx.fillText(f.txt,0,0);
-    }else if(f.big){
-      ctx.font=`900 ${Math.round(34*(f.sc||1))}px "Be Vietnam Pro",sans-serif`;
-      ctx.lineWidth=8; ctx.strokeStyle='#000'; ctx.strokeText(f.txt,0,0);
-      ctx.lineWidth=4; ctx.strokeStyle='#fff'; ctx.strokeText(f.txt,0,0);
-      ctx.fillStyle=f.color; ctx.fillText(f.txt,0,0);
-    }else{
-      ctx.font=`900 ${Math.round(22*(f.sc||1))}px "Be Vietnam Pro",sans-serif`;
-      ctx.lineWidth=5; ctx.strokeStyle='#000'; ctx.strokeText(f.txt,0,0);
-      ctx.fillStyle=f.color; ctx.fillText(f.txt,0,0);
-    }
-    ctx.restore();
-  }
+  /* Bong bóng thoại vẽ SAU CÙNG trong đám chữ nổi. Băng-rôn tên chiêu và số sát thương
+     nổ ra sau nên theo thứ tự trong mảng thì chúng đè lên câu đang nói — người dùng muốn
+     ngược lại: lời thoại luôn đọc được, hiệu ứng chiêu chạy phía dưới. */
+  for(const f of G.floats) if(!chatFloat(f)) drawFloat(f);
+  // bong bóng thoại để dành cho lượt cuối (xem cuối draw); riêng lúc hồi tưởng thì vẽ ngay
+  // tại đây, vì phân cảnh hồi tưởng phủ kín màn, đè chữ lên trên nhìn rối.
+  if(G.flashback) for(const f of G.floats) if(chatFloat(f)) drawFloat(f);
+
   for(const c of G.conf){
     ctx.save(); ctx.globalAlpha=clamp(c.life,0,1);
     ctx.translate(c.x,c.y); ctx.rotate(c.rot);
@@ -4910,6 +4926,17 @@ function draw(){
   arenaFrame();
   if(G.flashback) drawFlashback();
   if(G.callBanner) drawCallBanner();
+  /* Băng-rôn tên chiêu giữa màn (NARA CLAN FOREST, TWIN SHOT!!, AYANOKOUJI…) vẽ ở hệ toạ
+     độ màn hình nên nằm sau cùng — nó cũng che mất bong bóng thoại. Vẽ lại đám bong bóng
+     một lượt nữa ở đây, trong đúng vùng cắt và camera của sàn, để lời thoại nằm trên hết.
+     Lúc hồi tưởng thì thôi: phân cảnh đó phủ kín màn, chữ đè lên nhìn rối. */
+  if(!G.flashback&&G.floats.some(chatFloat)){
+    ctx.save();
+    ctx.beginPath(); ctx.rect(10,10,W-20,H-20); ctx.clip();
+    camApply();
+    for(const f of G.floats) if(chatFloat(f)) drawFloat(f);
+    ctx.restore();
+  }
 
   if(G.flashScreen>0){ ctx.save(); ctx.globalAlpha=clamp(G.flashScreen*4,0,.85); ctx.fillStyle='#fff'; ctx.fillRect(10,10,W-20,H-20); ctx.restore(); }
   if(!running&&!G.over) overlay('PRESS START','Space: pause  ·  R: restart');

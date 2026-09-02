@@ -474,6 +474,33 @@ bleedOn(e, k);
 
 ---
 
+## 6b. Thứ tự vẽ chữ nổi — bong bóng thoại luôn nằm trên
+
+Mọi chữ nổi (số sát thương, băng-rôn tên chiêu, bong bóng thoại) đều nằm chung mảng
+`G.floats` và trước đây vẽ đúng theo thứ tự trong mảng, nên thứ nào **đẩy vào sau thì đè
+lên trên**. Hệ quả: tung chiêu ngay lúc đang nói là băng-rôn `RASENGAN!` / `DECISION!` phủ
+kín câu thoại. **Người dùng chốt: lời thoại được ưu tiên, hiệu ứng chiêu chạy phía dưới.**
+
+- `chatFloat(f)` = `f.banner && f.bubble && !f.gold` — đúng khung trắng bo góc có đuôi nhọn
+  do `talk()` / tiếng than Shikamaru / câu mắng ChiChi tạo ra. Băng-rôn tên chiêu cũng là
+  bong bóng nhưng **viền vàng** (`gold:true`), nên **cờ `gold` chính là ranh giới** giữa
+  "lời nói" và "hiệu ứng chiêu". Đặt bong bóng thoại mới thì đừng gắn `gold`.
+- Thân vẽ một dòng chữ tách thành hàm riêng `drawFloat(f)` để gọi được nhiều lượt.
+- `draw()` vẽ **hai lượt**: trong vùng cắt của sàn vẽ mọi float **không phải** thoại; xong
+  hết `arenaFrame()` / `drawFlashback()` / `drawCallBanner()` mới mở lại đúng vùng cắt +
+  `camApply()` để vẽ đám bong bóng thoại. Nhờ lượt cuối này bong bóng nằm trên **cả băng-rôn
+  giữa màn** (NARA CLAN FOREST, TWIN SHOT!!, AYANOKOUJI…) vốn vẽ ở hệ toạ độ màn hình.
+- **Lúc hồi tưởng (`G.flashback`) thì bong bóng vẫn vẽ ở lượt đầu**, không đẩy lên trên:
+  phân cảnh đó phủ kín màn, chữ đè lên nhìn rối.
+- Bong bóng thoại chỉ được vẽ **một lượt duy nhất** — vẽ hai lượt thì viền đen và nền trắng
+  chồng lên nhau, nhìn đậm hẳn lên.
+
+Kiểm bằng `node tools/t_bubble.js`: đặt câu thoại và băng-rôn tên chiêu chồng đúng lên nhau
+rồi **đếm điểm ảnh** giữa chỗ chồng — nền trắng phải chiếm >50%, viền vàng phải là 0%. Bản
+cũ đo ra 35% vàng và test đổ đúng 5 mục.
+
+---
+
 ## 7. Vẽ và tốc độ khung hình
 
 Máy chạy test không có GPU, nên:
@@ -611,6 +638,7 @@ node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choán
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
+node tools/t_bubble.js  # bong bóng thoại nằm trên băng-rôn tên chiêu và băng-rôn giữa màn
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
                         # khiêu khích kéo địch ở mọi khoảng cách, anh miễn nhiễm Sexy no Jutsu,
                         # ba ô giọng của anh + hai ô xuất hiện + bảng tiếng chia nhóm,
