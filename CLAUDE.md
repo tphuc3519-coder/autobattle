@@ -116,9 +116,9 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
 Toàn bộ trong hằng `SHIKA`. Những điểm người dùng chốt riêng:
 - **Ngồi lười** (không phải nằm) đầu trận, tích 12 chakra/giây người chơi; bật dậy khi máu
   tụt xuống **80%** (`wakeHp:.80`) rồi chỉ còn 4/giây.
-- **Trần của quãng ngồi lười là 1000 chakra** (`lazyCap`). Không ai đánh thì cứ ngồi tới khi
-  đủ 1000 là **tự đứng dậy** đánh như bình thường. Trần này **chỉ chặn quãng ngồi**, không
-  phải trần tuyệt đối: đứng dậy rồi vẫn tích tiếp 4/giây và **vượt qua 1000 được**. Hai lối
+- **Trần của quãng ngồi lười là 650 chakra** (`lazyCap`). Không ai đánh thì cứ ngồi tới khi
+  đủ 650 là **tự đứng dậy** đánh như bình thường. Trần này **chỉ chặn quãng ngồi**, không
+  phải trần tuyệt đối: đứng dậy rồi vẫn tích tiếp 4/giây và **vượt qua 650 được**. Hai lối
   rời ghế đi chung hàm `shikaWake(f, why)` để phần dọn dẹp (câm tiếng than, xoá bong bóng,
   chờ `wakeDelay`) không bị chép thành hai bản. Thanh chakra canh theo `lazyCap`.
 - Bật dậy: **cắt tiếng than thở ngay lập tức**, xoá bong bóng đang treo, rồi **chờ 1.5 giây
@@ -141,9 +141,19 @@ Toàn bộ trong hằng `SHIKA`. Những điểm người dùng chốt riêng:
   cắt ngang thì hoàn 50% hồi chiêu.
 - Chiêu 2 **Shadow-Neck Bind**: 45 dmg/giây trong 3 giây rồi choáng 1.5 giây. Bị choáng giữa
   chừng là đứt, lần thử lại được bảo đảm không đứt.
-- Ultimate **Nara Clan Forest** (dưới 20% máu): thời lượng = chakra/100 giây người chơi. Địch
-  bị kiệt sức, gây sát thương giảm 50%, ăn 35~215 dmg/giây. Xong lãnh địa: mất chiêu 2, chiêu 1
-  yếu đi 30%, không tích chakra nữa (`f.weak`).
+- Ultimate **Nara Clan Forest** (dưới 20% máu): thời lượng = chakra/100 giây người chơi.
+  **Trói TẤT CẢ đối thủ đang đứng trên sàn** — kể cả viện binh Goku/Gohan lẫn đồng minh
+  Ayanokouji, cứ khác phe là dính (`domainFoes()` lọc theo `f.team!==k.team`). Ai bị trói thì
+  kiệt sức, gây sát thương giảm 50%, ăn 35~215 dmg/giây và **bị khoá thật** — `e.lock` được
+  gia hạn từng nhịp `SHIKA.domainGrip`, hết lãnh địa là tự hết (đừng gán `lock=0` để thả, sẽ
+  cắt luôn khoá của chiêu khác, ví dụ quãng đứng nghĩ của Horikita).
+  **Càng trói nhiều thì bóng càng loãng**: `domainMul(i) = max(domainFallMin, domainFall^i)`
+  = 100% / 62% / 38.4% / 25%… người bị tóm **trước** ăn đủ. Thứ tự nằm trong `k.domain.order`,
+  ai gục hay rời sàn thì rơi khỏi hàng và người sau **nhích lên một bậc**; quay lại thì xếp cuối.
+  Mấy trạng thái miễn khống chế sẵn có (ChiChi lúc lao tới, Tsubasa lúc Wings of the Eagle,
+  qua `domainCanBind()`) thoát được cái dây nhưng **vẫn ăn bom đủ**.
+  Xong lãnh địa: mất chiêu 2, chiêu 1 yếu đi 30%, không tích chakra nữa (`f.weak`).
+  Kiểm bằng `node tools/t_domain.js`.
 
 ### Horikita Suzune (`suzune`)
 Toàn bộ trong hằng `SUZ`, khai theo lối của Shikamaru (giây người chơi bọc `gs()`).
@@ -329,8 +339,10 @@ quyết định đúng, +5% tỉ lệ hồi máu, +6% lượng hồi máu, +8% m
   (`SPR.garden`), cộng thêm ô dán **con nai** (`SPR.nara`) đứng cạnh Shikamaru.
 - Cái cần đầu tư là **hiệu ứng bom nổ và trói bóng cho thật chi tiết** (`bombAt()`,
   `tendril()`, `drawForestGrip()`).
-- **Dải bóng trong lãnh địa chỉ là hiệu ứng nhìn** — không thật sự khoá chuyển động của
-  đối phương. (Chỉ chiêu 2 Shadow-Neck Bind mới trói thật.)
+- **Dải bóng trong lãnh địa trói thật** (người dùng đổi ý — trước đây chỉ là hiệu ứng nhìn):
+  mọi đối thủ trên sàn đều bị khoá chân lẫn tay, sát thương thì loãng dần theo thứ tự bị tóm.
+  `drawForestGrip()` vẽ cho từng người trong `k.domain.order` qua `gripOn()`, người bị tóm sau
+  thì bóng nhạt hơn cho khớp với lượng sát thương.
 - Tên hiển thị: **Nara Clan Forest**.
 - Có nút `#testForest` để xem thử lãnh địa mà không cần đánh tới 20% máu.
 - Thứ tự vẽ: `drawForestGrip()` phải gọi **sau** khi vẽ nhân vật, nếu không khói bom sẽ
@@ -527,8 +539,10 @@ Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 
 ```bash
 node tools/t_reg.js     # 15 cặp đấu song song, bắt lỗi trang, xem cơ chế lớn có nổ không
-node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần 1000 chakra
+node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần 650 chakra
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
+node tools/t_domain.js  # lãnh địa Nara: trói hết địch trên sàn, sát thương loãng dần 100/62/38.4/25%,
+                        # người đầu gục thì người sau nhích lên bậc, miễn khống chế thì thoát dây
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
@@ -589,7 +603,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 
 ## 10. Quy trình git
 
-- Nhánh làm việc: `claude/suzune-success-rate-skills-ws3a96`. **Không đẩy sang nhánh khác.**
+- Nhánh làm việc: `claude/shikamaru-territory-skill-2c96d8`. **Không đẩy sang nhánh khác.**
 - `git push -u origin <nhánh>`; lỗi mạng thì thử lại 4 lần, giãn 2s/4s/8s/16s.
 - Người dùng thường merge rất nhanh rồi hỏi luôn "pr?" / "merge đâu" — làm xong một việc thì
   **mở PR ngay**. Nếu PR trước đã merge thì mở PR mới, đừng chồng lên nhánh đã merge.

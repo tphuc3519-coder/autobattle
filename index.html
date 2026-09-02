@@ -297,7 +297,7 @@ const CHICHI_DASH_CD=5;           // ChiChi lao tới mỗi 5 giây trong trận
 const gs=sec=>sec/RT;             // giây người chơi -> giây trong trận
 const SHIKA={
   lazyRate:12*RT,                 // ngồi lười: 12 chakra mỗi giây người chơi
-  lazyCap:1000,                   // trần của quãng ngồi lười: đủ 1000 là tự đứng dậy
+  lazyCap:650,                    // trần của quãng ngồi lười: đủ 650 là tự đứng dậy
   fightRate:4*RT,                 // đã vào trận: 4 chakra mỗi giây người chơi
   wakeHp:.80,                     // tụt xuống mức này thì bật dậy đánh
   evadeBase:.10, evadeStep:.025, evadeMax:.70,   // né được thì không cộng dồn, chỉ ăn đòn mới cộng
@@ -310,6 +310,9 @@ const SHIKA={
   bindStun:gs(1.5), bindCd:gs(9), bindRetry:gs(7), bindSpd:380,
   domainHp:.20, domainLo:35*RT, domainHi:215*RT,
   domainOutCut:.5,                // địch trong lãnh địa chỉ gây một nửa sát thương
+  domainGrip:gs(.6),              // trói thật: khoá lại từng nhịp, hết lãnh địa là thả ngay
+  domainFall:.62,                 // trói thêm một người thì sát thương lên người đó còn 62% người trước
+  domainFallMin:.25,              // nhưng không tụt xuống dưới một phần tư
   chakraPerSec:100,               // 100 chakra đổi được 1 giây người chơi
   weakMul:.7,                     // hết lãnh địa: chiêu 1 yếu đi 30%
   wakeDelay:1.5                   // bật dậy rồi chờ bấy nhiêu giây người chơi mới ra đòn
@@ -451,7 +454,8 @@ const CHARS={
       `<b>2</b> Shadow Strangle Jutsu — 45 dmg/s for ${rts(SHIKA.bindT)}s, then stun ${rts(SHIKA.bindStun)}s`,
       `<b>Passive</b> Lazy start: ${SHIKA.lazyRate/RT} chakra/s sitting out — until ${SHIKA.lazyCap} chakra or hurt to ${Math.round(SHIKA.wakeHp*100)}%, then he gets up and banks ${SHIKA.fightRate/RT}/s like anyone else`,
       `<b>Passive</b> Evasion ${Math.round(SHIKA.evadeBase*100)}% vs every direct hit — ultimates included, Sexy no Jutsu excepted; +${+(SHIKA.evadeStep*100).toFixed(1)}% per basic hit taken, up to ${Math.round(SHIKA.evadeMax*100)}%`,
-      `<b>Below ${Math.round(SHIKA.domainHp*100)}% HP</b> Nara Clan Forest — chakra spent as duration`],
+      `<b>Below ${Math.round(SHIKA.domainHp*100)}% HP</b> Nara Clan Forest — chakra spent as duration · binds <i>every</i> enemy on the field (summons and allies too), each one locked down, exhausted and dealing −${Math.round(SHIKA.domainOutCut*100)}% damage`,
+      `<b>Forest</b> The shadow thins as it spreads: 100% damage on the first one bound, ${Math.round(SHIKA.domainFall*100)}% of that on the next, and so on down to a ${Math.round(SHIKA.domainFallMin*100)}% floor`],
     init(f){
       f.cds={s1:cm(1),s2:cm(2)};
       f.dashCd=SHIKA.stabCd;
@@ -1632,12 +1636,14 @@ function shikaInterrupt(f){
 /* Chiêu 3 — Khu rừng bóng của nhà Nara. Mở ra khi máu tụt dưới 20%, phủ kín sàn,
    và sống được bao lâu là do chakra tích từ đầu trận quyết định: 100 chakra đổi
    một giây người chơi. Đây chính là chỗ nội tại "nằm lười" trả công — nằm càng
-   lâu lúc đầu thì lãnh địa càng dài. */
-function naraDomain(k,e){
+   lâu lúc đầu thì lãnh địa càng dài.
+   Rừng trói MỌI đối thủ đang đứng trên sàn, kể cả viện binh lẫn đồng minh, nhưng
+   càng nhiều người bị trói thì bóng càng loãng: xem domainMul(). */
+function naraDomain(k){
   k.domainDone=true;
   const secPlayer=k.chakra/SHIKA.chakraPerSec;
   const dur=gs(secPlayer);
-  k.domain={t:dur,max:dur,acc:0,e};
+  k.domain={t:dur,max:dur,acc:0,order:[]};   // order: hàng người bị trói, thứ tự quyết định sát thương
   k.chakra=0;
   k.lock=0; k.dash=null; k.bind=null;
   setPose(k,'ulti',1.6);
@@ -1649,33 +1655,63 @@ function naraDomain(k,e){
   G.floats.push({x:k.x,y:k.y-118,txt:`${Math.round(secPlayer*SHIKA.chakraPerSec)} CHAKRA · ${secPlayer.toFixed(1)}s`,
     color:'#CFC6FF',life:2,ml:2,banner:true,gold:true});
   say(`Khu rừng nhà Nara mở ra — ${Math.round(secPlayer*SHIKA.chakraPerSec)} chakra đổi lấy ${secPlayer.toFixed(1)} giây.`,'s');
-  say('Trong rừng: địch kiệt sức, chỉ gây một nửa sát thương và ăn bom lẫn bóng liên tục.','m');
+  say('Trong rừng: mọi đối thủ trên sàn đều bị bóng trói, kiệt sức, chỉ gây một nửa sát thương và ăn bom liên tục.','m');
 }
+/* Bóng trói được bao nhiêu người cũng được, nhưng chia ra thì loãng: người bị tóm
+   đầu tiên ăn đủ, người thứ hai còn 62%, thứ ba 62% của thế nữa… tới sàn 25%. */
+function domainMul(i){ return Math.max(SHIKA.domainFallMin, Math.pow(SHIKA.domainFall,i)); }
+/* Ai đang đứng trong lãnh địa: mọi đấu thủ khác phe còn sống — cả viện binh
+   (Goku/Gohan) lẫn đồng minh (Ayanokouji). Trả về ĐÚNG thứ tự bị tóm, vì sát
+   thương giảm dần theo thứ tự đó; ai gục hay rời sàn thì rơi khỏi hàng và những
+   người sau nhích lên một bậc. */
+function domainFoes(k){
+  const D=k.domain; if(!D)return [];
+  const live=G.fighters.filter(f=>f&&f!==k&&f.alive&&f.hp>0&&!f.leaving&&f.team!==k.team);
+  for(const f of live) if(D.order.indexOf(f)<0){
+    D.order.push(f);
+    const rank=D.order.length;
+    ring(f.x,f.y,150,'#6B5BD6',.45);
+    G.floats.push({x:f.x,y:f.y-104,txt:rank>1?`SHADOW BIND ×${rank}`:'SHADOW BIND',
+      color:'#CFC6FF',life:1.2,ml:1.2,banner:true,sc:.62});
+    say(rank>1
+      ? `Bóng vươn thêm sang ${f.name} — trói người thứ ${rank}, nhưng loãng ra: chỉ còn ${Math.round(domainMul(rank-1)*100)}% sát thương.`
+      : `Bóng trói lấy ${f.name} — không nhúc nhích được nữa.`,'s');
+  }
+  D.order=D.order.filter(f=>live.indexOf(f)>=0);
+  return D.order;
+}
+/* Trói được hay không thì vẫn ăn bom: mấy trạng thái miễn khống chế sẵn có
+   (ChiChi lúc lao tới, Tsubasa lúc Wings of the Eagle) chỉ thoát được cái dây. */
+function domainCanBind(e){ return !(e.dash&&e.dash.guard) && !e.eagle; }
 function domainTick(k,dt){
   const D=k.domain; if(!D)return;
-  const e=D.e;
   k.domainA=Math.min(1,k.domainA+dt*3);
   D.t-=dt;
-  if(e&&e.alive){
+  const foes=domainFoes(k);
+  D.acc+=dt;
+  let tick=false;
+  if(D.acc>=.25){ D.acc-=.25; tick=true; }
+  foes.forEach((e,i)=>{
+    const mul=domainMul(i);
     e.exhaust=Math.max(e.exhaust,.6);                 // kiệt sức y như phân thân Konohamaru
     e.outCut=SHIKA.domainOutCut;
-    D.acc+=dt;
-    if(D.acc>=.25){
-      D.acc-=.25;
-      const dps=rnd(SHIKA.domainLo,SHIKA.domainHi);
-      hurt(e,dps*.25,k,false,'domain','shadow');
-      // quả bom nổ ngay cạnh địch: lõi sáng, sóng xung kích, khói bay
-      const bx=e.x+rnd(-46,46), by=e.y+rnd(-40,22);
-      G.fx.push({type:'gboom',x:bx,y:by,life:.42,ml:.42,seed:rnd(0,9),
-        big:dps>(SHIKA.domainLo+SHIKA.domainHi)/2});
-      for(let q=0;q<3;q++) G.fx.push({type:'dust',x:bx+rnd(-14,14),y:by+rnd(-12,12),r:7,life:.45,ml:.45});
-      G.flashScreen=Math.max(G.flashScreen,.05);
-      sfx('burn');
-    }
+    if(domainCanBind(e)) e.lock=Math.max(e.lock,SHIKA.domainGrip);   // trói thật, không phải chỉ vẽ
+    if(!tick)return;
+    const dps=rnd(SHIKA.domainLo,SHIKA.domainHi)*mul;
+    hurt(e,dps*.25,k,false,'domain','shadow');
+    // quả bom nổ ngay cạnh địch: lõi sáng, sóng xung kích, khói bay
+    const bx=e.x+rnd(-46,46), by=e.y+rnd(-40,22);
+    G.fx.push({type:'gboom',x:bx,y:by,life:.42,ml:.42,seed:rnd(0,9),
+      big:dps>(SHIKA.domainLo+SHIKA.domainHi)/2*mul});
+    for(let q=0;q<3;q++) G.fx.push({type:'dust',x:bx+rnd(-14,14),y:by+rnd(-12,12),r:7,life:.45,ml:.45});
+  });
+  if(tick&&foes.length){
+    G.flashScreen=Math.max(G.flashScreen,.05);
+    sfx('burn');
   }
   if(D.t<=0){
+    for(const e of D.order) e.outCut=0;                // thả hết; cái khoá .3s tự hết, đừng xoá tay kẻo cắt luôn khoá của chiêu khác
     k.domain=null; k.weak=true;
-    if(e) e.outCut=0;
     ring(k.x,k.y,320,'#6B5BD6',.5);
     G.floats.push({x:k.x,y:k.y-112,txt:'CHAKRA SPENT',color:'#9B8CFF',life:1.6,ml:1.6,banner:true,gold:true});
     say('Khu rừng khép lại — Shikamaru cạn chakra: mất chiêu trói bóng, shuriken yếu đi 30%.','s');
@@ -2779,7 +2815,8 @@ function step(dt){
     if(f.key==='suzune'&&!f.summon&&f.alive) suzPassive(f,dt);
     // người khiêu khích rời sàn thì đối thủ nhắm lại vào mục tiêu thật
     if(f.tauntBy&&(!f.tauntBy.alive||f.tauntBy.hp<=0||f.tauntBy.leaving>0||G.fighters.indexOf(f.tauntBy)<0)) f.tauntBy=null;
-    if(f.outCut>0&&!(foeOf(f)&&foeOf(f).domain)) f.outCut=0;
+    // ra khỏi rừng thì hết bị cắt sát thương — xét theo phe, vì rừng trói cả viện binh lẫn đồng minh
+    if(f.outCut>0&&!G.fighters.some(x=>x.domain&&x.alive&&x.team!==f.team)) f.outCut=0;
     f.domainA=clamp(f.domainA+dt*(f.domain?3:-2.5),0,1);
     if(!f.summon && f.hp<=f.maxHp*.20) f.injured=true;   // đã tơi tả là giữ luôn
     if(!f.summon){
@@ -2959,7 +2996,7 @@ function step(dt){
       ayaShield(f);
     }
     if(f.key==='shika' && !f.domainDone && f.hp<=f.maxHp*SHIKA.domainHp){
-      naraDomain(f,foeOf(f));
+      naraDomain(f);
     }
     if(f.key==='tsubasa' && !f.eagleDone && f.hp<=f.maxHp*EAGLE_HP){
       ring(f.x,f.y,130,'#FFF3C4',.5);
@@ -4112,7 +4149,7 @@ function tendril(x0,y0,cx1,cy1,cx2,cy2,x1,y1,w,a,barbs){
 function drawGarden(){
   const k=G.fighters.find(f=>f.key==='shika'&&!f.summon);
   if(!k||k.domainA<=0)return;
-  const a=k.domainA, T=G.t, e=foeOf(k);
+  const a=k.domainA, T=G.t;
   ctx.save();
 
   const bgImg=(SPR.garden.idle&&SPR.garden.idle.length)?SPR.garden.idle[0]:null;
@@ -4127,13 +4164,17 @@ function drawGarden(){
 }
 
 /* Bóng bám lên người địch trong lãnh địa: vũng bóng, gai, dây leo quấn, vòng siết,
-   bàn tay bóp cổ và mấy ngọn quật ra. Thuần hiệu ứng — địch vẫn chạy nhảy bình
-   thường, chỉ chậm đi vì Kiệt sức. Vẽ sau nhân vật để bom nổ không phủ mất. */
+   bàn tay bóp cổ và mấy ngọn quật ra. Bóng này trói thật — mọi đối thủ trên sàn đều
+   bị khoá chân tay (xem domainTick). Vẽ sau nhân vật để bom nổ không phủ mất. */
 function drawForestGrip(){
   const k=G.fighters.find(f=>f.key==='shika'&&!f.summon);
   if(!k||!k.domain||k.domainA<=0)return;
-  const a=k.domainA, T=G.t, e=foeOf(k);
-  if(!e||!e.alive)return;
+  // vẽ theo đúng hàng đã trói: người bị tóm sau thì bóng nhạt hơn, đúng như sát thương
+  k.domain.order.forEach((e,i)=>{
+    if(e&&e.alive) gripOn(e, k.domainA*(i?.78:1), G.t+i*.7);
+  });
+}
+function gripOn(e,a,T){
   ctx.save();
     const foot=e.y+18, top=e.y-e.spriteH*.72;
     ctx.globalAlpha=a*.55; ctx.fillStyle='#07040E';       // vũng bóng đọng dưới chân
@@ -5630,7 +5671,7 @@ function testForest(){
   // đầu trận chakra còn ít, lãnh địa sẽ chớp một cái là hết — nạp cho đủ xem
   if(k.chakra<400){ k.chakra=400; say('[Thử nghiệm] Nạp tạm 400 chakra cho đủ xem.','m'); }
   k.hp=Math.min(k.hp,Math.round(k.maxHp*(SHIKA.domainHp-.01)));
-  naraDomain(k,foeOf(k));
+  naraDomain(k);
   say('[Thử nghiệm] Ép Shikamaru mở khu rừng nhà Nara.','m');
 }
 function testTwin(){
