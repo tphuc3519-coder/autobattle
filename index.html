@@ -692,8 +692,9 @@ const SFX_EVENTS=[
   ['suz_hit','Quyết định đâm trúng địch'],
   ['suz_heal','Horikita hồi máu'],['suz_form2','Horikita đứng lên đánh trả'],['suz_form3','Horikita tự mình chiến đấu'],
 
-  ['aya_appear','Ayanokouji xuất hiện'],
+  ['aya_appear','Ayanokouji xuất hiện LẦN 1 (lúc bước ra chắn đòn)'],
   ['aya_stand','🎙 GIỌNG · "Stand up and fight." (lúc anh bước ra chắn đòn)'],
+  ['aya_appear2','Ayanokouji xuất hiện LẦN 2 (lúc vào làm đồng minh) — bỏ trống thì mượn tiếng "Viện binh tới"'],
   ['aya_join','🎙 GIỌNG · Câu lúc anh vào sân sát cánh lần cuối'],
   ['aya_strike','Ayanokouji đột kích'],
   ['aya_bye','🎙 GIỌNG · "This is where I take my leave." (lúc anh rời sàn)'],
@@ -926,6 +927,12 @@ const SFX_MAXLEN={
   aya_stand:AYA_STAND_LIFE*RT, aya_join:AYA_JOIN_LIFE*RT, aya_bye:AYA_BYE_LIFE*RT,
   suz_form2:2.4, suz_form3:2.8
 };
+/* Ô chưa nạp file thì mượn nguyên tiếng của ô khác — mượn cả file người dùng đã nạp
+   cho ô đó, không có file thì mượn tiếng tự tạo của nó. Nhờ vậy ô mới không cần thêm
+   case riêng trong synth(): lần xuất hiện thứ hai của Ayanokouji dùng luôn tiếng dịch
+   chuyển của viện binh (đúng tiếng Twin Shot của Tsubasa gọi đồng đội vào sân). */
+const SFX_FALLBACK={ aya_appear2:'summon' };
+
 /* File dài thì đọc nối tiếp từng đoạn, hết file thì quay lại đầu. Mặc định mỗi đoạn
    2.2 giây; hai ô dưới đây lấy độ dài đoạn theo đúng thứ giới hạn chúng.
    Giá trị có thể là hàm, tính lại mỗi lần phát — cần thế vì nhịp mắng của ChiChi
@@ -986,6 +993,7 @@ function playBuffer(name,buf,c,g){
 }
 function sfx(name){
   if(muted||volume<=0)return;
+  if(!SFXBUF[name]&&SFX_FALLBACK[name]) name=SFX_FALLBACK[name];   // ô trống thì mượn ô khác
   const now=performance.now();
   if(lastSfx[name] && now-lastSfx[name]<45) return;
   lastSfx[name]=now;
@@ -2465,7 +2473,7 @@ function ayaJoin(f){
   const py=clamp(f.y+rnd(-10,20),PAD+60,H-PAD-20);
   G.freeze=1.8; G.freezeAt=f;
   G.flashScreen=1;
-  sfx('aya_appear');
+  sfx('aya_appear2');                      // lần xuất hiện thứ hai có ô tiếng riêng
   G.callBanner={txt:'AYANOKOUJI JOINS',color:'#8FA6C8',life:CALL_BANNER_LIFE,ml:CALL_BANNER_LIFE};
   later(.45,()=>{
     if(G.over)return;

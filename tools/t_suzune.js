@@ -296,12 +296,21 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     const nhan = k => (E.find(x => x[0] === k) || [])[1];
     return { stand: nhan('aya_stand'), join: nhan('aya_join'), bye: nhan('aya_bye'),
              appear: nhan('aya_appear'), strike: nhan('aya_strike'), leave: nhan('aya_leave'),
+             appear2: nhan('aya_appear2'), muon: window.__SFXFALLBACK.aya_appear2,
              capStand: M.aya_stand, capJoin: M.aya_join, capBye: M.aya_bye,
              nhom: G.aya_appear, soNhom: Object.keys(G).length, RT };
   });
   for (const [k, ten] of [['stand', 'Stand up and fight'], ['join', 'vào sân sát cánh'], ['bye', 'take my leave']])
     ok(!!oTieng[k] && /🎙/.test(oTieng[k]), `co o giong '${k}' cho cau "${ten}" ("${oTieng[k]}")`);
   ok(!!oTieng.appear && !!oTieng.strike && !!oTieng.leave, 'ba o tieng dong cu cua anh van con nguyen');
+  ok(/L\u1ea6N 1/.test(oTieng.appear || '') && !!oTieng.appear2 && /L\u1ea6N 2/.test(oTieng.appear2),
+     `o xuat hien tach lam hai lan ("${oTieng.appear}" / "${oTieng.appear2}")`);
+  ok(oTieng.muon === 'summon', `o lan 2 bo trong thi muon tieng vien binh ("${oTieng.muon}")`);
+  const goiTieng = await doc(() => ({ shield: window.__ayaShield.toString(),
+                                      join: window.__ayaJoin.toString() }));
+  ok(/sfx\('aya_appear'\)/.test(goiTieng.shield) && /sfx\('aya_appear2'\)/.test(goiTieng.join)
+     && !/sfx\('aya_appear'\)/.test(goiTieng.join),
+     'lan chan don doc o aya_appear, lan vao lam dong minh doc o aya_appear2');
   ok(oTieng.capStand > 0 && oTieng.capJoin > 0 && oTieng.capBye > 0,
      `ba o giong deu bi cat theo bong bong (${oTieng.capStand.toFixed(1)}s / ${oTieng.capJoin.toFixed(1)}s / ${oTieng.capBye.toFixed(1)}s)`);
   ok(oTieng.nhom === 'Ayanokouji', `bang tieng co khu rieng cho Ayanokouji ("${oTieng.nhom}")`);

@@ -245,10 +245,22 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
 > | `aya_bye` | `AYA_BYE` — *"This is where I take my leave."* (lúc rời sàn) | `AYA_BYE_LIFE*RT` |
 >
 > Ba hằng `AYA_*_LIFE` khai **trước `SFX_MAXLEN`** (cạnh `SUZ_BUBBLE`) và dùng chung cho cả
-> `talk()` lẫn trần độ dài tiếng — hai chỗ không được lệch nhau. `aya_appear` / `aya_strike` /
-> `aya_leave` vẫn là tiếng động như cũ.
+> `talk()` lẫn trần độ dài tiếng — hai chỗ không được lệch nhau. `aya_strike` / `aya_leave`
+> vẫn là tiếng động như cũ.
 > *(Bản trước từng chốt "không cho anh ô giọng nào"; người dùng hỏi lại "mấy ô âm thanh
 > Ayanokouji xuất hiện và thoại mấy câu đó đâu" nên mở lại đủ ba ô.)*
+
+> **Tiếng anh xuất hiện tách làm HAI ô** — anh ra sân hai lần, hai lần khác hẳn nhau:
+> | Ô | Lúc nào | Chưa nạp file thì |
+> |---|---|---|
+> | `aya_appear` | lần 1 — `ayaShield()`, bước ra chắn đòn thay Horikita | tiếng tự tạo `case 'aya_appear'` như cũ |
+> | `aya_appear2` | lần 2 — `ayaJoin()`, vào sân làm đồng minh thật | **mượn nguyên ô `summon`** ("Viện binh tới" — đúng tiếng dịch chuyển lúc Twin Shot của Tsubasa gọi đồng đội vào sân) |
+>
+> Chỗ mượn khai trong `SFX_FALLBACK` (`{aya_appear2:'summon'}`) và `sfx()` đổi tên ô ngay ở
+> đầu hàm khi `SFXBUF[name]` còn trống. Nghĩa là **mượn cả file người dùng đã nạp cho ô
+> `summon`**, chứ không chỉ mượn tiếng tự tạo — nạp file cho `aya_appear2` là nó dùng file
+> riêng ngay. Vì có đường mượn nên ô này **không cần `case` riêng trong `synth()`**; ô nào
+> khác thêm mới mà không khai trong `SFX_FALLBACK` thì vẫn phải thêm `case`.
 
 > **Bảng nạp tiếng chia theo nhóm.** `SFX_GROUPS` gắn tiêu đề vào ô ĐẦU của mỗi khu
 > (Chung · Konohamaru · ChiChi · Ozora Tsubasa · Shikamaru · Horikita Suzune · Ayanokouji);
@@ -585,7 +597,7 @@ node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Ea
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
                         # khiêu khích kéo địch ở mọi khoảng cách, anh miễn nhiễm Sexy no Jutsu,
-                        # ba ô giọng của anh + bảng tiếng chia nhóm,
+                        # ba ô giọng của anh + hai ô xuất hiện + bảng tiếng chia nhóm,
                         # lãnh địa Nara trói ai có thanh máu và chia đều dmg (trận thứ hai: shika vs suzune),
                         # cước chia tay không nện vào miễn thương, bốn ô dáng riêng của form 3
 ```
@@ -644,7 +656,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 
 ## 10. Quy trình git
 
-- Nhánh làm việc: `claude/ayanokoji-sexy-jutsu-immunity-vqhy3i`. **Không đẩy sang nhánh khác.**
+- Nhánh làm việc: `claude/ayanokouji-audio-split-boxes-dqcy9e`. **Không đẩy sang nhánh khác.**
 - `git push -u origin <nhánh>`; lỗi mạng thì thử lại 4 lần, giãn 2s/4s/8s/16s.
 - Người dùng thường merge rất nhanh rồi hỏi luôn "pr?" / "merge đâu" — làm xong một việc thì
   **mở PR ngay**. Nếu PR trước đã merge thì mở PR mới, đừng chồng lên nhánh đã merge.

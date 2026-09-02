@@ -13,6 +13,7 @@ const HOOKS = `
 window.__G=()=>G; window.__ac=ac; window.__RT=RT; window.__SHIKA=SHIKA;
 window.__SFXBUF=SFXBUF; window.__sfx=n=>sfx(n); window.__SFXE=SFX_EVENTS;
 window.__SFXMAX=SFX_MAXLEN; window.__SFXGROUPS=SFX_GROUPS;
+window.__SFXFALLBACK=SFX_FALLBACK;
 /* sfx() nuốt lỗi của synth(), mà switch thiếu case thì cũng không ném — nên muốn biết
    một ô có tiếng tự tạo dự phòng hay không thì phải soi thẳng thân hàm. */
 window.__synthSrc=()=>synth.toString();
