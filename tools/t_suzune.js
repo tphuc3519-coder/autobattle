@@ -28,7 +28,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   /* ---- form 1: có đánh, nhưng đòn nhẹ, nhịp chậm và chưa có chiêu 2 ---- */
   const f1 = await doc(() => {
     const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
-    f.hp = f.maxHp;                       // giữ trên ngưỡng 85% để chưa sang form
+    f.hp = f.maxHp;                       // giữ trên ngưỡng SUZ.guardHp để chưa sang form
     return { form: f.form, cd: f.cds.s1 };
   });
   ok(f1.form === 1, 'vao tran la form 1');
@@ -65,11 +65,11 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   });
   ok(f1b.cp === 0 && f1b.form === 1, 'danh mot hoi o form 1 van khong tich duoc diem lop');
 
-  /* ---- ngưỡng 85%: Ayanokouji nhảy vào đỡ thay ---- */
-  const g0 = await doc(() => {
+  /* ---- chạm ngưỡng SUZ.guardHp: Ayanokouji nhảy vào đỡ thay ---- */
+  const nguong = await doc(() => {
     const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
     f.hp = f.maxHp * window.__SUZ.guardHp;       // chạm đúng ngưỡng
-    return 1;
+    return Math.round(window.__SUZ.guardHp * 100);
   });
   await doi(0.4);
   const g1 = await doc(() => {
@@ -77,7 +77,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     return { co: !!f.ayaG, t: f.ayaG ? f.ayaG.t : 0, form: f.form,
              thoai: G.floats.some(fl => /stand\s+up\s+and\s+fight/i.test(fl.txt || '')) };
   });
-  ok(g1.co, 'cham 85% mau thi Ayanokouji hien ra do don thay');
+  ok(g1.co, `cham ${nguong}% mau thi Ayanokouji hien ra do don thay`);
   ok(g1.form === 1, 'trong luc anh do thi Horikita van con o form 1');
 
   /* thời lượng đỡ đúng 4 giây người chơi, và trong quãng đó cô không mất máu */

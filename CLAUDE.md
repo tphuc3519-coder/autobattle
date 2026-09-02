@@ -116,11 +116,11 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
 Toàn bộ trong hằng `SHIKA`. Những điểm người dùng chốt riêng:
 - **Ngồi lười** (không phải nằm) đầu trận, tích 12 chakra/giây người chơi; bật dậy khi máu
   tụt xuống **80%** (`wakeHp:.80`) rồi chỉ còn 4/giây.
-- **Trần của quãng ngồi lười là 700 chakra** (`lazyCap`). Không ai đánh thì cứ ngồi tới khi
-  đủ 700 là **tự đứng dậy** đánh như bình thường. Trần này **chỉ chặn quãng ngồi**, không
-  phải trần tuyệt đối: đứng dậy rồi vẫn tích tiếp 4/giây và **vượt qua 700 được**.
-  *(Từng để 1000; người dùng hạ xuống 700 để anh vào trận sớm hơn. Test đọc thẳng
-  `SHIKA.lazyCap` nên đổi con số này là đủ, đừng ghim số vào chỗ khác.)* Hai lối
+- **Trần của quãng ngồi lười là 600 chakra** (`lazyCap`). Không ai đánh thì cứ ngồi tới khi
+  đủ 600 là **tự đứng dậy** đánh như bình thường. Trần này **chỉ chặn quãng ngồi**, không
+  phải trần tuyệt đối: đứng dậy rồi vẫn tích tiếp 4/giây và **vượt qua 600 được**.
+  *(Đường đi của con số: 1000 → 700 → 600, người dùng hạ dần cho anh vào trận sớm hơn.
+  Test đọc thẳng `SHIKA.lazyCap` nên đổi con số này là đủ, đừng ghim số vào chỗ khác.)* Hai lối
   rời ghế đi chung hàm `shikaWake(f, why)` để phần dọn dẹp (câm tiếng than, xoá bong bóng,
   chờ `wakeDelay`) không bị chép thành hai bản. Thanh chakra canh theo `lazyCap`.
 - Bật dậy: **cắt tiếng than thở ngay lập tức**, xoá bong bóng đang treo, rồi **chờ 1.5 giây
@@ -157,7 +157,8 @@ Nhân vật cận chiến, đi theo **ba form** — đây là cả tính cách n
 | 2 | Dám đánh nhưng còn sai | chiêu 1 đấm/đá, chiêu 2 Decision Making |
 | 3 | Tự đứng một mình | như form 2 nhưng mạnh hơn và cộng dồn theo điểm lớp. **Có hẳn bốn ô dán ảnh riêng**: `stand3` / `punch3` / `kick3` / `think3` (xem mục dưới) |
 
-**Chuyển form 1 → 2**: máu tụt xuống **85%** (`SUZ.guardHp`) thì Ayanokouji hiện ra.
+**Chuyển form 1 → 2**: máu tụt xuống **90%** (`SUZ.guardHp`) thì Ayanokouji hiện ra.
+*(Từng là 85%; người dùng nâng lên 90% để anh xuất chiến sớm hơn.)*
 Phân cảnh đóng băng 1.6s, anh nói *"Stand up and fight."*, rồi **đỡ đạn thay đúng 5 giây
 người chơi** (`SUZ.guardT`). Trong quãng đó `hurt()` trả về **false** cho Horikita ngay từ
 đầu hàm nên không chỉ mất máu mà cả choáng / cháy / chảy máu ăn theo cũng không dính.

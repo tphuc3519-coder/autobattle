@@ -62,6 +62,10 @@ async function openGame(keyA, keyB, opt) {
   await page.route('**://fonts.*/**', r => r.abort());   // khỏi chờ font mạng
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
+  // trang chết giữa chừng thì báo cho rõ là CHẾT chứ không phải test viết sai.
+  // (Đừng gom console.error vào đây: cú chặn font mạng ở trên luôn in một dòng
+  //  ERR_FAILED, gom vào là mọi test đều báo hỏng oan.)
+  page.on('crash', () => errors.push('TRANG SUP (renderer crash)'));
   await page.goto('file://' + (o.file || build()), { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
   await page.click(`#listA .cTile[data-key="${keyA}"]`);

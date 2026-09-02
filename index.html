@@ -297,7 +297,7 @@ const CHICHI_DASH_CD=5;           // ChiChi lao tới mỗi 5 giây trong trận
 const gs=sec=>sec/RT;             // giây người chơi -> giây trong trận
 const SHIKA={
   lazyRate:12*RT,                 // ngồi lười: 12 chakra mỗi giây người chơi
-  lazyCap:700,                    // trần của quãng ngồi lười: đủ 700 là tự đứng dậy
+  lazyCap:600,                    // trần của quãng ngồi lười: đủ 600 là tự đứng dậy
   fightRate:4*RT,                 // đã vào trận: 4 chakra mỗi giây người chơi
   wakeHp:.80,                     // tụt xuống mức này thì bật dậy đánh
   evadeBase:.10, evadeStep:.025, evadeMax:.70,   // né được thì không cộng dồn, chỉ ăn đòn mới cộng
@@ -335,7 +335,7 @@ const EAGLE_ACC=.5;               // độ lệch khi sút giảm một nửa, t
    nên vẫn co giãn theo thanh "tốc độ ra chiêu"; các mốc còn lại người dùng chốt bằng
    con số cụ thể nên để nguyên, không nhân cm(). */
 const SUZ={
-  guardHp:.85,               // tụt xuống mức này thì Ayanokouji nhảy vào đỡ đòn thay
+  guardHp:.90,               // tụt xuống mức này thì Ayanokouji nhảy vào đỡ đòn thay
   guardT:gs(5),              // đỡ đạn giúp cô 5 giây người chơi
   guardKickDmg:150,          // rồi tung một cước chia tay: 150 dmg
   guardKickStun:gs(2),       // và choáng 2 giây người chơi
