@@ -295,13 +295,19 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     const E = window.__SFXE, M = window.__SFXMAX, G = window.__SFXGROUPS, RT = window.__RT;
     const nhan = k => (E.find(x => x[0] === k) || [])[1];
     return { stand: nhan('aya_stand'), join: nhan('aya_join'), bye: nhan('aya_bye'),
-             appear: nhan('aya_appear'), strike: nhan('aya_strike'), leave: nhan('aya_leave'),
+             appear: nhan('aya_appear'), appear2: nhan('aya_appear2'),
+             strike: nhan('aya_strike'), leave: nhan('aya_leave'),
              capStand: M.aya_stand, capJoin: M.aya_join, capBye: M.aya_bye,
+             alias2: window.__SFXALIAS.aya_appear2,
              nhom: G.aya_appear, soNhom: Object.keys(G).length, RT };
   });
   for (const [k, ten] of [['stand', 'Stand up and fight'], ['join', 'vào sân sát cánh'], ['bye', 'take my leave']])
     ok(!!oTieng[k] && /🎙/.test(oTieng[k]), `co o giong '${k}' cho cau "${ten}" ("${oTieng[k]}")`);
   ok(!!oTieng.appear && !!oTieng.strike && !!oTieng.leave, 'ba o tieng dong cu cua anh van con nguyen');
+  ok(!!oTieng.appear2 && oTieng.appear2.includes('lần 2'),
+     `lan xuat hien thu 2 co o rieng ("${oTieng.appear2}")`);
+  ok((oTieng.appear || '').includes('lần đầu'), `o cu ghi ro la lan dau ("${oTieng.appear}")`);
+  ok(oTieng.alias2 === 'summon', `o lan 2 bo trong thi muon tieng dich chuyen cua vien binh ("${oTieng.alias2}")`);
   ok(oTieng.capStand > 0 && oTieng.capJoin > 0 && oTieng.capBye > 0,
      `ba o giong deu bi cat theo bong bong (${oTieng.capStand.toFixed(1)}s / ${oTieng.capJoin.toFixed(1)}s / ${oTieng.capBye.toFixed(1)}s)`);
   ok(oTieng.nhom === 'Ayanokouji', `bang tieng co khu rieng cho Ayanokouji ("${oTieng.nhom}")`);
@@ -325,7 +331,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     const area = document.getElementById('sfxArea');
     const heads = Array.from(area.querySelectorAll('.who')).map(x => x.textContent);
     const caps = Array.from(area.querySelectorAll('.slot span')).map(x => x.textContent);
-    return { heads, oGiong: caps.filter(c => /Stand up and fight|sát cánh|take my leave/.test(c)).length,
+    return { heads, oGiong: caps.filter(c => /🎙/.test(c) && /Stand up and fight|sát cánh|take my leave/.test(c)).length,
              tong: caps.length };
   });
   ok(bang.heads.includes('Ayanokouji') && bang.heads.length >= 6,
