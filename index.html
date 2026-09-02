@@ -51,8 +51,14 @@
   .slot.set{border-style:solid;border-color:var(--gold);color:var(--paper)}
   .slot img{width:100%;height:42px;object-fit:contain;display:block;margin-bottom:4px;background:#1D1840;border-radius:5px}
   .slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
-  .slotwrap{display:flex;flex-direction:column;gap:4px}
+  .slotwrap{position:relative;display:flex;flex-direction:column;gap:4px}
   .slotwrap input[type=range]{width:100%;height:12px;accent-color:var(--gold);cursor:pointer}
+  /* Nút xoá của riêng một ô. Nằm NGOÀI thẻ <label> (label nuốt cú bấm rồi mở hộp
+     chọn file), chỉ hiện khi ô đã có ảnh/tiếng. */
+  .slotdel{position:absolute;top:3px;right:3px;z-index:3;display:none;border:0;border-radius:6px;
+    background:#4A1230;color:#FFC7DA;font-size:11px;line-height:1;padding:3px 5px;cursor:pointer}
+  .slotwrap.set .slotdel{display:block}
+  .slotdel:hover{background:#7A1B48;color:#fff}
   .who{font-weight:800;font-size:13px;margin:12px 0 6px}
   .who.first{margin-top:0}
   details summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--gold);list-style:none}
@@ -164,8 +170,10 @@
           ⬆ Nhập bộ ảnh<input type="file" id="sprImportFile" accept="application/json" style="display:none">
         </label>
         <button id="sprClear">🗑 Xoá ảnh đã lưu</button>
+        <button id="sprUndo" style="display:none;background:#3A2E00;border-color:var(--gold);color:var(--gold)">↩ Hoàn tác xoá</button>
       </div>
       <div class="help" id="sprStatus">Ảnh bạn nạp sẽ được lưu lại, mở lại trang là có sẵn.</div>
+      <div class="help">Dán nhầm ảnh vào một ô thì bấm dấu <b>✕</b> ở góc trên bên phải của chính ô đó để xoá riêng nó — mấy ô khác giữ nguyên. Xoá xong còn nút <b>Hoàn tác</b> để lấy lại.</div>
       <div class="help"><b>Chọn nhiều ảnh cùng lúc cho một ô</b> (Ctrl/Cmd + click) thì game sẽ chạy chúng thành hoạt ảnh — 2–4 khung mỗi động tác là đủ mượt. Ảnh được thu về cao 480px trước khi lưu — đủ nét mà không quá nặng.</div>
     </details>
   </div>
@@ -190,6 +198,7 @@
       </div>
       <div id="sfxArea" style="margin-top:8px"></div>
       <div class="help" id="sfxStatus">Đang dùng tiếng tự tạo sẵn có. Nạp file để thay thế từng loại.</div>
+      <div class="help">Nạp nhầm file vào một ô thì bấm dấu <b>✕</b> ở góc trên bên phải của chính ô đó để xoá riêng nó — ô ấy quay về tiếng tự tạo, mấy ô khác giữ nguyên. Xoá xong còn nút <b>Hoàn tác xoá</b> để lấy lại.</div>
       <div class="help">File dài (trên 2.6 giây) sẽ được đọc <b>nối tiếp từng đoạn ~2 giây</b>, lần sau nói tiếp chỗ cũ chứ không quay lại đầu — hợp cho một tràng ChiChi chửi dài. Riêng <b>Kamehameha, Masenko và Đôi cánh đại bàng phát từ đầu, dài tối đa 5 giây</b> (tia bắn ra ở giây thứ 2.8 và 2.2 ở tốc độ gốc). Tiếng kết thúc, nhạc thắng, hò reo và <b>tiếng mở khu rừng nhà Nara</b> thì phát trọn vẹn, dài bao nhiêu cũng được. Tiếng gọi Goku / Gohan và tiếng viện binh hiện ra thì phát từ đầu rồi <b>tắt đúng lúc hình tắt</b>, file dài hơn chỉ nghe được phần đầu. <b>Tiếng Shikamaru than thở</b> đọc nối tiếp từng đoạn dài bằng bong bóng thoại, còn <b>tiếng mắng của ChiChi</b> đọc theo đúng nhịp hét — chỉnh tốc ra chiêu thì độ dài đoạn đổi theo. Cả hai đều nói tiếp chỗ cũ, hết file thì quay lại đầu, nên một file thu nhiều câu là mỗi lần một câu khác chứ không lặp câu đầu. Ô nào có dấu <b>🎙 GIỌNG</b> là chỗ thu lời thoại: <b>Horikita</b> có ba ô (câu tự hỏi · quyết định đúng · quyết định sai), <b>Ayanokouji</b> có ba ô cho đúng ba câu anh nói — "Stand up and fight." lúc bước ra chắn đòn, câu lúc vào sân sát cánh lần cuối, và "This is where I take my leave." lúc rời sàn. Mỗi câu tự cắt đúng lúc bong bóng thoại tắt, thu dài hơn thì phần đuôi không nghe được.</div>
     </details>
   </div>
@@ -551,8 +560,22 @@ function setFrames(ck,pk,imgs,label){
   const ref=SLOT[ck]&&SLOT[ck][pk]; if(!ref)return;
   ref.prev.src=imgs[0].src; ref.prev.style.display='block';
   ref.cap.textContent=(label||ref.label)+(imgs.length>1?` ×${imgs.length}`:'');
-  ref.el.classList.add('set');
+  ref.el.classList.add('set'); ref.wrap.classList.add('set');
 }
+/* Trả một ô về trạng thái trống — dán nhầm ảnh vào ô nào thì xoá đúng ô đó, mấy ô
+   khác của cùng nhân vật giữ nguyên. Xoá ảnh đang xem bằng removeAttribute chứ đừng
+   gán src='' (trình duyệt hiểu là tải lại chính trang này). */
+function clearFrames(ck,pk,label){
+  delete SPR[ck][pk];
+  const ref=SLOT[ck]&&SLOT[ck][pk]; if(!ref)return;
+  ref.prev.removeAttribute('src'); ref.prev.style.display='none';
+  ref.cap.textContent=label||ref.label;
+  ref.el.classList.remove('set'); ref.wrap.classList.remove('set');
+  if(ref.inp) ref.inp.value='';        // chọn lại đúng file vừa xoá vẫn phải bắn change
+}
+let SPR_TRASH=null;                    // ảnh của lần xoá gần nhất, để hoàn tác
+function sprTrashOn(){ const b=document.getElementById('sprUndo'); if(b)b.style.display=''; }
+function sprTrashOff(){ SPR_TRASH=null; const b=document.getElementById('sprUndo'); if(b)b.style.display='none'; }
 async function saveChar(ck){
   const data={};
   for(const pk in SPR[ck]) data[pk]=SPR[ck][pk].map(i=>i.src);
@@ -597,6 +620,7 @@ async function loadSaved(){
     const t=document.createElement('div'); t.className='who'+(i===0?' first':''); t.textContent=s.name; area.appendChild(t);
     const grid=document.createElement('div'); grid.className='slots';
     s.poses.forEach(([pk,label])=>{
+      const wrap=document.createElement('div'); wrap.className='slotwrap';
       const el=document.createElement('label'); el.className='slot';
       const prev=document.createElement('img'); prev.style.display='none';
       const cap=document.createElement('span'); cap.textContent=label;
@@ -615,8 +639,24 @@ async function loadSaved(){
         saveChar(s.key);
       });
       el.appendChild(prev); el.appendChild(cap); el.appendChild(inp);
-      SLOT[s.key][pk]={el,prev,cap,label};
-      grid.appendChild(el);
+
+      const del=document.createElement('button');
+      del.type='button'; del.className='slotdel'; del.textContent='✕';
+      del.title=`Xoá ảnh đã dán vào ô "${label}"`;
+      del.addEventListener('click',async ev=>{
+        ev.preventDefault(); ev.stopPropagation();
+        const cu=SPR[s.key][pk];
+        if(!cu||!cu.length){ status('Ô này chưa có ảnh nào.'); return; }
+        SPR_TRASH={[s.key]:{[pk]:cu}};
+        clearFrames(s.key,pk,label);
+        await saveChar(s.key);
+        sprTrashOn();
+        status(`Đã xoá ảnh ô "${label}" (${s.name}). Bấm "Hoàn tác" để lấy lại.`);
+      });
+
+      wrap.appendChild(el); wrap.appendChild(del);
+      SLOT[s.key][pk]={el,prev,cap,label,wrap,inp};
+      grid.appendChild(wrap);
     });
     area.appendChild(grid);
   });
@@ -645,14 +685,34 @@ async function loadSaved(){
     status('Đã nhập xong bộ ảnh.');
   });
   document.getElementById('sprClear').addEventListener('click',async ()=>{
+    const luu={}; let n=0;
+    for(const s of SETS){ luu[s.key]={...SPR[s.key]}; n+=Object.keys(SPR[s.key]).length; }
+    if(!n){ status('Chưa có ảnh nào để xoá.'); return; }
+    if(!confirm(`Xoá ảnh của ${n} ô? Bạn vẫn có thể bấm "Hoàn tác" ngay sau đó.`)) return;
+    SPR_TRASH=luu;
     for(const s of SETS){
-      SPR[s.key]={}; await Store.del('spr_'+s.key);
-      for(const [pk,label] of s.poses){
-        const ref=SLOT[s.key][pk];
-        ref.prev.style.display='none'; ref.cap.textContent=label; ref.el.classList.remove('set');
-      }
+      await Store.del('spr_'+s.key);
+      for(const [pk,label] of s.poses) clearFrames(s.key,pk,label);
+      SPR[s.key]={};
     }
-    status('Đã xoá toàn bộ ảnh đã lưu.');
+    sprTrashOn();
+    status(`Đã xoá ảnh của ${n} ô. Bấm "Hoàn tác" để lấy lại (còn giữ tới khi tải lại trang).`);
+  });
+
+  document.getElementById('sprUndo').addEventListener('click',async ()=>{
+    if(!SPR_TRASH){ status('Không có gì để hoàn tác.'); return; }
+    let n=0;
+    for(const s of SETS){
+      const set=SPR_TRASH[s.key]; if(!set)continue;
+      let co=false;
+      for(const [pk,label] of s.poses){
+        const imgs=set[pk]; if(!imgs||!imgs.length)continue;
+        setFrames(s.key,pk,imgs,label); n+=imgs.length; co=true;
+      }
+      if(co) await saveChar(s.key);
+    }
+    sprTrashOff();
+    status(`Đã khôi phục ${n} ảnh.`);
   });
 
   loadSaved();
@@ -1023,6 +1083,14 @@ function autoBalance(){
   sfxStatus(`Đã cân âm lượng ${names.length} file cho đều nhau.`);
 }
 function sfxStatus(m){ const e=document.getElementById('sfxStatus'); if(e)e.textContent=m; }
+/* Bật/tắt dấu ✓ và cờ .set của một ô tiếng. Cờ nằm ở .slotwrap vì nút ✕ là anh em
+   của thẻ <label> chứ không nằm trong nó (nằm trong thì label nuốt cú bấm). */
+function sfxSet(nm,on){
+  const r=SFXREFS[nm]; if(!r)return;
+  r.el.classList.toggle('set',!!on);
+  if(r.wrap) r.wrap.classList.toggle('set',!!on);
+  r.cap.textContent='♪ '+r.label+(on?' ✓':'');
+}
 const SFXVOL={};        // âm lượng riêng cho từng hiệu ứng (1 = gốc)
 const SFXSRC={};        // giữ dataURL để hoàn tác và xuất file
 let SFX_TRASH=null;     // bản sao lưu của lần xoá gần nhất
@@ -1055,7 +1123,7 @@ async function decodeInto(name,dataUrl){
       if(file.size>4*1024*1024){ sfxStatus('File quá nặng (>4MB), hãy nén lại hoặc cắt ngắn.'); return; }
       const src=await new Promise(r=>{ const rd=new FileReader(); rd.onload=()=>r(rd.result); rd.readAsDataURL(file); });
       if(await decodeInto(nm,src)){
-        el.classList.add('set'); cap.textContent='♪ '+label+' ✓';
+        sfxSet(nm,true);
         try{ await Store.set('sfx_'+nm,src); sfxStatus(`Đã lưu tiếng "${label}".`); }
         catch(e){ sfxStatus('Phát được nhưng không lưu được (file nặng).'); }
         sfx(nm);
@@ -1076,8 +1144,22 @@ async function decodeInto(name,dataUrl){
     vr.addEventListener('change',e=>{ e.stopPropagation(); sfx(nm); });
     vr.addEventListener('click',e=>e.stopPropagation());
 
-    wrap.appendChild(el); wrap.appendChild(vr);
-    refs[nm]={el,cap,label,vr};
+    const del=document.createElement('button');
+    del.type='button'; del.className='slotdel'; del.textContent='✕';
+    del.title=`Xoá file tiếng đã nạp cho ô "${label}"`;
+    del.addEventListener('click',async ev=>{
+      ev.preventDefault(); ev.stopPropagation();
+      if(!SFXSRC[nm]){ sfxStatus('Ô này chưa nạp file nào, đang dùng tiếng tự tạo.'); return; }
+      SFX_TRASH={[nm]:SFXSRC[nm]};
+      delete SFXBUF[nm]; delete SFXSRC[nm];
+      try{ await Store.del('sfx_'+nm); }catch(e){}
+      sfxSet(nm,false); inp.value='';      // chọn lại đúng file vừa xoá vẫn phải bắn change
+      document.getElementById('sfxUndo').style.display='';
+      sfxStatus(`Đã xoá tiếng ô "${label}" — quay lại tiếng tự tạo. Bấm "Hoàn tác xoá" để lấy lại.`);
+    });
+
+    wrap.appendChild(el); wrap.appendChild(del); wrap.appendChild(vr);
+    refs[nm]={el,cap,label,vr,wrap,inp};
     luoi.appendChild(wrap);
   });
   SFXREFS=refs;
@@ -1093,7 +1175,7 @@ async function decodeInto(name,dataUrl){
     SFX_TRASH={...SFXSRC};
     for(const [nm,label] of SFX_EVENTS){
       delete SFXBUF[nm]; delete SFXSRC[nm]; await Store.del('sfx_'+nm);
-      refs[nm].el.classList.remove('set'); refs[nm].cap.textContent='♪ '+label;
+      sfxSet(nm,false); refs[nm].inp.value='';
     }
     document.getElementById('sfxUndo').style.display='';
     sfxStatus(`Đã xoá ${count} file. Bấm "Hoàn tác" để lấy lại (còn giữ tới khi tải lại trang).`);
@@ -1105,7 +1187,7 @@ async function decodeInto(name,dataUrl){
     for(const [nm,label] of SFX_EVENTS){
       const src=SFX_TRASH[nm]; if(!src)continue;
       if(await decodeInto(nm,src)){
-        refs[nm].el.classList.add('set'); refs[nm].cap.textContent='♪ '+label+' ✓';
+        sfxSet(nm,true);
         try{ await Store.set('sfx_'+nm,src); }catch(e){}
         n++;
       }
@@ -1133,7 +1215,7 @@ async function decodeInto(name,dataUrl){
     for(const [nm,label] of SFX_EVENTS){
       const src=data[nm]; if(!src)continue;
       if(await decodeInto(nm,src)){
-        refs[nm].el.classList.add('set'); refs[nm].cap.textContent='♪ '+label+' ✓';
+        sfxSet(nm,true);
         try{ await Store.set('sfx_'+nm,src); }catch(e){}
         n++;
       }
@@ -1153,7 +1235,7 @@ async function decodeInto(name,dataUrl){
     for(const [nm,label] of SFX_EVENTS){
       let src=null; try{ src=await Store.get('sfx_'+nm); }catch(e){}
       if(!src)continue;
-      if(await decodeInto(nm,src)){ refs[nm].el.classList.add('set'); refs[nm].cap.textContent='♪ '+label+' ✓'; n++; }
+      if(await decodeInto(nm,src)){ sfxSet(nm,true); n++; }
     }
     // file 'twin' nạp từ trước khi tách Hyuga / Misaki: chuyển sang cả hai ô mới
     try{
@@ -1164,7 +1246,7 @@ async function decodeInto(name,dataUrl){
           if(SFXBUF[nm])continue;
           if(await decodeInto(nm,legacy)){
             Store.set('sfx_'+nm,legacy).catch(()=>{});
-            refs[nm].el.classList.add('set'); refs[nm].cap.textContent='♪ '+label+' ✓'; n++;
+            sfxSet(nm,true); n++;
           }
         }
         Store.del('sfx_twin');
