@@ -411,6 +411,18 @@ quyết định đúng, +5% tỉ lệ hồi máu, +6% lượng hồi máu, +8% m
 - Tiếng: `SFX_EVENTS` là mảng `[tên, nhãn tiếng Việt]`; chưa nạp file thì dùng tiếng tự tạo
   trong `switch` của `synth()` — **thêm ô mới thì phải thêm cả `case` dự phòng**.
 - Lưu trữ: `Store` (kho của Claude nếu có, không thì IndexedDB), khoá `spr_<key>` và `sfx_<tên>`.
+- **Xoá riêng một ô**: mỗi ô có nút `✕` ở góc trên bên phải (class `.slotdel`), chỉ hiện khi ô
+  đã có nội dung. Bấm là xoá đúng ô đó — cả trong bộ nhớ lẫn trong kho — rồi bật nút *Hoàn tác*
+  (`#sprUndo` / `#sfxUndo`). Ba điều bắt buộc khi đụng vào chỗ này:
+  1. **Nút `✕` phải nằm NGOÀI thẻ `<label>`** (là anh em của nó trong `.slotwrap`). Để trong
+     label thì cú bấm bị label nuốt và mở luôn hộp chọn file.
+  2. Cờ `.set` gắn ở **cả `.slot` lẫn `.slotwrap`** — CSS hiện nút đọc `.slotwrap.set`. Bên
+     bảng tiếng mọi chỗ bật/tắt đi qua `sfxSet(nm,on)`, bên bảng ảnh qua
+     `setFrames()` / `clearFrames()`; đừng sửa class hay chữ `✓` bằng tay ở chỗ khác.
+  3. Xoá xong phải `inp.value=''`, không thì chọn lại **đúng cái file vừa xoá** sẽ không bắn
+     sự kiện `change` — nhìn như nút nạp bị hỏng.
+  Thùng rác chỉ giữ **lần xoá gần nhất** (`SPR_TRASH` / `SFX_TRASH`), mất khi tải lại trang.
+  Nút xoá cả bộ ảnh giờ cũng hỏi lại và hoàn tác được, giống bên bảng tiếng.
 
 > **Khoá phải giữ nguyên đời đời.** Đổi tên khoá là xoá sạch ảnh và tiếng người dùng đã nạp.
 > Đổi tên một ô thì chỉ đổi **nhãn**, giữ nguyên tên khoá.
@@ -598,6 +610,7 @@ node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, 
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
+node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
                         # khiêu khích kéo địch ở mọi khoảng cách, anh miễn nhiễm Sexy no Jutsu,
                         # ba ô giọng của anh + hai ô xuất hiện + bảng tiếng chia nhóm,
