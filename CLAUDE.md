@@ -234,9 +234,15 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
 > | `suz_wrong` | 6 câu trong `SUZ_WRONG` | `SFX_SEG`, mỗi lần đọc tiếp một câu |
 >
 > **Sửa file tiếng thì phải sửa luôn ba chỗ trên cho khớp thứ tự.** Mấy ô còn lại
-> (`suz_punch` / `suz_kick` / `suz_block` / `suz_hit` / `suz_heal` / `suz_form2` /
-> `suz_form3`) là tiếng động, không phải giọng, nên giữ nguyên.
-
+> (`suz_hit` / `suz_heal` / `suz_form2` / `suz_form3`) là tiếng động, không phải giọng,
+> nên giữ nguyên.
+>
+> **Ba ô `suz_punch` / `suz_kick` / `suz_block` đã BỎ HẲN** (người dùng: đấm/đá thì mượn
+> tiếng của ChiChi, đỡ đòn thì dùng tiếng chịu đòn thường). `suzStrike()` gọi `sfx('punch')`
+> cho cả đấm lẫn đá — ChiChi chỉ có đúng một ô cận chiến — còn `ayaBlock()` gọi `sfx('hit')`.
+> Ô đầu của khu Horikita trong `SFX_GROUPS` vì vậy chuyển sang `suz_think`. Đừng dựng lại ba
+> ô đó.
+>
 > **Ayanokouji có BA ô giọng riêng**, đúng ba câu anh nói trong cả trận:
 > | Ô | Câu | Trần độ dài |
 > |---|---|---|
@@ -244,23 +250,20 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
 > | `aya_join` | `AYA_LAST` — câu lúc vào sân sát cánh lần cuối | `AYA_JOIN_LIFE*RT` |
 > | `aya_bye` | `AYA_BYE` — *"This is where I take my leave."* (lúc rời sàn) | `AYA_BYE_LIFE*RT` |
 >
+> **Lần xuất hiện tách làm hai ô.** `aya_appear` = lần đầu (bước ra chắn đòn),
+> `aya_appear2` = lần 2 (vào sân sát cánh khi đủ 150 điểm lớp). Ô lần 2 **bỏ trống thì
+> mượn hẳn ô `summon`** — đúng tiếng dịch chuyển của viện binh twin shot — qua bảng
+> `SFX_ALIAS`: `sfx()` thấy ô chưa nạp file mà có tên trong bảng thì đổi luôn sang ô kia,
+> nên mượn cả file người dùng đã nạp cho `summon` lẫn tiếng tự tạo của nó. Vì vậy ô có
+> mặt trong `SFX_ALIAS` **không cần** thêm `case` trong `synth()`; nạp file cho chính nó
+> thì file đó thắng. Chỗ đọc: `ayaShield()` (lần đầu) đọc `aya_appear`, `ayaJoin()` (lần 2)
+> đọc `aya_appear2` — `t_suzune.js` soi thân hai hàm này để không ai lỡ tay gộp lại.
+
 > Ba hằng `AYA_*_LIFE` khai **trước `SFX_MAXLEN`** (cạnh `SUZ_BUBBLE`) và dùng chung cho cả
 > `talk()` lẫn trần độ dài tiếng — hai chỗ không được lệch nhau. `aya_strike` / `aya_leave`
 > vẫn là tiếng động như cũ.
 > *(Bản trước từng chốt "không cho anh ô giọng nào"; người dùng hỏi lại "mấy ô âm thanh
 > Ayanokouji xuất hiện và thoại mấy câu đó đâu" nên mở lại đủ ba ô.)*
-
-> **Tiếng anh xuất hiện tách làm HAI ô** — anh ra sân hai lần, hai lần khác hẳn nhau:
-> | Ô | Lúc nào | Chưa nạp file thì |
-> |---|---|---|
-> | `aya_appear` | lần 1 — `ayaShield()`, bước ra chắn đòn thay Horikita | tiếng tự tạo `case 'aya_appear'` như cũ |
-> | `aya_appear2` | lần 2 — `ayaJoin()`, vào sân làm đồng minh thật | **mượn nguyên ô `summon`** ("Viện binh tới" — đúng tiếng dịch chuyển lúc Twin Shot của Tsubasa gọi đồng đội vào sân) |
->
-> Chỗ mượn khai trong `SFX_FALLBACK` (`{aya_appear2:'summon'}`) và `sfx()` đổi tên ô ngay ở
-> đầu hàm khi `SFXBUF[name]` còn trống. Nghĩa là **mượn cả file người dùng đã nạp cho ô
-> `summon`**, chứ không chỉ mượn tiếng tự tạo — nạp file cho `aya_appear2` là nó dùng file
-> riêng ngay. Vì có đường mượn nên ô này **không cần `case` riêng trong `synth()`**; ô nào
-> khác thêm mới mà không khai trong `SFX_FALLBACK` thì vẫn phải thêm `case`.
 
 > **Bảng nạp tiếng chia theo nhóm.** `SFX_GROUPS` gắn tiêu đề vào ô ĐẦU của mỗi khu
 > (Chung · Konohamaru · ChiChi · Ozora Tsubasa · Shikamaru · Horikita Suzune · Ayanokouji);

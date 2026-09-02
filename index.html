@@ -665,7 +665,7 @@ async function loadSaved(){
    thì giữ nguyên đời đời — đổi là xoá sạch tiếng người dùng đã nạp. */
 const SFX_GROUPS={
   crit:'Chung', throw:'Konohamaru', punch:'ChiChi', kick:'Ozora Tsubasa',
-  shika_lazy:'Shikamaru', suz_punch:'Horikita Suzune', aya_appear:'Ayanokouji'
+  shika_lazy:'Shikamaru', suz_think:'Horikita Suzune', aya_appear:'Ayanokouji'
 };
 const SFX_EVENTS=[
   ['crit','Chí mạng'],['stun','Choáng'],['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt'],
@@ -685,16 +685,15 @@ const SFX_EVENTS=[
   ['shika_bind','Trói bóng khoá cổ'],['shika_grab','Bóng siết lấy cổ'],
   ['shika_garden','Mở khu rừng nhà Nara'],
 
-  ['suz_punch','Horikita đấm'],['suz_kick','Horikita đá'],['suz_block','Horikita đỡ đòn / Ayanokouji chắn thay'],
   ['suz_think','🎙 GIỌNG · Horikita tự hỏi bản thân (một câu duy nhất)'],
   ['suz_decide','🎙 GIỌNG · Horikita quyết định ĐÚNG (file dài: mỗi lần đọc tiếp một câu)'],
   ['suz_wrong','🎙 GIỌNG · Horikita quyết định SAI (file dài: mỗi lần đọc tiếp một câu)'],
   ['suz_hit','Quyết định đâm trúng địch'],
   ['suz_heal','Horikita hồi máu'],['suz_form2','Horikita đứng lên đánh trả'],['suz_form3','Horikita tự mình chiến đấu'],
 
-  ['aya_appear','Ayanokouji xuất hiện LẦN 1 (lúc bước ra chắn đòn)'],
+  ['aya_appear','Ayanokouji xuất hiện lần đầu (bước ra chắn đòn)'],
   ['aya_stand','🎙 GIỌNG · "Stand up and fight." (lúc anh bước ra chắn đòn)'],
-  ['aya_appear2','Ayanokouji xuất hiện LẦN 2 (lúc vào làm đồng minh) — bỏ trống thì mượn tiếng "Viện binh tới"'],
+  ['aya_appear2','Ayanokouji xuất hiện lần 2 (vào sân sát cánh) — bỏ trống thì mượn tiếng dịch chuyển của viện binh'],
   ['aya_join','🎙 GIỌNG · Câu lúc anh vào sân sát cánh lần cuối'],
   ['aya_strike','Ayanokouji đột kích'],
   ['aya_bye','🎙 GIỌNG · "This is where I take my leave." (lúc anh rời sàn)'],
@@ -879,12 +878,6 @@ function synth(name,c,g){
       [.35,.9,1.6,2.4].forEach(dl=>tone(c,g,{type:'sine',f0:1500,f1:2300,dur:.32,vol:.05,delay:dl}));
       break;
     }
-    case 'suz_punch': tone(c,g,{type:'square',f0:230,f1:90,dur:.12,vol:.22});
-                      noise(c,g,{dur:.1,f0:1400,f1:400,vol:.16}); break;
-    case 'suz_kick':  tone(c,g,{type:'sawtooth',f0:180,f1:68,dur:.17,vol:.24});
-                      noise(c,g,{dur:.15,f0:900,f1:260,vol:.18}); break;
-    case 'suz_block': noise(c,g,{dur:.2,f0:620,f1:180,vol:.2,type:'lowpass'});
-                      tone(c,g,{type:'triangle',f0:300,f1:165,dur:.22,vol:.14}); break;
     case 'suz_think': [0,.22,.44].forEach((d,i)=>tone(c,g,{type:'sine',f0:520+i*95,f1:520+i*95,dur:.12,vol:.11,delay:d})); break;
     case 'suz_decide':tone(c,g,{type:'square',f0:660,f1:1320,dur:.22,vol:.2});
                       noise(c,g,{dur:.26,f0:1800,f1:600,vol:.12,q:1.2}); break;
@@ -912,6 +905,13 @@ function synth(name,c,g){
     default:        noise(c,g,{dur:.1,f0:1200,vol:.2});
   }
 }
+/* Ô chưa nạp file thì mượn HẲN một ô khác — mượn cả file người dùng đã nạp cho ô đó
+   lẫn tiếng tự tạo của nó, chứ không phải chỉ mượn tiếng tự tạo. Nạp file cho chính ô
+   này thì file đó thắng, bảng dưới hết tác dụng. Đây cũng là "tiếng dự phòng" của ô,
+   nên ô nào có mặt ở đây thì không cần thêm case trong synth(). */
+const SFX_ALIAS={
+  aya_appear2:'summon'    // lần 2 anh dịch chuyển vào sân y như viện binh twin shot
+};
 const SFX_FULL=new Set(['ko','win','cheer','twin_hyuga','twin_misaki','shika_garden']);
 // Các tiếng phát từ đầu rồi cắt ở một mốc. Chiêu lớn thì cắt ở 5 giây; mấy tiếng
 // đi kèm một hình cụ thể thì cắt đúng lúc hình đó tắt, để tiếng không nói tiếp khi
@@ -927,12 +927,6 @@ const SFX_MAXLEN={
   aya_stand:AYA_STAND_LIFE*RT, aya_join:AYA_JOIN_LIFE*RT, aya_bye:AYA_BYE_LIFE*RT,
   suz_form2:2.4, suz_form3:2.8
 };
-/* Ô chưa nạp file thì mượn nguyên tiếng của ô khác — mượn cả file người dùng đã nạp
-   cho ô đó, không có file thì mượn tiếng tự tạo của nó. Nhờ vậy ô mới không cần thêm
-   case riêng trong synth(): lần xuất hiện thứ hai của Ayanokouji dùng luôn tiếng dịch
-   chuyển của viện binh (đúng tiếng Twin Shot của Tsubasa gọi đồng đội vào sân). */
-const SFX_FALLBACK={ aya_appear2:'summon' };
-
 /* File dài thì đọc nối tiếp từng đoạn, hết file thì quay lại đầu. Mặc định mỗi đoạn
    2.2 giây; hai ô dưới đây lấy độ dài đoạn theo đúng thứ giới hạn chúng.
    Giá trị có thể là hàm, tính lại mỗi lần phát — cần thế vì nhịp mắng của ChiChi
@@ -993,7 +987,7 @@ function playBuffer(name,buf,c,g){
 }
 function sfx(name){
   if(muted||volume<=0)return;
-  if(!SFXBUF[name]&&SFX_FALLBACK[name]) name=SFX_FALLBACK[name];   // ô trống thì mượn ô khác
+  if(!SFXBUF[name]&&SFX_ALIAS[name]) name=SFX_ALIAS[name];   // chưa nạp thì mượn ô khác
   const now=performance.now();
   if(lastSfx[name] && now-lastSfx[name]<45) return;
   lastSfx[name]=now;
@@ -2338,7 +2332,7 @@ function suzStrike(f,e){
   const T=suzTune(f), kick=chance(.5);
   setPose(f,kick?'kick':'punch',cm(.3));
   aim(f,e,.9);
-  sfx(kick?'suz_kick':'suz_punch');
+  sfx('punch');   // mượn ô đấm của ChiChi, không có ô riêng
   G.fx.push({type:'punch',x:(f.x+e.x)/2,y:(f.y+e.y)/2,life:.16,ml:.16});
   if(!hurt(e,T.hit,f,false))return;
   suzCp(f,T.cp);
@@ -2449,7 +2443,7 @@ function ayaBlock(t,amt,src){
   G.floats.push({x:A.x,y:A.y-74,txt:'BLOCKED',color:'#DCE6F5',life:.85,ml:.85,banner:true,sc:.58});
   G.floats.push({x:A.x+rnd(-12,12),y:A.y-36,txt:'-'+Math.round(amt),color:'#8FA6C8',life:.8,ml:.8,sc:.5});
   ring(A.x,A.y-24,68,'#BFD4FF',.3);
-  sfx('suz_block');
+  sfx('hit');   // tiếng chịu đòn chung, không có ô riêng
 }
 function suzForm2(f){
   if(f.form>=2)return;
@@ -2473,7 +2467,7 @@ function ayaJoin(f){
   const py=clamp(f.y+rnd(-10,20),PAD+60,H-PAD-20);
   G.freeze=1.8; G.freezeAt=f;
   G.flashScreen=1;
-  sfx('aya_appear2');                      // lần xuất hiện thứ hai có ô tiếng riêng
+  sfx('aya_appear2');
   G.callBanner={txt:'AYANOKOUJI JOINS',color:'#8FA6C8',life:CALL_BANNER_LIFE,ml:CALL_BANNER_LIFE};
   later(.45,()=>{
     if(G.over)return;
