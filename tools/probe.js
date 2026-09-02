@@ -21,6 +21,7 @@ window.__sexy=sexy; window.__shadowBind=shadowBind; window.__tryEvade=tryEvade;
 window.__driveShot=driveShot; window.__eagleAwaken=eagleAwaken;
 window.__recCanvas=()=>RECV; window.__recFrame=()=>recFrame(); window.__CFR=()=>CFR;
 window.__aacRaw=aacRaw; window.__aacAsc=aacAsc; window.__mAudioEntry=mAudioEntry;
+window.__domainTargets=domainTargets; window.__domainShare=domainShare;
 window.__SUZ=SUZ; window.__suzTune=suzTune; window.__suzCp=suzCp;
 window.__ayaShield=ayaShield; window.__ayaJoin=ayaJoin; window.__ayaLeave=ayaLeave;
 window.__suzForm2=suzForm2; window.__suzForm3=suzForm3; window.__suzDecide=suzDecide;

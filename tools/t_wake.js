@@ -53,7 +53,7 @@ const { openGame } = require('./probe');
     return out;
   });
 
-  /* Lối rời ghế thứ hai: ngồi đủ lâu chạm trần 1000 chakra thì tự đứng dậy, không cần
+  /* Lối rời ghế thứ hai: ngồi đủ lâu chạm trần chakra (SHIKA.lazyCap) thì tự đứng dậy, không cần
      ai đánh. Ba thứ phải đúng cùng lúc: thôi ngồi, THẬT SỰ RA ĐÒN, và chakra vẫn tích
      tiếp như một Shikamaru đã vào trận (fightRate) — tức là vượt qua được trần. */
   const cap = await page.evaluate(() => new Promise(res => {

@@ -515,6 +515,79 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
 
   ok(errors.length === 0, `khong co loi trang${errors.length ? ': ' + errors[0] : ''}`);
   await browser.close();
+
+  /* ---- lãnh địa Nara trói CẢ HAI: khiêu khích của Ayanokouji không kéo nổi một cái vùng ---- */
+  const g2 = await openGame('shika', 'suzune');
+  const doc2 = fn => g2.page.evaluate(fn);
+  const doi2 = (giay, tran = 40000) => g2.page.evaluate(([g, tr]) => new Promise((res, rej) => {
+    const G = window.__G(), t0 = G.t;
+    const id = setInterval(() => { if (window.__G().t - t0 >= g) { clearInterval(id); res(window.__G().t - t0); } }, 25);
+    setTimeout(() => { clearInterval(id); rej(new Error('qua gio cho ' + g + 's trong tran')); }, tr);
+  }), [giay, tran]);
+  await g2.page.selectOption('#speed', '1');
+  await g2.page.waitForTimeout(200);
+
+  await doc2(() => {
+    const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
+    f.ayaG = null; f.ayaShieldDone = true;
+    window.__suzForm2(f);
+    window.__ayaJoin(f);
+  });
+  await doi2(2.6);
+  // nút #testForest chỉ nạp tạm 400 chakra = 4 giây người chơi = 2 giây trong trận, đo
+  // chưa xong thì rừng đã khép. Nạp hẳn cho đủ dài rồi mới mở.
+  await doc2(() => {
+    const k = window.__G().fighters.find(x => x.key === 'shika');
+    k.chakra = 4000; k.lazy = false; k.awake = true;
+  });
+  await g2.page.click('#testForest');
+  // naraDomain() đóng băng 1.8 giây phân cảnh; step() return sớm trong quãng đó nên lãnh
+  // địa chưa đập nhịp nào. Chờ hết phân cảnh rồi mới lấy mốc đo.
+  await g2.page.waitForFunction(() => window.__G().freeze <= 0, null, { timeout: 60000 });
+  await doi2(0.2);
+  const truoc2 = await doc2(() => {
+    const G = window.__G(), k = G.fighters.find(x => x.key === 'shika');
+    const f = G.fighters.find(x => x.key === 'suzune'), a = G.fighters.find(x => x.ally);
+    // nới máu cho cả hai để không ai gục giữa chừng, và bỏ né để đo cho sạch
+    for (const x of [f, a]) { if (x) { x.maxHp = 9000; x.hp = 9000; x.evade = 0; x.dmgRes = 0; } }
+    return { rung: !!k.domain, con: k.domain ? k.domain.t : 0, co: !!a, hpF: f.hp, hpA: a ? a.hp : -1,
+             nham: window.__aimTarget(k) === a };
+  });
+  ok(truoc2.rung && truoc2.con > 2, `mo duoc khu rung nha Nara (con ${truoc2.con.toFixed(1)}s trong tran)`);
+  ok(truoc2.co, 'Ayanokouji dang dung tren san luc rung mo');
+  ok(truoc2.nham, 'anh van khieu khich duoc Shikamaru (don thuong van vao anh)');
+
+  /* danh sách bị trói và bậc sát thương: đấu thủ chính đứng đầu, người sau nhẹ dần */
+  const dsach = await doc2(() => {
+    const G = window.__G(), S = window.__SHIKA;
+    const k = G.fighters.find(x => x.key === 'shika');
+    const ds = window.__domainTargets(k);
+    return { so: ds.length, dau: ds[0] ? ds[0].key : '', hai: ds[1] ? !!ds[1].ally : false,
+             p0: window.__domainShare(0), p1: window.__domainShare(1), p2: window.__domainShare(2),
+             giam: S.domainFalloff };
+  });
+  ok(dsach.so === 2 && dsach.dau === 'suzune' && dsach.hai,
+     `rung troi ca ${dsach.so} nguoi, dau thu chinh dung dau roi toi Ayanokouji`);
+  gan(dsach.p0, 1, 0.001, 'nguoi thu nhat an du sat thuong');
+  gan(dsach.p1, dsach.giam, 0.001, `nguoi thu hai chi an ${Math.round(dsach.giam * 100)}%`);
+  gan(dsach.p2, dsach.giam * dsach.giam, 0.001, 'nguoi thu ba nhe tiep mot bac nua');
+
+  await doi2(4);
+  const sau2 = await doc2(() => {
+    const G = window.__G();
+    const f = G.fighters.find(x => x.key === 'suzune'), a = G.fighters.find(x => x.ally);
+    return { hpF: f.hp, hpA: a ? a.hp : -1,
+             cutF: f.outCut, cutA: a ? a.outCut : -1,
+             metF: f.exhaust, metA: a ? a.exhaust : -1 };
+  });
+  ok(sau2.hpF > 0 && truoc2.hpF - sau2.hpF > 0, `Horikita van an bom trong rung (mat ${(truoc2.hpF - sau2.hpF).toFixed(1)} mau)`);
+  ok(sau2.hpA > 0 && truoc2.hpA - sau2.hpA > 0, `Ayanokouji cung an bom trong rung (mat ${(truoc2.hpA - sau2.hpA).toFixed(1)} mau)`);
+  ok(sau2.cutF > 0 && sau2.cutA > 0, `ca hai deu bi cat sat thuong gay ra (${sau2.cutF} / ${sau2.cutA})`);
+  ok(sau2.metF > 0 && sau2.metA > 0, 'ca hai deu bi kiet suc trong rung');
+  const matF = truoc2.hpF - sau2.hpF, matA = truoc2.hpA - sau2.hpA;
+  ok(matA < matF, `nguoi bi troi thu hai an nhe hon nguoi thu nhat (${matA.toFixed(1)} < ${matF.toFixed(1)})`);
+  ok(g2.errors.length === 0, `khong co loi trang o tran thu hai${g2.errors.length ? ': ' + g2.errors[0] : ''}`);
+  await g2.browser.close();
   console.log(loi.length ? `\nHONG ${loi.length} muc` : '\nDAT toan bo');
   process.exit(loi.length ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });
