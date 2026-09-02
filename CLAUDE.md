@@ -255,8 +255,8 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
 - **Taunt đi qua `aimTarget(f)`**, không đụng tới `foeOf()`. `foeOf` vẫn là quan hệ phe;
   `aimTarget` chỉ trả lời "đang nhắm vào ai". Mọi chỗ NHẮM (aiVec, think, cú lao, đạn dò,
   viện binh) đọc `aimTarget`, mọi chỗ tính phe vẫn đọc `foeOf`.
-  **Ngoại lệ duy nhất là lãnh địa Nara**: nó là một vùng nên trói hết mọi đối thủ trên sàn,
-  đọc thẳng `domainTargets()` chứ không đọc `aimTarget` (xem mục 3).
+  **Ngoại lệ duy nhất là lãnh địa Nara**: nó là một vùng nên trói cả hai người có thanh máu
+  và chia đều sát thương, đọc thẳng `domainTargets()` chứ không đọc `aimTarget` (xem mục 3).
 - **Viện binh của địch không có khiêu khích riêng** nên `aimTarget` cho chúng đọc luôn
   `master.tauntBy` — nếu không, Goku / Gohan / phân thân cứ gọi ra là lách được anh và bắn
   thẳng vào Horikita. Có chặn `t.team!==f.team` để không bao giờ nhắm nhầm vào phe mình.
@@ -353,19 +353,21 @@ quyết định đúng, +5% tỉ lệ hồi máu, +6% lượng hồi máu, +8% m
 - Có nút `#testForest` để xem thử lãnh địa mà không cần đánh tới 20% máu.
 - Thứ tự vẽ: `drawForestGrip()` phải gọi **sau** khi vẽ nhân vật, nếu không khói bom sẽ
   che mất dải bóng.
-- **Lãnh địa trói HẾT đối thủ đang đứng trên sàn** — đấu thủ chính, đồng minh (Ayanokouji)
-  và cả viện binh (Goku / Gohan / phân thân). Khu rừng là một *vùng*, không phải đòn đơn, nên
-  **khiêu khích không kéo nó về một người**: `domainTick()` duyệt `domainTargets(k)`, mỗi
-  người ăn **một lượt bom riêng** cùng `exhaust` và `outCut`.
-- **Trói thêm người thì siết lỏng dần.** Thứ tự `domainTargets()` trả về chính là thứ tự chịu
-  đòn (đấu thủ chính → đồng minh → viện binh), và người thứ i ăn `domainShare(i) =
-  domainFalloff^i` phần sát thương: **100% · 65% · 42% · 27%…** (`SHIKA.domainFalloff=.65`).
-  Nhờ vậy trói được cả sàn mà tổng sát thương không nhân lên theo số người. Quả bom to hay
-  nhỏ cũng so theo phần của chính người đó, không so với sàn gốc.
+- **Lãnh địa trói mọi đối thủ CÓ THANH MÁU** — đấu thủ chính và đồng minh (Ayanokouji).
+  Khu rừng là một *vùng*, không phải đòn đơn, nên **khiêu khích không kéo nó về một người**:
+  `domainTick()` duyệt `domainTargets(k)`, ai bị trói cũng dính đủ `exhaust` và `outCut`.
+- **Viện binh thuần triệu hồi thì không trói được.** Goku / Gohan / phân thân **không có thanh
+  máu** — bóng chẳng bám vào đâu. Cờ nhận diện là `summon && !ally`, đúng cái cờ `drawBars()`
+  dùng để quyết định có vẽ thanh máu hay không. *(Người dùng: "dạng thuần summon k có thanh máu
+  như goku với gohan, phân thân thì trói sao đc".)*
+- **Sát thương CHIA ĐỀU cho những người đang bị trói**, không phải mỗi người một lượt riêng:
+  một nhịp bốc **một** lượt `rnd(domainLo, domainHi)` rồi nhân `domainShare(n) = 1/n` — một
+  người ăn trọn, hai người mỗi người một nửa, ba người mỗi người một phần ba. Trói thêm người
+  **không** làm khu rừng mạnh lên, chỉ làm nó dàn mỏng ra.
   `drawForestGrip()` gọi `forestGripOn(k,e)` cho từng người để dải bóng bám đúng ai đang
   bị trói. Hết giờ thì trả `outCut` của cả danh sách về 0.
-  *(Từng cho lãnh địa dí theo `aimTarget()` — người dùng bác: "lãnh địa shikamaru thì trói cả 2",
-  rồi chốt tiếp: "trói hết những đối thủ trên sân, nhưng dmg giảm tuần tự".)*
+  *(Đường đi của yêu cầu: lúc đầu cho lãnh địa dí theo `aimTarget()` → bác, "trói cả 2" →
+  làm thành giảm dần theo bậc → bác tiếp, chốt là **chia đều** và **chỉ trói ai có thanh máu**.)*
 
 ---
 
@@ -564,7 +566,7 @@ node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Ea
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
                         # khiêu khích kéo địch ở mọi khoảng cách, anh miễn nhiễm Sexy no Jutsu,
-                        # lãnh địa Nara trói cả sàn và giảm dần theo thứ tự (trận thứ hai: shika vs suzune),
+                        # lãnh địa Nara trói ai có thanh máu và chia đều dmg (trận thứ hai: shika vs suzune),
                         # cước chia tay không nện vào miễn thương, bốn ô dáng riêng của form 3
 ```
 

@@ -550,6 +550,9 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     const f = G.fighters.find(x => x.key === 'suzune'), a = G.fighters.find(x => x.ally);
     // nới máu cho cả hai để không ai gục giữa chừng, và bỏ né để đo cho sạch
     for (const x of [f, a]) { if (x) { x.maxHp = 9000; x.hp = 9000; x.evade = 0; x.dmgRes = 0; } }
+    // ghim cả ba người lại: chỉ còn bom của lãnh địa làm thay đổi máu. Không ghim thì
+    // shuriken của Shikamaru và cửa hồi máu 5% của Horikita làm nhiễu hết số đo.
+    for (const x of [k, f, a]) { if (x) x.stun = 60; }
     return { rung: !!k.domain, con: k.domain ? k.domain.t : 0, co: !!a, hpF: f.hp, hpA: a ? a.hp : -1,
              nham: window.__aimTarget(k) === a };
   });
@@ -557,20 +560,30 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   ok(truoc2.co, 'Ayanokouji dang dung tren san luc rung mo');
   ok(truoc2.nham, 'anh van khieu khich duoc Shikamaru (don thuong van vao anh)');
 
-  /* danh sách bị trói và bậc sát thương: đấu thủ chính đứng đầu, người sau nhẹ dần */
+  /* danh sách bị trói: ai có thanh máu thì bị trói, viện binh thuần triệu hồi thì không.
+     Sát thương chia đều: hai người mỗi người một nửa, ba người mỗi người một phần ba. */
   const dsach = await doc2(() => {
-    const G = window.__G(), S = window.__SHIKA;
+    const G = window.__G();
     const k = G.fighters.find(x => x.key === 'shika');
+    const f = G.fighters.find(x => x.key === 'suzune');
     const ds = window.__domainTargets(k);
+    // dựng tạm một viện binh kiểu Goku/Gohan (summon, KHÔNG ally) xem rừng có trói nhầm không
+    const vien = { key: 'goku', name: 'Goku', team: f.team, master: f, summon: true, ally: false,
+                   alive: true, hp: 100, maxHp: 100, x: f.x, y: f.y, dots: [], exhaust: 0, outCut: 0 };
+    G.fighters.push(vien);
+    const ds2 = window.__domainTargets(k);
+    G.fighters.splice(G.fighters.indexOf(vien), 1);
     return { so: ds.length, dau: ds[0] ? ds[0].key : '', hai: ds[1] ? !!ds[1].ally : false,
-             p0: window.__domainShare(0), p1: window.__domainShare(1), p2: window.__domainShare(2),
-             giam: S.domainFalloff };
+             soVien: ds2.length, dinhVien: ds2.some(x => x === vien),
+             p1: window.__domainShare(1), p2: window.__domainShare(2), p3: window.__domainShare(3) };
   });
   ok(dsach.so === 2 && dsach.dau === 'suzune' && dsach.hai,
-     `rung troi ca ${dsach.so} nguoi, dau thu chinh dung dau roi toi Ayanokouji`);
-  gan(dsach.p0, 1, 0.001, 'nguoi thu nhat an du sat thuong');
-  gan(dsach.p1, dsach.giam, 0.001, `nguoi thu hai chi an ${Math.round(dsach.giam * 100)}%`);
-  gan(dsach.p2, dsach.giam * dsach.giam, 0.001, 'nguoi thu ba nhe tiep mot bac nua');
+     `rung troi ca ${dsach.so} nguoi co thanh mau, dau thu chinh dung dau roi toi Ayanokouji`);
+  ok(dsach.soVien === 2 && !dsach.dinhVien,
+     'vien binh thuan trieu hoi (khong co thanh mau) thi rung khong troi');
+  gan(dsach.p1, 1, 0.001, 'mot minh thi an tron sat thuong');
+  gan(dsach.p2, .5, 0.001, 'hai nguoi thi moi nguoi mot nua');
+  gan(dsach.p3, 1 / 3, 0.001, 'ba nguoi thi moi nguoi mot phan ba');
 
   await doi2(4);
   const sau2 = await doc2(() => {
@@ -585,7 +598,8 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   ok(sau2.cutF > 0 && sau2.cutA > 0, `ca hai deu bi cat sat thuong gay ra (${sau2.cutF} / ${sau2.cutA})`);
   ok(sau2.metF > 0 && sau2.metA > 0, 'ca hai deu bi kiet suc trong rung');
   const matF = truoc2.hpF - sau2.hpF, matA = truoc2.hpA - sau2.hpA;
-  ok(matA < matF, `nguoi bi troi thu hai an nhe hon nguoi thu nhat (${matA.toFixed(1)} < ${matF.toFixed(1)})`);
+  const lech = Math.abs(matF - matA) / Math.max(matF, matA);
+  ok(lech < .25, `hai nguoi bi troi an xap xi bang nhau (${matF.toFixed(1)} vs ${matA.toFixed(1)}, lech ${(lech * 100).toFixed(1)}%)`);
   ok(g2.errors.length === 0, `khong co loi trang o tran thu hai${g2.errors.length ? ': ' + g2.errors[0] : ''}`);
   await g2.browser.close();
   console.log(loi.length ? `\nHONG ${loi.length} muc` : '\nDAT toan bo');
