@@ -116,11 +116,11 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
 Toàn bộ trong hằng `SHIKA`. Những điểm người dùng chốt riêng:
 - **Ngồi lười** (không phải nằm) đầu trận, tích 12 chakra/giây người chơi; bật dậy khi máu
   tụt xuống **80%** (`wakeHp:.80`) rồi chỉ còn 4/giây.
-- **Trần của quãng ngồi lười là 700 chakra** (`lazyCap`). Không ai đánh thì cứ ngồi tới khi
-  đủ 700 là **tự đứng dậy** đánh như bình thường. Trần này **chỉ chặn quãng ngồi**, không
-  phải trần tuyệt đối: đứng dậy rồi vẫn tích tiếp 4/giây và **vượt qua 700 được**.
-  *(Từng để 1000; người dùng hạ xuống 700 để anh vào trận sớm hơn. Test đọc thẳng
-  `SHIKA.lazyCap` nên đổi con số này là đủ, đừng ghim số vào chỗ khác.)* Hai lối
+- **Trần của quãng ngồi lười là 600 chakra** (`lazyCap`). Không ai đánh thì cứ ngồi tới khi
+  đủ 600 là **tự đứng dậy** đánh như bình thường. Trần này **chỉ chặn quãng ngồi**, không
+  phải trần tuyệt đối: đứng dậy rồi vẫn tích tiếp 4/giây và **vượt qua 600 được**.
+  *(Đường đi của con số: 1000 → 700 → 600, người dùng hạ dần cho anh vào trận sớm hơn.
+  Test đọc thẳng `SHIKA.lazyCap` nên đổi con số này là đủ, đừng ghim số vào chỗ khác.)* Hai lối
   rời ghế đi chung hàm `shikaWake(f, why)` để phần dọn dẹp (câm tiếng than, xoá bong bóng,
   chờ `wakeDelay`) không bị chép thành hai bản. Thanh chakra canh theo `lazyCap`.
 - Bật dậy: **cắt tiếng than thở ngay lập tức**, xoá bong bóng đang treo, rồi **chờ 1.5 giây
@@ -157,7 +157,8 @@ Nhân vật cận chiến, đi theo **ba form** — đây là cả tính cách n
 | 2 | Dám đánh nhưng còn sai | chiêu 1 đấm/đá, chiêu 2 Decision Making |
 | 3 | Tự đứng một mình | như form 2 nhưng mạnh hơn và cộng dồn theo điểm lớp. **Có hẳn bốn ô dán ảnh riêng**: `stand3` / `punch3` / `kick3` / `think3` (xem mục dưới) |
 
-**Chuyển form 1 → 2**: máu tụt xuống **85%** (`SUZ.guardHp`) thì Ayanokouji hiện ra.
+**Chuyển form 1 → 2**: máu tụt xuống **90%** (`SUZ.guardHp`) thì Ayanokouji hiện ra.
+*(Từng là 85%; người dùng nâng lên 90% để anh xuất chiến sớm hơn.)*
 Phân cảnh đóng băng 1.6s, anh nói *"Stand up and fight."*, rồi **đỡ đạn thay đúng 5 giây
 người chơi** (`SUZ.guardT`). Trong quãng đó `hurt()` trả về **false** cho Horikita ngay từ
 đầu hàm nên không chỉ mất máu mà cả choáng / cháy / chảy máu ăn theo cũng không dính.
@@ -232,11 +233,29 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
 > | `suz_decide` | 15 câu trong `SUZ_DECISIONS` | `SFX_SEG`, mỗi lần đọc tiếp một câu |
 > | `suz_wrong` | 6 câu trong `SUZ_WRONG` | `SFX_SEG`, mỗi lần đọc tiếp một câu |
 >
-> **Sửa file tiếng thì phải sửa luôn ba chỗ trên cho khớp thứ tự.** Người dùng đã bác ô
-> giọng thứ tư (`aya_line`, để Ayanokouji nói): anh vẫn có bong bóng thoại, chỉ là không
-> có giọng riêng — tiếng `aya_appear` đã kêu ngay lúc anh bước ra rồi. Mấy ô còn lại
+> **Sửa file tiếng thì phải sửa luôn ba chỗ trên cho khớp thứ tự.** Mấy ô còn lại
 > (`suz_punch` / `suz_kick` / `suz_block` / `suz_hit` / `suz_heal` / `suz_form2` /
-> `suz_form3` / `aya_*`) là tiếng động, không phải giọng, nên giữ nguyên.
+> `suz_form3`) là tiếng động, không phải giọng, nên giữ nguyên.
+
+> **Ayanokouji có BA ô giọng riêng**, đúng ba câu anh nói trong cả trận:
+> | Ô | Câu | Trần độ dài |
+> |---|---|---|
+> | `aya_stand` | `AYA_STAND` — *"Stand up and fight."* (lúc bước ra chắn đòn) | `AYA_STAND_LIFE*RT` |
+> | `aya_join` | `AYA_LAST` — câu lúc vào sân sát cánh lần cuối | `AYA_JOIN_LIFE*RT` |
+> | `aya_bye` | `AYA_BYE` — *"This is where I take my leave."* (lúc rời sàn) | `AYA_BYE_LIFE*RT` |
+>
+> Ba hằng `AYA_*_LIFE` khai **trước `SFX_MAXLEN`** (cạnh `SUZ_BUBBLE`) và dùng chung cho cả
+> `talk()` lẫn trần độ dài tiếng — hai chỗ không được lệch nhau. `aya_appear` / `aya_strike` /
+> `aya_leave` vẫn là tiếng động như cũ.
+> *(Bản trước từng chốt "không cho anh ô giọng nào"; người dùng hỏi lại "mấy ô âm thanh
+> Ayanokouji xuất hiện và thoại mấy câu đó đâu" nên mở lại đủ ba ô.)*
+
+> **Bảng nạp tiếng chia theo nhóm.** `SFX_GROUPS` gắn tiêu đề vào ô ĐẦU của mỗi khu
+> (Chung · Konohamaru · ChiChi · Ozora Tsubasa · Shikamaru · Horikita Suzune · Ayanokouji);
+> `buildSfx()` gặp tiêu đề thì mở một lưới `.slots` mới, y như bảng dán ảnh. Trước đó 45 ô
+> xếp phẳng một mạch nên mấy ô cuối tìm không ra — đó chính là lý do người dùng tưởng
+> ô của Ayanokouji chưa có. **Thứ tự trong `SFX_EVENTS` chỉ ảnh hưởng chỗ hiển thị**, mọi
+> thứ khác tra theo tên khoá; mà tên khoá thì giữ nguyên đời đời.
 
 **Ayanokouji làm đồng minh thật** (đủ 150 điểm ở form 2). Anh là fighter duy nhất mang cờ
 `ally:true`; `summon:true` để `hurt()` không gọi `finish()` khi anh cạn máu, nhưng
@@ -566,6 +585,7 @@ node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Ea
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
                         # khiêu khích kéo địch ở mọi khoảng cách, anh miễn nhiễm Sexy no Jutsu,
+                        # ba ô giọng của anh + bảng tiếng chia nhóm,
                         # lãnh địa Nara trói ai có thanh máu và chia đều dmg (trận thứ hai: shika vs suzune),
                         # cước chia tay không nện vào miễn thương, bốn ô dáng riêng của form 3
 ```

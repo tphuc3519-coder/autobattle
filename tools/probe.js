@@ -12,6 +12,10 @@ const SRC = path.join(ROOT, 'index.html');
 const HOOKS = `
 window.__G=()=>G; window.__ac=ac; window.__RT=RT; window.__SHIKA=SHIKA;
 window.__SFXBUF=SFXBUF; window.__sfx=n=>sfx(n); window.__SFXE=SFX_EVENTS;
+window.__SFXMAX=SFX_MAXLEN; window.__SFXGROUPS=SFX_GROUPS;
+/* sfx() nuốt lỗi của synth(), mà switch thiếu case thì cũng không ném — nên muốn biết
+   một ô có tiếng tự tạo dự phòng hay không thì phải soi thẳng thân hàm. */
+window.__synthSrc=()=>synth.toString();
 window.__CHARS=CHARS; window.__hurt=hurt; window.__shikaStabHit=shikaStabHit;
 window.__gs=gs; window.__rts=rts;
 window.__vector=vector; window.__drawFighter=drawFighter;
@@ -62,6 +66,10 @@ async function openGame(keyA, keyB, opt) {
   await page.route('**://fonts.*/**', r => r.abort());   // khỏi chờ font mạng
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
+  // trang chết giữa chừng thì báo cho rõ là CHẾT chứ không phải test viết sai.
+  // (Đừng gom console.error vào đây: cú chặn font mạng ở trên luôn in một dòng
+  //  ERR_FAILED, gom vào là mọi test đều báo hỏng oan.)
+  page.on('crash', () => errors.push('TRANG SUP (renderer crash)'));
   await page.goto('file://' + (o.file || build()), { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
   await page.click(`#listA .cTile[data-key="${keyA}"]`);

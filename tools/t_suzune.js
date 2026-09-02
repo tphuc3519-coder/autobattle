@@ -28,7 +28,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   /* ---- form 1: có đánh, nhưng đòn nhẹ, nhịp chậm và chưa có chiêu 2 ---- */
   const f1 = await doc(() => {
     const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
-    f.hp = f.maxHp;                       // giữ trên ngưỡng 85% để chưa sang form
+    f.hp = f.maxHp;                       // giữ trên ngưỡng SUZ.guardHp để chưa sang form
     return { form: f.form, cd: f.cds.s1 };
   });
   ok(f1.form === 1, 'vao tran la form 1');
@@ -65,11 +65,11 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   });
   ok(f1b.cp === 0 && f1b.form === 1, 'danh mot hoi o form 1 van khong tich duoc diem lop');
 
-  /* ---- ngưỡng 85%: Ayanokouji nhảy vào đỡ thay ---- */
-  const g0 = await doc(() => {
+  /* ---- chạm ngưỡng SUZ.guardHp: Ayanokouji nhảy vào đỡ thay ---- */
+  const nguong = await doc(() => {
     const G = window.__G(), f = G.fighters.find(x => x.key === 'suzune');
     f.hp = f.maxHp * window.__SUZ.guardHp;       // chạm đúng ngưỡng
-    return 1;
+    return Math.round(window.__SUZ.guardHp * 100);
   });
   await doi(0.4);
   const g1 = await doc(() => {
@@ -77,7 +77,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     return { co: !!f.ayaG, t: f.ayaG ? f.ayaG.t : 0, form: f.form,
              thoai: G.floats.some(fl => /stand\s+up\s+and\s+fight/i.test(fl.txt || '')) };
   });
-  ok(g1.co, 'cham 85% mau thi Ayanokouji hien ra do don thay');
+  ok(g1.co, `cham ${nguong}% mau thi Ayanokouji hien ra do don thay`);
   ok(g1.form === 1, 'trong luc anh do thi Horikita van con o form 1');
 
   /* thời lượng đỡ đúng 4 giây người chơi, và trong quãng đó cô không mất máu */
@@ -288,6 +288,49 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   ok(!!oAnh.injured, `o 'injured' cu van con lam o lui chung ("${oAnh.injured}")`);
   ok(/form 2/.test(oAnh.idle || ''), `o dung cu ghi ro la cua form 2 ("${oAnh.idle}")`);
   ok(/form 2/.test(oAnh.think || ''), `o dung nghi cu ghi ro la cua form 2 ("${oAnh.think}")`);
+
+  /* ---- ô tiếng của Ayanokouji: ba câu thoại phải có ô giọng riêng, và bảng nạp tiếng
+         phải chia nhóm để mấy ô cuối không chìm nghỉm ---- */
+  const oTieng = await doc(() => {
+    const E = window.__SFXE, M = window.__SFXMAX, G = window.__SFXGROUPS, RT = window.__RT;
+    const nhan = k => (E.find(x => x[0] === k) || [])[1];
+    return { stand: nhan('aya_stand'), join: nhan('aya_join'), bye: nhan('aya_bye'),
+             appear: nhan('aya_appear'), strike: nhan('aya_strike'), leave: nhan('aya_leave'),
+             capStand: M.aya_stand, capJoin: M.aya_join, capBye: M.aya_bye,
+             nhom: G.aya_appear, soNhom: Object.keys(G).length, RT };
+  });
+  for (const [k, ten] of [['stand', 'Stand up and fight'], ['join', 'vào sân sát cánh'], ['bye', 'take my leave']])
+    ok(!!oTieng[k] && /🎙/.test(oTieng[k]), `co o giong '${k}' cho cau "${ten}" ("${oTieng[k]}")`);
+  ok(!!oTieng.appear && !!oTieng.strike && !!oTieng.leave, 'ba o tieng dong cu cua anh van con nguyen');
+  ok(oTieng.capStand > 0 && oTieng.capJoin > 0 && oTieng.capBye > 0,
+     `ba o giong deu bi cat theo bong bong (${oTieng.capStand.toFixed(1)}s / ${oTieng.capJoin.toFixed(1)}s / ${oTieng.capBye.toFixed(1)}s)`);
+  ok(oTieng.nhom === 'Ayanokouji', `bang tieng co khu rieng cho Ayanokouji ("${oTieng.nhom}")`);
+
+  /* tiếng tự tạo dự phòng: thêm ô mới thì phải thêm cả case trong synth(), không thì
+     chưa nạp file là im ru mà chẳng ai báo (sfx() nuốt lỗi, switch thiếu case cũng im) */
+  const duPhong = await doc(async () => {
+    const src = window.__synthSrc(), out = {};
+    for (const n of ['aya_stand', 'aya_join', 'aya_bye']) {
+      out[n] = src.includes("case '" + n + "'");
+      window.__sfx(n);
+      await new Promise(r => setTimeout(r, 80));      // sfx() chan trung 45ms
+    }
+    return out;
+  });
+  ok(duPhong.aya_stand && duPhong.aya_join && duPhong.aya_bye,
+     `ba o giong deu co tieng tu tao du phong trong synth() (${JSON.stringify(duPhong)})`);
+
+  /* bảng nạp tiếng trên màn hình: có tiêu đề nhóm, và ba ô giọng hiện ra thật */
+  const bang = await page.evaluate(() => {
+    const area = document.getElementById('sfxArea');
+    const heads = Array.from(area.querySelectorAll('.who')).map(x => x.textContent);
+    const caps = Array.from(area.querySelectorAll('.slot span')).map(x => x.textContent);
+    return { heads, oGiong: caps.filter(c => /Stand up and fight|sát cánh|take my leave/.test(c)).length,
+             tong: caps.length };
+  });
+  ok(bang.heads.includes('Ayanokouji') && bang.heads.length >= 6,
+     `bang nap tieng chia thanh ${bang.heads.length} khu: ${bang.heads.join(' · ')}`);
+  ok(bang.oGiong === 3, `ba o giong cua Ayanokouji hien ra tren bang (thay ${bang.oGiong}/3, tong ${bang.tong} o)`);
 
   /* Bốn dáng form 3 phải vẽ ra KHÁC hẳn form 2 — nếu ai đó lỡ xoá nhánh vẽ thì chỗ này
      đổ ngay, chứ nhìn bằng mắt trong trận thì rất dễ bỏ sót. */

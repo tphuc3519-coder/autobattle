@@ -188,9 +188,9 @@
         <label class="chk"><input type="checkbox" id="musicOn" checked> 🎵 Nhạc nền</label>
         <label class="chk">Âm lượng nhạc <input type="range" id="musicVol" min="0" max="1" step="0.05" value="0.3" style="width:110px"></label>
       </div>
-      <div class="slots" id="sfxArea" style="margin-top:8px"></div>
+      <div id="sfxArea" style="margin-top:8px"></div>
       <div class="help" id="sfxStatus">Đang dùng tiếng tự tạo sẵn có. Nạp file để thay thế từng loại.</div>
-      <div class="help">File dài (trên 2.6 giây) sẽ được đọc <b>nối tiếp từng đoạn ~2 giây</b>, lần sau nói tiếp chỗ cũ chứ không quay lại đầu — hợp cho một tràng ChiChi chửi dài. Riêng <b>Kamehameha, Masenko và Đôi cánh đại bàng phát từ đầu, dài tối đa 5 giây</b> (tia bắn ra ở giây thứ 2.8 và 2.2 ở tốc độ gốc). Tiếng kết thúc, nhạc thắng, hò reo và <b>tiếng mở khu rừng nhà Nara</b> thì phát trọn vẹn, dài bao nhiêu cũng được. Tiếng gọi Goku / Gohan và tiếng viện binh hiện ra thì phát từ đầu rồi <b>tắt đúng lúc hình tắt</b>, file dài hơn chỉ nghe được phần đầu. <b>Tiếng Shikamaru than thở</b> đọc nối tiếp từng đoạn dài bằng bong bóng thoại, còn <b>tiếng mắng của ChiChi</b> đọc theo đúng nhịp hét — chỉnh tốc ra chiêu thì độ dài đoạn đổi theo. Cả hai đều nói tiếp chỗ cũ, hết file thì quay lại đầu, nên một file thu nhiều câu là mỗi lần một câu khác chứ không lặp câu đầu.</div>
+      <div class="help">File dài (trên 2.6 giây) sẽ được đọc <b>nối tiếp từng đoạn ~2 giây</b>, lần sau nói tiếp chỗ cũ chứ không quay lại đầu — hợp cho một tràng ChiChi chửi dài. Riêng <b>Kamehameha, Masenko và Đôi cánh đại bàng phát từ đầu, dài tối đa 5 giây</b> (tia bắn ra ở giây thứ 2.8 và 2.2 ở tốc độ gốc). Tiếng kết thúc, nhạc thắng, hò reo và <b>tiếng mở khu rừng nhà Nara</b> thì phát trọn vẹn, dài bao nhiêu cũng được. Tiếng gọi Goku / Gohan và tiếng viện binh hiện ra thì phát từ đầu rồi <b>tắt đúng lúc hình tắt</b>, file dài hơn chỉ nghe được phần đầu. <b>Tiếng Shikamaru than thở</b> đọc nối tiếp từng đoạn dài bằng bong bóng thoại, còn <b>tiếng mắng của ChiChi</b> đọc theo đúng nhịp hét — chỉnh tốc ra chiêu thì độ dài đoạn đổi theo. Cả hai đều nói tiếp chỗ cũ, hết file thì quay lại đầu, nên một file thu nhiều câu là mỗi lần một câu khác chứ không lặp câu đầu. Ô nào có dấu <b>🎙 GIỌNG</b> là chỗ thu lời thoại: <b>Horikita</b> có ba ô (câu tự hỏi · quyết định đúng · quyết định sai), <b>Ayanokouji</b> có ba ô cho đúng ba câu anh nói — "Stand up and fight." lúc bước ra chắn đòn, câu lúc vào sân sát cánh lần cuối, và "This is where I take my leave." lúc rời sàn. Mỗi câu tự cắt đúng lúc bong bóng thoại tắt, thu dài hơn thì phần đuôi không nghe được.</div>
     </details>
   </div>
 
@@ -297,7 +297,7 @@ const CHICHI_DASH_CD=5;           // ChiChi lao tới mỗi 5 giây trong trận
 const gs=sec=>sec/RT;             // giây người chơi -> giây trong trận
 const SHIKA={
   lazyRate:12*RT,                 // ngồi lười: 12 chakra mỗi giây người chơi
-  lazyCap:700,                    // trần của quãng ngồi lười: đủ 700 là tự đứng dậy
+  lazyCap:600,                    // trần của quãng ngồi lười: đủ 600 là tự đứng dậy
   fightRate:4*RT,                 // đã vào trận: 4 chakra mỗi giây người chơi
   wakeHp:.80,                     // tụt xuống mức này thì bật dậy đánh
   evadeBase:.10, evadeStep:.025, evadeMax:.70,   // né được thì không cộng dồn, chỉ ăn đòn mới cộng
@@ -335,7 +335,7 @@ const EAGLE_ACC=.5;               // độ lệch khi sút giảm một nửa, t
    nên vẫn co giãn theo thanh "tốc độ ra chiêu"; các mốc còn lại người dùng chốt bằng
    con số cụ thể nên để nguyên, không nhân cm(). */
 const SUZ={
-  guardHp:.85,               // tụt xuống mức này thì Ayanokouji nhảy vào đỡ đòn thay
+  guardHp:.90,               // tụt xuống mức này thì Ayanokouji nhảy vào đỡ đòn thay
   guardT:gs(5),              // đỡ đạn giúp cô 5 giây người chơi
   guardKickDmg:150,          // rồi tung một cước chia tay: 150 dmg
   guardKickStun:gs(2),       // và choáng 2 giây người chơi
@@ -391,6 +391,10 @@ const SUZ_BUBBLE=1.9;
 /* Bong bóng câu tự hỏi phải sống lâu hơn quãng đứng im một nhịp: đứng im 1.5 giây người
    chơi mà đọc một câu hỏi thì không kịp, và tiếng không được sống lâu hơn hình đi kèm. */
 const SUZ_THINK_LIFE=SUZ.decThink+gs(.9);
+/* Ba câu thoại của Ayanokouji, mỗi câu một tuổi thọ riêng. Khai ở đây (trước SFX_MAXLEN)
+   để vừa dùng cho talk() vừa dùng làm trần độ dài của ô giọng — hai chỗ không được lệch
+   nhau, tiếng không bao giờ được sống lâu hơn bong bóng. */
+const AYA_STAND_LIFE=SUZ_BUBBLE*1.4, AYA_JOIN_LIFE=2.5, AYA_BYE_LIFE=2.2;
 const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
@@ -655,22 +659,45 @@ async function loadSaved(){
 })();
 
 /* ---------- âm thanh ---------- */
+/* Bảng ô tiếng. Xếp theo NHÓM để bảng nạp tiếng chia được thành từng khu có tiêu đề —
+   45 ô xếp phẳng thì mấy ô cuối (Horikita, Ayanokouji) chìm nghỉm, tìm không ra.
+   Thứ tự ở đây chỉ ảnh hưởng chỗ hiển thị; mọi thứ khác tra theo TÊN KHOÁ, mà tên khoá
+   thì giữ nguyên đời đời — đổi là xoá sạch tiếng người dùng đã nạp. */
+const SFX_GROUPS={
+  crit:'Chung', throw:'Konohamaru', punch:'ChiChi', kick:'Ozora Tsubasa',
+  shika_lazy:'Shikamaru', suz_punch:'Horikita Suzune', aya_appear:'Ayanokouji'
+};
 const SFX_EVENTS=[
+  ['crit','Chí mạng'],['stun','Choáng'],['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt'],
+  ['boom','Kunai nổ'],['ko','Kết thúc'],['win','Nhạc thắng trận'],['cheer','Khán giả hò reo'],
+
   ['throw','Ném phi tiêu'],['hit','Trúng phi tiêu'],['clone','Phân thân'],['sexy','Sexy Jutsu'],
-  ['rasengan','Rasengan'],['punch','ChiChi đấm'],['crit','Chí mạng'],['scold','Mắng'],
-  ['stun','Choáng'],['summon','Viện binh tới'],['kame','Kamehameha'],['masenko','Masenko'],['callgoku','ChiChi gọi Goku'],['callgohan','ChiChi gọi Gohan'],['boom','Kunai nổ'],['ko','Kết thúc'],['win','Nhạc thắng trận'],['cheer','Khán giả hò reo'],
-  ['kick','Tsubasa sút bóng'],['bicycle','Overhead kick'],['bounce','Bóng dội tường'],['drive','Drive shot'],['twin_hyuga','Twin shot với Hyuga'],['twin_misaki','Twin shot với Misaki'],['goal','Ghi goal'],['wings','Đôi cánh đại bàng'],
-  ['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt'],
+  ['rasengan','Rasengan'],
+
+  ['punch','ChiChi đấm'],['scold','Mắng'],['summon','Viện binh tới'],
+  ['callgoku','ChiChi gọi Goku'],['callgohan','ChiChi gọi Gohan'],['kame','Kamehameha'],['masenko','Masenko'],
+
+  ['kick','Tsubasa sút bóng'],['bicycle','Overhead kick'],['bounce','Bóng dội tường'],['drive','Drive shot'],
+  ['twin_hyuga','Twin shot với Hyuga'],['twin_misaki','Twin shot với Misaki'],['goal','Ghi goal'],['wings','Đôi cánh đại bàng'],
+
   ['shika_lazy','Shikamaru ngồi than thở'],['shika_wake','Shikamaru bật dậy đánh'],
-  ['shika_stab','Đâm sau lưng'],['shika_stab_hit','Mũi đâm trúng người địch'],['shika_bind','Trói bóng khoá cổ'],['shika_grab','Bóng siết lấy cổ'],
+  ['shika_stab','Đâm sau lưng'],['shika_stab_hit','Mũi đâm trúng người địch'],
+  ['shika_bind','Trói bóng khoá cổ'],['shika_grab','Bóng siết lấy cổ'],
   ['shika_garden','Mở khu rừng nhà Nara'],
+
   ['suz_punch','Horikita đấm'],['suz_kick','Horikita đá'],['suz_block','Horikita đỡ đòn / Ayanokouji chắn thay'],
   ['suz_think','🎙 GIỌNG · Horikita tự hỏi bản thân (một câu duy nhất)'],
   ['suz_decide','🎙 GIỌNG · Horikita quyết định ĐÚNG (file dài: mỗi lần đọc tiếp một câu)'],
   ['suz_wrong','🎙 GIỌNG · Horikita quyết định SAI (file dài: mỗi lần đọc tiếp một câu)'],
   ['suz_hit','Quyết định đâm trúng địch'],
   ['suz_heal','Horikita hồi máu'],['suz_form2','Horikita đứng lên đánh trả'],['suz_form3','Horikita tự mình chiến đấu'],
-  ['aya_appear','Ayanokouji xuất hiện'],['aya_strike','Ayanokouji đột kích'],['aya_leave','Ayanokouji rời sàn']
+
+  ['aya_appear','Ayanokouji xuất hiện'],
+  ['aya_stand','🎙 GIỌNG · "Stand up and fight." (lúc anh bước ra chắn đòn)'],
+  ['aya_join','🎙 GIỌNG · Câu lúc anh vào sân sát cánh lần cuối'],
+  ['aya_strike','Ayanokouji đột kích'],
+  ['aya_bye','🎙 GIỌNG · "This is where I take my leave." (lúc anh rời sàn)'],
+  ['aya_leave','Ayanokouji rời sàn']
 ];
 const SFXBUF={};
 let AC=null, volume=.6, muted=false, lastSfx={};
@@ -869,6 +896,12 @@ function synth(name,c,g){
                       noise(c,g,{dur:.6,f0:400,f1:1800,vol:.1}); break;
     case 'suz_form3': [523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(c,g,{type:'triangle',f0:f,f1:f,dur:i===3?.8:.16,vol:.17,delay:i*.12}));
                       noise(c,g,{dur:1,f0:500,f1:2400,vol:.11}); break;
+    case 'aya_stand': [0,.34].forEach((d,i)=>tone(c,g,{type:'sine',f0:196,f1:196,dur:.26,vol:.16,delay:d}));
+                      tone(c,g,{type:'triangle',f0:392,f1:392,dur:.2,vol:.07,delay:.34}); break;
+    case 'aya_join':  [0,.3,.6].forEach((d,i)=>tone(c,g,{type:'sine',f0:185,f1:185,dur:.24,vol:.15,delay:d}));
+                      tone(c,g,{type:'triangle',f0:370,f1:294,dur:.4,vol:.08,delay:.62}); break;
+    case 'aya_bye':   [0,.3].forEach((d,i)=>tone(c,g,{type:'sine',f0:196-i*22,f1:196-i*22,dur:.28,vol:.15,delay:d}));
+                      tone(c,g,{type:'sine',f0:147,f1:110,dur:.5,vol:.1,delay:.6}); break;
     case 'aya_appear':tone(c,g,{type:'sine',f0:90,f1:225,dur:.7,vol:.24});
                       noise(c,g,{dur:.7,f0:300,f1:1600,vol:.14,q:.8}); break;
     case 'aya_strike':tone(c,g,{type:'sawtooth',f0:520,f1:120,dur:.24,vol:.26});
@@ -889,6 +922,8 @@ const SFX_MAXLEN={
   summon:SUMMON_CHARGE*RT,                      // viện binh hiện ra tới lúc bắn
   suz_think:SUZ_THINK_LIFE*RT,                  // câu tự hỏi tắt đúng lúc bong bóng tắt
   aya_leave:SUZ_BUBBLE*RT,
+  // ba ô giọng của Ayanokouji: mỗi câu cắt đúng bằng bong bóng đang treo câu đó
+  aya_stand:AYA_STAND_LIFE*RT, aya_join:AYA_JOIN_LIFE*RT, aya_bye:AYA_BYE_LIFE*RT,
   suz_form2:2.4, suz_form3:2.8
 };
 /* File dài thì đọc nối tiếp từng đoạn, hết file thì quay lại đầu. Mặc định mỗi đoạn
@@ -1001,7 +1036,14 @@ async function decodeInto(name,dataUrl){
 (function buildSfx(){
   const area=document.getElementById('sfxArea'); if(!area)return;
   const refs={};
+  let luoi=null, dau=true;                   // mỗi nhóm một tiêu đề + một lưới riêng
   SFX_EVENTS.forEach(([nm,label])=>{
+    const nhom=SFX_GROUPS[nm];
+    if(nhom||!luoi){
+      const t=document.createElement('div'); t.className='who'+(dau?' first':'');
+      t.textContent=nhom||'Khác'; area.appendChild(t); dau=false;
+      luoi=document.createElement('div'); luoi.className='slots'; area.appendChild(luoi);
+    }
     const wrap=document.createElement('div'); wrap.className='slotwrap';
     const el=document.createElement('label'); el.className='slot';
     const cap=document.createElement('span'); cap.textContent='♪ '+label;
@@ -1034,7 +1076,7 @@ async function decodeInto(name,dataUrl){
 
     wrap.appendChild(el); wrap.appendChild(vr);
     refs[nm]={el,cap,label,vr};
-    area.appendChild(wrap);
+    luoi.appendChild(wrap);
   });
   SFXREFS=refs;
   document.getElementById('sfxBalance').addEventListener('click',autoBalance);
@@ -2387,7 +2429,8 @@ function ayaShield(f){
   G.fx.push({type:'poof',x:f.ayaG.x,y:f.ayaG.y-18,life:.8,ml:.8});
   later(.5,()=>{
     if(G.over||!f.ayaG)return;
-    talk(f.ayaG.x, f.y-114, AYA_STAND, SUZ_BUBBLE*1.4, true);
+    sfx('aya_stand');                       // giọng đi cùng bong bóng, cắt đúng lúc nó tắt
+    talk(f.ayaG.x, f.y-114, AYA_STAND, AYA_STAND_LIFE, true);
   },true);
   say('Horikita loạng choạng — Ayanokouji bước ra, đứng chắn trước mặt cô.','s');
 }
@@ -2426,7 +2469,8 @@ function ayaJoin(f){
   G.callBanner={txt:'AYANOKOUJI JOINS',color:'#8FA6C8',life:CALL_BANNER_LIFE,ml:CALL_BANNER_LIFE};
   later(.45,()=>{
     if(G.over)return;
-    talk(px, py-124, AYA_LAST, 2.5, false);
+    sfx('aya_join');
+    talk(px, py-124, AYA_LAST, AYA_JOIN_LIFE, false);
   },true);
   later(1.55,()=>{
     if(G.over||!f.alive)return;
@@ -2554,7 +2598,8 @@ function ayaLeave(a){
   setPose(a,'leave',SUZ.ayaLeaveT);
   sfx('aya_leave');
   ring(a.x,a.y,110,'#8FA6C8',.5);
-  talk(a.x, a.y-118, AYA_BYE, 2.2, true);
+  sfx('aya_bye');
+  talk(a.x, a.y-118, AYA_BYE, AYA_BYE_LIFE, true);
   a.exitX=(a.x<W/2)?-70:W+70;
   say('Ayanokouji cạn máu — anh không gục xuống, anh chào Horikita rồi rời sàn.','s');
 }
