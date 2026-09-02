@@ -28,6 +28,11 @@ window.__suzStrike=suzStrike; window.__aimTarget=aimTarget; window.__suzThink=su
 window.__SUZ_ASK=()=>SUZ_ASK;
 window.__suzDecisionHit=suzDecisionHit; window.__ayaStrike=ayaStrike; window.__suzHeal=suzHeal;
 window.__suzTier=suzTier; window.__SUZ_TIERS=SUZ_TIERS;
+window.__ayaGuardKick=ayaGuardKick; window.__ayaGuardKickHit=ayaGuardKickHit;
+window.__SETS=SETS; window.__getCtx=()=>ctx;
+/* pickLine() bốc lại cho tới khi ra chỉ số KHÁC lần trước, nên test ghim cứng Math.random
+   một hằng số là treo vòng lặp. Gọi cái này trước để lần bốc đầu chắc chắn ăn. */
+window.__resetLines=()=>{ lastDecision=-1; lastWrong=-1; };
 window.__DECISIONS=SUZ_DECISIONS; window.__WRONGS=SUZ_WRONG;
 `;
 
