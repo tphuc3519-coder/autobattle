@@ -310,16 +310,24 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
 
 **Ô dán ảnh riêng theo form.** Form 3 có `stand3` / `punch3` / `kick3` / `think3`; hai nhánh của
 chiêu 2 tách theo cả form lẫn kết quả: `right2` / `wrong2` (form 2) và `right3` / `wrong3`
-(form 3); trạng thái dưới 20% máu tách làm hai: `injured2` (form 1/2) và `injured3` (form 3).
-Nhãn trong `SETS` ghi rõ form cho khỏi lẫn — ô cũ cũng đổi nhãn theo: `idle` = "Thủ thế (form 2)",
-`punch`/`kick` = "(form 1/2)", `think` = "(form 2)", `decide` = "Ra quyết định (ô lùi chung)",
-`injured` = "Tơi tả <20% máu (ô lùi chung)". `sprite()` đổi ô theo form ngay chỗ đã đổi cho form 1;
-thiếu ảnh thì lùi về đúng ô cùng nghĩa của form 2, rồi mới tới ô lùi chung. Riêng `hurt` vẫn dùng
-chung cho mọi form (form 1 vẫn mượn `block`).
+(form 3); trạng thái dưới 20% máu tách làm hai: `injured2` (form 1/2) và `injured3` (form 3);
+dưới 20% máu mà đang **đứng suy nghĩ** thì có ô riêng nữa: `thinkHurt2` (form 2) và `thinkHurt3`
+(form 3). Nhãn trong `SETS` ghi rõ form cho khỏi lẫn — ô cũ cũng đổi nhãn theo:
+`idle` = "Thủ thế (form 2)", `punch`/`kick` = "(form 1/2)", `think` = "(form 2)".
+`sprite()` đổi ô theo form ngay chỗ đã đổi cho form 1; thiếu ảnh thì lùi về đúng ô cùng nghĩa của
+form 2 (ô tơi tả-suy nghĩ lùi về ô đứng nghĩ lành lặn). Riêng `hurt` vẫn dùng chung cho mọi form
+(form 1 vẫn mượn `block`).
 
-> **`decide` và `injured` không xoá đi.** `decide` vẫn là dáng lúc chốt mà không còn ai để nhắm
-> (`suzDecide` return sớm), `injured` vẫn là ô lùi của `injured2`/`injured3`; ai đã nạp ảnh vào
-> hai ô đó từ trước vẫn dùng được. Đổi tên hay bỏ ô là **xoá sạch ảnh người dùng đã nạp**.
+> **Hai ô "lùi chung" `decide` / `injured` đã BỎ.** Chúng không phải tư thế nào của cô: `decide`
+> chỉ là ô lùi của `right*`/`wrong*`, `injured` chỉ là ô lùi của `injured2`/`injured3` — mà bản
+> thân hai cặp kia đã lùi được về nhau, nên nạp ảnh vào ô chung chẳng thêm được gì. Người dùng
+> hỏi thẳng "ô lùi chung là gì", lúc đó cả hai đang trống, nên đổi chỗ đó thành `thinkHurt2` /
+> `thinkHurt3`. `decide` vẫn còn là **tư thế** (`suzDecide` return sớm khi không còn ai để nhắm)
+> nhưng không còn ô dán ảnh — nhánh lùi `pk==='decide'` trong `sprite()` giữ nguyên.
+>
+> Kèm theo đó là một **lỗi thật đã sửa**: `sprite()` bật cờ tơi tả bằng `set.injured` (ô vừa bỏ),
+> nên ai chỉ nạp `injured2`/`injured3` thì ảnh tơi tả **không bao giờ hiện**. Giờ cờ đọc
+> `injArr` = `injured3||injured2` theo form, mấy nhân vật kia vẫn đọc `injured` như cũ.
 
 Dáng vector đi kèm — tất cả đều **vẽ sau tóc**, vẽ trước thì hai lọn tóc dài che mất:
 - `stand3` đứng hẳn thế thủ như võ sĩ, khuỷu ép sát sườn, nắm đấm dẫn đường ngang cằm.
@@ -694,6 +702,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 | Cú cước chia tay đo ra 160 thay vì 150 | test cộng dồn mọi lượng máu địch mất, mà Horikita vẫn đấm 10 dmg ở form 1 | đo **cú sụt lớn nhất trong một nhịp**, đừng cộng dồn |
 | Test treo cứng, không lỗi không thoát | `pickLine()` bốc lại tới khi ra chỉ số **khác lần trước**, mà test ghim `Math.random` một hằng số nên vòng `do…while` không bao giờ ra | gọi `window.__resetLines()` (móc trong `probe.js`) trước mỗi lần ghim `Math.random` rồi mới gọi `suzDecide` — lần bốc đầu chắc chắn ăn, `pen` cũng thành số cố định để đo |
 | Cước chia tay của Ayanokouji thỉnh thoảng không gây dmg | rơi trúng 0.75 giây tự miễn thương của Sexy no Jutsu, `hurt()` trả false ngay từ đầu hàm | treo cú lao lại trước mặt địch cho tới khi hết miễn thương (`SUZ.guardKickWait` làm trần chờ), và sửa dòng nhật ký báo nhầm thành "bị né" |
+| Ảnh tơi tả của Horikita không hiện | `sprite()` bật cờ `inj` bằng `set.injured` — ô lùi chung, còn ô thật là `injured2`/`injured3` | cờ đọc `injArr` chọn theo form; bỏ luôn hai ô lùi chung khỏi bảng |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---

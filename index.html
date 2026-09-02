@@ -271,7 +271,7 @@ const SETS=[
   {key:'chichi', name:'ChiChi', poses:[['idle','Thủ thế'],['atk1','Đấm đá'],['atk2','Mắng'],['skill','Hăng máu'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc gọi)'],['call','Dáng gọi viện binh']]},
   {key:'tsubasa', name:'Ozora Tsubasa', poses:[['idle','Thủ thế'],['atk1','Sút bóng'],['bicycle','Overhead kick'],['atk2','Drive shot'],['wings','Đôi cánh đại bàng'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc kích hoạt nội tại)']]},
   {key:'shika', name:'Shikamaru', poses:[['idle','Thủ thế'],['lazy','Ngồi lười (đầu trận)'],['atk1','Phóng shuriken'],['stab','Đâm sau lưng'],['atk2','Kết ấn trói bóng'],['ulti','Mở lãnh địa'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
-  {key:'suzune', name:'Horikita Suzune', poses:[['idle','Thủ thế (form 2)'],['scared','Thủ thế sợ hãi (form 1)'],['stand3','Thủ thế (form 3)'],['block','Thủ chéo hai tay (chịu đòn)'],['punch','Đấm (form 1/2)'],['kick','Đá (form 1/2)'],['think','Đứng suy nghĩ (form 2)'],['punch3','Đấm (form 3)'],['kick3','Đá (form 3)'],['think3','Đứng suy nghĩ (form 3)'],['right2','Quyết định đúng (form 2)'],['wrong2','Quyết định sai (form 2)'],['right3','Quyết định đúng (form 3)'],['wrong3','Quyết định sai (form 3)'],['decide','Ra quyết định (ô lùi chung)'],['hurt','Trúng đòn'],['injured2','Tơi tả <20% máu (form 1/2)'],['injured3','Tơi tả <20% máu (form 3)'],['injured','Tơi tả <20% máu (ô lùi chung)']]},
+  {key:'suzune', name:'Horikita Suzune', poses:[['idle','Thủ thế (form 2)'],['scared','Thủ thế sợ hãi (form 1)'],['stand3','Thủ thế (form 3)'],['block','Thủ chéo hai tay (chịu đòn)'],['punch','Đấm (form 1/2)'],['kick','Đá (form 1/2)'],['think','Đứng suy nghĩ (form 2)'],['punch3','Đấm (form 3)'],['kick3','Đá (form 3)'],['think3','Đứng suy nghĩ (form 3)'],['right2','Quyết định đúng (form 2)'],['wrong2','Quyết định sai (form 2)'],['right3','Quyết định đúng (form 3)'],['wrong3','Quyết định sai (form 3)'],['hurt','Trúng đòn'],['injured2','Tơi tả <20% máu (form 1/2)'],['injured3','Tơi tả <20% máu (form 3)'],['thinkHurt2','Tơi tả khi đứng suy nghĩ (form 2)'],['thinkHurt3','Tơi tả khi đứng suy nghĩ (form 3)']]},
   {key:'ayanokouji', name:'Ayanokouji', poses:[['idle','Đứng'],['guard','Đỡ đòn thay Horikita'],['strike','Đòn đột kích'],['leave','Rời sàn đấu']]},
   {key:'nara', name:'Con nai nhà Nara', poses:[['idle','Đứng cạnh Shikamaru trong lãnh địa']]},
   {key:'garden', name:'Phong cảnh lãnh địa', poses:[['idle','Ảnh nền khu rừng nhà Nara']]},
@@ -3693,7 +3693,11 @@ function drawWings(x,y,scale,flap,col,alpha){
 function sprite(f){
   const set=SPR[f.key]||{};
   let pk=f.pose;
-  const inj = f.injured && set.injured && set.injured.length;
+  /* Horikita có bộ ô tơi tả riêng theo từng form nên không đọc ô 'injured' như mấy
+     nhân vật kia — đọc nhầm thì nạp ảnh vào injured2/injured3 vẫn không hiện. */
+  const injArr = f.key==='suzune' ? (f.form>=3 ? (set.injured3||set.injured2) : set.injured2)
+                                  : set.injured;
+  const inj = f.injured && injArr && injArr.length;
   // tơi tả: chỉ thay ảnh đứng / trúng đòn, còn ra chiêu vẫn chạy ảnh riêng
   if(inj && (pk==='idle'||pk==='hurt')) pk='injured';
   // lúc này: ảnh đứng đổi sang dáng có cánh
@@ -3709,7 +3713,7 @@ function sprite(f){
     if(pk==='idle') pk='stand3';
     else if(pk==='punch') pk='punch3';
     else if(pk==='kick') pk='kick3';
-    else if(pk==='think') pk='think3';
+    else if(pk==='think') pk=f.injured?'thinkHurt3':'think3';
     else if(pk==='right') pk='right3';
     else if(pk==='wrong') pk='wrong3';
     else if(pk==='injured') pk='injured3';
@@ -3718,6 +3722,7 @@ function sprite(f){
   else if(f.key==='suzune'){
     if(pk==='right') pk='right2';
     else if(pk==='wrong') pk='wrong2';
+    else if(pk==='think'&&f.injured) pk='thinkHurt2';
     else if(pk==='injured') pk='injured2';
   }
   let arr=set[pk];
@@ -3730,19 +3735,22 @@ function sprite(f){
     else if(pk==='stand3') arr=set.idle;
     else if(pk==='punch3') arr=set.punch||set.kick||set.atk1||set.idle;
     else if(pk==='kick3')  arr=set.kick||set.punch||set.atk1||set.idle;
-    else if(pk==='think3') arr=set.think||set.decide||set.idle;
-    else if(pk==='right2'||pk==='wrong2') arr=set.decide||set.think||set.idle;
-    else if(pk==='right3') arr=set.right2||set.decide||set.think||set.idle;
-    else if(pk==='wrong3') arr=set.wrong2||set.decide||set.think||set.idle;
-    else if(pk==='right'||pk==='wrong') arr=set.decide||set.think||set.idle;
-    // tơi tả: form 1/2 lùi về ô chung, form 3 lùi về ô form 1/2 rồi mới tới ô chung
-    else if(pk==='injured2') arr=set.injured||set.block||set.hurt||set.idle;
-    else if(pk==='injured3') arr=set.injured2||set.injured||set.hurt||set.idle;
+    else if(pk==='think3') arr=set.think||set.idle;
+    else if(pk==='right2'||pk==='wrong2') arr=set.think||set.idle;
+    else if(pk==='right3') arr=set.right2||set.think||set.idle;
+    else if(pk==='wrong3') arr=set.wrong2||set.think||set.idle;
+    else if(pk==='right'||pk==='wrong') arr=set.think||set.idle;
+    // tơi tả lúc đứng nghĩ: chưa nạp thì lùi về ô đứng nghĩ lành lặn rồi mới tới ô tơi tả
+    else if(pk==='thinkHurt2') arr=set.think||set.injured2||set.idle;
+    else if(pk==='thinkHurt3') arr=set.think3||set.thinkHurt2||set.think||set.injured3||set.injured2||set.idle;
+    // tơi tả: form 3 lùi về ô của form 1/2 rồi mới tới ô trúng đòn
+    else if(pk==='injured2') arr=set.block||set.hurt||set.idle;
+    else if(pk==='injured3') arr=set.injured2||set.hurt||set.idle;
     else if(pk==='block') arr=set.scared||set.hurt||set.idle;
     else if(pk==='punch') arr=set.kick||set.atk1||set.idle;
     else if(pk==='kick') arr=set.punch||set.atk1||set.idle;
-    else if(pk==='think') arr=set.decide||set.idle;
-    else if(pk==='decide') arr=set.think||set.idle;
+    else if(pk==='think') arr=set.idle;
+    else if(pk==='decide') arr=set.think||set.idle;   // 'decide' chỉ còn là TƯ THẾ, không còn ô dán ảnh
     else if(pk==='strike') arr=set.atk1||set.idle;
     else if(pk==='guard') arr=set.idle;
     else if(pk==='leave') arr=set.idle;
@@ -3751,7 +3759,7 @@ function sprite(f){
     else if(pk==='wounded') arr=set.injured||set.hurt||set.idle;
     else if(pk==='injured') arr=set.hurt||set.idle;
     // thiếu ảnh cho tư thế nào thì lùi về ảnh tơi tả, không lùi về ảnh nguyên vẹn
-    else arr=set[f.pose]||(inj?set.injured:null)||set.idle;
+    else arr=set[f.pose]||(inj?injArr:null)||set.idle;
   }
   if(!arr||!arr.length)return null;
   if(arr.length===1)return arr[0];
