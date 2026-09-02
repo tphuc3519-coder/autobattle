@@ -359,11 +359,55 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   ok(ally.hp > 0 && Math.abs(ally.hp - join.mongHp) <= 2, `mau anh bang 35% mau Horikita luc do (${ally.hp} vs ${join.mongHp})`);
   gan(ally.cast, 2, 0.001, 'Horikita duoc buff +100% toc ra chieu');
 
+  /* ---- khiêu khích: anh còn đứng đó thì mọi đòn của địch đều nhắm vào anh ---- */
+  await doc(() => {                                  // đẩy địch ra thật xa, ngoài tầm cận chiến
+    const G = window.__G(), e = G.fighters.find(x => x.key === 'kono');
+    const f = G.fighters.find(x => x.key === 'suzune');
+    e.x = 60; e.y = 60; f.x = 520; f.y = 900; e.stun = 0;
+  });
+  await doi(0.35);
+  const keo = await doc(() => {
+    const G = window.__G(), a = G.fighters.find(x => x.ally);
+    const e = G.fighters.find(x => x.key === 'kono');
+    const f = G.fighters.find(x => x.key === 'suzune');
+    // viện binh của địch (Goku / Gohan / phân thân) không có khiêu khích riêng: phải nhắm
+    // theo đúng người đang khiêu khích chủ của nó
+    const vien = { team: e.team, master: e, summon: true, alive: true, hp: 100, x: e.x, y: e.y };
+    return { tauntBy: !!a && G.fighters.find(x => x.key === 'kono').tauntBy === a,
+             nham: window.__aimTarget(e) === a,
+             vienNham: window.__aimTarget(vien) === a,
+             coNham: window.__aimTarget(f) === e,
+             xa: Math.round(Math.hypot(e.x - f.x, e.y - f.y)) };
+  });
+  ok(keo.tauntBy, `dich xa ${keo.xa}px van bi anh khieu khich (khong doi ap sat nua)`);
+  ok(keo.nham, 'moi don cua dich deu nham vao Ayanokouji chu khong vao Horikita');
+  ok(keo.vienNham, 'vien binh cua dich cung nham vao Ayanokouji');
+  ok(keo.coNham, 'Horikita van nham vao dich, khong bi anh keo nham');
+
+  /* ---- Sexy no Jutsu: anh miễn nhiễm hoàn toàn ---- */
+  const khoi = await doc(() => {
+    const G = window.__G(), a = G.fighters.find(x => x.ally);
+    const e = G.fighters.find(x => x.key === 'kono');
+    const f = G.fighters.find(x => x.key === 'suzune');
+    a.dots.length = 0; a.stun = 0; a.hp = a.maxHp;
+    f.dots.length = 0; f.stun = 0; f.ayaG = null;
+    a.x = e.x + 40; a.y = e.y + 20;                  // đứng ngay trong làn khói
+    f.x = e.x + 130; f.y = e.y + 90;                 // cô cũng đứng trong tầm khói
+    const truoc = a.hp;
+    window.__sexy(e, a);
+    return { dot: a.dots.length, stun: a.stun, mat: truoc - a.hp, coDot: f.dots.length };
+  });
+  ok(khoi.dot === 0, 'khoi hong khong bam duoc vao Ayanokouji (0 dot)');
+  gan(khoi.stun, 0, 0.001, 'Ayanokouji khong dung hinh du la nam');
+  gan(khoi.mat, 0, 0.001, 'Ayanokouji khong mat mot giot mau nao');
+  ok(khoi.coDot > 0, 'khoi hong van an vao Horikita nhu thuong');
+
   /* đòn đột kích: 40 dmg + choáng 1.25 giây người chơi */
   const dk = await doc(() => {
     const G = window.__G();
     const a = G.fighters.find(x => x.ally), e = G.fighters.find(x => x.key === 'kono');
     e.hp = e.maxHp; e.evade = 0; e.stun = 0; e.eagle = false; e.prewing = false; e.ccRes = 0;
+    e.invuln = 0;                                    // vừa tung Sexy no Jutsu xong nên còn miễn thương
     const truoc = e.hp;
     window.__ayaStrike ? window.__ayaStrike(a, e) : (a.strikeCd = 0);
     return { dmg: truoc - e.hp, stun: e.stun * window.__RT };
@@ -417,6 +461,12 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
              thoai: G.floats.some(fl => /my\s+own\s+goal/i.test(fl.txt || '')) };
   });
   ok(!f3.con, 'anh da di khoi san');
+  const het = await doc(() => {
+    const G = window.__G(), e = G.fighters.find(x => x.key === 'kono');
+    const f = G.fighters.find(x => x.key === 'suzune');
+    return { sach: !e.tauntBy, nham: window.__aimTarget(e) === f };
+  });
+  ok(het.sach && het.nham, 'anh di roi thi dich nham lai vao Horikita');
   ok(f3.form === 3, 'Horikita sang form 3');
   gan(f3.cast, 1, 0.001, 'buff toc ra chieu tat theo anh');
   gan(f3.hit, 20, 0.001, 'form 3: don tay len 20 dmg');
