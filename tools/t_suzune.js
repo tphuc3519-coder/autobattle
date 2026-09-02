@@ -308,6 +308,12 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
      `lan xuat hien thu 2 co o rieng ("${oTieng.appear2}")`);
   ok((oTieng.appear || '').includes('lần đầu'), `o cu ghi ro la lan dau ("${oTieng.appear}")`);
   ok(oTieng.alias2 === 'summon', `o lan 2 bo trong thi muon tieng dich chuyen cua vien binh ("${oTieng.alias2}")`);
+  /* hai lan xuat hien phai doc dung o cua minh — gop lai la hong ca y nghia cua viec tach o */
+  const goiTieng = await doc(() => ({ shield: window.__ayaShield.toString(),
+                                      join: window.__ayaJoin.toString() }));
+  ok(/sfx\('aya_appear'\)/.test(goiTieng.shield) && /sfx\('aya_appear2'\)/.test(goiTieng.join)
+     && !/sfx\('aya_appear'\)/.test(goiTieng.join),
+     'ayaShield() doc o aya_appear, ayaJoin() doc o aya_appear2');
   ok(oTieng.capStand > 0 && oTieng.capJoin > 0 && oTieng.capBye > 0,
      `ba o giong deu bi cat theo bong bong (${oTieng.capStand.toFixed(1)}s / ${oTieng.capJoin.toFixed(1)}s / ${oTieng.capBye.toFixed(1)}s)`);
   ok(oTieng.nhom === 'Ayanokouji', `bang tieng co khu rieng cho Ayanokouji ("${oTieng.nhom}")`);
