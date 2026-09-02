@@ -256,11 +256,18 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
 > (2 giây người chơi) để chuỗi phân cảnh không bao giờ kẹt lại. Đo được: 14/14 lần cú cước
 > ăn đủ 150 dmg, trước đó cứ 10 lần thì hụt 1.
 
-**Bốn ô dán ảnh riêng của form 3.** `stand3` / `punch3` / `kick3` / `think3` (nhãn trong `SETS`:
-"Thủ thế (form 3)", "Đấm (form 3)", "Đá (form 3)", "Đứng suy nghĩ (form 3)"). Bốn ô cũ đổi nhãn
-cho khỏi lẫn: `idle` = "Thủ thế (form 2)", `punch`/`kick` = "(form 1/2)", `think` = "(form 2)".
-`sprite()` đổi ô theo form ngay chỗ đã đổi cho form 1; thiếu ảnh thì lùi về đúng ô cùng nghĩa của
-form 2. Ô `decide` và `hurt`/`injured` vẫn dùng chung cho mọi form.
+**Ô dán ảnh riêng theo form.** Form 3 có `stand3` / `punch3` / `kick3` / `think3`; hai nhánh của
+chiêu 2 tách theo cả form lẫn kết quả: `right2` / `wrong2` (form 2) và `right3` / `wrong3`
+(form 3); trạng thái dưới 20% máu tách làm hai: `injured2` (form 1/2) và `injured3` (form 3).
+Nhãn trong `SETS` ghi rõ form cho khỏi lẫn — ô cũ cũng đổi nhãn theo: `idle` = "Thủ thế (form 2)",
+`punch`/`kick` = "(form 1/2)", `think` = "(form 2)", `decide` = "Ra quyết định (ô lùi chung)",
+`injured` = "Tơi tả <20% máu (ô lùi chung)". `sprite()` đổi ô theo form ngay chỗ đã đổi cho form 1;
+thiếu ảnh thì lùi về đúng ô cùng nghĩa của form 2, rồi mới tới ô lùi chung. Riêng `hurt` vẫn dùng
+chung cho mọi form (form 1 vẫn mượn `block`).
+
+> **`decide` và `injured` không xoá đi.** `decide` vẫn là dáng lúc chốt mà không còn ai để nhắm
+> (`suzDecide` return sớm), `injured` vẫn là ô lùi của `injured2`/`injured3`; ai đã nạp ảnh vào
+> hai ô đó từ trước vẫn dùng được. Đổi tên hay bỏ ô là **xoá sạch ảnh người dùng đã nạp**.
 
 Dáng vector đi kèm — tất cả đều **vẽ sau tóc**, vẽ trước thì hai lọn tóc dài che mất:
 - `stand3` đứng hẳn thế thủ như võ sĩ, khuỷu ép sát sườn, nắm đấm dẫn đường ngang cằm.
@@ -268,10 +275,27 @@ Dáng vector đi kèm — tất cả đều **vẽ sau tóc**, vẽ trước th�
 - `kick3` đá **cao hơn** (góc `1.5` thay vì `1.15`), tay sau thủ cằm, tay trước chìa ra giữ đà.
 - `think3` một tay ngang bụng chống lấy khuỷu, tay kia đỡ cằm — nghĩ mà vẫn đứng vững, khác hẳn
   kiểu ôm lấy mình của form 1 và kiểu buông thõng của form 2.
+- `right*` chốt đúng: tay chìa thẳng đẩy câu trả lời vào mặt địch, dấu `!` vàng trên đầu.
+- `wrong*` chốt trật: tay ra được nửa đường thì khựng lại rồi xuôi xuống, **dấu gạch chéo hồng**
+  vẽ bằng nét chứ không phải chữ (font headless hay thiếu ký tự ✕).
+- Bản form 3 của cả `right`/`wrong` giữ nguyên nắm đấm ở quai hàm; form 2 thì buông tay sau.
+- `injured3` nặng hơn `injured2`: ngoài hai vệt xước và băng vai chung, form 3 có thêm vệt trên
+  gò má, băng quấn hai cánh tay và gấu váy rách một góc. Góc rách tô bằng tông sẫm hơn váy chứ
+  **không mượn màu nền** — nền sàn đổi màu theo phân cảnh.
+
+> **Dáng phải đặt trong từng nhánh của `suzDecide`, không đặt một lần ở đầu hàm** — lúc vào hàm
+> còn chưa bốc ra đúng hay sai. Nhánh sai mà điểm lớp thủng xuống âm thì `setPose(f,'hurt')` đè
+> lên `'wrong'`, đó là cố ý: cô đang tự ăn sát thương.
 
 Nắm đấm thủ sát quai hàm dùng chung qua hàm `thuCam()`, đoạn chi vẽ qua `tay()` — cả hai khai ở
 đầu khối vẽ của Horikita. `t_suzune.js` chấm bằng cách vẽ từng dáng ra canvas phụ rồi **đếm điểm
-ảnh lệch** giữa form 2 và form 3, nên xoá mất một nhánh vẽ là test đổ ngay.
+ảnh lệch** giữa form 2 và form 3 (thủ thế 387 · đấm 197 · đá 476 · nghĩ 427 · đúng 194 · sai 200 ·
+tơi tả 441), nên xoá mất một nhánh vẽ là test đổ ngay. Riêng trạng thái tơi tả còn so **lành lặn
+với tơi tả trong cùng một form** để chắc là có vẽ thêm dấu vết: form 1/2 được 113 điểm, form 3 được
+209 — luật là form 3 phải nặng hơn.
+
+> **Đếm điểm ảnh phải soi cả bốn kênh RGBA.** Chỉ soi kênh alpha thì mấy vết thương vẽ đè lên thân
+> người (vốn đã đục sẵn) gần như không đổi gì — đo ra đúng 3 điểm và test báo hỏng oan.
 
 **Chuyển form 2 → 3**: anh về 0 máu thì **KHÔNG chết**. `a.alive` vẫn `true`, không có
 `finish()`, không có hiệu ứng gục. Anh nói *"This is where I take my leave."* rồi **đi bộ ra
@@ -557,6 +581,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 | Chữ thò ra ngoài khung sàn | mọi float vẽ đúng tại `f.x/f.y`, không ai đo bề ngang chữ | đo khối chữ trước rồi kéo vào **khung đang nhìn thấy** (`W/z × H/z` quanh tâm camera), không phải cả sàn — lúc phân cảnh zoom, chỗ nằm trong sàn vẫn có thể nằm ngoài màn hình. Dòng trạng thái dưới thanh máu cũng canh theo bề ngang của chính nó |
 | Mũi tên bong bóng quyết định tụt vào trong khung | lấy `min(bw/2,bh/2)` làm mép | tính giao điểm của tia với hình chữ nhật |
 | Cú cước chia tay đo ra 160 thay vì 150 | test cộng dồn mọi lượng máu địch mất, mà Horikita vẫn đấm 10 dmg ở form 1 | đo **cú sụt lớn nhất trong một nhịp**, đừng cộng dồn |
+| Test treo cứng, không lỗi không thoát | `pickLine()` bốc lại tới khi ra chỉ số **khác lần trước**, mà test ghim `Math.random` một hằng số nên vòng `do…while` không bao giờ ra | gọi `window.__resetLines()` (móc trong `probe.js`) trước mỗi lần ghim `Math.random` rồi mới gọi `suzDecide` — lần bốc đầu chắc chắn ăn, `pen` cũng thành số cố định để đo |
 | Cước chia tay của Ayanokouji thỉnh thoảng không gây dmg | rơi trúng 0.75 giây tự miễn thương của Sexy no Jutsu, `hurt()` trả false ngay từ đầu hàm | treo cú lao lại trước mặt địch cho tới khi hết miễn thương (`SUZ.guardKickWait` làm trần chờ), và sửa dòng nhật ký báo nhầm thành "bị né" |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 

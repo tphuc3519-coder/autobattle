@@ -262,7 +262,7 @@ const SETS=[
   {key:'chichi', name:'ChiChi', poses:[['idle','Thủ thế'],['atk1','Đấm đá'],['atk2','Mắng'],['skill','Hăng máu'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc gọi)'],['call','Dáng gọi viện binh']]},
   {key:'tsubasa', name:'Ozora Tsubasa', poses:[['idle','Thủ thế'],['atk1','Sút bóng'],['bicycle','Overhead kick'],['atk2','Drive shot'],['wings','Đôi cánh đại bàng'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc kích hoạt nội tại)']]},
   {key:'shika', name:'Shikamaru', poses:[['idle','Thủ thế'],['lazy','Ngồi lười (đầu trận)'],['atk1','Phóng shuriken'],['stab','Đâm sau lưng'],['atk2','Kết ấn trói bóng'],['ulti','Mở lãnh địa'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
-  {key:'suzune', name:'Horikita Suzune', poses:[['idle','Thủ thế (form 2)'],['scared','Thủ thế sợ hãi (form 1)'],['stand3','Thủ thế (form 3)'],['block','Thủ chéo hai tay (chịu đòn)'],['punch','Đấm (form 1/2)'],['kick','Đá (form 1/2)'],['think','Đứng suy nghĩ (form 2)'],['punch3','Đấm (form 3)'],['kick3','Đá (form 3)'],['think3','Đứng suy nghĩ (form 3)'],['decide','Ra quyết định'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
+  {key:'suzune', name:'Horikita Suzune', poses:[['idle','Thủ thế (form 2)'],['scared','Thủ thế sợ hãi (form 1)'],['stand3','Thủ thế (form 3)'],['block','Thủ chéo hai tay (chịu đòn)'],['punch','Đấm (form 1/2)'],['kick','Đá (form 1/2)'],['think','Đứng suy nghĩ (form 2)'],['punch3','Đấm (form 3)'],['kick3','Đá (form 3)'],['think3','Đứng suy nghĩ (form 3)'],['right2','Quyết định đúng (form 2)'],['wrong2','Quyết định sai (form 2)'],['right3','Quyết định đúng (form 3)'],['wrong3','Quyết định sai (form 3)'],['decide','Ra quyết định (ô lùi chung)'],['hurt','Trúng đòn'],['injured2','Tơi tả <20% máu (form 1/2)'],['injured3','Tơi tả <20% máu (form 3)'],['injured','Tơi tả <20% máu (ô lùi chung)']]},
   {key:'ayanokouji', name:'Ayanokouji', poses:[['idle','Đứng'],['guard','Đỡ đòn thay Horikita'],['strike','Đòn đột kích'],['leave','Rời sàn đấu']]},
   {key:'nara', name:'Con nai nhà Nara', poses:[['idle','Đứng cạnh Shikamaru trong lãnh địa']]},
   {key:'garden', name:'Phong cảnh lãnh địa', poses:[['idle','Ảnh nền khu rừng nhà Nara']]},
@@ -2283,6 +2283,7 @@ function suzDecide(f,e){
     const dmg=Math.round(rnd(T.decLo,T.decHi));
     const tier=suzTier(f,dmg);
     const a=Math.atan2(bodyCY(e)-bodyCY(f), e.x-f.x);
+    setPose(f,'right',cm(.5));               // dáng chốt đúng: tay chìa thẳng đẩy câu trả lời đi
     aim(f,e,1.1);
     sfx('suz_decide');
     ring(f.x,f.y,84,tier.mau,.38);
@@ -2295,6 +2296,7 @@ function suzDecide(f,e){
     // quyết định sai: mất điểm, và nếu điểm thủng xuống âm thì cô tự gánh đúng phần âm đó
     const txt=pickLine(SUZ_WRONG,'w');
     const pen=Math.round(rnd(SUZ.decPenLo,SUZ.decPenHi));
+    setPose(f,'wrong',cm(.5));               // dáng chốt trật: tay khựng lại nửa chừng
     sfx('suz_wrong');
     talk(f.x, f.y-102, txt, SUZ_BUBBLE, false);
     G.floats.push({x:f.x+38,y:f.y-58,txt:'−'+pen+' CP',color:'#FF9AAE',life:1.1,ml:1.1,sc:.58});
@@ -3257,6 +3259,7 @@ function vector(f){
     const f3=(f.form>=3);                                 // form 3 có bộ dáng riêng: đứng, đấm, đá, nghĩ
     const st3=(f3&&f.pose==='idle');                      // form 3: đứng hẳn thế thủ, vẽ sau tóc
     const th3=(f3&&f.pose==='think');                     // form 3: nghĩ mà vẫn đứng vững, tay đỡ cằm
+    const dOk=(f.pose==='right'), dBad=(f.pose==='wrong'); // chốt xong: đúng thì đẩy tay ra, sai thì khựng
     const kick=(f.pose==='kick'), punch=(f.pose==='punch');
     const kk=(kick||punch)?Math.sin(clamp(f.poseT||0,0,1)*Math.PI):0;
     /* vẽ một đoạn chi từ (x1,y1) tới (x2,y2) — mấy dáng có tay gập khuỷu đều xài */
@@ -3285,7 +3288,7 @@ function vector(f){
     ctx.beginPath(); ctx.moveTo(0,y-5); ctx.lineTo(-6,y-9); ctx.lineTo(-6,y-1); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.moveTo(0,y-5); ctx.lineTo(6,y-9);  ctx.lineTo(6,y-1);  ctx.closePath(); ctx.fill();
     ctx.fillStyle='#F5CFA8';
-    if(scared||st3||th3||(f3&&kick)){ /* mấy dáng có bàn tay đưa lên mặt đều vẽ sau cùng, xem cuối khối */ }
+    if(scared||st3||th3||dOk||dBad||(f3&&kick)){ /* mấy dáng có tay riêng đều vẽ sau cùng, xem cuối khối */ }
     else if(punch){
       ctx.fillRect(11,y-7,11+kk*14,7);                      // nắm đấm phóng ra
       if(!f3) ctx.fillRect(-18,y-2,7,12);                   // form 1/2 buông tay còn lại; form 3 thủ ngay cằm
@@ -3351,6 +3354,18 @@ function vector(f){
       tay(10,y+1,12,y-4,8,blazer);                         // cánh tay phải dựng lên từ khuỷu
       tay(12,y-4,10,y-10+th,7,'#F5CFA8');
       ctx.fillStyle='#F5CFA8'; ctx.beginPath(); ctx.arc(10,y-10+th,3.8,0,7); ctx.fill();  // bàn tay đỡ cằm
+    }else if(dOk){
+      // Chốt đúng: cả người dồn tới trước, tay chìa thẳng đẩy câu trả lời vào mặt đối phương.
+      if(f3) thuCam(0);                                    // form 3 vẫn giữ nắm đấm ở quai hàm
+      else { ctx.fillStyle='#F5CFA8'; ctx.fillRect(-18,y-3,7,12); }
+      tay(9,y-7,22,y-9,7,'#F5CFA8');
+      ctx.fillStyle='#F5CFA8'; ctx.beginPath(); ctx.arc(23,y-9,4.2,0,7); ctx.fill();
+    }else if(dBad){
+      // Chốt trật: tay đưa ra được nửa đường thì khựng lại rồi xuôi xuống.
+      if(f3) thuCam(0);
+      else { ctx.fillStyle='#F5CFA8'; ctx.fillRect(-18,y-1,7,12); }
+      tay(9,y-6,15,y+2,7,'#F5CFA8');
+      ctx.fillStyle='#F5CFA8'; ctx.beginPath(); ctx.arc(16,y+3,3.8,0,7); ctx.fill();
     }else if(f3&&punch){
       thuCam(0);                                           // đấm: tay còn lại không buông xuôi nữa
     }else if(f3&&kick){
@@ -3359,11 +3374,17 @@ function vector(f){
       tay(9,y-7,18+kk*4,y-9-kk*3,7,'#F5CFA8');
       ctx.fillStyle='#F5CFA8'; ctx.beginPath(); ctx.arc(19+kk*4,y-10-kk*3,3.8,0,7); ctx.fill();
     }
-    if(f.pose==='think'||f.pose==='decide'){                // dấu hỏi lơ lửng lúc cân nhắc
+    if(f.pose==='think'||f.pose==='decide'||dOk){           // dấu hỏi lúc cân nhắc, dấu than lúc chốt
       ctx.save();
-      ctx.fillStyle=f.pose==='decide'?'#FFE100':'#BFE4FF';
+      ctx.fillStyle=f.pose==='think'?'#BFE4FF':'#FFE100';
       ctx.font='900 16px "Be Vietnam Pro",sans-serif'; ctx.textAlign='center';
-      ctx.fillText(f.pose==='decide'?'!':'?', 17, y-34+Math.sin(G.t*5)*2);
+      ctx.fillText(f.pose==='think'?'?':'!', 17, y-34+Math.sin(G.t*5)*2);
+      ctx.restore();
+    }else if(dBad){                                        // chốt trật: một dấu gạch chéo hồng nhạt
+      const yy=y-34+Math.sin(G.t*5)*2;
+      ctx.save(); ctx.strokeStyle='#FF8FA3'; ctx.lineWidth=2.4; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(13,yy-7); ctx.lineTo(21,yy+1); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(21,yy-7); ctx.lineTo(13,yy+1); ctx.stroke();
       ctx.restore();
     }
     if(f.injured){
@@ -3371,6 +3392,15 @@ function vector(f){
       ctx.beginPath(); ctx.moveTo(-8,y+1); ctx.lineTo(-1,y+8); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(3,y-3); ctx.lineTo(9,y+3); ctx.stroke();
       ctx.fillStyle='#E8E2F0'; ctx.fillRect(-11,y-16,8,3);
+      if(f3){
+        // Form 3 tơi tả: không còn ai đỡ nên vết tích nặng hơn — thêm một vệt trên gò má,
+        // băng quấn cả cánh tay trước, và gấu váy rách một góc.
+        ctx.strokeStyle='#8E1023'; ctx.lineWidth=1.8;
+        ctx.beginPath(); ctx.moveTo(6,y-24); ctx.lineTo(11,y-20); ctx.stroke();
+        ctx.fillStyle='#E8E2F0'; ctx.fillRect(9,y-4,7,3); ctx.fillRect(-13,y-9,7,3);
+        ctx.fillStyle='#2B3552';                            // tông sẫm hơn váy, không mượn màu nền
+        ctx.beginPath(); ctx.moveTo(10,y+16); ctx.lineTo(4,y+16); ctx.lineTo(8,y+9); ctx.closePath(); ctx.fill();
+      }
     }
   }else if(f.key==='ayanokouji'){
     const guard=(f.pose==='guard'), strike=(f.pose==='strike');
@@ -3502,7 +3532,8 @@ function sprite(f){
   // Horikita form 1: đứng thì sợ hãi, trúng đòn thì thủ chéo hai tay
   if(f.key==='suzune' && f.form<2){
     if(pk==='idle') pk='scared';
-    else if(pk==='hurt'||pk==='injured') pk='block';
+    else if(pk==='hurt') pk='block';
+    else if(pk==='injured') pk='injured2';
   }
   // Horikita form 3: đứng một mình nên có bộ ô riêng, không dùng chung với form 2
   else if(f.key==='suzune' && f.form>=3){
@@ -3510,6 +3541,15 @@ function sprite(f){
     else if(pk==='punch') pk='punch3';
     else if(pk==='kick') pk='kick3';
     else if(pk==='think') pk='think3';
+    else if(pk==='right') pk='right3';
+    else if(pk==='wrong') pk='wrong3';
+    else if(pk==='injured') pk='injured3';
+  }
+  // form 2: chỉ hai ô quyết định là có bản riêng, còn lại dùng ô gốc
+  else if(f.key==='suzune'){
+    if(pk==='right') pk='right2';
+    else if(pk==='wrong') pk='wrong2';
+    else if(pk==='injured') pk='injured2';
   }
   let arr=set[pk];
   if(!arr||!arr.length){
@@ -3522,6 +3562,13 @@ function sprite(f){
     else if(pk==='punch3') arr=set.punch||set.kick||set.atk1||set.idle;
     else if(pk==='kick3')  arr=set.kick||set.punch||set.atk1||set.idle;
     else if(pk==='think3') arr=set.think||set.decide||set.idle;
+    else if(pk==='right2'||pk==='wrong2') arr=set.decide||set.think||set.idle;
+    else if(pk==='right3') arr=set.right2||set.decide||set.think||set.idle;
+    else if(pk==='wrong3') arr=set.wrong2||set.decide||set.think||set.idle;
+    else if(pk==='right'||pk==='wrong') arr=set.decide||set.think||set.idle;
+    // tơi tả: form 1/2 lùi về ô chung, form 3 lùi về ô form 1/2 rồi mới tới ô chung
+    else if(pk==='injured2') arr=set.injured||set.block||set.hurt||set.idle;
+    else if(pk==='injured3') arr=set.injured2||set.injured||set.hurt||set.idle;
     else if(pk==='block') arr=set.scared||set.hurt||set.idle;
     else if(pk==='punch') arr=set.kick||set.atk1||set.idle;
     else if(pk==='kick') arr=set.punch||set.atk1||set.idle;
@@ -3539,7 +3586,7 @@ function sprite(f){
   }
   if(!arr||!arr.length)return null;
   if(arr.length===1)return arr[0];
-  const fps=(pk==='idle'||pk==='injured')?6:11;
+  const fps=(pk==='idle'||pk==='injured'||pk==='injured2'||pk==='injured3'||pk==='stand3')?6:11;
   return arr[Math.floor(G.t*fps)%arr.length];
 }
 function drawFighter(f){
