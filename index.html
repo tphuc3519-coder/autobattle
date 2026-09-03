@@ -284,6 +284,11 @@ const SETS=[
 ];
 const SLOT={};
 
+/* Tầm tay của mọi đòn cận chiến, cộng vào r+r (26+26) => 76px. Nới rộng hơn mốc cũ 16
+   vì hai người giờ đứng cách nhau MELEE_MIN~MELEE_MAX (58~64) chứ không dán vào nhau;
+   không nới thì nhịp ra đòn tụt hẳn một phần tư. */
+const MELEE_REACH=24;
+
 /* ---------- bảng nhân vật chơi được ---------- */
 const PICK={a:'kono',b:'chichi'};
 const GOAL_MAX=5;                 // số goal cần để mở Victory Twin Shot
@@ -351,7 +356,7 @@ const SUZ={
   guardKickSpd:820,          // tốc độ cú lao trước khi tung cước
   guardKickWait:gs(2),       // địch đang miễn thương thì giữ chân anh lại tối đa bấy nhiêu giây người chơi
   atkCd:cm(.25)*2.5,         // đánh chậm hơn ChiChi đúng 2.5 lần
-  atkRange:16,               // tầm tay, cộng vào r+r như ChiChi
+  atkRange:24,               // tầm tay, cộng vào r+r như ChiChi (= MELEE_REACH)
   decThink:gs(1.5),          // bất động suy nghĩ 1.5 giây người chơi
   decCd:gs(3.5),             // chốt xong thì 3.5 giây người chơi nữa mới nghĩ tiếp
   decSpd:1150,               // bong bóng quyết định phóng đi siêu nhanh
@@ -425,7 +430,7 @@ const CHARS={
     skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in, guaranteed crit, CC immune &amp; −30% dmg while dashing`,'<b>Passive</b> every 5 hits +5% crit','<b>Below 20% HP</b> calls Goku / Gohan'],
     init(f){ f.cds={s1:0,s2:cm(3)}; f.dashCd=CHICHI_DASH_CD; f.hits=0; f.critBonus=0; },
     think(f,e,d,auto){
-      if(f.cds.s1<=0&&d<f.r+e.r+16&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
+      if(f.cds.s1<=0&&d<f.r+e.r+MELEE_REACH&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
       if(f.cds.s2<=0&&(auto?d<460:keys['k'])){ f.cds.s2=cm(7); scold(f,e); }
       // Đồng hồ riêng, không nằm trong cds: đây là nhịp cố định mỗi 10 giây người chơi nên
       // không bị hiệu ứng kiệt sức kéo dài, cũng không kèm điều kiện khoảng cách
@@ -1360,6 +1365,8 @@ function mk(o){
     vx:0, vy:0, recoil:0, rdx:0, rdy:0, dustT:0, ghostT:0,
     ax:1, ay:0, lunge:0, invuln:0, dvx:0, dvy:0, moveAmt:0, leanS:0,
     wx:W/2, wy:H/2, wt:0, engage:true, engT:2,
+    orbR:0, orbT:0, jx:0, jy:0, jt:0,   // quãng cách lượn + hướng nhiễu, đổi liên tục
+
     goals:0, vuln:0, exhaust:0, prewing:false, prewingDone:false, prewingA:0,
     chakra:0, lazy:false, awake:false, evade:0, outCut:0, weak:false,
     bind:null, bindGuard:false, bindPending:false, lazyTalk:0, wakeT:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
@@ -1636,7 +1643,7 @@ function sexy(k,e){
 }
 function rasengan(k,e){
   k.rage=0; k.dash={t:1.9,hit:false,tgt:e}; setPose(k,'ulti',2); if(e) aim(k,e,1.6); sfx('rasengan');
-  G.floats.push({x:k.x,y:k.y-104,txt:'RASENGAN!',color:k.color,life:1.6,ml:1.6,banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.07,.07)});
+  G.floats.push({x:k.x,y:k.y-104,txt:'RASENGAN!',color:k.color,life:1.6,ml:1.6,banner:true,bubble:true,gold:true,big:true,focus:true,tilt:rnd(-.07,.07)});
   ring(k.x,k.y,70,'#63B4FF',.5);
   say('RASENGAN! Konohamaru lao tới.','g');
 }
@@ -2816,6 +2823,12 @@ function ayaGuardEnd(f){
 }
 
 /* ---------- AI ---------- */
+/* Cận chiến thì đứng cách nhau một quãng chứ đừng dán vào người ta. Tầm tay của cả
+   ChiChi lẫn Horikita là r+r+16 = 68, nên điểm lượn phải nằm DƯỚI mốc đó mới ra đòn
+   được; MELEE_GAP là quãng hở tối thiểu giữa hai thân người, dùng chung cho cú đẩy
+   tách thân trong step(). */
+const MELEE_MIN=58, MELEE_MAX=64, MELEE_BAND=4, MELEE_GAP=6;
+const orbWant=f=>f.orbR||((MELEE_MIN+MELEE_MAX)/2);
 const isPlayer=f=>!!G&&((mode==='p1'&&f===G.k)||(mode==='p2'&&f===G.c));
 function playerVec(){
   let x=0,y=0;
@@ -2852,12 +2865,14 @@ function aiVec(f,e){
   // Horikita form 1: đã dám vung tay nhưng vẫn nhát — nhích vào đủ tầm rồi lùi ngay,
   // nên cô đánh được nhưng không bao giờ trụ lại ăn đòn như một nhân vật cận chiến thật.
   if(f.key==='suzune'&&f.form<2){
-    // Điểm lượn phải nằm HẲN trong tầm tay (r+r+16 = 68), nếu không cô cứ đứng ngay
-    // mép tầm và phần lớn lượt hồi chiêu rơi vào lúc vừa lùi ra — nhìn như không đánh.
-    if(d>50){ x+=ux*.85; y+=uy*.85; }
-    else    { x-=ux*.75; y-=uy*.75; }
-    x+=wxu*.5-uy*f.strafe*.5;
-    y+=wyu*.5+ux*f.strafe*.5;
+    // Điểm lượn phải nằm HẲN trong tầm tay (r+r+MELEE_REACH = 76), nếu không cô cứ đứng
+    // ngay mép tầm và phần lớn lượt hồi chiêu rơi vào lúc vừa lùi ra — nhìn như không đánh.
+    // Nhát hơn người khác nên lượn ở rìa ngoài quãng cách chung, vào tới nơi là lùi ngay.
+    const want=orbWant(f)+3;
+    if(d>want){ x+=ux*.85; y+=uy*.85; }
+    else      { x-=ux*.75; y-=uy*.75; }
+    x+=wxu*.5-uy*f.strafe*.5+f.jx*.3;
+    y+=wyu*.5+ux*f.strafe*.5+f.jy*.3;
     const dv0=dodgeVec(f); x+=dv0.x*1.6; y+=dv0.y*1.6;
     return {x,y};
   }
@@ -2865,12 +2880,18 @@ function aiVec(f,e){
     const want=f.want||215;
     if(d<want-45){ x-=ux*1.15; y-=uy*1.15; }
     else if(d>want+65){ x+=ux*.75; y+=uy*.75; }
-    x+=wxu*.85 - uy*f.strafe*.4;
-    y+=wyu*.85 + ux*f.strafe*.4;
+    x+=wxu*.85 - uy*f.strafe*.4 + f.jx*.25;
+    y+=wyu*.85 + ux*f.strafe*.4 + f.jy*.25;
   }else{
     if(f.engage){
-      if(d>52){ x+=ux; y+=uy; } else { x+=-uy*f.strafe*.9; y+=ux*f.strafe*.9; }
-      x+=wxu*.35; y+=wyu*.35;
+      // quãng cách muốn giữ đổi ngẫu nhiên (MELEE_MIN~MELEE_MAX): xa quá thì tiến, sát
+      // quá thì giãn ra, vừa tầm thì lượn vòng — nên hai người không bao giờ đứng chết dí
+      // vào nhau mà vẫn luôn nằm trong tầm tay.
+      const want=orbWant(f);
+      if(d>want+MELEE_BAND){ x+=ux; y+=uy; }
+      else if(d<want-MELEE_BAND){ x-=ux*.9; y-=uy*.9; }
+      else { x+=-uy*f.strafe*.95; y+=ux*f.strafe*.95; }
+      x+=wxu*.35+f.jx*.34; y+=wyu*.35+f.jy*.34;
     }else{
       x+=wxu*1.15 - ux*.4;
       y+=wyu*1.15 - uy*.4;
@@ -2931,6 +2952,9 @@ function step(dt){
     if(f.lazy) f.pose='lazy';
     if(f.bind) f.pose='atk2';
     f.strafeT-=dt; if(f.strafeT<=0){ f.strafe=chance(.5)?1:-1; f.strafeT=rnd(.9,2.2); }
+    // quãng cách lượn và hướng nhiễu: đổi liên tục cho bước chân trông ngẫu nhiên
+    f.orbT-=dt; if(f.orbT<=0){ f.orbR=rnd(MELEE_MIN,MELEE_MAX); f.orbT=rnd(1.1,2.4); }
+    f.jt-=dt;   if(f.jt<=0){ const ja=rnd(0,Math.PI*2); f.jx=Math.cos(ja); f.jy=Math.sin(ja); f.jt=rnd(.45,1.1); }
     if(f.recoil>0) f.recoil=Math.max(0,f.recoil-dt*4);
     if(f.lunge>0) f.lunge=Math.max(0,f.lunge-dt*3.2);
     if(f.invuln>0) f.invuln=Math.max(0,f.invuln-dt);
@@ -3117,7 +3141,7 @@ function step(dt){
         sfx('goal');
         ring(f.x,f.y,105,'#9AE6C4',.42);
         G.floats.push({x:f.x,y:f.y-126,txt:'PRE-WINGS OF THE EAGLE',color:'#9AE6C4',
-          life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.05,.05)});
+          life:1.7,ml:1.7,banner:true,gold:true,focus:true,tilt:rnd(-.05,.05)});
         G.floats.push({x:f.x,y:f.y-104,txt:`−35% DMG TAKEN · +50% CAST · ${Math.round((1-PREWING_STUN)*100)}% STUN RESIST`,
           color:'#CFF5E4',life:1.7,ml:1.7,banner:true,sc:.62});
         say('Tsubasa nghiến răng đứng dậy — Pre-Wings: chịu đòn tốt hơn, ra chiêu nhanh hơn, khó bị choáng hơn.','g');
@@ -3160,6 +3184,23 @@ function step(dt){
         G.fighters.splice(i,1);
       }
     }
+  }
+
+  /* Đẩy tách thân: hai người có thanh máu không bao giờ được chồng lên nhau. Mốc là
+     r+r+MELEE_GAP, tức 58px — vẫn nằm gọn trong tầm tay 68 nên đòn cận chiến không hụt.
+     Đang lao (dash) thì miễn, nếu không cú lao chẳng bao giờ tới nơi; viện binh thuần
+     (Goku / Gohan / phân thân) đứng yên tại chỗ nên chỉ người kia dịch ra. */
+  for(let i=0;i<G.fighters.length;i++)for(let j=i+1;j<G.fighters.length;j++){
+    const a=G.fighters[i], b=G.fighters[j];
+    if(!a||!b||!a.alive||!b.alive)continue;
+    if(a.dash||b.dash||a.leaving>0||b.leaving>0)continue;
+    const wa=(a.summon&&!a.ally)?0:1, wb=(b.summon&&!b.ally)?0:1;
+    if(!wa&&!wb)continue;
+    const dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy)||.01, need=a.r+b.r+MELEE_GAP;
+    if(d>=need)continue;
+    const ov=need-d, ux=dx/d, uy=dy/d, sh=ov/(wa+wb);
+    if(wa){ a.x=clamp(a.x-ux*sh,PAD,W-PAD); a.y=clamp(a.y-uy*sh,PAD+50,H-PAD-10); }
+    if(wb){ b.x=clamp(b.x+ux*sh,PAD,W-PAD); b.y=clamp(b.y+uy*sh,PAD+50,H-PAD-10); }
   }
 
   for(let i=G.waves.length-1;i>=0;i--){
@@ -4690,6 +4731,15 @@ function versusBox(){
   ctx.fillStyle=c.color; ctx.fillText(n2,bx+17+w1+wm,cy);
   ctx.textAlign='center'; ctx.textBaseline='alphabetic';
 }
+/* Tên chiêu và tên hiệu ứng nổi lềnh khềnh khắp sàn thì rối mắt, nên thu nhỏ lại:
+   băng-rôn cỡ đầy đủ còn 74%, mấy dòng phụ vốn đã nhỏ sẵn (có sc, không big) chỉ bớt
+   nhẹ 15% cho khỏi mờ tịt. Chiêu "focus" — ultimate, biến thân, phân cảnh — gắn cờ
+   focus:true và giữ nguyên cỡ chữ to. Số sát thương và bong bóng thoại không đụng tới. */
+const NAME_FULL=.74, NAME_SMALL=.85;
+function floatScale(f){
+  if(f.focus) return f.sc||1;
+  return (f.sc||1)*((f.sc&&f.sc<1&&!f.big)?NAME_SMALL:NAME_FULL);
+}
 /* Một dòng chữ nổi: số sát thương, băng-rôn tên chiêu, hay bong bóng thoại.
    Tách ra khỏi draw() để vẽ được làm nhiều lượt — xem chatFloat(). */
 function drawFloat(f){
@@ -4707,7 +4757,7 @@ function drawFloat(f){
     ctx.font=(f.big?'900 23px':'800 16px')+' "Be Vietnam Pro",sans-serif';
     bh=(f.big?40:30)+(lns.length-1)*(f.big?26:19);
   }else if(f.banner){
-    const px=(f.big?27:21)*(f.sc||1);
+    const px=(f.big?27:21)*floatScale(f);
     ctx.font=`900 ${Math.round(px)}px "Be Vietnam Pro",sans-serif`;
     bh=px+12;
   }else if(f.big){
@@ -4756,17 +4806,17 @@ function drawFloat(f){
     ls.forEach((L,i)=>ctx.fillText(L,0,y0+i*lh));
   }else if(f.banner){
     ctx.rotate((f.tilt||0)+Math.sin(age*22)*.04);
-    ctx.font=`900 ${Math.round((f.big?27:21)*(f.sc||1))}px "Be Vietnam Pro",sans-serif`;
+    const k=floatScale(f);                    // chữ nhỏ lại thì viền cũng phải mỏng theo
+    ctx.font=`900 ${Math.round((f.big?27:21)*k)}px "Be Vietnam Pro",sans-serif`;
     if(f.gold){
-      const k=(f.sc||1);
       ctx.shadowColor='rgba(255,197,66,.85)'; ctx.shadowBlur=14*k;
       ctx.lineWidth=11*k; ctx.strokeStyle='#000'; ctx.strokeText(f.txt,0,0);
       ctx.shadowBlur=0;
       ctx.lineWidth=6*k; ctx.strokeStyle='#FFC542'; ctx.strokeText(f.txt,0,0);
       ctx.lineWidth=2*k; ctx.strokeStyle='#FFF3C4'; ctx.strokeText(f.txt,0,0);
     }else{
-      ctx.lineWidth=7; ctx.strokeStyle='#000'; ctx.strokeText(f.txt,0,0);
-      ctx.lineWidth=3; ctx.strokeStyle='#fff'; ctx.strokeText(f.txt,0,0);
+      ctx.lineWidth=7*k; ctx.strokeStyle='#000'; ctx.strokeText(f.txt,0,0);
+      ctx.lineWidth=3*k; ctx.strokeStyle='#fff'; ctx.strokeText(f.txt,0,0);
     }
     ctx.fillStyle=f.color; ctx.fillText(f.txt,0,0);
   }else if(f.big){
