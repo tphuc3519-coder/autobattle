@@ -29,7 +29,7 @@ File dài ~4100 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên --
 | `state` | `mk()`, `mkChar()`, `foeOf()`, `newGame()`, `later()`, `pop()`, `setPose()` |
 | `damage` | `stunFx()`, `tryEvade()`, **`hurt()`**, `counters()`, `finish()` |
 | `Konohamaru` / `ChiChi` / `Shikamaru` / `Ozora Tsubasa` / `Horikita Suzune` | thân các chiêu thức |
-| `AI` | `aiVec()`, `dodgeVec()`, `playerVec()` |
+| `AI` | `MELEE_MIN/MAX/BAND/GAP`, `orbWant()`, `aiVec()`, `dodgeVec()`, `playerVec()` |
 | `step` | một hàm to — toàn bộ mô phỏng một bước 1/120 giây |
 | `draw` | `vector()`, `sprite()`, `drawFighter()`, `drawGarden()`, `drawForestGrip()`, `bombAt()`, `tendril()`, phân cảnh, băng-rôn |
 | `loop` / `ghi hình sàn đấu` / `màn chọn nhân vật` | vòng `requestAnimationFrame`, quay video (`recFrame()` dựng khung dọc 9:16), dựng thẻ `.cTile` |
@@ -189,11 +189,13 @@ chiêu; form 1 nhân thêm `f1Slow = 1.6` nữa. **Hồi chiêu phải đọc qu
 > kịp đỡ đòn, `suzCp()` sẽ gọi `ayaJoin()` lúc cô còn chưa qua form 2 — vỡ cả mạch truyện.
 > Muốn đổi thì sửa `SUZ.f1`.
 
-> **Điểm lượn của AI form 1 phải nằm hẳn trong tầm tay** (`d > 50` thì tiến, dưới thì lùi;
-> tầm tay là `r+r+16 = 68`). Để mốc sát mép tầm thì phần lớn lượt hồi chiêu rơi đúng lúc cô
-> vừa lùi ra, nhìn như không thèm đánh. Đo được: gặp địch cận chiến cô ra đủ 7 đòn trong 14
-> giây trong trận (đúng trần lý thuyết 14/1.8); gặp địch đánh xa thì ít hơn hẳn vì bị kéo
-> giãn — đó là chuyện thường của cận chiến, ChiChi cũng vậy.
+> **Điểm lượn của AI form 1 phải nằm hẳn trong tầm tay** (`orbWant(f)+3` thì tiến, dưới thì
+> lùi; tầm tay là `r+r+MELEE_REACH = 76`). Để mốc sát mép tầm thì phần lớn lượt hồi chiêu rơi
+> đúng lúc cô vừa lùi ra, nhìn như không thèm đánh. Đo được: gặp địch cận chiến cô ra đủ 7 đòn
+> trong 14 giây trong trận (đúng trần lý thuyết 14/1.8); gặp địch đánh xa thì ít hơn hẳn vì bị
+> kéo giãn — đó là chuyện thường của cận chiến, ChiChi cũng vậy.
+> *(Mốc cũ là hằng số `d > 50` khi tầm tay còn 68; giờ đọc qua `orbWant()` để đi chung với
+> quãng cách cận chiến ở mục 2b — ghim số cứng thì cô đánh nhau với cú đẩy tách thân.)*
 
 **Chiêu 2 — Decision Making**. Vòng đời một quyết định: đứng **bất động 1.5 giây**
 (`decThink`, qua `f.decT` + `f.lock`) → chốt và phóng đi **siêu nhanh** (`decSpd = 1150`) →
@@ -383,6 +385,43 @@ quyết định đúng, +5% tỉ lệ hồi máu, +6% lượng hồi máu, +8% m
 
 ---
 
+## 2b. Khoảng cách khi cận chiến — đừng dán vào nhau
+
+Người dùng bác bản cũ: hai người cận chiến đứng chồng hẳn lên nhau, nhìn chỉ thấy một
+hình. Nguyên nhân: AI cận chiến chỉ tiến khi `d > 52` (đúng bằng `r+r`), nên hai người
+đều dí tới sát rồi đứng lì đó, mà **không có gì cản hai thân người xuyên qua nhau**.
+
+Ba thứ khai ở đầu khu `AI`, sửa số thì sửa ở đây:
+
+| Hằng | Là gì |
+|---|---|
+| `MELEE_MIN` / `MELEE_MAX` = 58 / 64 | quãng cách AI cận chiến muốn giữ; mỗi người bốc lại một con số trong khoảng này sau mỗi 1.1~2.4 giây (`f.orbR` / `f.orbT`) |
+| `MELEE_BAND` = 4 | vùng chết quanh con số đó: xa hơn thì tiến, gần hơn thì **giãn ra**, còn ở giữa thì lượn vòng |
+| `MELEE_GAP` = 6 | quãng hở tối thiểu giữa hai thân người, dùng cho cú đẩy tách thân trong `step()` |
+
+- **Cú đẩy tách thân** nằm trong `step()`, ngay trước vòng xử lý `G.waves`: duyệt mọi cặp
+  trong `G.fighters`, chồng nhau thì đẩy hai người ra cho đủ `a.r+b.r+MELEE_GAP` = 58px.
+  Miễn cho ai **đang lao** (`dash`) — không thì cú lao không bao giờ tới nơi — và cho ai
+  đang rời sàn. **Viện binh thuần** (`summon && !ally`: Goku / Gohan / phân thân) đứng yên
+  tại chỗ nên chỉ người kia dịch ra.
+- **Tầm tay nới theo**: `MELEE_REACH = 24` (cũ 16), tức `r+r+24 = 76`. `SUZ.atkRange` phải
+  bằng đúng con số đó. Không nới thì nhịp ra đòn tụt hẳn một phần tư — đo được 62 → 48 đòn
+  trong 15 giây trong trận; nới rồi thì về đúng 60 → 60.
+- **Bước chân ngẫu nhiên**: mỗi người có thêm một hướng nhiễu `f.jx/f.jy` bốc lại sau mỗi
+  0.45~1.1 giây, cộng vào vector đi của cả cận chiến lẫn đánh xa. Cùng với `f.strafe` sẵn có
+  thì hai người lượn quanh nhau chứ không đứng chết một chỗ.
+
+Đo được (trung vị khoảng cách giữa hai người, 25 giây trong trận):
+
+| Cặp | Cũ | Mới |
+|---|---|---|
+| ChiChi vs ChiChi | 38.6 · 69% thời gian dưới 52px | 58.1 · **0%** dưới 52px |
+| ChiChi vs Horikita | 51.2 · 63% dưới 52px | 58.8 · **0%** dưới 52px |
+| Konohamaru vs ChiChi | 64.2 · 36% dưới 52px | 75.2 · **0%** dưới 52px |
+
+Con số dưới 52 còn sót lại chỉ xuất hiện lúc ai đó **đang lao** (Flying Kick, cú phóng của
+Decision Making) — đó là phần được miễn, không phải lỗi.
+
 ## 3. Lãnh địa Nara — người dùng muốn gì và không muốn gì
 
 - **KHÔNG vẽ tay cả khung cảnh lãnh địa.** Người dùng chỉ cần một **ô để dán ảnh nền**
@@ -506,6 +545,28 @@ kín câu thoại. **Người dùng chốt: lời thoại được ưu tiên, hi
 Kiểm bằng `node tools/t_bubble.js`: đặt câu thoại và băng-rôn tên chiêu chồng đúng lên nhau
 rồi **đếm điểm ảnh** giữa chỗ chồng — nền trắng phải chiếm >50%, viền vàng phải là 0%. Bản
 cũ đo ra 35% vàng và test đổ đúng 5 mục.
+
+## 6c. Cỡ chữ hiệu ứng — nhỏ lại, trừ chiêu focus
+
+Người dùng bác bản cũ: tên chiêu và tên hiệu ứng nổi lềnh khềnh khắp sàn, "nhìn rối mắt
+quá". `drawFloat()` vì vậy nhân thêm một hệ số qua `floatScale(f)`:
+
+| Loại | Hệ số | Ví dụ |
+|---|---|---|
+| có cờ `focus:true` | **1** (giữ nguyên cỡ to) | `RASENGAN!`, `PRE-WINGS OF THE EAGLE` |
+| băng-rôn cỡ đầy đủ (`big`, hoặc không có `sc`) | `NAME_FULL = .74` | `FLYING KICK!`, `SHADOW STAB!`, `CRITICAL HIT!`, `EXHAUSTED …` |
+| dòng phụ vốn đã nhỏ sẵn (`sc` < 1, không `big`) | `NAME_SMALL = .85` | `DODGE`, `BLOCKED`, `GOAL 3/5` |
+
+- Hệ số ăn vào **cả bề dày viền** (`lineWidth`), không thì chữ nhỏ mà viền vẫn dày, nhìn
+  bết lại thành một cục.
+- **Số sát thương và bong bóng thoại không đụng tới** — người dùng chỉ chê tên chiêu / tên
+  hiệu ứng; chữ nói mà nhỏ đi thì đọc không kịp.
+- **Băng-rôn giữa màn** (`G.callBanner`: NARA CLAN FOREST, TWIN SHOT!!, WINGS OF THE EAGLE,
+  GOKU!!, AYANOKOUJI…) đi đường riêng `drawCallBanner()`, **không** qua `floatScale()` —
+  đó vốn là mấy cú focus nên phải to.
+- Vì vậy chỉ có đúng hai chỗ cần cờ `focus:true`: `RASENGAN!` và `PRE-WINGS OF THE EAGLE` —
+  hai cú không có băng-rôn giữa màn đi kèm. Thêm chiêu focus mới thì gắn cờ, đừng nống
+  `NAME_FULL` lên.
 
 ---
 
@@ -709,7 +770,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 
 ## 10. Quy trình git
 
-- Nhánh làm việc: `claude/ayanokouji-audio-split-boxes-dqcy9e`. **Không đẩy sang nhánh khác.**
+- Nhánh làm việc: `claude/combat-spacing-ui-redesign-wnldeq`. **Không đẩy sang nhánh khác.**
 - `git push -u origin <nhánh>`; lỗi mạng thì thử lại 4 lần, giãn 2s/4s/8s/16s.
 - Người dùng thường merge rất nhanh rồi hỏi luôn "pr?" / "merge đâu" — làm xong một việc thì
   **mở PR ngay**. Nếu PR trước đã merge thì mở PR mới, đừng chồng lên nhánh đã merge.
