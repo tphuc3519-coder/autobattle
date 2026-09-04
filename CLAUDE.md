@@ -401,15 +401,15 @@ nhịp** — họ đứng nhìn chứ chưa được đánh. Hết ba dáng thì
 > lý do anh không bay lúc màn hình còn đứng ở "PRESS START". Đổi thanh tốc độ thì 1.5 giây
 > thật cũng đổi theo, đúng như mọi hằng số khác trong game.
 
-**Nội tại — Ginyu's Aura.** Mỗi `GN.auraCd = gs(12)` aura phủ kín sàn một lần, bốc 50/50:
+**Nội tại — Ginyu's Aura.** Aura phủ kín sàn một lần rồi **nghỉ `GN.auraCd = gs(18)`**, bốc 50/50:
 
 | Nhánh | Địch chịu | Ginyu vào thế |
 |---|---|---|
 | ngơ ngác (`gnDaze`, `GN.dazeT = gs(8)`) | −90% tốc chạy, −50% tốc ra chiêu | **hưng phấn** `gnState='atk'` |
 | sôi máu (`gnRage`, `GN.rageT = gs(6)`) | +50% tốc chạy, +30% tốc ra chiêu | **thăm dò** `gnState='def'` |
 
-- **Hưng phấn** (`GN.atk`, `gs(8)`): +75% dmg gây ra, **+50% dmg phải chịu — nhân sau mọi
-  lớp phòng thủ**, +30% thời gian dính khống chế, +50% tốc ra chiêu, +60% tốc chạy. Bao
+- **Hưng phấn** (`GN.atk`, `gs(8)`): +50% dmg gây ra, **+50% dmg phải chịu — nhân sau mọi
+  lớp phòng thủ**, +40% thời gian dính khống chế, +50% tốc ra chiêu, +60% tốc chạy. Bao
   quanh anh là **luồng khí tím** kiểu Dragon Ball (`gnAuraDraw`).
 - **Thăm dò** (`GN.def`, `gs(10)`): −60% dmg nhận, +40% kháng hiệu ứng, đổi lại −40% dmg
   gây ra và −40% tốc ra chiêu. Vỏ khí xanh mỏng hơn hẳn.
@@ -417,16 +417,25 @@ nhịp** — họ đứng nhìn chứ chưa được đánh. Hết ba dáng thì
   ứng gì — `gnCrowd() >= 3` (đếm bằng đúng cờ `summon && !ally` mà `drawBars()` dùng, nên
   Goku / Gohan / phân thân không tính, còn Ayanokouji thì có).
 
+> **Hồi chiêu của aura KHÔNG cộng dồn với quãng đang vận thế đứng.** `ginyuTick()` `return`
+> sớm suốt lúc `f.gnState` còn — đồng hồ `f.gnAura` đứng yên hẳn — rồi nạp lại đủ `auraCd`
+> đúng lúc thế đứng hết. Nghĩa là nhịp thật giữa hai lần aura là **hết thế đứng rồi mới đếm
+> 18 giây người chơi**, chứ không phải 18 giây tính từ lúc aura nổ.
+> *(Người dùng nói "cooldown 18s… aura xong thì 20s sau mới hồi tiếp" — hai con số lệch nhau
+> 2 giây. Tôi lấy **18** vì đó là con số nêu thẳng ra làm hằng số; muốn đúng 20 thì sửa
+> `GN.auraCd = gs(20)`, cơ chế không phải đụng tới.)*
+
 **Bốn chiêu:**
 - **1 · Basic** — đấm hoặc đá, `GN.hitDmg = 35`, hồi chiêu `cm(GN.atkCd)` = `cm(.22)`, tức
   nhanh hơn ChiChi (`cm(.25)`) một nhịp. 25% kèm choáng `gs(.75)`.
-- **2 · Ginyu's Beam** — mỗi `gs(8)` bắn **6 luồng khí tím**, mỗi luồng 35 dmg, choáng
+- **2 · Ginyu's Beam** — mỗi `gs(10)` bắn **6 luồng khí tím**, mỗi luồng **25 dmg**, choáng
   `gs(1)` và **hất lùi 340** (Twin Shot của Tsubasa mới 260 — người dùng muốn đẩy xa hơn).
-  Bay `420` (Masenko `330`) nhưng **độ lệch tỉ lệ thuận với khoảng cách**
-  (`GN.beamSpread * d/GN.beamFar`), nên xa thì tản rộng. **Trúng đủ 3 luồng** thì dính
-  *Worn Out*: −60% tốc chạy, −40% tốc ra chiêu, −25% dmg trong `gs(7)`. Đếm bằng
-  `t.gnBeamHits`, đặt lại 0 ở đầu mỗi loạt.
-- **3 · Ginyu's Flash** — đứng trụ gồng `gs(1.75)` (`gnFlash.ph='charge'`, `f.lock`), rồi
+  Bay `560` và ra dồn dập (`beamGap .11`) — **bắn từa lưa chứ không ngắm**: độ lệch
+  `beamSpreadNear + (beamSpread−beamSpreadNear)·d/beamFar` = **lệch sẵn 0.22 rad ngay lúc
+  sát mặt** rồi toác tới 0.95 rad khi đứng xa. Đo được: trung bình 0.19 rad ở 60px và
+  0.45 rad ở 430px. **Trúng đủ 3 luồng** thì dính *Worn Out*: −60% tốc chạy, −40% tốc ra
+  chiêu, −25% dmg trong `gs(7)`. Đếm bằng `t.gnBeamHits`, đặt lại 0 ở đầu mỗi loạt.
+- **3 · Ginyu's Flash** — hồi chiêu `gs(17)`, đứng trụ gồng `gs(1.75)` (`gnFlash.ph='charge'`, `f.lock`), rồi
   nối **một luồng sáng tím LIỀN MẠCH** từ anh sang địch: to như Kamehameha nhưng vẽ theo lối
   dải bóng của Shikamaru (`drawGinyuFlash()`, gọi **sau** khi vẽ nhân vật, cạnh
   `drawBindShadow()`). 100 dmg, choáng `gs(3.5)`, **hết choáng mới tới** quãng −80% tốc chạy
@@ -939,8 +948,10 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
   (`ginyu_force`, `ginyu_change`) đang chờ người dùng thu file. Quãng bay vào sân cố tình
   để đúng **1.5 giây thật ở thanh tốc độ gốc** để người dùng canh tiếng — đổi thanh tốc độ
   thì con số đó đổi theo, đây không phải lỗi.
-- **Cân bằng của Ginyu chưa ai chỉnh.** Mọi con số là do người dùng đọc ra, tôi khai đúng
-  như vậy; đo thử thì anh thắng khá đậm (ví dụ vs ChiChi còn ~700 máu). Muốn hạ thì sửa
-  `GN.hitDmg` / `GN.atk` chứ đừng đụng vào cơ chế.
+- **Đã hạ sát thương một vòng theo yêu cầu**: hưng phấn +75%→+50% dmg (khống chế +30%→+40%),
+  beam 35→25 dmg và hồi chiêu `gs(8)`→`gs(10)`, flash `gs(14)`→`gs(17)`, aura `gs(12)`→`gs(18)`
+  và không cộng dồn với thế đứng. **Chiêu 1 vẫn 35 dmg và flash vẫn 100 dmg** — người dùng
+  chưa nêu số mới cho hai chỗ đó nên tôi không tự đặt; muốn hạ tiếp thì sửa `GN.hitDmg` /
+  `GN.flashDmg`.
 - Ô tiếng của Horikita/Ayanokouji mới chỉ có tiếng tự tạo trong `synth()`; hai ô đọc nối tiếp
   (`suz_decide`, `suz_wrong`) đang chờ người dùng thu file TTS theo `SUZ_DECISIONS` / `SUZ_WRONG`.

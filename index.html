@@ -421,21 +421,24 @@ const AYA_STAND_LIFE=SUZ_BUBBLE*1.4, AYA_JOIN_LIFE=2.5, AYA_BYE_LIFE=2.2;
 const GN={
   flyT:gs(1.5),              // bấm Bắt đầu là bay vào sân, đúng 1.5 giây người chơi
   danceT:gs(2.4),            // ba dáng Ginyu Force chạy liên tục rồi mới toả aura
-  auraCd:gs(12),             // nhịp toả aura, cũng là hồi chiêu của "trạng thái chiến đấu"
+  /* Hồi chiêu của aura KHÔNG cộng dồn với quãng đang vận thế đứng: aura nổ ra, Ginyu
+     vận hết thế hưng phấn hay thăm dò, XONG rồi đồng hồ 18 giây mới bắt đầu chạy. */
+  auraCd:gs(18),
   /* Aura phủ kín sàn: 50% làm địch ngơ ngác (có lợi cho Ginyu), 50% làm địch sôi máu */
   dazeT:gs(8),  dazeMove:.10, dazeCast:.50,
   rageT:gs(6),  rageMove:1.50, rageCast:1.30,
   /* Địch ngơ ngác -> Ginyu hưng phấn; địch sôi máu -> Ginyu lùi về thăm dò */
-  atk:{t:gs(8),  dmg:1.75, take:1.50, cc:1.30, cast:1.50, move:1.60},
+  atk:{t:gs(8),  dmg:1.50, take:1.50, cc:1.40, cast:1.50, move:1.60},
   def:{t:gs(10), take:.40,  ccRes:.40, dmg:.60,  cast:.60},
   /* Chiêu 1 — đấm/đá, nhanh hơn ChiChi (cm(.25)) một nhịp và nặng đòn hơn hẳn */
   atkCd:.22, hitDmg:35, hitStun:gs(.75), hitStunOdds:.25,
-  /* Chiêu 2 — Ginyu Beam: sáu luồng khí tím, bay nhanh hơn Masenko, càng xa càng lệch */
-  beamCd:gs(8), beamN:6, beamDmg:35, beamSpd:420, beamGap:.16,
-  beamStun:gs(1), beamKb:340, beamSpread:.42, beamFar:460,
+  /* Chiêu 2 — Ginyu Beam: sáu luồng khí tím bắn từa lưa. Bay rất nhanh, ra dồn dập, và
+     lệch sẵn một góc ngay cả lúc sát mặt (beamSpreadNear) rồi toác hẳn ra khi đứng xa. */
+  beamCd:gs(10), beamN:6, beamDmg:25, beamSpd:560, beamGap:.11,
+  beamStun:gs(1), beamKb:340, beamSpread:.95, beamSpreadNear:.22, beamFar:460,
   tiredHits:3, tiredT:gs(7), tiredMove:.40, tiredCast:.60, tiredDmg:.75,
   /* Chiêu 3 — Ginyu Flash: gồng 1.75 giây rồi nối một luồng sáng tím liền mạch */
-  flashCd:gs(14), flashCharge:gs(1.75), flashHold:gs(.6),
+  flashCd:gs(17), flashCharge:gs(1.75), flashHold:gs(.6),
   flashDmg:100, flashStun:gs(3.5), flashSlowT:gs(5), flashMove:.20, flashCast:.75,
   /* Chiêu 4 — CHANGE!!! Tia sáng phóng ra từ MIỆNG, càng gần càng dễ trúng nhưng
      gần nhất cũng không bao giờ chắc ăn, xa nhất chỉ còn 18%. */
@@ -578,7 +581,7 @@ const CHARS={
     role:'melee', speed:104, dodge:.7, male:true,
     skills:[
       `<b>Entrance</b> He does not start on the arena — he flies in over ${rts(GN.flyT)}s, lands, runs the three Ginyu Force poses and yells "${GN_SHOUT}" while the foe can only stand and watch`,
-      `<b>Passive · Ginyu's Aura</b> every ${rts(GN.auraCd)}s the aura floods the arena — <b>50%</b> the foe is caught off guard (−${Math.round((1-GN.dazeMove)*100)}% move, −${Math.round((1-GN.dazeCast)*100)}% cast for ${rts(GN.dazeT)}s), <b>50%</b> the foe's blood boils instead (+${Math.round((GN.rageMove-1)*100)}% move, +${Math.round((GN.rageCast-1)*100)}% cast for ${rts(GN.rageT)}s)`,
+      `<b>Passive · Ginyu's Aura</b> the aura floods the arena: <b>50%</b> the foe is caught off guard (−${Math.round((1-GN.dazeMove)*100)}% move, −${Math.round((1-GN.dazeCast)*100)}% cast for ${rts(GN.dazeT)}s), <b>50%</b> the foe's blood boils instead (+${Math.round((GN.rageMove-1)*100)}% move, +${Math.round((GN.rageCast-1)*100)}% cast for ${rts(GN.rageT)}s) · the ${rts(GN.auraCd)}s cooldown only starts once his stance has run out — the two never overlap`,
       `<b>Passive · Battle Stance</b> foe caught off guard ⇒ Ginyu goes <b>excited</b> for ${rts(GN.atk.t)}s: +${Math.round((GN.atk.dmg-1)*100)}% damage dealt, +${Math.round((GN.atk.cast-1)*100)}% cast, +${Math.round((GN.atk.move-1)*100)}% move — but +${Math.round((GN.atk.take-1)*100)}% damage taken (straight through his defence) and +${Math.round((GN.atk.cc-1)*100)}% longer crowd control`,
       `<b>Passive · Probing Stance</b> foe's blood boils ⇒ Ginyu goes <b>defensive</b> for ${rts(GN.def.t)}s: −${Math.round((1-GN.def.take)*100)}% damage taken, +${Math.round(GN.def.ccRes*100)}% CC resist, but −${Math.round((1-GN.def.dmg)*100)}% damage dealt and −${Math.round((1-GN.def.cast)*100)}% cast speed · with <b>three or more fighters</b> on the field he always takes this stance`,
       `<b>1</b> Punch &amp; Kick — ${GN.hitDmg} dmg, a shade faster than ChiChi, ${Math.round(GN.hitStunOdds*100)}% to stun ${rts(GN.hitStun)}s`,
@@ -3077,13 +3080,18 @@ function ginyuTick(f,dt){
   if(f.gnPanic&&f.pose==='idle'){ f.pose='panic'; f.poseT=0; }
   // hoán đổi thân xác / hoảng loạn thì nội tại aura tắt hẳn: lúc đó anh còn hồn vía đâu
   if(f.swapAs||f.gnPanic||f.gnChange) return;
+  /* Đang vận thế đứng thì đồng hồ aura ĐỨNG YÊN — hai quãng không cộng dồn vào nhau.
+     Vận xong mới nạp lại đủ auraCd, nên khoảng nghỉ thật sự giữa hai lần aura là
+     "hết thế đứng rồi mới đếm 18 giây". */
   if(f.gnState){
     f.gnStateT-=dt;
     if(f.gnStateT<=0){
       f.gnState=null; f.gnStateT=0;
+      f.gnAura=GN.auraCd;
       G.floats.push({x:f.x,y:f.y-104,txt:'BACK TO NORMAL',color:'#C9A0FF',
         life:1.1,ml:1.1,banner:true,sc:.6});
     }
+    return;
   }
   f.gnAura-=dt;
   if(f.gnAura<=0) ginyuAura(f);
@@ -3150,8 +3158,8 @@ function ginyuBeam(f,e){
     const tg=aimTarget(f)||e;
     if(!tg||!tg.alive)return;
     const d=dist(f,tg);
-    // càng xa càng lệch: sát mặt thì gần như chuẩn, hết sàn thì tản rộng hẳn
-    const sp=GN.beamSpread*clamp(d/GN.beamFar,0,1);
+    // sát mặt đã lệch sẵn một góc, càng xa càng toác — bắn từa lưa chứ không ngắm
+    const sp=GN.beamSpreadNear+(GN.beamSpread-GN.beamSpreadNear)*clamp(d/GN.beamFar,0,1);
     const a=Math.atan2(tg.y-f.y,tg.x-f.x)+rnd(-sp,sp);
     if(Math.abs(Math.cos(a))>.12) f.face=Math.cos(a)>=0?1:-1;
     f.ax=Math.cos(a); f.ay=Math.sin(a); f.lunge=Math.max(f.lunge,.55);

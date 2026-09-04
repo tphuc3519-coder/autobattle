@@ -120,9 +120,9 @@ async function waitGame(page, fnBody, limit) {
       g.gnState = null; g.gnStateT = 0; window.__gnStatus(g, 0);
       return { a, d, GN: { atk: GN.atk, def: GN.def } };
     });
-    ok('thế hưng phấn: +75% dmg, +50% dmg nhận, choáng dài thêm 30%',
-      Math.abs(mult.a.dmg - 1.75) < .001 && Math.abs(mult.a.take - 1.5) < .001 &&
-      Math.abs(mult.a.stun - 1.3) < .001 && Math.abs(mult.a.move - 1.6) < .001 &&
+    ok('thế hưng phấn: +50% dmg, +50% dmg nhận, choáng dài thêm 40%',
+      Math.abs(mult.a.dmg - 1.5) < .001 && Math.abs(mult.a.take - 1.5) < .001 &&
+      Math.abs(mult.a.stun - 1.4) < .001 && Math.abs(mult.a.move - 1.6) < .001 &&
       Math.abs(mult.a.cast - 1.5) < .001,
       `dmg ${mult.a.dmg} · nhận ${mult.a.take} · choáng 1s -> ${mult.a.stun}s · chạy ${mult.a.move} · cast ${mult.a.cast}`);
     ok('thế thăm dò: chỉ ăn 40% dmg, kháng 40% hiệu ứng, đánh và ra chiêu còn 60%',
@@ -157,6 +157,8 @@ async function waitGame(page, fnBody, limit) {
     ok('Ginyu Beam bắn đúng 6 luồng khí', beam.total === 6, `đếm được ${beam.total}`);
     ok('luồng khí đẩy lùi xa hơn cú sút của Tsubasa (260)', beam.kb > 260, `beamKb=${beam.kb}`);
     ok('luồng khí bay nhanh hơn Masenko (330)', beam.spd > 330, `beamSpd=${beam.spd}`);
+    ok('mỗi luồng khí gây 25 dmg', beam.dmg === 25, `${beam.dmg} dmg`);
+
 
     // đủ ba luồng trúng thì dính mệt mỏi
     const tired = await page.evaluate(() => {
@@ -222,6 +224,68 @@ async function waitGame(page, fnBody, limit) {
     ok('quãng ghì chân chỉ bắt đầu SAU khi hết choáng',
       flash.pend > 0 && Math.abs(flash.slow - flash.GN.slowT) < .2,
       `xếp hàng ${flash.pend}s, chạy ${flash.slow}s sau khi hết choáng`);
+
+    /* Bắn từa lưa: sát mặt đã lệch sẵn một góc chứ không ngắm thẳng, đứng xa thì toác
+       hẳn ra. Đo bằng góc thật của từng luồng so với đường thẳng nối tới địch.
+       Lúc đo phải cho địch tạm CÙNG PHE: đứng sát 60px thì luồng khí chạm người ngay
+       trong nhịp sinh ra nó và bị xoá trước khi kịp đọc, cùng phe thì nó bay xuyên qua. */
+    const spray = await page.evaluate(() => new Promise(res => {
+      const G = window.__G(), GN = window.__GN;
+      const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f !== g);
+      const team0 = e.team;
+      g.gnState = null; g.gnStateT = 0; g.gnFlash = null; window.__gnStatus(g, 0);
+      const doOne = (dd, done) => {
+        e.team = g.team;
+        const put = () => { g.x = 300; g.y = 300; e.x = 300 + dd; e.y = 300;
+                            e.hp = e.maxHp; g.hp = g.maxHp; };
+        put(); G.proj.length = 0;
+        for (let v = 0; v < 3; v++) window.__ginyuBeam(g, e);   // ba loạt cho đủ mẫu
+        const seen = []; let ticks = 0;
+        const id = setInterval(() => {
+          ticks++; put();
+          for (const p of G.proj) if (p.type === 'gbeam' && !p.__m) { p.__m = 1; seen.push(Math.abs(Math.atan2(p.vy, p.vx))); }
+          if (seen.length >= GN.beamN * 3 || ticks > 1400) { clearInterval(id); e.team = team0; done(seen); }
+        }, 8);
+      };
+      const tb = a => ({ n: a.length,
+                         tb: a.length ? +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(3) : -1,
+                         max: a.length ? +Math.max(...a).toFixed(3) : -1 });
+      doOne(60, near => doOne(430, far => res({ near: tb(near), far: tb(far),
+        cfg: { near: GN.beamSpreadNear, far: GN.beamSpread } })));
+      setTimeout(() => res({ timeout: 1, near: { n: 0, tb: -1 }, far: { n: 0, tb: -1, max: -1 } }), 60000);
+    }));
+    ok('sát mặt cũng đã bắn lệch sẵn, không ngắm thẳng',
+      spray.near.n >= 12 && spray.near.tb > .05,
+      `${spray.near.n} luồng, lệch trung bình ${spray.near.tb} rad ở 60px`);
+    ok('đứng xa thì toác hẳn ra — bắn từa lưa',
+      spray.far.n >= 12 && spray.far.tb > spray.near.tb * 1.6 && spray.far.max > .6,
+      `${spray.near.tb} rad ở 60px -> ${spray.far.tb} rad ở 430px (lệch nhất ${spray.far.max})`);
+
+    /* Đồng hồ aura phải ĐỨNG YÊN suốt quãng đang vận thế đứng, rồi mới nạp lại đủ
+       auraCd — hai quãng không cộng dồn vào nhau. */
+    const cd = await page.evaluate(() => new Promise(res => {
+      const G = window.__G(), GN = window.__GN;
+      const g = G.fighters.find(f => f.key === 'ginyu');
+      g.gnPanic = false; g.gnFlash = null; g.gnChange = null;
+      g.gnState = 'atk'; g.gnStateT = GN.atk.t; g.gnAura = GN.auraCd;
+      const t0 = G.t;
+      let duringMin = Infinity, atEnd = -1, stanceEnd = -1;
+      const id = setInterval(() => {
+        if (g.gnState) duringMin = Math.min(duringMin, g.gnAura);
+        else if (stanceEnd < 0) { stanceEnd = G.t - t0; atEnd = g.gnAura; }
+        if (stanceEnd >= 0 || G.t - t0 > GN.atk.t + 3) {
+          clearInterval(id);
+          res({ duringMin: +duringMin.toFixed(3), atEnd: +atEnd.toFixed(3),
+                stanceEnd: +stanceEnd.toFixed(2), cd: GN.auraCd, stance: GN.atk.t, RT: window.__RT });
+        }
+      }, 12);
+      setTimeout(() => { clearInterval(id); res({ timeout: 1 }); }, 40000);
+    }));
+    ok('đang vận thế đứng thì đồng hồ aura đứng yên',
+      Math.abs(cd.duringMin - cd.cd) < .01, `tụt xuống thấp nhất ${cd.duringMin}/${cd.cd}`);
+    ok('vận xong mới nạp lại đủ 18 giây người chơi — không cộng dồn',
+      Math.abs(cd.atEnd - cd.cd) < .15 && Math.abs(cd.cd * cd.RT - 18) < .01,
+      `hết thế đứng ở giây ${cd.stanceEnd}, còn ${(cd.atEnd * cd.RT).toFixed(1)}s người chơi mới tới aura sau`);
 
     ok(`trận 1 không lỗi trang`, errors.length === 0, errors.join(' | '));
     await browser.close();
