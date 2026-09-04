@@ -431,11 +431,11 @@ const GN={
   atk:{t:gs(8),  dmg:1.50, take:1.50, cc:1.40, cast:1.50, move:1.60},
   def:{t:gs(10), take:.40,  ccRes:.40, dmg:.60,  cast:.60},
   /* Chiêu 1 — đấm/đá, nhanh hơn ChiChi (cm(.25)) một nhịp và nặng đòn hơn hẳn */
-  atkCd:.22, hitDmg:35, hitStun:gs(.75), hitStunOdds:.25,
+  atkCd:.22, hitDmg:25, hitStun:gs(.75), hitStunOdds:.25,
   /* Chiêu 2 — Ginyu Beam: sáu luồng khí tím bắn từa lưa. Bay rất nhanh, ra dồn dập, và
      lệch sẵn một góc ngay cả lúc sát mặt (beamSpreadNear) rồi toác hẳn ra khi đứng xa. */
-  beamCd:gs(10), beamN:6, beamDmg:25, beamSpd:560, beamGap:.11,
-  beamStun:gs(1), beamKb:340, beamSpread:.95, beamSpreadNear:.22, beamFar:460,
+  beamCd:gs(10), beamN:6, beamDmg:18, beamSpd:560, beamGap:.11,
+  beamStun:gs(1.5), beamStunOdds:.15, beamKb:340, beamSpread:.95, beamSpreadNear:.22, beamFar:460,
   tiredHits:3, tiredT:gs(7), tiredMove:.40, tiredCast:.60, tiredDmg:.75,
   /* Chiêu 3 — Ginyu Flash: gồng 1.75 giây rồi nối một luồng sáng tím liền mạch */
   flashCd:gs(17), flashCharge:gs(1.75), flashHold:gs(.6),
@@ -583,9 +583,9 @@ const CHARS={
       `<b>Entrance</b> He does not start on the arena — he flies in over ${rts(GN.flyT)}s, lands, runs the three Ginyu Force poses and yells "${GN_SHOUT}" while the foe can only stand and watch`,
       `<b>Passive · Ginyu's Aura</b> the aura floods the arena: <b>50%</b> the foe is caught off guard (−${Math.round((1-GN.dazeMove)*100)}% move, −${Math.round((1-GN.dazeCast)*100)}% cast for ${rts(GN.dazeT)}s), <b>50%</b> the foe's blood boils instead (+${Math.round((GN.rageMove-1)*100)}% move, +${Math.round((GN.rageCast-1)*100)}% cast for ${rts(GN.rageT)}s) · the ${rts(GN.auraCd)}s cooldown only starts once his stance has run out — the two never overlap`,
       `<b>Passive · Battle Stance</b> foe caught off guard ⇒ Ginyu goes <b>excited</b> for ${rts(GN.atk.t)}s: +${Math.round((GN.atk.dmg-1)*100)}% damage dealt, +${Math.round((GN.atk.cast-1)*100)}% cast, +${Math.round((GN.atk.move-1)*100)}% move — but +${Math.round((GN.atk.take-1)*100)}% damage taken (straight through his defence) and +${Math.round((GN.atk.cc-1)*100)}% longer crowd control`,
-      `<b>Passive · Probing Stance</b> the <b>first time</b> a foe's blood boils ⇒ Ginyu goes <b>defensive</b> for ${rts(GN.def.t)}s: −${Math.round((1-GN.def.take)*100)}% damage taken, +${Math.round(GN.def.ccRes*100)}% CC resist, but −${Math.round((1-GN.def.dmg)*100)}% damage dealt and −${Math.round((1-GN.def.cast)*100)}% cast speed. He only ever sizes a foe up <b>once</b> — after that every aura drops him straight into the battle stance · the exception is <b>three or more fighters</b> on the field, where he always stays defensive`,
+      `<b>Passive · Probing Stance</b> on the <b>very first aura only</b>, a foe whose blood boils sends Ginyu <b>defensive</b> for ${rts(GN.def.t)}s: −${Math.round((1-GN.def.take)*100)}% damage taken, +${Math.round(GN.def.ccRes*100)}% CC resist, but −${Math.round((1-GN.def.dmg)*100)}% damage dealt and −${Math.round((1-GN.def.cast)*100)}% cast speed. He only ever sizes a foe up on that first aura — every aura after it drops him straight into the battle stance · the exception is <b>three or more fighters</b> on the field, where he always stays defensive`,
       `<b>1</b> Punch &amp; Kick — ${GN.hitDmg} dmg, a shade faster than ChiChi, ${Math.round(GN.hitStunOdds*100)}% to stun ${rts(GN.hitStun)}s`,
-      `<b>2</b> Ginyu Beam — every ${rts(GN.beamCd)}s, ${GN.beamN} purple ki bolts, ${GN.beamDmg} dmg each, knocks far back and stuns ${rts(GN.beamStun)}s · faster than Masenko but it strays at range · <b>${GN.tiredHits}+ bolts</b> land ⇒ Worn Out: −${Math.round((1-GN.tiredMove)*100)}% move, −${Math.round((1-GN.tiredCast)*100)}% cast, −${Math.round((1-GN.tiredDmg)*100)}% damage for ${rts(GN.tiredT)}s`,
+      `<b>2</b> Ginyu Beam — every ${rts(GN.beamCd)}s, ${GN.beamN} purple ki bolts sprayed wide, ${GN.beamDmg} dmg each, knocks far back and ${Math.round(GN.beamStunOdds*100)}% to stun ${rts(GN.beamStun)}s · faster than Masenko and it strays badly, worse the further out he is · <b>${GN.tiredHits}+ bolts</b> land ⇒ Worn Out: −${Math.round((1-GN.tiredMove)*100)}% move, −${Math.round((1-GN.tiredCast)*100)}% cast, −${Math.round((1-GN.tiredDmg)*100)}% damage for ${rts(GN.tiredT)}s`,
       `<b>3</b> Ginyu Flash — he plants his feet and charges ${rts(GN.flashCharge)}s, then one unbroken purple pillar locks onto the foe: ${GN.flashDmg} dmg, stun ${rts(GN.flashStun)}s, then −${Math.round((1-GN.flashMove)*100)}% move and −${Math.round((1-GN.flashCast)*100)}% cast for ${rts(GN.flashSlowT)}s`,
       `<b>4 · CHANGE!!!</b> At 0 HP he does not die — he stops where he fell and fires a body-change beam from his mouth. It strays badly: only ${Math.round(GN.changeLo*100)}% to connect across the arena, up to ${Math.round(GN.changeHi*100)}% point blank, never certain · with three or more fighters he aims at the highest HP one and possesses whoever the beam touches first`,
       `<b>4 · hit</b> souls swap — his old body drops to ${Math.round(GN.changeKeep*100)}% max HP, the stolen body gains ${Math.round(GN.changeGain*100)}% max HP. In the foe's body he keeps his own beam and flash at −${Math.round((1-GN.swapSelf)*100)}% damage and −${Math.round((1-GN.swapSelfCc)*100)}% effect, and borrows their basic attack at −${Math.round((1-GN.swapBody)*100)}% (no cut for shuriken / explosive kunai / football bodies, but his aim in a stolen body is wretched). The foe, stuck in Ginyu's body, is left with Ginyu's punch and kick at −${Math.round((1-GN.swapHost)*100)}%`,
@@ -3119,19 +3119,20 @@ function ginyuAura(f){
           :'Aura Ginyu tràn khắp sàn — nhưng đối phương sôi máu, càng đánh càng hăng.','m');
   /* Chọn thế đứng, theo đúng thứ tự ưu tiên:
        1. Ba người có thanh máu trở lên thì anh không dám hưng phấn nữa, LUÔN lùi về thăm
-          dò — đây là luật đứng riêng, không bị trần một lần chặn.
-       2. Địch ngơ ngác thì anh hưng phấn.
-       3. Địch sôi máu thì anh lùi về thăm dò — nhưng CHỈ ĐÚNG MỘT LẦN trong cả trận.
-          Thăm dò xong là anh biết người biết ta rồi, từ đó dù địch có sôi máu nữa thì
-          cứ tới nhịp aura là anh vào thẳng thế chiến đấu. */
+          dò — đây là luật đứng riêng, không bị cửa một lần chặn.
+       2. Cửa vào thế thăm dò CHỈ MỞ Ở NHỊP AURA ĐẦU TIÊN của trận: lần đó địch sôi máu
+          thì anh lùi lại thăm dò một lượt. Đi qua nhịp đầu rồi là cửa đóng hẳn — từ đó
+          mọi nhịp aura đều vào thẳng thế chiến đấu, dù địch có sôi máu bao nhiêu lần nữa.
+          (Cửa đóng theo NHỊP chứ không theo "lần đầu địch sôi máu": nhịp đầu mà địch ngơ
+          ngác thì anh hưng phấn, và cả trận không còn thấy thế thăm dò nữa.) */
   const crowd=gnCrowd()>=3;
-  const which=crowd?'def':(daze?'atk':(f.gnProbeDone?'atk':'def'));
+  const which=crowd?'def':((!f.gnProbeDone&&!daze)?'def':'atk');
+  f.gnProbeDone=true;
   ginyuState(f,which);
 }
 function ginyuState(f,which){
   f.gnState=which;
   f.gnStateT=which==='atk'?GN.atk.t:GN.def.t;
-  if(which==='def') f.gnProbeDone=true;      // thăm dò xong là hết, lần sau vào thẳng thế chiến đấu
   sfx(which==='atk'?'ginyu_excited':'ginyu_probe');
   ring(f.x,f.y,142,which==='atk'?'#C77DFF':'#7FE0FF',.5);
   G.floats.push({x:f.x,y:f.y-120,txt:which==='atk'?'BATTLE STANCE · EXCITED':'PROBING STANCE · GUARDED',
@@ -3161,7 +3162,7 @@ function ginyuBeam(f,e){
   e.gnBeamHits=0;
   G.floats.push({x:f.x,y:f.y-106,txt:'GINYU BEAM!',color:f.color,life:1.5,ml:1.5,
     banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.06,.06)});
-  say(`Ginyu gồng khí — ${GN.beamN} luồng khí tím bắn ra, mỗi luồng ${GN.beamDmg} dmg và hất địch văng xa.`,'m');
+  say(`Ginyu gồng khí — ${GN.beamN} luồng khí tím bắn tứ tung, mỗi luồng ${GN.beamDmg} dmg, hất địch văng xa và ${Math.round(GN.beamStunOdds*100)}% choáng ${rts(GN.beamStun)} giây.`,'m');
   for(let i=0;i<GN.beamN;i++) later(cm(.2)+i*cm(GN.beamGap),()=>{
     if(!f.alive||G.over||G.freeze>0)return;
     const tg=aimTarget(f)||e;
@@ -3187,7 +3188,12 @@ function gnBeamHit(p,t){
   sfx('hit');
   if(!landed)return;
   knock(t,p.vx,p.vy,GN.beamKb);
-  stunFx(t,gnCc(o,GN.beamStun),'spark');
+  // choáng không còn chắc chắn: mỗi luồng chỉ 15% ăn may, đổi lại dài hơn hẳn
+  if(chance(GN.beamStunOdds)&&stunFx(t,gnCc(o,GN.beamStun),'spark')){
+    sfx('stun');
+    G.floats.push({x:t.x,y:t.y-104,txt:`STUNNED ${rts(GN.beamStun)}s`,color:'#C9A0FF',
+      life:1.2,ml:1.2,banner:true,sc:.6});
+  }
   t.gnBeamHits=(t.gnBeamHits||0)+1;
   if(t.gnBeamHits===GN.tiredHits){
     t.gnTired=Math.max(t.gnTired,gnCc(o,GN.tiredT));

@@ -84,33 +84,52 @@ async function waitGame(page, fnBody, limit) {
     const roll = await page.evaluate(() => {
       const G = window.__G(), GN = window.__GN;
       const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f !== g);
+      const R = Math.random;
+      // chance(.5) là Math.random()<.5 -> nhỏ thì địch ngơ ngác, lớn thì địch sôi máu
+      const pulse = (ghim) => {
+        e.gnDaze = 0; e.gnRage = 0; g.gnState = null;
+        Math.random = () => ghim;
+        try { window.__ginyuAura(g); } finally { Math.random = R; }
+        return { st: g.gnState, daze: e.gnDaze > 0, rage: e.gnRage > 0 };
+      };
+      const out = {};
+      /* Kịch bản A — nhịp aura ĐẦU địch sôi máu: đúng nhịp đó anh thăm dò, rồi 40 nhịp
+         sôi máu tiếp theo phải vào thẳng thế chiến đấu. */
       g.gnProbeDone = false;
-      const seen = { daze: 0, rage: 0, atk: 0, def: 0 };
-      // lần đầu địch sôi máu rơi vào nhịp thứ mấy — thế thăm dò chỉ được phép hiện ở đó
-      let rage1 = -1, def1 = -1;
+      out.a1 = pulse(.9).st;
+      out.aSau = [];
+      for (let i = 0; i < 40; i++) out.aSau.push(pulse(.9).st);
+      /* Kịch bản B — nhịp aura ĐẦU địch ngơ ngác: anh hưng phấn, và cửa thăm dò đóng
+         luôn từ đó, dù nhịp sau địch có sôi máu. */
+      g.gnProbeDone = false;
+      out.b1 = pulse(.1).st;
+      out.bSau = [];
+      for (let i = 0; i < 40; i++) out.bSau.push(pulse(.9).st);
+      // hai nhánh aura vẫn phải bốc được cả hai kiểu
+      g.gnProbeDone = false;
+      const seen = { daze: 0, rage: 0 };
       for (let i = 0; i < 60; i++) {
         e.gnDaze = 0; e.gnRage = 0; g.gnState = null;
         window.__ginyuAura(g);
         if (e.gnDaze > 0) seen.daze++;
-        if (e.gnRage > 0) { seen.rage++; if (rage1 < 0) rage1 = i; }
-        if (g.gnState === 'atk') seen.atk++;
-        if (g.gnState === 'def') { seen.def++; if (def1 < 0) def1 = i; }
+        if (e.gnRage > 0) seen.rage++;
       }
-      return { seen, rage1, def1, dazeT: GN.dazeT, rageT: GN.rageT };
+      out.seen = seen;
+      return out;
     });
     ok('aura có đủ hai nhánh 50/50',
       roll.seen.daze > 10 && roll.seen.rage > 10 && roll.seen.daze + roll.seen.rage === 60,
       `${roll.seen.daze} ngơ ngác / ${roll.seen.rage} sôi máu trên 60 lần`);
-    ok('ngơ ngác thì Ginyu luôn hưng phấn',
-      roll.seen.atk === 60 - roll.seen.def && roll.seen.atk >= roll.seen.daze,
-      `hưng phấn ${roll.seen.atk} / thăm dò ${roll.seen.def} trên 60 lần`);
-    /* Thế thăm dò là phản ứng MỘT LẦN: hiện đúng ở nhịp địch sôi máu lần đầu, sau đó
-       dù địch có sôi máu bao nhiêu lần nữa anh cũng vào thẳng thế chiến đấu. */
-    ok('thế thăm dò chỉ hiện đúng một lần trong cả trận',
-      roll.seen.def === 1, `hiện ${roll.seen.def} lần trên 60 nhịp aura`);
-    ok('và đúng ở nhịp địch sôi máu lần đầu tiên',
-      roll.def1 >= 0 && roll.def1 === roll.rage1,
-      `sôi máu lần đầu ở nhịp ${roll.rage1}, thăm dò ở nhịp ${roll.def1}`);
+    ok('nhịp aura đầu mà địch sôi máu thì Ginyu lùi về thăm dò',
+      roll.a1 === 'def', `nhịp đầu ra "${roll.a1}"`);
+    ok('qua nhịp đầu là cửa thăm dò đóng hẳn — địch sôi máu nữa vẫn hưng phấn',
+      roll.aSau.every(x => x === 'atk'),
+      `${roll.aSau.filter(x => x === 'def').length} lần thăm dò trên 40 nhịp sôi máu tiếp theo`);
+    ok('nhịp aura đầu mà địch ngơ ngác thì Ginyu hưng phấn',
+      roll.b1 === 'atk', `nhịp đầu ra "${roll.b1}"`);
+    ok('lỡ nhịp đầu là cả trận không còn thấy thế thăm dò',
+      roll.bSau.every(x => x === 'atk'),
+      `${roll.bSau.filter(x => x === 'def').length} lần thăm dò trên 40 nhịp sôi máu sau đó`);
 
     // hệ số của hai thế đứng phải ăn thật vào sát thương và thời gian choáng
     const mult = await page.evaluate(() => {
@@ -168,7 +187,31 @@ async function waitGame(page, fnBody, limit) {
     ok('Ginyu Beam bắn đúng 6 luồng khí', beam.total === 6, `đếm được ${beam.total}`);
     ok('luồng khí đẩy lùi xa hơn cú sút của Tsubasa (260)', beam.kb > 260, `beamKb=${beam.kb}`);
     ok('luồng khí bay nhanh hơn Masenko (330)', beam.spd > 330, `beamSpd=${beam.spd}`);
-    ok('mỗi luồng khí gây 25 dmg', beam.dmg === 25, `${beam.dmg} dmg`);
+    ok('mỗi luồng khí gây 18 dmg', beam.dmg === 18, `${beam.dmg} dmg`);
+
+    /* Choáng của luồng khí không còn chắc chắn: 15% ăn may, đổi lại dài 1.5 giây người
+       chơi. Ghim Math.random để đo hẳn hai đầu thay vì trông vào xác suất. */
+    const bstun = await page.evaluate(() => {
+      const G = window.__G(), GN = window.__GN;
+      const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f !== g);
+      g.gnState = null; g.gnStateT = 0; window.__gnStatus(g, 0);
+      e.evade = 0; e.dodge = 0; e.dmgRes = 0; e.ccRes = 0; e.gnDaze = 0; e.gnRage = 0;
+      e.prewing = false; e.eagle = false;
+      window.__gnStatus(e, 0);
+      const R = Math.random;
+      const thu = ghim => {
+        e.hp = e.maxHp; e.stun = 0; e.invuln = 0;
+        const p = { type: 'gbeam', owner: g, dmg: GN.beamDmg, vx: 120, vy: 0, x: e.x, y: e.y, r: 15 };
+        Math.random = () => ghim;
+        try { window.__gnBeamHit(p, e); } finally { Math.random = R; }
+        return +e.stun.toFixed(3);
+      };
+      return { an: thu(.05), truot: thu(.9), odds: GN.beamStunOdds, dur: GN.beamStun, RT: window.__RT };
+    });
+    ok('luồng khí chỉ 15% gây choáng, và choáng dài 1.5 giây người chơi',
+      Math.abs(bstun.odds - .15) < 1e-9 && Math.abs(bstun.dur * bstun.RT - 1.5) < .01 &&
+      Math.abs(bstun.an - bstun.dur) < .01 && bstun.truot === 0,
+      `bốc trúng -> choáng ${(bstun.an * bstun.RT).toFixed(2)}s người chơi, bốc trượt -> ${bstun.truot}s`);
 
 
     // đủ ba luồng trúng thì dính mệt mỏi

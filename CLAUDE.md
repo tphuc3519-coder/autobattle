@@ -406,14 +406,20 @@ nhịp** — họ đứng nhìn chứ chưa được đánh. Hết ba dáng thì
 | Nhánh | Địch chịu | Ginyu vào thế |
 |---|---|---|
 | ngơ ngác (`gnDaze`, `GN.dazeT = gs(8)`) | −90% tốc chạy, −50% tốc ra chiêu | **hưng phấn** `gnState='atk'` |
-| sôi máu (`gnRage`, `GN.rageT = gs(6)`) | +50% tốc chạy, +30% tốc ra chiêu | **thăm dò** `gnState='def'` — chỉ lần đầu |
+| sôi máu (`gnRage`, `GN.rageT = gs(6)`) | +50% tốc chạy, +30% tốc ra chiêu | **thăm dò** `gnState='def'` — chỉ ở nhịp aura ĐẦU |
 
-> **Thế thăm dò là phản ứng ĐÚNG MỘT LẦN trong cả trận** (`f.gnProbeDone`). Thăm dò xong là
-> anh biết người biết ta rồi: từ đó dù địch có sôi máu bao nhiêu lần nữa, cứ tới nhịp aura
-> là anh vào thẳng thế chiến đấu. Bản mô tả gốc nói đúng chỗ này — *"sau 10s thăm dò, Ginyu
-> trở lại bình thường, và cứ mỗi 12s thì Ginyu vào trạng thái **chiến đấu** như bình thường"*
-> — bản đầu tôi làm nhầm thành bốc 50/50 mỗi nhịp nên một trận thấy thế thăm dò tới hai lần.
-> **Luật ba người trở lên thắng trần này**: đông người thì anh luôn thăm dò, không bị chặn.
+> **Cửa vào thế thăm dò chỉ mở ở NHỊP AURA ĐẦU TIÊN của trận** (`f.gnProbeDone`, bật lên
+> ngay sau nhịp đầu **dù nhịp đó ra thế nào**). Nhịp đầu địch sôi máu thì anh lùi lại thăm
+> dò một lượt; đi qua nhịp đầu là cửa đóng hẳn, mọi nhịp aura sau đều vào thẳng thế chiến
+> đấu. Nhịp đầu mà địch ngơ ngác thì anh hưng phấn và **cả trận không còn thấy thế thăm dò
+> nữa** — cửa tính theo NHỊP chứ không phải theo "lần đầu địch sôi máu".
+>
+> *Hai lần sai trước đó, ghi lại cho khỏi lặp:* bản đầu bốc 50/50 mỗi nhịp nên một trận
+> thấy thăm dò hai ba lần; bản thứ hai chặn theo "lần đầu địch sôi máu" nên thăm dò vẫn nhảy
+> ra ở nhịp thứ ba (đo được ở cặp Ginyu vs Konohamaru, giây 27.8). Người dùng bác cả hai:
+> *"vẫn còn tình trạng có trạng thái phòng thủ sau lần đầu tạo hiệu ứng"*.
+>
+> **Luật ba người trở lên thắng cửa này**: đông người thì anh luôn thăm dò, không bị chặn.
 
 - **Hưng phấn** (`GN.atk`, `gs(8)`): +50% dmg gây ra, **+50% dmg phải chịu — nhân sau mọi
   lớp phòng thủ**, +40% thời gian dính khống chế, +50% tốc ra chiêu, +60% tốc chạy. Bao
@@ -425,8 +431,10 @@ nhịp** — họ đứng nhìn chứ chưa được đánh. Hết ba dáng thì
   mà `drawBars()` dùng, nên Goku / Gohan / phân thân không tính, còn Ayanokouji thì có).
 
 Thứ tự ưu tiên khi chọn thế đứng, viết thẳng trong `ginyuAura()`: **đông người → thăm dò**,
-không thì **địch ngơ ngác → hưng phấn**, không thì **địch sôi máu → thăm dò nếu còn lần,
-hết lần thì hưng phấn**.
+không thì **còn cửa và địch sôi máu → thăm dò**, còn lại đều là **hưng phấn**. Cửa đóng
+(`f.gnProbeDone=true`) ngay sau nhịp aura đầu, đặt trong `ginyuAura()` chứ không đặt trong
+`ginyuState()` — đặt trong `ginyuState()` thì nhịp đầu ra hưng phấn sẽ không đóng cửa và
+lỗi cũ quay lại.
 
 > **Hồi chiêu của aura KHÔNG cộng dồn với quãng đang vận thế đứng.** `ginyuTick()` `return`
 > sớm suốt lúc `f.gnState` còn — đồng hồ `f.gnAura` đứng yên hẳn — rồi nạp lại đủ `auraCd`
@@ -437,10 +445,10 @@ hết lần thì hưng phấn**.
 > `GN.auraCd = gs(20)`, cơ chế không phải đụng tới.)*
 
 **Bốn chiêu:**
-- **1 · Basic** — đấm hoặc đá, `GN.hitDmg = 35`, hồi chiêu `cm(GN.atkCd)` = `cm(.22)`, tức
+- **1 · Basic** — đấm hoặc đá, `GN.hitDmg = 25`, hồi chiêu `cm(GN.atkCd)` = `cm(.22)`, tức
   nhanh hơn ChiChi (`cm(.25)`) một nhịp. 25% kèm choáng `gs(.75)`.
-- **2 · Ginyu's Beam** — mỗi `gs(10)` bắn **6 luồng khí tím**, mỗi luồng **25 dmg**, choáng
-  `gs(1)` và **hất lùi 340** (Twin Shot của Tsubasa mới 260 — người dùng muốn đẩy xa hơn).
+- **2 · Ginyu's Beam** — mỗi `gs(10)` bắn **6 luồng khí tím**, mỗi luồng **18 dmg**, **15%
+  choáng `gs(1.5)`** (`beamStunOdds` — không còn choáng chắc chắn như bản đầu) và **hất lùi 340** (Twin Shot của Tsubasa mới 260 — người dùng muốn đẩy xa hơn).
   Bay `560` và ra dồn dập (`beamGap .11`) — **bắn từa lưa chứ không ngắm**: độ lệch
   `beamSpreadNear + (beamSpread−beamSpreadNear)·d/beamFar` = **lệch sẵn 0.22 rad ngay lúc
   sát mặt** rồi toác tới 0.95 rad khi đứng xa. Đo được: trung bình 0.19 rad ở 60px và
@@ -959,10 +967,10 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
   (`ginyu_force`, `ginyu_change`) đang chờ người dùng thu file. Quãng bay vào sân cố tình
   để đúng **1.5 giây thật ở thanh tốc độ gốc** để người dùng canh tiếng — đổi thanh tốc độ
   thì con số đó đổi theo, đây không phải lỗi.
-- **Đã hạ sát thương một vòng theo yêu cầu**: hưng phấn +75%→+50% dmg (khống chế +30%→+40%),
-  beam 35→25 dmg và hồi chiêu `gs(8)`→`gs(10)`, flash `gs(14)`→`gs(17)`, aura `gs(12)`→`gs(18)`
-  và không cộng dồn với thế đứng. **Chiêu 1 vẫn 35 dmg và flash vẫn 100 dmg** — người dùng
-  chưa nêu số mới cho hai chỗ đó nên tôi không tự đặt; muốn hạ tiếp thì sửa `GN.hitDmg` /
-  `GN.flashDmg`.
+- **Đã hạ sát thương hai vòng theo yêu cầu**: hưng phấn +75%→+50% dmg (khống chế +30%→+40%),
+  beam 35→25→**18** dmg và hồi chiêu `gs(8)`→`gs(10)` (đổi lại choáng thành 15% × `gs(1.5)`),
+  đòn tay 35→**25**, flash `gs(14)`→`gs(17)`, aura `gs(12)`→`gs(18)` và không cộng dồn với
+  thế đứng. **Flash vẫn 100 dmg** — người dùng chưa nêu số mới cho chỗ đó nên tôi không tự
+  đặt; muốn hạ tiếp thì sửa `GN.flashDmg`.
 - Ô tiếng của Horikita/Ayanokouji mới chỉ có tiếng tự tạo trong `synth()`; hai ô đọc nối tiếp
   (`suz_decide`, `suz_wrong`) đang chờ người dùng thu file TTS theo `SUZ_DECISIONS` / `SUZ_WRONG`.
