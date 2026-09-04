@@ -158,6 +158,9 @@
     <button id="testSuz3" title="Ép Ayanokouji rời sàn để Horikita sang form 3">🧪 Test Horikita F3</button>
     <button id="testGinyuAura" title="Ép aura Ginyu toả ra ngay">🧪 Test aura Ginyu</button>
     <button id="testGinyuChange" title="Ép Ginyu tung CHANGE!!! ngay">🧪 Test CHANGE</button>
+    <button id="testDoraShrink" title="Ép Small Light thu nhỏ đối thủ ngay">🧪 Test Small Light</button>
+    <button id="testDoraDoor" title="Ép Doraemon chui Emergency Door ngay">🧪 Test Emergency Door</button>
+    <button id="testDoraTime" title="Ép Doraemon dùng Time Machine ngay">🧪 Test Time Machine</button>
   </div>
 
   <div class="stage"><canvas id="arena" width="620" height="620"></canvas></div>
@@ -263,9 +266,9 @@ let G=null, running=false, speedMul=BASE_SPEED, mode='auto', autoSkill=true;
 const keys={};
 
 /* ---------- sprite slots ---------- */
-const SPR={kono:{},chichi:{},tsubasa:{},shika:{},suzune:{},ginyu:{},ayanokouji:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
-const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',suzune:'#7FC8FF',ginyu:'#A05CFF'};
-const HP={kono:1000,chichi:1000,tsubasa:1000,shika:1000,suzune:1000,ginyu:1000};
+const SPR={kono:{},chichi:{},tsubasa:{},shika:{},suzune:{},ginyu:{},dora:{},ayanokouji:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
+const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',suzune:'#7FC8FF',ginyu:'#A05CFF',dora:'#2B9BE8'};
+const HP={kono:1000,chichi:1000,tsubasa:1000,shika:1000,suzune:1000,ginyu:1000,dora:1000};
 const CAST={mul:1.8};
 const cm=v=>v*CAST.mul;
 const SETS=[
@@ -275,6 +278,7 @@ const SETS=[
   {key:'shika', name:'Shikamaru', poses:[['idle','Thủ thế'],['lazy','Ngồi lười (đầu trận)'],['atk1','Phóng shuriken'],['stab','Đâm sau lưng'],['atk2','Kết ấn trói bóng'],['ulti','Mở lãnh địa'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
   {key:'suzune', name:'Horikita Suzune', poses:[['idle','Thủ thế (form 2)'],['scared','Thủ thế sợ hãi (form 1)'],['stand3','Thủ thế (form 3)'],['block','Thủ chéo hai tay (chịu đòn)'],['punch','Đấm (form 1/2)'],['kick','Đá (form 1/2)'],['think','Đứng suy nghĩ (form 2)'],['punch3','Đấm (form 3)'],['kick3','Đá (form 3)'],['think3','Đứng suy nghĩ (form 3)'],['right2','Quyết định đúng (form 2)'],['wrong2','Quyết định sai (form 2)'],['right3','Quyết định đúng (form 3)'],['wrong3','Quyết định sai (form 3)'],['hurt','Trúng đòn'],['injured2','Tơi tả <20% máu (form 1/2)'],['injured3','Tơi tả <20% máu (form 3)'],['thinkHurt2','Tơi tả khi đứng suy nghĩ (form 2)'],['thinkHurt3','Tơi tả khi đứng suy nghĩ (form 3)']]},
   {key:'ginyu', name:'Captain Ginyu', poses:[['idle','Thủ thế'],['fly','Bay vào sân (đầu trận)'],['dance1','Ginyu Force · dáng 1'],['dance2','Ginyu Force · dáng 2'],['dance3','Ginyu Force · dáng 3'],['punch','Đấm'],['kick','Đá'],['beam','Ginyu Beam'],['flash','Ginyu Flash'],['change','CHANGE!!!'],['panic','Hoảng hốt (bắn trượt Change)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
+  {key:'dora', name:'Doraemon', poses:[['idle','Thủ thế'],['pocket','Thò tay vào túi thần kỳ'],['punch','Đấm (bàn tay tròn)'],['kick','Đá'],['slam','Lao bụng / húc đầu (đòn 3)'],['aircannon','Air Cannon'],['smalllight','Small Light'],['copter','Take-copter (bay)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Ngồi ăn dorayaki (thắng)'],['down','Ngã ngồi, choáng váng (thua)']]},
   {key:'ayanokouji', name:'Ayanokouji', poses:[['idle','Đứng'],['guard','Đỡ đòn thay Horikita'],['strike','Đòn đột kích'],['leave','Rời sàn đấu']]},
   {key:'nara', name:'Con nai nhà Nara', poses:[['idle','Đứng cạnh Shikamaru trong lãnh địa']]},
   {key:'garden', name:'Phong cảnh lãnh địa', poses:[['idle','Ảnh nền khu rừng nhà Nara']]},
@@ -462,6 +466,61 @@ const GN_PROJ_BODY=new Set(['kono','tsubasa','shika']);
 const GN_SHOUT='GINYU FORCE!';
 const GN_CHANGE_LINE='My turn — the last technique... CHANGE!!!';
 const GN_FORCE_LIFE=2.2, GN_CHANGE_LIFE=2.6;
+/* ---------- Doraemon ----------
+   Khai theo lối của Shikamaru / Horikita / Ginyu: mốc thời gian viết bằng giây NGƯỜI CHƠI
+   rồi bọc gs(). Đây là fighter kiểu "Control – Utility – Survival": đòn tay nhẹ, nhưng
+   bảo bối thì đủ để làm chậm, giữ khoảng cách, chạy thoát và lật ngược thế trận.
+   MỌI chữ hiện ra trong game của nhân vật này là tiếng Anh, kể cả tên trạng thái. */
+const DORA={
+  /* Màn ra mắt — Anywhere Door, đúng 1.5 giây người chơi chia làm bốn pha.
+     Mốc pha tính bằng giây trong trận, cộng dồn: cửa hiện · cửa mở · bước ra · cửa đóng. */
+  doorT:gs(1.5), doorPh:[gs(.35),gs(.75),gs(1.2),gs(1.5)],
+  /* Nội tại 1 — Take-copter */
+  copFar:.55,                // địch xa hơn 55% chiều dài sàn
+  copIdle:gs(2.5),           // và bấy nhiêu giây người chơi không đánh trúng ai
+  copT:gs(4), copCd:gs(15),
+  copMove:1.70,              // +70% tốc chạy
+  copSlowRes:.40,            // hiệu ứng làm chậm chỉ còn 60% hiệu lực
+  copDodge:.20,              // né đạn tốt hơn 20%
+  copHover:9,                // bay là là, không bao giờ rời sàn
+  /* Nội tại 2 — Emergency Door */
+  edOdds:.60, edCd:gs(8), edDist:.30, edT:gs(.45),
+  edSpeed:1.40, edSpeedT:gs(2),
+  /* Chiêu 1 — Basic Attack: combo ba đòn, đòn ba đẩy lùi và choáng */
+  hit:[15,15,20], hitGap:gs(.6), hitCd:cm(.5),
+  slamStun:gs(.6), slamKb:340,
+  disOdds:.25, disT:gs(1.5), disMove:.80, disCast:.85,
+  /* Chiêu 2 — Air Cannon */
+  acCd:gs(10), acAim:gs(.7), acDmg:100, acStun:gs(3), acSpd:520,
+  acKbDist:.22,              // đẩy lùi bằng 22% chiều dài sàn
+  acBreak:gs(.35),           // bị đánh trong bấy nhiêu giây đầu thì đứt chiêu
+  acBreakCut:.50,            // đứt thì chỉ phải chờ nửa hồi chiêu
+  acPierce:2, acPierce2:.60, // xuyên tối đa hai người, người thứ hai chịu 60%
+  /* Độ chính xác theo khoảng cách: [quãng, tỉ lệ] — nội suy tuyến tính giữa hai mốc */
+  acAcc:[[0,.90],[140,.75],[290,.60],[430,.50],[520,.40],[700,.30]],
+  /* Chiêu 3 — Small Light */
+  slCd:gs(18), slAim:gs(1), slDmg:35, slSpd:560,
+  shrunkT:gs(7), shrunkSize:.55,
+  shrunkHit:.85,             // vòng ăn đòn chỉ được nhỏ đi tối đa 15%
+  shrunkMove:.45, shrunkCast:.60, shrunkDmg:.65, shrunkReach:.80, shrunkKb:1.40,
+  growT:gs(.4), shrinkT:gs(.18),
+  /* Chiêu 4 — Time Machine: Second Chance */
+  tmT:gs(2.2), tmPh:[gs(.5),gs(1),gs(1.7),gs(2.2)],
+  tmBackLo:1, tmBackHi:3,    // quay ngược 1~3 giây người chơi, có cả số lẻ
+  tmHistT:gs(4),             // giữ bấy nhiêu giây người chơi lịch sử vị trí + máu
+  tmHealCap:.20,             // hồi lại không quá 20% máu tối đa
+  tmCdCut:.40,               // hồi chiêu đang chạy được cắt 40% phần còn lại
+  fkT:gs(5), fkTake:.70, fkMove:1.35, fkCast:1.45, fkAcc:.25, fkCcRes:.35,
+  /* Panic Mode / Prepared Mode — xem ghi chú trong CLAUDE.md, phần này tôi tự chốt */
+  panicHp:.35,               // tụt xuống mức này là hoảng
+  panicBurst:.15,            // hoặc ăn trọn một đòn nặng bằng bấy nhiêu máu tối đa
+  panicT:gs(2.5), panicCast:.85, panicJit:2.2,
+  prepT:gs(6), prepCast:1.25
+};
+/* Tuổi thọ bong bóng thoại của Doraemon. Khai TRƯỚC SFX_MAXLEN vì trần độ dài ô giọng
+   bám theo đúng con số này — tiếng không được sống lâu hơn hình. */
+const DORA_HI_LIFE=1.8;
+const DORA_HI='Hello! Leave it to me!';
 const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
@@ -483,7 +542,7 @@ const CHARS={
     skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in, guaranteed crit, CC immune &amp; −30% dmg while dashing`,'<b>Passive</b> every 5 hits +5% crit','<b>Below 20% HP</b> calls Goku / Gohan'],
     init(f){ f.cds={s1:0,s2:cm(3)}; f.dashCd=CHICHI_DASH_CD; f.hits=0; f.critBonus=0; },
     think(f,e,d,auto){
-      if(f.cds.s1<=0&&d<f.r+e.r+MELEE_REACH&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
+      if(f.cds.s1<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
       if(f.cds.s2<=0&&(auto?d<460:keys['k'])){ f.cds.s2=cm(7); scold(f,e); }
       // Đồng hồ riêng, không nằm trong cds: đây là nhịp cố định mỗi 10 giây người chơi nên
       // không bị hiệu ứng kiệt sức kéo dài, cũng không kèm điều kiện khoảng cách
@@ -567,7 +626,7 @@ const CHARS={
       // Chiêu 2 là chiêu của người dám ra quyết định — form 1 chưa có.
       // Vòng đời một quyết định: đứng nghĩ decThink, chốt, rồi decCd nữa mới nghĩ lại.
       if(f.form>=2&&f.cds.s2<=0&&(auto||keys['k'])){ f.cds.s2=SUZ.decThink+SUZ.decCd; suzThink(f,e); return; }
-      if(f.cds.s1<=0&&d<f.r+e.r+SUZ.atkRange&&(auto||keys['j'])){
+      if(f.cds.s1<=0&&d<f.r+e.r+SUZ.atkRange*((f.reachMul)||1)&&(auto||keys['j'])){
         f.cds.s1=suzTune(f).atkCd; suzStrike(f,e);
       }
     },
@@ -601,7 +660,7 @@ const CHARS={
       if(f.swapAs) return ginyuSwapThink(f,e,d,auto);
       if(f.cds.s3<=0&&(auto?d<520:keys['l'])){ f.cds.s3=GN.flashCd+GN.flashCharge; ginyuFlash(f,e); return; }
       if(f.cds.s2<=0&&(auto?d<GN.beamFar:keys['k'])){ f.cds.s2=GN.beamCd; ginyuBeam(f,e); return; }
-      if(f.cds.s1<=0&&d<f.r+e.r+MELEE_REACH&&(auto||keys['j'])){ f.cds.s1=cm(GN.atkCd); ginyuStrike(f,e); }
+      if(f.cds.s1<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])){ f.cds.s1=cm(GN.atkCd); ginyuStrike(f,e); }
     },
     /* Thanh phụ chỉ nói đúng một chuyện: aura tới đâu rồi, hay đang đứng ở thế nào.
        Không dán chữ giải thích lên sàn — cùng luật với Horikita. */
@@ -615,6 +674,52 @@ const CHARS={
                                     txt:`PROBING ${(f.gnStateT*RT).toFixed(1)}s`};
       return {pct:clamp(1-f.gnAura/GN.auraCd,0,1), fill:'#A05CFF',
               txt:`Aura: ${(Math.max(0,f.gnAura)*RT).toFixed(1)}s`};
+    }
+  }
+  ,dora:{
+    name:'Doraemon', short:'Dora', tag:'Gadgets · Control', emoji:'🔔', color:'#2B9BE8', alt:'#7FD0FF',
+    role:'ranged', want:205, speed:96, dodge:.85, male:true,
+    skills:[
+      `<b>Entrance</b> He is not on the arena when the bell rings — a pink <b>Anywhere Door</b> fades in, opens, he steps out, looks around and raises a hand, then the door shuts. The whole thing takes ${rts(DORA.doorT)}s and the foe can only wait`,
+      `<b>Passive · Fourth-Dimensional Pocket</b> he reaches into the pocket on his belly before every gadget, and puts it away afterwards — three gadgets come out on their own`,
+      `<b>Passive · Take-copter</b> foe more than ${Math.round(DORA.copFar*100)}% of the arena away and nothing landed for ${rts(DORA.copIdle)}s ⇒ the propeller goes on his head for ${rts(DORA.copT)}s: +${Math.round((DORA.copMove-1)*100)}% move, low obstacles (Shadow Strangle included) cannot hold him, slows lose ${Math.round(DORA.copSlowRes*100)}% of their bite, +${Math.round(DORA.copDodge*100)}% projectile dodge · ends early once he is close enough to swing · every ${rts(DORA.copCd)}s`,
+      `<b>Passive · Emergency Door</b> ${Math.round(DORA.edOdds*100)}% of the time an incoming hit makes him dive through a pink door instead: untouchable in transit, every slow washed off (stun, burn and the rest stay), out again ${Math.round(DORA.edDist*100)}% of the arena away on the far side of the foe, +${Math.round((DORA.edSpeed-1)*100)}% move for ${rts(DORA.edSpeedT)}s · deals no damage · every ${rts(DORA.edCd)}s`,
+      `<b>1 · Basic Attack</b> three round-handed blows ${DORA.hit[0]} / ${DORA.hit[1]} / ${DORA.hit[2]} dmg, ${rts(DORA.hitGap)}s apart — the third is a belly charge that knocks back hard and stuns ${rts(DORA.slamStun)}s · each blow ${Math.round(DORA.disOdds*100)}% to leave <b>Disoriented</b> for ${rts(DORA.disT)}s (−${Math.round((1-DORA.disMove)*100)}% move, −${Math.round((1-DORA.disCast)*100)}% cast)`,
+      `<b>2 · Air Cannon</b> every ${rts(DORA.acCd)}s — ${rts(DORA.acAim)}s to aim, then a ring of compressed air for ${DORA.acDmg} dmg, ${Math.round(DORA.acKbDist*100)}% of the arena in knockback, ${rts(DORA.acStun)}s stun, and it cuts any channelled skill short · accuracy runs ${Math.round(DORA.acAcc[1][1]*100)}–${Math.round(DORA.acAcc[0][1]*100)}% up close down to ${Math.round(DORA.acAcc[5][1]*100)}–${Math.round(DORA.acAcc[4][1]*100)}% across the arena · pierces <b>two</b> bodies, the second takes ${Math.round(DORA.acPierce2*100)}% · a hit inside the first ${rts(DORA.acBreak)}s cancels it for half the cooldown`,
+      `<b>3 · Small Light</b> every ${rts(DORA.slCd)}s — ${rts(DORA.slAim)}s to aim, then a pale yellow beam for ${DORA.slDmg} dmg that leaves the foe <b>Shrunk</b> at ${Math.round(DORA.shrunkSize*100)}% size for ${rts(DORA.shrunkT)}s: −${Math.round((1-DORA.shrunkMove)*100)}% move, −${Math.round((1-DORA.shrunkCast)*100)}% cast, −${Math.round((1-DORA.shrunkDmg)*100)}% damage dealt, −${Math.round((1-DORA.shrunkReach)*100)}% melee reach, +${Math.round((DORA.shrunkKb-1)*100)}% knockback taken · it never stacks, a second beam only refreshes the timer · the beam does not curve`,
+      `<b>4 · Time Machine: Second Chance</b> at 0 HP he does not fall — the Time Machine rolls in and winds him back ${DORA.tmBackLo}–${DORA.tmBackHi}s: his old spot, his old HP (never more than ${Math.round(DORA.tmHealCap*100)}% of max healed), every debuff gone, ${Math.round(DORA.tmCdCut*100)}% off what is left of his cooldowns · <b>once per match</b>, and only he is rewound`,
+      `<b>4 · Future Knowledge</b> ${rts(DORA.fkT)}s after the rewind — −${Math.round((1-DORA.fkTake)*100)}% damage taken, +${Math.round((DORA.fkMove-1)*100)}% move, +${Math.round((DORA.fkCast-1)*100)}% cast, +${Math.round(DORA.fkAcc*100)}% accuracy on both Air Cannon and Small Light, ${Math.round(DORA.fkCcRes*100)}% resist to slows and stuns`,
+      `<b>Passive · Panic Mode / Prepared Mode</b> dropping under ${Math.round(DORA.panicHp*100)}% HP, or eating one blow worth ${Math.round(DORA.panicBurst*100)}% of his max, sends him scrambling for ${rts(DORA.panicT)}s — he backs off and fumbles in the pocket (−${Math.round((1-DORA.panicCast)*100)}% cast). Then he finds the right gadget: <b>Prepared Mode</b> for ${rts(DORA.prepT)}s at +${Math.round((DORA.prepCast-1)*100)}% cast, and he goes back on the offensive`],
+    init(f){
+      f.cds={s1:0,s2:DORA.acCd,s3:gs(3)};
+      f.drEntry=null; f.drAim=null; f.drCombo=null;
+      f.copter=0; f.copCd=DORA.copCd*.4; f.copIdle=0; f.drNoHit=0;
+      f.edCd=0; f.edT=0; f.edSpeed=0;
+      f.fk=0; f.panic=0; f.prep=0; f.tmDone=false; f.tm=null;
+      f.hist=[]; f.histT=0;
+      doraEnter(f);
+    },
+    think(f,e,d,auto){
+      if(f.drEntry||f.drAim||f.tm||f.edT>0)return;
+      /* Thứ tự hành động: thu nhỏ trước, thổi bay sau, hết bảo bối mới xáp lá cà.
+         Take-copter và Emergency Door là nội tại, chạy ngoài chỗ này. */
+      if(f.cds.s3<=0&&(auto?d<520:keys['l'])){ f.cds.s3=DORA.slCd; doraSmallLight(f,e); return; }
+      if(f.cds.s2<=0&&(auto?d<540:keys['k'])){ f.cds.s2=DORA.acCd; doraAirCannon(f,e); return; }
+      if(f.cds.s1<=0&&!f.drCombo&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])) doraCombo(f,e);
+    },
+    /* Thanh phụ nói đúng một chuyện: cái túi đang có sẵn bảo bối nào. Không dán chữ
+       giải thích lên sàn — cùng luật với Horikita và Ginyu. */
+    gauge:f=>{
+      if(f.tm) return {pct:1, fill:'#FFE100', txt:'Time Machine'};
+      if(f.fk>0) return {pct:clamp(f.fk/DORA.fkT,0,1), fill:'#FFE100',
+                         txt:`Future Knowledge ${(f.fk*RT).toFixed(1)}s`};
+      if(f.copter>0) return {pct:clamp(f.copter/DORA.copT,0,1), fill:'#FFD34D',
+                             txt:`Take-copter ${(f.copter*RT).toFixed(1)}s`};
+      if(f.panic>0) return {pct:clamp(f.panic/DORA.panicT,0,1), fill:'#FF9A6E', txt:'Panic Mode'};
+      if(f.prep>0) return {pct:clamp(f.prep/DORA.prepT,0,1), fill:'#7DEBAB', txt:'Prepared Mode'};
+      const nAc=f.cds.s2<=0, nSl=f.cds.s3<=0, nEd=f.edCd<=0;
+      const n=(nAc?1:0)+(nSl?1:0)+(nEd?1:0);
+      return {pct:n/3, fill:'#7FD0FF', txt:`Pocket: ${n}/3 ready`};
     }
   }
 };
@@ -825,7 +930,7 @@ async function loadSaved(){
 const SFX_GROUPS={
   crit:'Chung', throw:'Konohamaru', punch:'ChiChi', kick:'Ozora Tsubasa',
   shika_lazy:'Shikamaru', suz_think:'Horikita Suzune', aya_appear:'Ayanokouji',
-  ginyu_fly:'Captain Ginyu'
+  ginyu_fly:'Captain Ginyu', dora_door:'Doraemon'
 };
 const SFX_EVENTS=[
   ['crit','Chí mạng'],['stun','Choáng'],['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt'],
@@ -868,7 +973,19 @@ const SFX_EVENTS=[
   ['ginyu_flash','Ginyu Flash — luồng sáng nối vào địch'],
   ['ginyu_change','🎙 GIỌNG · "CHANGE!!!" (câu cuối trước khi hoán đổi thân xác)'],
   ['ginyu_swap','Hoán đổi thân xác thành công'],
-  ['ginyu_miss','Change bắn trượt — Ginyu hoảng hốt']
+  ['ginyu_miss','Change bắn trượt — Ginyu hoảng hốt'],
+
+  ['dora_door','Anywhere Door hiện ra / mở ra'],
+  ['dora_hi','🎙 GIỌNG · Doraemon bước ra chào sân'],
+  ['dora_pocket','Thò tay vào túi thần kỳ lấy bảo bối'],
+  ['dora_aircannon','Air Cannon bắn ra'],
+  ['dora_smalllight','Small Light bắn tia'],
+  ['dora_shrink','Đối thủ bị thu nhỏ'],
+  ['dora_copter','Take-copter quay cánh'],
+  ['dora_escape','Chui qua Emergency Door'],
+  ['dora_panic','Doraemon hoảng hốt'],
+  ['dora_time','Time Machine khởi động'],
+  ['dora_win','Ngồi ăn dorayaki ăn mừng']
 ];
 const SFXBUF={};
 let AC=null, volume=.6, muted=false, lastSfx={};
@@ -1096,6 +1213,28 @@ function synth(name,c,g){
                       noise(c,g,{dur:.8,f0:400,f1:2600,vol:.14}); break;
     case 'ginyu_miss':tone(c,g,{type:'square',f0:520,f1:150,dur:.45,vol:.2});
                       noise(c,g,{dur:.45,f0:2000,f1:300,vol:.14,type:'lowpass'}); break;
+    case 'dora_door': tone(c,g,{type:'sine',f0:520,f1:880,dur:.5,vol:.16});
+                      tone(c,g,{type:'triangle',f0:260,f1:440,dur:.5,vol:.1});
+                      noise(c,g,{dur:.7,f0:600,f1:2400,vol:.09,q:1.2,delay:.3}); break;
+    case 'dora_hi':   [0,.18,.4].forEach((d,i)=>tone(c,g,{type:'square',f0:520+i*90,f1:520+i*90,dur:.14,vol:.14,delay:d}));
+                      tone(c,g,{type:'sine',f0:780,f1:620,dur:.3,vol:.1,delay:.6}); break;
+    case 'dora_pocket':noise(c,g,{dur:.24,f0:900,f1:260,vol:.16,type:'lowpass'});
+                      tone(c,g,{type:'sine',f0:300,f1:520,dur:.2,vol:.1}); break;
+    case 'dora_aircannon':tone(c,g,{type:'sine',f0:90,f1:40,dur:.5,vol:.3});
+                      noise(c,g,{dur:.5,f0:1800,f1:200,vol:.28,q:.7,type:'lowpass'}); break;
+    case 'dora_smalllight':tone(c,g,{type:'sine',f0:1400,f1:520,dur:.3,vol:.18});
+                      tone(c,g,{type:'triangle',f0:700,f1:260,dur:.3,vol:.1});
+                      noise(c,g,{dur:.28,f0:2600,f1:900,vol:.1}); break;
+    case 'dora_shrink':[0,.09,.18,.27].forEach((d,i)=>tone(c,g,{type:'sine',f0:900-i*180,f1:760-i*180,dur:.14,vol:.14,delay:d})); break;
+    case 'dora_copter':tone(c,g,{type:'sawtooth',f0:60,f1:150,dur:.9,vol:.12});
+                      noise(c,g,{dur:.9,f0:500,f1:900,vol:.14,q:3}); break;
+    case 'dora_escape':tone(c,g,{type:'sine',f0:660,f1:1320,dur:.28,vol:.18});
+                      noise(c,g,{dur:.3,f0:800,f1:2600,vol:.12}); break;
+    case 'dora_panic':[0,.1,.2].forEach((d,i)=>tone(c,g,{type:'square',f0:420+i*130,f1:520+i*150,dur:.12,vol:.13,delay:d})); break;
+    case 'dora_time': tone(c,g,{type:'sawtooth',f0:420,f1:70,dur:1.6,vol:.24});
+                      tone(c,g,{type:'sine',f0:210,f1:35,dur:1.6,vol:.16});
+                      noise(c,g,{dur:1.6,f0:2600,f1:200,vol:.14,q:1.4,type:'lowpass'}); break;
+    case 'dora_win':  [523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(c,g,{type:'triangle',f0:f,f1:f,dur:i===3?.7:.15,vol:.16,delay:i*.13})); break;
     default:        noise(c,g,{dur:.1,f0:1200,vol:.2});
   }
 }
@@ -1121,7 +1260,9 @@ const SFX_MAXLEN={
   aya_stand:AYA_STAND_LIFE*RT, aya_join:AYA_JOIN_LIFE*RT, aya_bye:AYA_BYE_LIFE*RT,
   suz_form2:2.4, suz_form3:2.8,
   // hai ô giọng của Ginyu: cắt đúng bằng bong bóng đang treo câu đó
-  ginyu_force:GN_FORCE_LIFE*RT, ginyu_change:GN_CHANGE_LIFE*RT
+  ginyu_force:GN_FORCE_LIFE*RT, ginyu_change:GN_CHANGE_LIFE*RT,
+  dora_hi:DORA_HI_LIFE*RT,                      // câu chào cắt đúng lúc bong bóng tắt
+  dora_door:DORA.doorT*RT, dora_time:DORA.tmT*RT
 };
 /* File dài thì đọc nối tiếp từng đoạn, hết file thì quay lại đầu. Mặc định mỗi đoạn
    2.2 giây; hai ô dưới đây lấy độ dài đoạn theo đúng thứ giới hạn chúng.
@@ -1393,7 +1534,8 @@ async function decodeInto(name,dataUrl){
 })();
 
 /* ---------- nhạc nền ---------- */
-const MUSIC={on:true, vol:.3, gain:null, filter:null, oscs:[], lfo:null, timer:null, next:0, step:0};
+const MUSIC={on:true, vol:.3, gain:null, filter:null, oscs:[], lfo:null, timer:null, next:0, step:0,
+             theme:'main'};
 const CHORDS=[
   [146.83,220.00,261.63], // Dm nhẹ
   [130.81,196.00,246.94], // C
@@ -1401,6 +1543,31 @@ const CHORDS=[
   [164.81,196.00,246.94]  // Em
 ];
 const PENTA=[523.25,587.33,659.25,783.99,880.00,1046.50];
+/* Theme du hành thời gian — hợp âm tăng và thang nguyên cung, nghe lơ lửng không có
+   chủ âm, đúng kiểu đang trôi giữa các mốc thời gian. Dùng cho phân cảnh Time Machine
+   của Doraemon; hết phân cảnh thì trả về theme chính. */
+const TIME_CHORDS=[
+  [130.81,164.81,207.65],
+  [146.83,185.00,233.08],
+  [123.47,155.56,196.00],
+  [138.59,174.61,220.00]
+];
+const TIME_PENTA=[554.37,622.25,698.46,783.99,880.00,987.77];
+const THEMES={ main:{ch:CHORDS,mel:PENTA,cut:760,sweep:260},
+               time:{ch:TIME_CHORDS,mel:TIME_PENTA,cut:1180,sweep:620} };
+const curTheme=()=>THEMES[MUSIC.theme]||THEMES.main;
+/* Đổi theme giữa chừng: pad trượt sang hợp âm mới, bộ lọc quét theo. Gọi được cả khi
+   nhạc đang tắt — lúc đó chỉ ghi nhớ tên theme. */
+function setTheme(name){
+  if(MUSIC.theme===name)return;
+  MUSIC.theme=name;
+  const c=AC; const T=curTheme();
+  if(!c||!MUSIC.gain)return;
+  const ch=T.ch[0];
+  MUSIC.oscs.forEach((o,i)=>{ try{ o.frequency.exponentialRampToValueAtTime(ch[i],c.currentTime+.6); }catch(e){} });
+  try{ MUSIC.filter.frequency.cancelScheduledValues(c.currentTime);
+       MUSIC.filter.frequency.linearRampToValueAtTime(T.cut,c.currentTime+.6); }catch(e){}
+}
 
 function startMusic(){
   const c=ac(); if(!c||MUSIC.gain)return;
@@ -1427,12 +1594,13 @@ function startMusic(){
     const cc=ac(); if(!cc||!MUSIC.gain)return;
     while(MUSIC.next < cc.currentTime+.9){
       const t=MUSIC.next;
+      const TH=curTheme();
       if(MUSIC.step%16===0){
-        const ch=CHORDS[(MUSIC.step/16)%CHORDS.length];
+        const ch=TH.ch[(MUSIC.step/16)%TH.ch.length];
         MUSIC.oscs.forEach((o,i)=>o.frequency.exponentialRampToValueAtTime(ch[i],t+3.2));
       }
       if(MUSIC.step%2===0 && Math.random()<.55){
-        const f=PENTA[Math.floor(Math.random()*PENTA.length)];
+        const f=TH.mel[Math.floor(Math.random()*TH.mel.length)];
         const o=cc.createOscillator(), g=cc.createGain();
         o.type='sine'; o.frequency.value=f;
         g.gain.setValueAtTime(.0001,t);
@@ -1507,6 +1675,12 @@ function mk(o){
     gnDaze:0, gnRage:0, gnTired:0, gnSlow:0, gnSlowAfter:0, gnBeamHits:0,
     gnEntry:null, gnAura:0, gnState:null, gnStateT:0, gnFlash:null, gnChange:null,
     gnChangeDone:false, gnProbeDone:false, gnPanic:false, gnPanicMul:1, swapAs:null, gnSoul:null,
+    /* Doraemon: Disoriented và Shrunk là thứ anh dán lên NGƯỜI KHÁC, nên khai chung ở đây */
+    dis:0, shrunk:0, szMul:1, hitMul:1, reachMul:1, kbTake:1, drCcRes:0, dmgDealt:0,
+    copter:0, copCd:0, drNoHit:0, edCd:0, edT:0, edMoved:false, edSpeed:0, edFrom:null, edTo:null,
+    fk:0, panic:0, prep:0, panicOn:false, panicSeen:false,
+    drEntry:null, drAim:null, drCombo:null, drHide:false, tm:null, tmDone:false,
+    hist:[], histT:0, startX:0, startY:0,
     bind:null, bindGuard:false, bindPending:false, lazyTalk:0, wakeT:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
 }
@@ -1545,6 +1719,7 @@ function aimTarget(f){
 }
 function newGame(){
   G={t:0,proj:[],waves:[],fx:[],floats:[],conf:[],timers:[],logs:[],over:null,winner:null,endT:0,announced:false,cam:{x:W/2,y:H/2,z:1},freeze:0,freezeAt:null,callBanner:null,loserFx:null,fighters:[],mates:[],flashback:null,flashScreen:0};
+  G.timeWarp=null;
   G.k=mkChar(PICK.a,0,W/2,PAD+120);
   G.c=mkChar(PICK.b,1,W/2,H-PAD-120);
   G.fighters=[G.k,G.c];
@@ -1563,7 +1738,7 @@ function setPose(f,p,t){ if(f.dash&&p!=='ulti')return; f.pose=p; f.poseT=t; }
 /* Vùng dính đòn: ảnh nhân vật cao khoảng 120px (từ f.y-100 tới f.y+20) trong khi
    f.r chỉ 26, nên nếu đo bằng vòng tròn quanh f.y thì đạn bay ngang ngực hay đầu
    sẽ xuyên qua người mà không ăn đòn. Dùng hình bầu dục ôm theo thân. */
-const bodyCY=f=>f.y-24, bodyRY=f=>f.summon?54:46;
+const bodyCY=f=>f.y-24, bodyRY=f=>(f.summon?54:46)*(f.hitMul||1);
 function hitsBody(p,f){
   const dx=p.x-f.x, dy=p.y-bodyCY(f);
   const rx=f.r+p.r, ry=bodyRY(f)+p.r;
@@ -1584,6 +1759,7 @@ function stunFx(f,dur,kind){
   if(f.prewing) dur*=PREWING_STUN;               // Pre-Wings: gồng được, choáng ngắn lại
   if(f.ccRes>0) dur*=(1-f.ccRes);                // Horikita form 3: kháng hiệu ứng, choáng ngắn lại
   if(f.gnCcRes>0) dur*=(1-f.gnCcRes);            // Ginyu đang ở thế thăm dò: kháng hiệu ứng
+  if(f.drCcRes>0) dur*=(1-f.drCcRes);            // Doraemon đang mang Future Knowledge
   if(f.ccTake&&f.ccTake!==1) dur*=f.ccTake;      // Ginyu đang hưng phấn: dính khống chế lâu hơn
   if(f.key==='shika'&&f.bind&&f.bind.guard){     // lần bù: đứng vững, không cắt được
     G.floats.push({x:f.x,y:f.y-104,txt:'UNBREAKABLE',color:'#CFC6FF',
@@ -1630,6 +1806,11 @@ function hurt(t,amt,src,crit,kind,tint,raw){
   // Ayanokouji nhảy vào đỡ thay: suốt quãng này Horikita không mất một giọt máu nào
   if(t.ayaG&&t.ayaG.t>0){ ayaBlock(t,amt,src); return false; }
   if(t.gnChange)return false;               // đang tung CHANGE!!!: không ai cắt ngang được
+  if(t.tm)return false;                     // đang trong phân cảnh Time Machine
+  if(t.edT>0)return false;                  // đang đi trong lòng Emergency Door
+  /* Emergency Door: sắp ăn một đòn bất kỳ thì 60% Doraemon chui qua cửa thay vì chịu trận.
+     Đặt TRƯỚC nhánh né để cửa được ưu tiên hơn mọi thứ khác. */
+  if(drTryEscape(t))return false;
   if(t.invuln>0){
     pop(t.x,t.y,'IMMUNE',t.color||'#FFF3C4',false);
     ring(t.x,t.y,52,'#FF9AD5',.3);
@@ -1652,6 +1833,8 @@ function hurt(t,amt,src,crit,kind,tint,raw){
   // Ginyu: hưng phấn thì ăn thêm 50% sát thương (xuyên qua phòng thủ), thăm dò thì chỉ ăn 40%
   if(t.dmgTake!==undefined&&t.dmgTake!==1) amt*=t.dmgTake;
   if(t.dash&&t.dash.guard) amt*=CHICHI_DASH_RES;   // đang lao tới: nhận ít sát thương hơn
+  // Small Light chọn mục tiêu theo tổng sát thương đã gây ra, nên phải cộng dồn ở đây
+  if(src&&!src.summon) src.dmgDealt=(src.dmgDealt||0)+amt;
   t.hp=Math.max(0,t.hp-amt);
   t.flash=crit?.2:.12; t.recoil=crit?1.4:1;
   t.flashCol=tint||null;                    // đỏ: nổ / thiêu đốt · hồng: Sexy no Jutsu
@@ -1674,6 +1857,9 @@ function hurt(t,amt,src,crit,kind,tint,raw){
     G.flashScreen=Math.max(G.flashScreen,.07);
   }
   counters(src,t);
+  drOnHurt(t,amt);                          // đứt Air Cannon, lệch Small Light, hoặc hoảng
+  /* Chiêu 4 — Time Machine: Second Chance. Máu về 0 nhưng Doraemon chưa ngã hẳn. */
+  if(t.hp<=0&&!t.summon&&drCanTime(t)){ doraTime(t); return true; }
   /* Chiêu 4 — CHANGE!!! Máu về 0 nhưng Captain Ginyu chưa chết: anh đứng nguyên chỗ
      ngã xuống và bắn tia hoán đổi thân xác. Chỉ đúng một lần, và chỉ khi hồn anh còn
      nằm trong thân xác của chính mình. */
@@ -1682,6 +1868,8 @@ function hurt(t,amt,src,crit,kind,tint,raw){
   return true;                              // đòn đã trúng: chỗ gọi được phép gắn thêm choáng / duy trì
 }
 function counters(src,tgt){
+  // Take-copter chỉ bật khi suốt copIdle giây không đánh trúng ai: trúng phát nào là reset
+  if(src&&src.key==='dora'&&!src.summon) src.drNoHit=0;
   for(const f of [src,tgt]){
     if(!f||f.summon)continue;
     if(f.key==='kono'&&f.rage<20){ f.rage++; if(f.rage===20) say('Nộ khí đầy — RASENGAN sẵn sàng!','g'); }
@@ -1700,11 +1888,21 @@ function finish(w){
   const loser = (win===G.k)?G.c:G.k;
   if(loser){
     loser.pose='hurt'; loser.poseT=0; loser.flash=0; loser.recoil=0; loser.lunge=0;
+    /* Doraemon thua thì ngã ngồi, vài bảo bối rơi ra khỏi túi rồi nằm xuống choáng váng.
+       Không máu me, không hiệu ứng chết chóc — anh chỉ bị hạ gục và bất tỉnh. */
+    if(loser.key==='dora'&&!loser.swapAs){
+      loser.pose='down';
+      for(let i=0;i<7;i++) G.fx.push({type:'gadget',x:loser.x+rnd(-10,10),y:loser.y+rnd(-16,6),
+        rot:rnd(0,6),vr:rnd(-4,4),shape:i%3,life:1.6,ml:1.6,
+        color:['#F5C518','#D8E4EE','#FF9AD5','#7FD0FF'][i%4]});
+      sfx('dora_panic');
+    }
     G.loserFx={f:loser,t:0,puff:0};
     ring(loser.x,loser.y-10,140,loser.color,.5);
   }
   G.proj.length=0; G.waves.length=0;
   G.floats.length=0; G.callBanner=null; G.freeze=0;
+  G.timeWarp=null; setTheme('main');
   G.timers.length=0; G.fx.length=0;
   sfx('ko'); say(G.over+' thắng!','g');
 }
@@ -1879,6 +2077,15 @@ function bindTick(k,dt){
   const B=k.bind; if(!B)return;
   const e=B.e;
   if(!e||!e.alive||!k.alive||G.over){ k.bind=null; k.lock=0; return; }
+  /* Take-copter: bay là là nên mấy thứ bò dưới đất — dải bóng của Shikamaru — không
+     bám vào được. Người dùng chốt riêng chỗ này. */
+  if(e.copter>0){
+    k.bind=null; k.lock=0; k.pose='idle';
+    G.floats.push({x:e.x,y:e.y-92,txt:'TAKE-COPTER · OUT OF REACH',color:'#FFD34D',
+      life:1.3,ml:1.3,banner:true,sc:.6});
+    say('Dải bóng trườn tới nhưng Doraemon đang bay — bóng không bám được vào đâu.','s');
+    return;
+  }
   const d=dist(k,e)||1;
   if(B.ph==='reach'){
     B.len+=SHIKA.bindSpd*dt;
@@ -2106,7 +2313,8 @@ const canReflect=p=>PHYSICAL.has(p.type)&&!p.noReflect;
 function knock(f,vx,vy,power){
   if(!f||f.summon||f.eagle||(f.dash&&f.dash.guard))return;   // lúc này không bị hất văng
   const m=Math.hypot(vx,vy)||1;
-  f.kbx=vx/m*power; f.kby=vy/m*power;
+  const p=power*(f.kbTake||1);              // đang bị Shrunk thì chịu thêm 40% lực đẩy
+  f.kbx=vx/m*p; f.kby=vy/m*p;
 }
 function addGoal(f){
   if(!f||f.key!=='tsubasa'||f.summon||f.eagle||G.over)return;
@@ -3363,7 +3571,7 @@ function ginyuChangeMiss(f){
 function ginyuSwapThink(f,e,d,auto){
   if(f.swapAs==='foe'){
     // kẹt trong thân xác Ginyu: chỉ còn đúng đấm đá của Ginyu
-    if(f.cds.s1<=0&&d<f.r+e.r+MELEE_REACH&&(auto||keys['j'])){ f.cds.s1=cm(GN.atkCd); ginyuStrike(f,e); }
+    if(f.cds.s1<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])){ f.cds.s1=cm(GN.atkCd); ginyuStrike(f,e); }
     return;
   }
   if(f.cds.s3<=0&&(auto?d<520:keys['l'])){ f.cds.s3=GN.flashCd+GN.flashCharge; ginyuFlash(f,e); return; }
@@ -3374,7 +3582,7 @@ function ginyuSwapThink(f,e,d,auto){
    sát thương và dáng vẫn là của họ. Phần yếu đi nằm ở f.dmgOut (gnStatus dựng), phần
    ngắm hỏng nằm ở f.missOdds / f.aimOff. */
 function gnBorrowBasic(f,e,d){
-  const reach=f.r+e.r+MELEE_REACH;
+  const reach=f.r+e.r+meleeReach(f);
   switch(f.key){
     case 'kono':    if(d<460){ f.cds.s1=cm(1.35); shuriken(f,e); } break;
     case 'shika':   if(d<500){ f.cds.s1=cm(SHIKA.atkCd); shikaThrow(f,e); } break;
@@ -3382,6 +3590,575 @@ function gnBorrowBasic(f,e,d){
     case 'chichi':  if(d<reach){ f.cds.s1=cm(.25); melee(f,e); } break;
     case 'suzune':  if(d<f.r+e.r+SUZ.atkRange){ f.cds.s1=suzTune(f).atkCd; suzStrike(f,e); } break;
     default:        if(d<reach){ f.cds.s1=cm(GN.atkCd); ginyuStrike(f,e); } break;
+  }
+}
+
+/* ================= Doraemon ================= */
+/* Fighter kiểu "Control – Utility – Survival": đòn tay nhẹ, nhưng cái túi thần kỳ đủ để
+   làm chậm, giữ khoảng cách, chạy thoát và lật ngược thế trận. Năm mảng, đừng gộp lại:
+     1. màn ra mắt — Anywhere Door, đúng 1.5 giây người chơi chia làm bốn pha;
+     2. hai nội tại tự chạy — Take-copter (đuổi kịp) và Emergency Door (chạy thoát);
+     3. ba chiêu bấm tay — combo ba đòn, Air Cannon, Small Light;
+     4. Time Machine: Second Chance — máu về 0 thì quay ngược chính mình 1~3 giây;
+     5. Panic Mode / Prepared Mode — hoảng trước, tìm được đúng bảo bối rồi phản công.
+   MỌI chữ hiện ra trong game của nhân vật này là tiếng Anh, kể cả tên trạng thái. */
+
+/* Tầm tay cận chiến của một người: Small Light rút ngắn tầm của người bị thu nhỏ, nên
+   mọi chỗ kiểm tầm đọc qua đây thay vì đọc thẳng hằng MELEE_REACH. */
+const meleeReach=f=>MELEE_REACH*((f&&f.reachMul)||1);
+const drCanTime=f=>!!f&&f.key==='dora'&&!f.summon&&!f.swapAs&&!f.tmDone&&!f.tm;
+
+/* Dựng lại phần hệ số nhân của Doraemon, chạy NGAY SAU gnStatus() nên nhân chồng lên
+   thứ gnStatus() vừa đặt chứ không gán đè. Chạy cho mọi nhân vật: Disoriented và Shrunk
+   là thứ Doraemon dán lên người khác. */
+/* Dựng lại toàn bộ hệ số nhân của một người. gnStatus() GÁN, drStatus() NHÂN CHỒNG lên
+   — nên hai hàm đó phải đi liền nhau và đúng thứ tự này. Gọi drStatus() lẻ một mình là
+   hệ số cộng dồn qua từng nhịp; vì vậy chỉ có đúng một cửa vào là hàm này. */
+function statusTick(f,dt){ gnStatus(f,dt); drStatus(f,dt); }
+function drStatus(f,dt){
+  for(const k of ['dis','shrunk','copter','fk','edSpeed','panic','prep']) if(f[k]>0) f[k]=Math.max(0,f[k]-dt);
+  if(f.copCd>0) f.copCd=Math.max(0,f.copCd-dt);
+  if(f.edCd>0) f.edCd=Math.max(0,f.edCd-dt);
+  // hết hoảng là tìm được đúng bảo bối: chuyển thẳng sang Prepared Mode
+  if(f.panicOn&&!(f.panic>0)){
+    f.panicOn=false;
+    if(f.alive&&!G.over&&f.key==='dora'){
+      f.prep=DORA.prepT;
+      G.floats.push({x:f.x,y:f.y-112,txt:'PREPARED MODE',color:'#7DEBAB',
+        life:1.4,ml:1.4,banner:true,gold:true,tilt:rnd(-.05,.05)});
+      say('Doraemon lục xong túi — tìm được đúng bảo bối và bắt đầu phản công.','m');
+    }
+  }
+  // hết Shrunk: trả lại vòng ăn đòn, tầm tay và lực đẩy phải chịu
+  if(f.hitMul!==1&&!(f.shrunk>0)){
+    f.hitMul=1; f.reachMul=1; f.kbTake=1;
+    if(f.r0!==undefined){ f.r=f.r0; f.r0=undefined; }
+  }
+  /* Model to nhỏ dần chứ không bật cụp. Quãng đi chỉ là (1 - shrunkSize) chứ không phải
+     cả dải 0→1, nên nhịp bước phải nhân đúng quãng đó — nếu không thì phình lại chỉ mất
+     45% thời gian đã hẹn. */
+  const want=f.shrunk>0?DORA.shrunkSize:1;
+  const span=1-DORA.shrunkSize;
+  const rate=span*dt/(want<f.szMul?DORA.shrinkT:DORA.growT);
+  f.szMul=clamp(f.szMul+clamp(want-f.szMul,-rate,rate),DORA.shrunkSize,1);
+
+  let slow=1, fast=1, ct=1, out=1, take=1, ccr=0;
+  if(f.dis>0){ slow*=DORA.disMove; ct*=DORA.disCast; }
+  if(f.shrunk>0){ slow*=DORA.shrunkMove; ct*=DORA.shrunkCast; out*=DORA.shrunkDmg; }
+  if(f.panic>0) ct*=DORA.panicCast;
+  if(f.prep>0) ct*=DORA.prepCast;
+  if(f.fk>0){ ct*=DORA.fkCast; fast*=DORA.fkMove; take*=DORA.fkTake; ccr=Math.max(ccr,DORA.fkCcRes); }
+  if(f.copter>0) fast*=DORA.copMove;
+  if(f.edSpeed>0) fast*=DORA.edSpeed;
+  f.moveMul*=slow;
+  /* Take-copter chống hiệu ứng làm chậm — kể cả thứ người khác gây ra (aura Ginyu, kiệt
+     sức, dải bóng). Gộp sau khi mọi thứ làm chậm đã nhân vào rồi mới nới ra một lượt. */
+  if(f.copter>0&&f.moveMul<1) f.moveMul=1-(1-f.moveMul)*(1-DORA.copSlowRes);
+  f.moveMul*=fast;
+  f.castMul*=ct; f.gnOut*=out; f.dmgOut*=out; f.dmgTake*=take;
+  f.drCcRes=ccr;
+}
+
+/* ---- màn ra mắt: Anywhere Door ---- */
+function doraEnter(f){
+  /* Bấm Bắt đầu mới bắt đầu đếm — step() chỉ chạy khi trận đang chạy, nên 1.5 giây
+     trong trận này đúng bằng 1.5 giây thật ở thanh tốc độ gốc. */
+  f.startX=f.x; f.startY=f.y;
+  f.drEntry={t:0, x:f.x, y:f.y, said:false, greeted:false,
+             side:(f.team===0?1:-1), doorA:0, doorOpen:0};
+  f.drHide=true;
+  f.pose='idle'; f.poseT=0;
+}
+function drEntryTick(f,dt){
+  const E=f.drEntry, P=DORA.doorPh;
+  // suốt màn ra mắt đối phương chỉ được đứng chờ, chưa được đánh
+  for(const o of G.fighters) if(o.team!==f.team&&!(o.summon&&!o.ally)) o.lock=Math.max(o.lock,.3);
+  f.lock=Math.max(f.lock,.3);
+  if(!E.said){ E.said=true; sfx('dora_door');
+    say('Một cánh Anywhere Door màu hồng hiện ra — Doraemon chưa có mặt trên sàn.','m'); }
+  E.t+=dt;
+  const t=E.t;
+  // pha 1: cửa hiện ra · pha 2: cửa mở · pha 3: bước ra · pha 4: cửa đóng rồi biến mất
+  E.doorA=t<P[0]?clamp(t/P[0],0,1):(t<P[2]?1:clamp(1-(t-P[2])/(P[3]-P[2]),0,1));
+  E.doorOpen=t<P[0]?0:(t<P[1]?clamp((t-P[0])/(P[1]-P[0]),0,1)
+                              :(t<P[2]?1:clamp(1-(t-P[2])/(P[3]-P[2]),0,1)));
+  f.drHide = t<P[1];
+  if(t>=P[1]){
+    const q=clamp((t-P[1])/(P[2]-P[1]),0,1);
+    f.x=E.x+E.side*22*q;
+    f.face=E.side;
+    // bước ra, nhìn quanh, rồi giơ một tay lên chào
+    f.pose = q<.65?'idle':'win';
+    f.poseT=0;
+    if(!E.greeted&&q>=.65){
+      E.greeted=true;
+      sfx('dora_hi');
+      talk(f.x,f.y-124,DORA_HI,DORA_HI_LIFE,true);
+      ring(f.x,f.y,96,'#FF9AD5',.45);
+    }
+  }
+  if(t>=P[3]){
+    f.drEntry=null; f.drHide=false; f.pose='idle'; f.poseT=0;
+    say('Cửa đóng lại — trận đấu bắt đầu.','m');
+  }
+}
+
+/* ---- nội tại 1: Take-copter ---- */
+function drCopterTick(f,dt,e,d){
+  if(f.copter>0){
+    // bay là là trong sàn, tới đủ tầm vung tay là hạ cánh ngay
+    if(e&&e.alive&&d<f.r+e.r+meleeReach(f)+22){ drCopterOff(f,'đã áp sát được'); return; }
+    if(f.copter<=0){ drCopterOff(f,'hết giờ'); return; }
+    f.pose='copter'; f.poseT=0;
+    if(chance(dt*8)) G.fx.push({type:'dust',x:f.x+rnd(-14,14),y:f.y+18,r:3,life:.3,ml:.3});
+    return;
+  }
+  if(f.copCd>0||!e||!e.alive||f.drAim||f.drCombo||f.tm)return;
+  /* Điều kiện: địch ở xa hơn 55% chiều dài sàn VÀ suốt copIdle vừa rồi không đánh
+     trúng ai. drNoHit được counters() đặt lại về 0 mỗi lần anh gây được sát thương. */
+  if(d>W*DORA.copFar&&f.drNoHit>=DORA.copIdle) drCopterOn(f);
+}
+function drCopterOn(f){
+  f.copter=DORA.copT; f.copCd=DORA.copCd; f.drNoHit=0;
+  setPose(f,'pocket',gs(.3));
+  sfx('dora_pocket'); sfx('dora_copter');
+  ring(f.x,f.y,92,'#FFD34D',.42);
+  G.floats.push({x:f.x,y:f.y-116,
+    txt:`TAKE-COPTER +${Math.round((DORA.copMove-1)*100)}% MOVE ${rts(DORA.copT)}s`,
+    color:'#FFD34D',life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  say('Địch chạy xa quá — Doraemon lấy Take-copter gắn lên đầu và bay đuổi theo.','m');
+}
+function drCopterOff(f,why){
+  if(!(f.copter>0))return;
+  f.copter=0;
+  f.pose='idle'; f.poseT=0;
+  say(`Take-copter cất lại vào túi — ${why}.`,'m');
+}
+
+/* ---- nội tại 2: Emergency Door ---- */
+/* Sắp ăn một đòn bất kỳ thì 60% anh chui qua cửa thay vì chịu trận. hurt() gọi cái này
+   TRƯỚC khi trừ máu, nên đòn đó coi như không trúng. */
+function drTryEscape(t){
+  if(!t||t.key!=='dora'||t.summon||!t.alive)return false;
+  if(t.drEntry||t.tm||t.edT>0||t.edCd>0)return false;
+  if(!chance(DORA.edOdds))return false;
+  doraEscape(t);
+  return true;
+}
+/* Chỗ đáp phải nằm trong sàn, cách chỗ cũ khoảng edDist chiều dài sàn, và càng xa địch
+   càng tốt. Có từ ba người trở lên thì phải thoát khỏi CHỖ ĐÔNG địch nhất, không được
+   nhảy sang chỗ còn đông hơn — nên điểm chấm trừ hẳn theo số địch đứng quanh. */
+function drSafeSpot(f){
+  const foes=G.fighters.filter(o=>o&&o!==f&&o.alive&&o.hp>0&&o.team!==f.team&&!(o.leaving>0));
+  const R=W*DORA.edDist;
+  let best=null, bestS=-1e9;
+  for(let i=0;i<24;i++){
+    const a=i/24*Math.PI*2;
+    const x=clamp(f.x+Math.cos(a)*R,PAD+16,W-PAD-16);
+    const y=clamp(f.y+Math.sin(a)*R,PAD+66,H-PAD-26);
+    // không được đáp vào trong model người khác
+    let clash=false;
+    for(const o of G.fighters){
+      if(!o||o===f||!o.alive||o.leaving>0)continue;
+      if(Math.hypot(o.x-x,o.y-y)<o.r+f.r+MELEE_GAP+8){ clash=true; break; }
+    }
+    if(clash)continue;
+    let near=1e9, crowd=0;
+    for(const o of foes){
+      const dd=Math.hypot(o.x-x,o.y-y);
+      near=Math.min(near,dd);
+      if(dd<190) crowd++;
+    }
+    if(near===1e9) near=W;
+    const sc=near-140*crowd;
+    if(sc>bestS){ bestS=sc; best={x,y}; }
+  }
+  return best||{x:clamp(f.x,PAD+16,W-PAD-16), y:clamp(f.y,PAD+66,H-PAD-26)};
+}
+function doraEscape(f){
+  f.edCd=DORA.edCd; f.edT=DORA.edT; f.edMoved=false;
+  f.drAim=null; f.drCombo=null; f.dash=null;
+  drCopterOff(f,'chui qua cửa');
+  f.edFrom={x:f.x,y:f.y};
+  f.edTo=drSafeSpot(f);
+  f.vx=f.vy=f.dvx=f.dvy=f.kbx=f.kby=0;
+  sfx('dora_escape');
+  ring(f.x,f.y,90,'#FF9AD5',.4);
+  G.floats.push({x:f.x,y:f.y-112,txt:'EMERGENCY DOOR',color:'#FF9AD5',
+    life:1.4,ml:1.4,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  say('Doraemon mở Anywhere Door chui qua — đòn đánh trượt vào khoảng không.','m');
+}
+function drEscapeTick(f,dt){
+  f.edT-=dt;
+  f.lock=Math.max(f.lock,.2);
+  f.drHide=!f.edMoved;                 // đang ở trong cửa thì chưa thấy trên sàn
+  if(!f.edMoved&&f.edT<=DORA.edT*.5){
+    f.edMoved=true;
+    f.x=f.edTo.x; f.y=f.edTo.y;
+    f.vx=f.vy=f.dvx=f.dvy=f.kbx=f.kby=0;
+    /* Xoá HIỆU ỨNG LÀM CHẬM, giữ nguyên choáng / cháy / độc và mọi debuff khác — kể cả
+       Shrunk, vì đó là một lần biến hình chứ không phải một lớp làm chậm. */
+    f.dis=0; f.gnSlow=0; f.gnSlowAfter=0; f.gnDaze=0; f.gnTired=0; f.exhaust=0;
+    f.edSpeed=DORA.edSpeedT;
+    sfx('dora_escape');
+    ring(f.x,f.y,90,'#FF9AD5',.4);
+    G.floats.push({x:f.x,y:f.y-104,
+      txt:`SLOWS CLEARED · +${Math.round((DORA.edSpeed-1)*100)}% MOVE ${rts(DORA.edSpeedT)}s`,
+      color:'#FFC0DE',life:1.4,ml:1.4,banner:true,sc:.62});
+  }
+  if(f.edT<=0){ f.edT=0; f.drHide=false; f.edFrom=null; f.pose='idle'; f.poseT=0; }
+}
+
+/* ---- chiêu 1: Basic Attack, combo ba đòn ---- */
+function doraCombo(f,e){ f.drCombo={i:0,t:0,e}; }
+function drComboTick(f,dt){
+  const C=f.drCombo; if(!C)return;
+  const tg=aimTarget(f);
+  const e=(tg&&tg.alive)?tg:C.e;
+  if(!e||!e.alive||G.over||f.stun>0){ f.drCombo=null; return; }
+  C.e=e; C.t-=dt;
+  if(C.t>0)return;
+  if(dist(f,e)>f.r+e.r+meleeReach(f)+16){   // địch lùi ra khỏi tầm thì bỏ dở combo
+    f.drCombo=null; f.cds.s1=DORA.hitCd*.5; return;
+  }
+  drBlow(f,e,C.i);
+  C.i++; C.t=DORA.hitGap;
+  if(C.i>=3){ f.drCombo=null; f.cds.s1=DORA.hitCd; }
+}
+function drBlow(f,e,i){
+  const last=i===2;
+  // Doraemon không có ngón tay: vung cả bàn tay tròn, đòn ba là lao bụng / húc đầu
+  setPose(f,last?'slam':(i===0?'punch':'kick'),gs(.4));
+  aim(f,e,last?1.2:.9);
+  sfx('punch');
+  const landed=hurt(e,DORA.hit[i],f);
+  G.fx.push({type:'punch',x:(f.x+e.x)/2,y:(f.y+e.y)/2,life:.16,ml:.16});
+  if(!landed)return;
+  if(last){
+    knock(e,e.x-f.x,e.y-f.y,DORA.slamKb);
+    ring(e.x,e.y,86,f.color,.35);
+    if(stunFx(e,DORA.slamStun,'spark')){
+      sfx('stun');
+      G.floats.push({x:e.x,y:e.y-104,txt:`STUNNED ${rts(DORA.slamStun)}s`,color:'#7FD0FF',
+        life:1.2,ml:1.2,banner:true,sc:.6});
+    }
+    say(`Doraemon lao bụng — ${DORA.hit[2]} dmg, hất địch lùi và choáng ${rts(DORA.slamStun)} giây.`,'m');
+  }
+  if(chance(DORA.disOdds)) drDisorient(e);
+}
+function drDisorient(t){
+  if(!t||t.summon)return;
+  t.dis=Math.max(t.dis,DORA.disT);
+  G.floats.push({x:t.x,y:t.y-118,
+    txt:`DISORIENTED −${Math.round((1-DORA.disMove)*100)}% MOVE / −${Math.round((1-DORA.disCast)*100)}% CAST ${rts(DORA.disT)}s`,
+    color:'#BFE4FF',life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
+}
+
+/* ---- lấy bảo bối: thò tay vào túi rồi mới rút vật ra ---- */
+function drReach(f,kind,e,cd){
+  f.drCombo=null;                    // rút bảo bối là bỏ dở combo tay, đừng chạy cả hai
+  f.drAim={kind, t:cd, e, age:0, jolt:0};
+  f.lock=Math.max(f.lock,cd+gs(.2));
+  setPose(f,'pocket',gs(.25));
+  sfx('dora_pocket');
+}
+function drAimTick(f,dt){
+  const A=f.drAim; if(!A)return;
+  const tg=aimTarget(f);
+  const e=(tg&&tg.alive)?tg:A.e;
+  if(!e||!e.alive||G.over||!f.alive){ f.drAim=null; f.lock=0; return; }
+  A.e=e; A.age+=dt; A.t-=dt;
+  // pha đầu là thò tay vào túi, sau đó mới cầm bảo bối lên ngắm
+  f.pose = A.age<gs(.25)?'pocket':(A.kind==='ac'?'aircannon':'smalllight');
+  f.poseT=0;
+  aim(f,e,.3);
+  f.lock=Math.max(f.lock,.2);
+  if(A.t<=0){ f.drAim=null; f.lock=0; (A.kind==='ac'?drAcFire:drSlFire)(f,e,A); }
+}
+/* Bị đánh giữa lúc đang lấy bảo bối. Air Cannon đứt hẳn nếu còn trong acBreak giây đầu
+   (bù lại chỉ chờ nửa hồi chiêu); Small Light thì không đứt, chỉ lệch hướng bắn. */
+function drOnHurt(t,amt){
+  if(!t||t.key!=='dora'||t.summon)return;
+  const A=t.drAim;
+  if(A&&A.kind==='ac'&&A.age<=DORA.acBreak){
+    t.drAim=null; t.lock=0; setPose(t,'hurt',.25);
+    t.cds.s2=DORA.acCd*DORA.acBreakCut;
+    G.floats.push({x:t.x,y:t.y-104,txt:`AIR CANNON BROKEN · CD ${Math.round(DORA.acBreakCut*100)}%`,
+      color:'#BFE4FF',life:1.4,ml:1.4,banner:true,sc:.62});
+    say('Doraemon bị đánh ngay lúc rút Air Cannon — chiêu đứt, bù lại chỉ chờ nửa hồi chiêu.','m');
+  }else if(A&&A.kind==='sl'){
+    A.jolt+=(chance(.5)?1:-1)*rnd(.10,.26);
+  }
+  if(amt>=t.maxHp*DORA.panicBurst||t.hp<=t.maxHp*DORA.panicHp) drPanicOn(t);
+}
+function drPanicOn(f){
+  if(!f||f.panic>0||f.tm||!f.alive||G.over)return;
+  /* Đang mang Future Knowledge thì không hoảng: anh vừa xem trước chuyện sắp xảy ra.
+     Đây cũng là chỗ giữ đúng luật "Time Machine không hồi lại Panic Mode" — quay về với
+     20% máu mà lại hoảng ngay thì coi như có hồi. */
+  if(f.fk>0)return;
+  f.panic=DORA.panicT; f.panicOn=true; f.prep=0;
+  sfx('dora_panic');
+  G.floats.push({x:f.x,y:f.y-112,txt:'PANIC MODE',color:'#FF9A6E',
+    life:1.4,ml:1.4,banner:true,gold:true,tilt:rnd(-.06,.06)});
+  say('Doraemon hoảng hốt — lùi lại, quýnh quáng lục túi tìm bảo bối.','m');
+}
+
+/* ---- chiêu 2: Air Cannon ---- */
+/* Luồng khí nén, không phải tia năng lượng: một vòng khí trắng xanh bay đi rồi tan.
+   Độ chính xác tra bảng DORA.acAcc theo khoảng cách, nội suy tuyến tính giữa hai mốc. */
+function drAcOdds(d,f){
+  const T=DORA.acAcc;
+  let p=T[T.length-1][1];
+  if(d<=T[0][0]) p=T[0][1];
+  else for(let i=1;i<T.length;i++){
+    if(d<=T[i][0]){ const q=(d-T[i-1][0])/(T[i][0]-T[i-1][0]); p=T[i-1][1]+(T[i][1]-T[i-1][1])*q; break; }
+  }
+  if(f&&f.fk>0) p+=DORA.fkAcc;              // Future Knowledge: ngắm chuẩn hơn hẳn
+  return clamp(p,.05,.98);
+}
+function doraAirCannon(f,e){
+  drReach(f,'ac',e,DORA.acAim);
+  G.floats.push({x:f.x,y:f.y-106,txt:'AIR CANNON',color:f.color,life:1.4,ml:1.4,
+    banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
+  say('Doraemon thò tay vào túi, lắp Air Cannon vào tay và ngắm.','m');
+}
+function drAcFire(f,e,A){
+  const d=dist(f,e);
+  const p=drAcOdds(d,f);
+  const ok=chance(p);
+  const sy=f.y-30;
+  const base=Math.atan2(bodyCY(e)-sy,e.x-f.x);
+  const a=ok?base+rnd(-.02,.02):base+(chance(.5)?1:-1)*rnd(.26,.55);
+  if(Math.abs(Math.cos(a))>.12) f.face=Math.cos(a)>=0?1:-1;
+  f.ax=Math.cos(a); f.ay=Math.sin(a); f.lunge=Math.max(f.lunge,.7);
+  setPose(f,'aircannon',gs(.45));
+  G.proj.push({type:'aircan',team:f.team,owner:f,x:f.x+Math.cos(a)*30,y:sy+Math.sin(a)*30,
+    vx:Math.cos(a)*DORA.acSpd,vy:Math.sin(a)*DORA.acSpd,r:22,dmg:DORA.acDmg,
+    life:2.6,ang:a,hitList:[],wob:rnd(0,9)});
+  sfx('dora_aircannon');
+  ring(f.x+Math.cos(a)*26,sy+Math.sin(a)*26,54,'#D6F2FF',.3);
+  G.flashScreen=Math.max(G.flashScreen,.05);
+  say(`Air Cannon bắn ra — tỉ lệ trúng ở khoảng cách này ${Math.round(p*100)}%.`,'m');
+}
+/* Trả về true nếu luồng khí đã ăn đủ số người và phải tan. Người thứ hai trên đường
+   bay chỉ chịu 60% sát thương lẫn 60% thời gian choáng. */
+function drAcHit(p,t){
+  if(p.hitList.indexOf(t)>=0)return false;
+  p.hitList.push(t);
+  const mul=p.hitList.length>1?DORA.acPierce2:1;
+  ring(t.x,t.y,120,'#D6F2FF',.45);
+  G.flashScreen=Math.max(G.flashScreen,.08);
+  const landed=hurt(t,p.dmg*mul,p.owner,'AIR CANNON!','big');
+  if(landed){
+    knock(t,p.vx,p.vy,W*DORA.acKbDist*6);
+    drInterrupt(t);
+    if(stunFx(t,DORA.acStun*mul,'spark')){
+      sfx('stun');
+      G.floats.push({x:t.x,y:t.y-104,txt:`STUNNED ${rts(DORA.acStun*mul)}s`,color:'#D6F2FF',
+        life:1.3,ml:1.3,banner:true,sc:.6});
+    }
+    for(let i=0;i<7;i++) G.fx.push({type:'dust',x:t.x+rnd(-18,18),y:t.y+rnd(-26,12),r:5,life:.4,ml:.4});
+    say(p.hitList.length>1
+      ?`Luồng khí xuyên tiếp người thứ hai — ${Math.round(p.dmg*mul)} dmg và choáng ngắn hơn.`
+      :`Air Cannon trúng đích — ${Math.round(p.dmg)} dmg, thổi bay và choáng ${rts(DORA.acStun)} giây.`,'m');
+  }
+  return p.hitList.length>=DORA.acPierce;
+}
+/* Cắt ngang mấy chiêu cần thời gian gồng. Riêng quãng đứng suy nghĩ của Horikita thì
+   KHÔNG đụng vào: máy quyết định của cô là một chuỗi trạng thái, cắt giữa chừng là hỏng
+   cả mạch chứ không phải chỉ mất một chiêu. */
+function drInterrupt(e){
+  if(!e)return false;
+  let cut=false;
+  if(e.bind||(e.dash&&e.dash.kind==='stab')){ shikaInterrupt(e); cut=true; }
+  if(e.gnFlash){ e.gnFlash=null; e.lock=0; e.pose='idle'; cut=true; }
+  if(e.drAim){ e.drAim=null; e.lock=0; e.pose='idle'; cut=true; }
+  if(cut) G.floats.push({x:e.x,y:e.y-92,txt:'INTERRUPTED',color:'#D6F2FF',
+    life:1.1,ml:1.1,banner:true,sc:.6});
+  return cut;
+}
+
+/* ---- chiêu 3: Small Light ---- */
+/* Có ba người trở lên thì chọn theo thứ tự: gây tổng sát thương cao nhất, rồi máu hiện
+   tại cao nhất; ai đang bị Shrunk thì bỏ qua, chuyển sang người chưa dính. */
+function drSlTarget(f){
+  const foes=G.fighters.filter(o=>o&&o.alive&&o.hp>0&&o.team!==f.team&&!(o.summon&&!o.ally)&&!(o.leaving>0));
+  if(!foes.length)return null;
+  const fresh=foes.filter(o=>!(o.shrunk>0));
+  const pool=fresh.length?fresh:foes;
+  let best=pool[0];
+  for(const o of pool){
+    const a=o.dmgDealt||0, b=best.dmgDealt||0;
+    if(a>b||(a===b&&o.hp>best.hp)) best=o;
+  }
+  return best;
+}
+function doraSmallLight(f,e){
+  drReach(f,'sl',drSlTarget(f)||e,DORA.slAim);
+  G.floats.push({x:f.x,y:f.y-106,txt:'SMALL LIGHT',color:f.color,life:1.4,ml:1.4,
+    banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
+  say('Doraemon rút Small Light ra, cầm hai tay và ngắm.','m');
+}
+function drSlFire(f,e,A){
+  const jolt=A.jolt*(f.fk>0?(1-DORA.fkAcc):1);      // bị đánh lúc ngắm thì hướng bắn lệch
+  const sy=f.y-34;
+  const a=Math.atan2(bodyCY(e)-sy,e.x-f.x)+jolt;
+  if(Math.abs(Math.cos(a))>.12) f.face=Math.cos(a)>=0?1:-1;
+  f.ax=Math.cos(a); f.ay=Math.sin(a); f.lunge=Math.max(f.lunge,.6);
+  setPose(f,'smalllight',gs(.4));
+  // tia bay nhanh nhưng KHÔNG bẻ cong đuổi theo mục tiêu
+  G.proj.push({type:'smalllight',team:f.team,owner:f,x:f.x+Math.cos(a)*28,y:sy+Math.sin(a)*28,
+    vx:Math.cos(a)*DORA.slSpd,vy:Math.sin(a)*DORA.slSpd,r:13,dmg:DORA.slDmg,
+    life:2.4,ang:a,wob:rnd(0,9)});
+  sfx('dora_smalllight');
+  ring(f.x+Math.cos(a)*24,sy+Math.sin(a)*24,40,'#FFF3B0',.26);
+  say(jolt?'Small Light bắn ra — nhưng vừa ăn đòn nên hướng bắn lệch đi.':'Small Light bắn ra một tia vàng nhạt.','m');
+}
+function drSlHit(p,t){
+  const landed=hurt(t,p.dmg,p.owner,false,'big');
+  if(!landed)return;
+  drShrink(t);
+}
+/* Shrunk KHÔNG cộng dồn: đang bị thu nhỏ mà ăn thêm một tia thì chỉ làm mới đồng hồ. */
+function drShrink(t){
+  if(!t||t.summon)return;
+  const fresh=!(t.shrunk>0);
+  t.shrunk=DORA.shrunkT;
+  if(!fresh){
+    G.floats.push({x:t.x,y:t.y-112,txt:`SHRUNK REFRESHED ${rts(DORA.shrunkT)}s`,color:'#FFF3B0',
+      life:1.3,ml:1.3,banner:true,sc:.62});
+    return;
+  }
+  /* Model nhỏ hẳn còn 55%, nhưng vòng ăn đòn chỉ được nhỏ đi 15% — nhỏ theo model thì
+     đối phương gần như không đánh trúng được nữa. */
+  if(t.r0===undefined) t.r0=t.r;
+  t.r=Math.max(10,Math.round(t.r0*DORA.shrunkHit));
+  t.hitMul=DORA.shrunkHit; t.reachMul=DORA.shrunkReach; t.kbTake=DORA.shrunkKb;
+  sfx('dora_shrink');
+  ring(t.x,t.y,110,'#FFF3B0',.45);
+  G.floats.push({x:t.x,y:t.y-118,txt:`SHRUNK ${Math.round(DORA.shrunkSize*100)}% SIZE ${rts(DORA.shrunkT)}s`,
+    color:'#FFF3B0',life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  say(`${t.name} bị Small Light thu nhỏ — chậm hẳn, đánh nhẹ hẳn và bị thổi bay dễ hơn trong ${rts(DORA.shrunkT)} giây.`,'m');
+}
+
+/* ---- chiêu 4: Time Machine: Second Chance ---- */
+/* Lịch sử vị trí và máu, lấy mẫu đều đặn và chỉ giữ tmHistT giây gần nhất. */
+function drHistTick(f,dt){
+  f.histT-=dt;
+  if(f.histT>0)return;
+  f.histT=gs(.12);
+  f.hist.push({t:G.t,x:f.x,y:f.y,hp:f.hp});
+  while(f.hist.length&&G.t-f.hist[0].t>DORA.tmHistT+gs(.2)) f.hist.shift();
+}
+function doraTime(f){
+  f.tmDone=true;
+  f.hp=1; f.alive=true;
+  f.drAim=null; f.drCombo=null; f.dash=null; f.edT=0; f.drHide=false;
+  f.copter=0; f.dots.length=0;
+  f.vx=f.vy=f.dvx=f.dvy=f.kbx=f.kby=0;
+  f.tm={t:0, back:rnd(DORA.tmBackLo,DORA.tmBackHi)};
+  f.lock=Math.max(f.lock,DORA.tmT+gs(.4));
+  setPose(f,'down',DORA.tmT);
+  /* Đạn anh vừa bắn ra trong quãng sắp bị tua lại phải biến mất, nếu không quay xong
+     là có hai loạt cùng bay. */
+  for(let i=G.proj.length-1;i>=0;i--) if(G.proj[i]&&G.proj[i].owner===f) G.proj.splice(i,1);
+  /* Đóng băng cả sàn: step() return sớm lúc G.freeze>0 nên đồng hồ buff, debuff và hồi
+     chiêu của MỌI người đứng yên — không ai mất thời gian hiệu ứng vì đoạn phân cảnh. */
+  G.freeze=DORA.tmT; G.freezeAt=f;
+  G.timeWarp={t:0,max:DORA.tmT,f};
+  G.flashScreen=Math.max(G.flashScreen,.5);
+  sfx('dora_time');
+  setTheme('time');
+  G.callBanner={txt:'TIME MACHINE: SECOND CHANCE',color:'#FFE100',life:CALL_BANNER_LIFE,ml:CALL_BANNER_LIFE};
+  say('Doraemon ngã xuống — nhưng cỗ Time Machine hiện ra, kim đồng hồ quay ngược.','m');
+  later(DORA.tmPh[3],()=>drTimeBack(f),true);
+}
+function drTimeBack(f){
+  const T=f.tm; f.tm=null;
+  G.timeWarp=null;
+  setTheme('main');
+  if(G.over)return;
+  const backM=gs(T?T.back:2);
+  /* Chưa đủ tmHistT giây dữ liệu thì về thẳng chỗ xuất phát với 20% máu tối đa. */
+  const enough=f.hist.length>1&&(G.t-f.hist[0].t)>=DORA.tmHistT-gs(.3);
+  let px,py,ph;
+  if(enough){
+    const want=G.t-backM;
+    let best=f.hist[0];
+    for(const h of f.hist){ if(h.t<=want) best=h; else break; }
+    px=best.x; py=best.y; ph=best.hp;
+  }else{
+    px=f.startX; py=f.startY; ph=f.maxHp*DORA.tmHealCap;
+  }
+  f.x=clamp(px,PAD,W-PAD); f.y=clamp(py,PAD+50,H-PAD-10);
+  // hồi lại đúng lượng máu của lúc đó, nhưng không quá 20% máu tối đa
+  f.hp=Math.max(1,Math.min(ph,f.maxHp*DORA.tmHealCap));
+  // xoá sạch debuff đang mang trên người anh — chỉ trên anh thôi
+  f.stun=0; f.dis=0; f.shrunk=0; f.dots.length=0;
+  f.gnDaze=0; f.gnRage=0; f.gnTired=0; f.gnSlow=0; f.gnSlowAfter=0;
+  f.exhaust=0; f.vuln=0; f.outCut=0; f.lock=0; f.kbx=0; f.kby=0;
+  f.hitMul=1; f.reachMul=1; f.kbTake=1;
+  if(f.r0!==undefined){ f.r=f.r0; f.r0=undefined; }
+  for(const o of G.fighters) if(o.bind&&o.bind.e===f){ o.bind=null; o.lock=0; }
+  // hồi chiêu đang chạy được cắt 40% phần còn lại
+  for(const k in f.cds) f.cds[k]=Math.max(0,f.cds[k]*(1-DORA.tmCdCut));
+  f.copCd=Math.max(0,f.copCd*(1-DORA.tmCdCut));
+  f.edCd=Math.max(0,f.edCd*(1-DORA.tmCdCut));
+  f.panic=0; f.panicOn=false;              // không hồi lại Panic Mode
+  f.fk=DORA.fkT;
+  f.hist.length=0; f.histT=0;
+  f.pose='idle'; f.poseT=0;
+  ring(f.x,f.y,150,'#FFE100',.55);
+  G.flashScreen=Math.max(G.flashScreen,.4);
+  G.floats.push({x:f.x,y:f.y-118,txt:`FUTURE KNOWLEDGE ${rts(DORA.fkT)}s`,color:'#FFE100',
+    life:1.8,ml:1.8,banner:true,gold:true,focus:true,tilt:rnd(-.05,.05)});
+  say(`Doraemon quay ngược ${(T?T.back:2).toFixed(1)} giây — về đúng chỗ cũ với ${Math.round(f.hp)} máu, sạch debuff.`,'m');
+  say('Biết trước chuyện sắp xảy ra: chịu đòn tốt hơn, chạy nhanh hơn, ngắm chuẩn hơn.','m');
+}
+
+/* ---- AI: giữ khoảng cách trung bình, hoảng thì lùi, hết bảo bối mới xáp vào ---- */
+function doraVec(f,e){
+  const d=dist(f,e)||1, ux=(e.x-f.x)/d, uy=(e.y-f.y)/d;
+  const wd=Math.hypot(f.wx-f.x,f.wy-f.y)||1, wxu=(f.wx-f.x)/wd, wyu=(f.wy-f.y)/wd;
+  let x=0,y=0;
+  const jit=f.panic>0?DORA.panicJit:1;
+  if(f.panic>0){
+    // hoảng: lùi thẳng ra và chạy loạn, chưa nghĩ ra dùng bảo bối nào
+    x-=ux*1.25; y-=uy*1.25;
+    x+=wxu*.5+f.jx*.8*jit; y+=wyu*.5+f.jy*.8*jit;
+  }else if(f.cds.s2>0&&f.cds.s3>0&&!f.drAim){
+    // cả hai bảo bối đang hồi: lúc này mới chịu áp sát đánh tay
+    const want=orbWant(f);
+    if(d>want+MELEE_BAND){ x+=ux; y+=uy; }
+    else if(d<want-MELEE_BAND){ x-=ux*.9; y-=uy*.9; }
+    else { x+=-uy*f.strafe*.95; y+=ux*f.strafe*.95; }
+    x+=wxu*.35+f.jx*.34; y+=wyu*.35+f.jy*.34;
+  }else{
+    // còn bảo bối: giữ đúng quãng trung bình để rút đồ ra dùng
+    const want=f.want||205;
+    if(d<want-45){ x-=ux*1.15; y-=uy*1.15; }
+    else if(d>want+65){ x+=ux*.75; y+=uy*.75; }
+    x+=wxu*.85-uy*f.strafe*.4+f.jx*.25;
+    y+=wyu*.85+ux*f.strafe*.4+f.jy*.25;
+  }
+  const dv=dodgeVec(f); x+=dv.x*1.5; y+=dv.y*1.5;
+  return {x,y};
+}
+
+function doraTick(f,dt){
+  if(f.drEntry){ drEntryTick(f,dt); return; }
+  drHistTick(f,dt);
+  if(f.tm){ f.lock=Math.max(f.lock,.3); f.pose='down'; f.poseT=0; return; }
+  if(f.edT>0){ drEscapeTick(f,dt); return; }
+  f.drNoHit+=dt;
+  const e=aimTarget(f)||foeOf(f);
+  const d=e?dist(f,e):999;
+  drCopterTick(f,dt,e,d);
+  drAimTick(f,dt);
+  drComboTick(f,dt);
+  if(f.hp>0&&f.hp<=f.maxHp*DORA.panicHp&&f.panic<=0&&f.prep<=0&&!f.panicSeen){
+    f.panicSeen=true; drPanicOn(f);
   }
 }
 
@@ -3407,7 +4184,7 @@ function dodgeVec(f){
     const sp=Math.hypot(p.vx,p.vy)||1;
     if(((f.x-p.x)*p.vx+(f.y-p.y)*p.vy)/(sp*(d||1))<.6)continue;
     const PW={kame:1.7,twin:1.5,drive:1.3,ball:1.1};
-    const w=(1-d/200)*(PW[p.type]||1)*f.dodge;
+    const w=(1-d/200)*(PW[p.type]||1)*f.dodge*(1+(f.copter>0?DORA.copDodge:0));
     dx+=-p.vy/sp*w*f.strafe + (f.x-p.x)/(d||1)*w*.5;
     dy+= p.vx/sp*w*f.strafe + (f.y-p.y)/(d||1)*w*.5;
   }
@@ -3439,6 +4216,8 @@ function aiVec(f,e){
     const dv0=dodgeVec(f); x+=dv0.x*1.6; y+=dv0.y*1.6;
     return {x,y};
   }
+  // Doraemon giữ quãng trung bình để rút bảo bối; hoảng thì lùi, hết bảo bối mới xáp vào
+  if(f.key==='dora'&&!f.summon) return doraVec(f,e);
   if(f.role==='ranged'){
     const want=f.want||215;
     if(d<want-45){ x-=ux*1.15; y-=uy*1.15; }
@@ -3499,6 +4278,7 @@ function step(dt){
     for(let i=G.fx.length-1;i>=0;i--){ const e=G.fx[i]; if(!e) continue; e.life-=dt; if(e.type==='ring')e.r+=(e.max-e.r)*dt*7; if(e.life<=0)G.fx.splice(i,1); }
     for(let i=G.floats.length-1;i>=0;i--){ const f=G.floats[i]; if(!f) continue; f.y-=18*dt; f.life-=dt; if(f.life<=0)G.floats.splice(i,1); }
     if(G.callBanner){ G.callBanner.life-=dt; if(G.callBanner.life<=0)G.callBanner=null; }
+    if(G.timeWarp){ G.timeWarp.t+=dt; if(G.timeWarp.t>=G.timeWarp.max) G.timeWarp=null; }
     if(G.flashScreen>0)G.flashScreen-=dt;
     return;
   }
@@ -3531,13 +4311,15 @@ function step(dt){
     if(f.lock>0) f.lock=Math.max(0,f.lock-dt);
     if(f.unhideT>0){ f.unhideT-=dt; if(f.unhideT<=0){ f.hidden=false; f.lock=0; } }
     if(f.eagle&&!f.swapAs) eagleTick(f,dt);
-    // hệ số nhân của Ginyu bám vào mọi người, nên dựng lại cho từng người mỗi nhịp
-    gnStatus(f,dt);
+    // hệ số nhân của Ginyu và của Doraemon bám vào mọi người: dựng lại cho từng người
+    // mỗi nhịp, qua đúng một cửa
+    statusTick(f,dt);
     if(f.key==='shika'&&!f.summon&&f.alive&&!f.swapAs){ shikaPassive(f,dt); bindTick(f,dt); domainTick(f,dt); }
     if(f.key==='suzune'&&!f.summon&&f.alive&&!f.swapAs) suzPassive(f,dt);
     /* Chạy cho cả ba trường hợp: chính Ginyu, thân xác Ginyu do địch điều khiển, và
        thân xác địch đang có hồn Ginyu — chiêu 3 của anh cần được đếm nhịp ở cả hai chỗ. */
     if(!f.summon&&f.alive&&(f.key==='ginyu'||f.swapAs)) ginyuTick(f,dt);
+    if(f.key==='dora'&&!f.summon&&f.alive&&!f.swapAs) doraTick(f,dt);
     // người khiêu khích rời sàn thì đối thủ nhắm lại vào mục tiêu thật
     if(f.tauntBy&&(!f.tauntBy.alive||f.tauntBy.hp<=0||f.tauntBy.leaving>0||G.fighters.indexOf(f.tauntBy)<0)) f.tauntBy=null;
     if(f.outCut>0&&!(foeOf(f)&&foeOf(f).domain)) f.outCut=0;
@@ -3576,7 +4358,8 @@ function step(dt){
       G.cam.z+=(tz-G.cam.z)*Math.min(1,dt*2.4);
       G.cam.x+=(tx-G.cam.x)*Math.min(1,dt*3);
       G.cam.y+=(ty-G.cam.y)*Math.min(1,dt*3);
-      if(w.alive) setPose(w,'idle',0);
+      // Doraemon thắng thì ngồi xuống ăn dorayaki chứ không đứng thủ thế
+      if(w.alive) setPose(w,w.key==='dora'&&!w.swapAs?'win':'idle',0);
     }
     if(!G.announced && G.endT>=2){
       G.announced=true;
@@ -3768,6 +4551,7 @@ function step(dt){
     if(!a||!b||!a.alive||!b.alive)continue;
     if(a.dash||b.dash||a.leaving>0||b.leaving>0)continue;
     if(a.gnEntry||b.gnEntry||a.gnChange||b.gnChange)continue;   // đang bay vào sân / đang tung CHANGE
+    if(a.drEntry||b.drEntry||a.edT>0||b.edT>0||a.tm||b.tm)continue;   // Doraemon: ra mắt / chui cửa / tua ngược
     const wa=(a.summon&&!a.ally)?0:1, wb=(b.summon&&!b.ally)?0:1;
     if(!wa&&!wb)continue;
     const dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy)||.01, need=a.r+b.r+MELEE_GAP;
@@ -3923,6 +4707,9 @@ function step(dt){
         continue;
       }
       if(p.type==='gbeam'&&hitsBody(p,f)){ gnBeamHit(p,f); dead=true; break; }
+      // luồng khí nén xuyên được tối đa hai người rồi mới tan
+      if(p.type==='aircan'){ if(hitsBody(p,f)&&drAcHit(p,f)){ dead=true; break; } continue; }
+      if(p.type==='smalllight'&&hitsBody(p,f)){ drSlHit(p,f); dead=true; break; }
       if(p.type==='decision'&&hitsBody(p,f)){ suzDecisionHit(p,f); dead=true; break; }
       if(p.type==='kunai'&&hitsBody(p,f)){ explode(p); dead=true; break; }
       if((p.type==='ball'||p.type==='drive'||p.type==='twin')&&hitsBody(p,f)){ ballHit(p,f); dead=true; break; }
@@ -4277,6 +5064,8 @@ function vector(f){
       ctx.beginPath(); ctx.moveTo(-13,y+8); ctx.lineTo(-8,y+2); ctx.lineTo(-4,y+8); ctx.closePath(); ctx.fill();
     }
     ctx.restore();
+  }else if(f.key==='dora'){
+    doraVector(f);
   }else if(f.key==='ayanokouji'){
     const guard=(f.pose==='guard'), strike=(f.pose==='strike');
     const kk=strike?Math.sin(clamp(f.poseT||0,0,1)*Math.PI):0;
@@ -4457,6 +5246,14 @@ function sprite(f){
     else if(pk==='kick') arr=set.punch||set.atk1||set.idle;
     else if(pk==='think') arr=set.idle;
     else if(pk==='decide') arr=set.think||set.idle;   // 'decide' chỉ còn là TƯ THẾ, không còn ô dán ảnh
+    // Doraemon: thiếu ảnh dáng nào thì lùi về ô gần nghĩa nhất
+    else if(pk==='pocket') arr=set.idle;
+    else if(pk==='slam') arr=set.punch||set.kick||set.idle;
+    else if(pk==='aircannon') arr=set.pocket||set.idle;
+    else if(pk==='smalllight') arr=set.pocket||set.aircannon||set.idle;
+    else if(pk==='copter') arr=set.idle;
+    else if(pk==='win') arr=set.idle;
+    else if(pk==='down') arr=set.injured||set.hurt||set.idle;
     // Ginyu: thiếu ảnh dáng nào thì lùi về ô gần nghĩa nhất, đừng lùi thẳng về ô đứng
     else if(pk==='dance1'||pk==='dance2'||pk==='dance3') arr=set.idle;
     else if(pk==='fly') arr=set.idle;
@@ -4481,6 +5278,7 @@ function sprite(f){
 }
 function drawFighter(f){
   if(f.hidden)return;                          // đang thay bằng mô hình sút đôi
+  if(f.drHide)return;                          // Doraemon còn trong lòng Anywhere Door
   const img=sprite(f);
   const mv=f.moveAmt!==undefined?clamp(f.moveAmt,0,1):(f.moving?1:0);
   const hop = Math.abs(Math.sin(G.t*7.5))*7*mv + Math.sin(G.t*2.4)*2.5*(1-mv);
@@ -4501,9 +5299,15 @@ function drawFighter(f){
   }
   if(mv>.05){ sy*=1+Math.sin(G.t*7.5)*.05*mv; sx*=1-Math.sin(G.t*7.5)*.03*mv; }
   sy*=1-.12*rec;
+  /* Small Light: model co lại rõ hẳn (55%) trong khi vòng ăn đòn chỉ nhỏ đi 15% —
+     hai con số này CỐ Ý lệch nhau, xem ghi chú trong CLAUDE.md. */
+  const sz=f.szMul===undefined?1:f.szMul;
+  sx*=sz; sy*=sz;
+  // Take-copter: bay là là, đủ thấy chân rời đất chứ không bay lên trời
+  const fly=f.copter>0?DORA.copHover*(1+Math.sin(G.t*9)*.12):0;
 
-  ctx.save(); ctx.globalAlpha=.25*clamp(1-hop/26,.3,1); ctx.fillStyle='#000';
-  ctx.beginPath(); ctx.ellipse(f.x+ox,f.y+22,20-hop*.35,6,0,0,7); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.globalAlpha=.25*clamp(1-hop/26,.3,1)*(fly?.6:1); ctx.fillStyle='#000';
+  ctx.beginPath(); ctx.ellipse(f.x+ox,f.y+22,(20-hop*.35)*sz,6*sz,0,0,7); ctx.fill(); ctx.restore();
 
   // Vòng khiêu khích dưới chân Ayanokouji: dấu hiệu duy nhất cho biết địch đang bị hút
   // vào anh. Chỉ là hình, không chữ.
@@ -4624,7 +5428,7 @@ function drawFighter(f){
   gnAuraDraw(f,f.x+ox,f.y+20-hop);
 
   ctx.save();
-  ctx.translate(f.x+ox, f.y+20+oy*.4-hop);
+  ctx.translate(f.x+ox, f.y+20+oy*.4-hop-fly);
   // Ngồi lười: nếu đã có ảnh dáng ngồi riêng thì vẽ nguyên, đừng bóp gì cả.
   // Chỉ khi chưa nạp ảnh mới ngả nhẹ và thu thấp để hình đứng đọc ra thành ngồi.
   const fakeSit = f.lazy && !(SPR[f.key]&&SPR[f.key].lazy&&SPR[f.key].lazy.length);
@@ -4900,6 +5704,7 @@ function fireText(txt,cx,y,size,seed){
 }
 function drawBars(f){
   if(f.summon&&!f.ally)return;
+  if(f.drHide)return;                          // Doraemon còn trong lòng Anywhere Door
   if(f.ally){
     // đồng minh dùng thanh nhỏ hơn hẳn, để ba người đứng sát nhau vẫn đọc được ai là ai
     const w=84,h=16,x=clamp(f.x-w/2,12,W-w-12),y=f.y+28;
@@ -4959,6 +5764,12 @@ function drawBars(f){
   if(f.gnState==='atk') lines.push({t:`EXCITED +${Math.round((GN.atk.dmg-1)*100)}% DMG · +${Math.round((GN.atk.take-1)*100)}% DMG TAKEN · +${Math.round((GN.atk.cc-1)*100)}% CC`, c:'#C77DFF', s:9});
   if(f.gnState==='def') lines.push({t:`PROBING −${Math.round((1-GN.def.take)*100)}% DMG TAKEN · +${Math.round(GN.def.ccRes*100)}% CC RESIST · −${Math.round((1-GN.def.dmg)*100)}% DMG`, c:'#7FE0FF', s:9});
   if(f.gnPanic) lines.push({t:`PANIC · ${GN.panicMove[0]}–${GN.panicMove[1]}× MOVE · EVERYTHING AT ${Math.round(GN.panicCut*100)}%`, c:'#FF9A9A', s:9});
+  if(f.dis>0) lines.push({t:`DISORIENTED −${Math.round((1-DORA.disMove)*100)}% MOVE / −${Math.round((1-DORA.disCast)*100)}% CAST (${(f.dis*RT).toFixed(1)}s)`, c:'#BFE4FF', s:9});
+  if(f.shrunk>0) lines.push({t:`SHRUNK −${Math.round((1-DORA.shrunkMove)*100)}% MOVE / −${Math.round((1-DORA.shrunkDmg)*100)}% DMG / +${Math.round((DORA.shrunkKb-1)*100)}% KNOCKBACK (${(f.shrunk*RT).toFixed(1)}s)`, c:'#FFF3B0', s:9});
+  if(f.copter>0) lines.push({t:`TAKE-COPTER +${Math.round((DORA.copMove-1)*100)}% MOVE · SLOWS −${Math.round(DORA.copSlowRes*100)}% (${(f.copter*RT).toFixed(1)}s)`, c:'#FFD34D', s:9});
+  if(f.fk>0) lines.push({t:`FUTURE KNOWLEDGE −${Math.round((1-DORA.fkTake)*100)}% DMG TAKEN · +${Math.round((DORA.fkCast-1)*100)}% CAST (${(f.fk*RT).toFixed(1)}s)`, c:'#FFE100', s:9});
+  if(f.panic>0) lines.push({t:'PANIC MODE', c:'#FF9A6E', s:10});
+  if(f.prep>0) lines.push({t:`PREPARED MODE +${Math.round((DORA.prepCast-1)*100)}% CAST`, c:'#7DEBAB', s:9});
   if(f.invuln>0) lines.push({t:`IMMUNE (${(f.invuln*RT).toFixed(1)}s)`, c:'#FF9AD5', s:11});
   ctx.lineWidth=3; ctx.strokeStyle='#000';
   lines.forEach(L=>{
@@ -5303,8 +6114,316 @@ function drawGinyuFlash(){
     ctx.restore();
   }
 }
+/* Doraemon vẽ tay — giữ đúng hình dáng nguyên tác: thân tròn xanh, bụng trắng, bàn tay
+   TRÒN KHÔNG NGÓN, mũi đỏ, chuông vàng, và cái túi thần kỳ trước bụng. Bảo bối là đồ
+   vật cầm trên tay chứ không phải chiêu năng lượng. Gọi từ vector(). */
+function doraVector(f){
+  const y=-18;
+  const blue='#2B9BE8', deep='#1B6FB0', white='#F4FAFF', red='#E03A3A', bell='#F5C518';
+  const P=f.pose||'idle';
+  const t=G.t*10, sw=f.moving?Math.sin(t)*3:0;
+  const fly=P==='copter';
+  /* Bàn tay tròn không ngón: một hình tròn trắng, viền sẫm. Đây là chi tiết người dùng
+     nhấn mạnh — đừng bao giờ vẽ thành nắm đấm có ngón. */
+  const paw=(x,yy,r)=>{
+    ctx.fillStyle=white; ctx.strokeStyle=deep; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.arc(x,yy,r||6.2,0,7); ctx.fill(); ctx.stroke();
+  };
+  const arm=(x0,y0,ang,len,r)=>{
+    const x1=x0+Math.sin(ang)*len, y1=y0+Math.cos(ang)*len;
+    ctx.strokeStyle=blue; ctx.lineWidth=7; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+    paw(x1,y1,r);
+    return {x:x1,y:y1};
+  };
+  // góc hai tay theo từng dáng (0 = chỉ thẳng xuống, âm = đưa ra trước)
+  let aL=-.35, aR=.35, legL=.1+sw*.02, legR=-.1-sw*.02, lean=0;
+  if(P==='punch'){ aL=.5; aR=-1.5; lean=-.1; }
+  else if(P==='kick'){ aL=.8; aR=.4; legR=-1.15; lean=.16; }
+  else if(P==='slam'){ aL=1.1; aR=-1.1; lean=-.34; }
+  else if(P==='pocket'){ aL=-.2; aR=-.55; lean=.06; }
+  else if(P==='aircannon'){ aL=.5; aR=-1.52; lean=-.06; }
+  else if(P==='smalllight'){ aL=-1.28; aR=-1.5; lean=-.05; }
+  else if(P==='copter'){ aL=-.7; aR=.7; legL=.5; legR=-.5; }
+  else if(P==='win'){ aL=.4; aR=-2.6; }
+  else if(P==='down'){ aL=1.4; aR=-1.4; lean=.5; }
+  else if(P==='hurt'||P==='injured'){ aL=.7; aR=-.7; lean=.14; }
+
+  ctx.save();
+  ctx.rotate(lean);
+  if(P==='down') ctx.translate(0,10);
+
+  // hai chân ngắn, bàn chân trắng bầu
+  ctx.strokeStyle=blue; ctx.lineWidth=8; ctx.lineCap='round';
+  for(const [lx,la] of [[-7,legL],[7,legR]]){
+    const fx=lx+Math.sin(la)*13, fy=y+18+Math.cos(la)*13;
+    ctx.beginPath(); ctx.moveTo(lx,y+16); ctx.lineTo(fx,fy); ctx.stroke();
+    ctx.fillStyle=white; ctx.strokeStyle=deep; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.ellipse(fx,fy+2,7,4.2,0,0,7); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle=blue; ctx.lineWidth=8;
+  }
+  // tay sau vẽ trước thân
+  arm(-11,y-2,aL,15);
+  // thân tròn xanh
+  ctx.fillStyle=blue; ctx.strokeStyle=deep; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.ellipse(0,y+2,16,17,0,0,7); ctx.fill(); ctx.stroke();
+  // bụng trắng
+  ctx.fillStyle=white;
+  ctx.beginPath(); ctx.ellipse(0,y+4,12,13,0,0,7); ctx.fill();
+  // túi thần kỳ: nửa vòng tròn ngay trước bụng
+  ctx.fillStyle='#E7F3FB'; ctx.strokeStyle=deep; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.arc(0,y+7,8.5,0,Math.PI); ctx.fill(); ctx.stroke();
+  if(P==='pocket'){                                  // thò tay vào túi lấy bảo bối
+    ctx.fillStyle='#0E2233'; ctx.beginPath(); ctx.arc(0,y+8,6.4,0,Math.PI); ctx.fill();
+  }
+  // vòng cổ đỏ + chuông vàng
+  ctx.strokeStyle=red; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(-13,y-11); ctx.lineTo(13,y-11); ctx.stroke();
+  ctx.fillStyle=bell; ctx.strokeStyle='#8A6A00'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.arc(0,y-7,5,0,7); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle='#8A6A00'; ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.moveTo(-3.4,y-8.4); ctx.lineTo(3.4,y-8.4); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,y-6); ctx.lineTo(0,y-3.4); ctx.stroke();
+  // đầu tròn: nửa trên xanh, mặt trắng
+  ctx.fillStyle=blue; ctx.strokeStyle=deep; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.arc(0,y-24,15,0,7); ctx.fill(); ctx.stroke();
+  ctx.fillStyle=white;
+  ctx.beginPath(); ctx.arc(0,y-21,12.4,0,7); ctx.fill();
+  // hai mắt trắng viền sẫm
+  for(const ex of [-4.6,4.6]){
+    ctx.fillStyle='#FFFFFF'; ctx.strokeStyle='#1B2430'; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.ellipse(ex,y-30,4,5.2,0,0,7); ctx.fill(); ctx.stroke();
+  }
+  ctx.fillStyle='#101820';
+  if(P==='down'){                                   // choáng váng: hai mắt thành dấu x
+    ctx.strokeStyle='#101820'; ctx.lineWidth=1.6;
+    for(const ex of [-4.6,4.6]){
+      ctx.beginPath(); ctx.moveTo(ex-2.4,y-32); ctx.lineTo(ex+2.4,y-28); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ex+2.4,y-32); ctx.lineTo(ex-2.4,y-28); ctx.stroke();
+    }
+  }else{
+    const look=(P==='aircannon'||P==='smalllight'||P==='punch'||P==='slam')?1.4:0;
+    ctx.beginPath(); ctx.arc(-4.6+look,y-29.6,1.9,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(4.6+look,y-29.6,1.9,0,7); ctx.fill();
+  }
+  // mũi đỏ + vạch dọc + râu mèo + miệng
+  ctx.fillStyle=red; ctx.strokeStyle='#8A1414'; ctx.lineWidth=1.1;
+  ctx.beginPath(); ctx.arc(0,y-23.5,3.4,0,7); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle='#3A4450'; ctx.lineWidth=1.1;
+  ctx.beginPath(); ctx.moveTo(0,y-20.6); ctx.lineTo(0,y-15.4); ctx.stroke();
+  for(const sgn of [-1,1]) for(let i=0;i<3;i++){
+    const yy=y-24+i*3.2;
+    ctx.beginPath(); ctx.moveTo(sgn*6,yy); ctx.lineTo(sgn*12.5,yy-2+i*1.6); ctx.stroke();
+  }
+  ctx.strokeStyle='#3A4450'; ctx.lineWidth=1.4;
+  ctx.beginPath();
+  if(P==='win'||P==='idle') ctx.arc(0,y-17.5,4.6,.15,Math.PI-.15);
+  else ctx.arc(0,y-16.5,3.4,.2,Math.PI-.2);
+  ctx.stroke();
+  // tay trước vẽ sau thân, kèm bảo bối đang cầm
+  const h=arm(11,y-2,aR,15);
+  if(P==='aircannon'){                               // ống Air Cannon lắp vào tay
+    ctx.save(); ctx.translate(h.x,h.y); ctx.rotate(-Math.PI/2-aR);
+    ctx.fillStyle='#D8E4EE'; ctx.strokeStyle='#5A6A78'; ctx.lineWidth=1.4;
+    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(0,-5.5,17,11,3); ctx.fill(); ctx.stroke(); }
+    else { ctx.fillRect(0,-5.5,17,11); ctx.strokeRect(0,-5.5,17,11); }
+    ctx.fillStyle='#7FD0FF'; ctx.beginPath(); ctx.ellipse(17,0,3,6,0,0,7); ctx.fill();
+    ctx.restore();
+  }else if(P==='smalllight'){                        // đèn pin Small Light cầm hai tay
+    ctx.save(); ctx.translate(h.x,h.y); ctx.rotate(-Math.PI/2-aR);
+    ctx.fillStyle='#F0F3F8'; ctx.strokeStyle='#5A6A78'; ctx.lineWidth=1.4;
+    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(-2,-4,15,8,2.5); ctx.fill(); ctx.stroke(); }
+    else { ctx.fillRect(-2,-4,15,8); ctx.strokeRect(-2,-4,15,8); }
+    ctx.fillStyle='#FFF3B0'; ctx.beginPath(); ctx.ellipse(13,0,3.4,5.4,0,0,7); ctx.fill();
+    ctx.restore();
+  }else if(P==='win'){                               // cái dorayaki cầm trên tay
+    ctx.fillStyle='#C98A3C'; ctx.strokeStyle='#7A4E18'; ctx.lineWidth=1.3;
+    ctx.beginPath(); ctx.ellipse(h.x,h.y-6,8,5.4,0,0,7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#5B3410'; ctx.fillRect(h.x-8,h.y-6.6,16,1.8);
+  }
+  if(fly){                                           // Take-copter quay trên đỉnh đầu
+    ctx.save(); ctx.translate(0,y-40);
+    ctx.fillStyle='#F5C518'; ctx.strokeStyle='#8A6A00'; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.ellipse(0,4,3,5,0,0,7); ctx.fill(); ctx.stroke();
+    ctx.save(); ctx.scale(Math.cos(G.t*22)*.9+.1,1);
+    ctx.fillStyle='#FFD34D';
+    ctx.beginPath(); ctx.ellipse(-11,0,11,2.6,0,0,7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(11,0,11,2.6,0,0,7); ctx.fill();
+    ctx.restore(); ctx.restore();
+  }
+  if(f.injured){
+    ctx.strokeStyle='#8E1023'; ctx.lineWidth=2.2; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-9,y+2); ctx.lineTo(-3,y+8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(5,y-28); ctx.lineTo(10,y-24); ctx.stroke();
+    ctx.fillStyle='#E8E2F0'; ctx.fillRect(-12,y-6,8,2.6);
+  }
+  ctx.restore();
+}
+/* Anywhere Door — cánh cửa hồng. Dùng chung cho màn ra mắt, Emergency Door và màn ăn
+   mừng. open = 0 (đóng kín) tới 1 (mở toang), a = độ đậm. */
+function drawDoorAt(x,y,open,a,scale){
+  if(a<=.02)return;
+  const S=scale||1, w=34*S, h=62*S;
+  ctx.save();
+  ctx.globalAlpha=a;
+  // khung cửa hồng
+  ctx.fillStyle='#F27FB4'; ctx.strokeStyle='#8E3163'; ctx.lineWidth=2;
+  if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(x-w/2,y+20-h,w,h,4); ctx.fill(); ctx.stroke(); }
+  else { ctx.fillRect(x-w/2,y+20-h,w,h); ctx.strokeRect(x-w/2,y+20-h,w,h); }
+  // khoảng tối bên trong, hé ra theo độ mở
+  if(open>.02){
+    ctx.fillStyle='#1A0E22';
+    const iw=(w-8)*open;
+    ctx.fillRect(x-w/2+4,y+18-h+4,iw,h-8);
+    ctx.globalAlpha=a*(.25+.35*open);
+    ctx.fillStyle='#FFC0DE';
+    ctx.fillRect(x-w/2+4,y+18-h+4,iw,h-8);
+    ctx.globalAlpha=a;
+  }
+  // tay nắm tròn
+  ctx.fillStyle='#FFE9A8'; ctx.strokeStyle='#8A6A00'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.arc(x+w/2-7,y+20-h/2,3.2,0,7); ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+/* Mọi cánh cửa đang có mặt trên sàn: cửa ra mắt, cửa thoát hiểm, cửa ăn mừng.
+   Vẽ TRƯỚC nhân vật để Doraemon bước ra từ phía trước cửa. */
+function drawDoraDoors(){
+  for(const f of G.fighters){
+    if(!f||f.key!=='dora')continue;
+    const E=f.drEntry;
+    if(E){ drawDoorAt(E.x,E.y,E.doorOpen,E.doorA); continue; }
+    if(f.edT>0){
+      const q=clamp(1-f.edT/DORA.edT,0,1);
+      // cửa vào ở chỗ cũ, cửa ra ở chỗ mới — hé rồi khép lại
+      if(f.edFrom) drawDoorAt(f.edFrom.x,f.edFrom.y,clamp(1-q*2,0,1),clamp(1-q*1.6,0,1),.9);
+      if(f.edMoved&&f.edTo) drawDoorAt(f.edTo.x,f.edTo.y,clamp((q-.5)*2,0,1),clamp((q-.4)*2,0,1),.9);
+    }
+    if(G.over&&G.winner===f&&f.alive){
+      // màn ăn mừng: một cánh cửa đứng phía sau lưng
+      drawDoorAt(f.x-34,f.y,1,clamp(G.endT*1.2,0,.95));
+    }
+  }
+}
+/* Phân cảnh Time Machine: đổi hẳn không khí sang du hành thời gian — nền tối lại, mặt
+   đồng hồ quay NGƯỢC, vệt thời gian chạy giật lùi, và cỗ máy bay tới đón. */
+function drawTimeWarp(){
+  const T=G.timeWarp; if(!T)return;
+  const f=T.f, q=clamp(T.t/T.max,0,1);
+  const P=DORA.tmPh, t=T.t;
+  ctx.save();
+  ctx.globalAlpha=clamp(q*2.2,0,.72);
+  ctx.fillStyle='#0A1030'; ctx.fillRect(0,0,W,H);
+  ctx.restore();
+  // vệt thời gian chạy giật lùi quanh Doraemon
+  ctx.save();
+  ctx.globalAlpha=.5;
+  ctx.strokeStyle='#7FD0FF'; ctx.lineWidth=2.4; ctx.lineCap='round';
+  for(let i=0;i<18;i++){
+    const a=i*.349-G.t*3.4, r0=40+((i*37)%90), L=26+((i*53)%40);
+    ctx.globalAlpha=.18+.3*Math.abs(Math.sin(i+G.t*2));
+    ctx.beginPath();
+    ctx.moveTo(f.x+Math.cos(a)*r0, f.y-24+Math.sin(a)*r0*.7);
+    ctx.lineTo(f.x+Math.cos(a)*(r0+L), f.y-24+Math.sin(a)*(r0+L)*.7);
+    ctx.stroke();
+  }
+  ctx.restore();
+  // mặt đồng hồ lớn, kim chạy ngược
+  if(t>=P[0]){
+    const a=clamp((t-P[0])/(P[1]-P[0]),0,1);
+    ctx.save();
+    ctx.globalAlpha=.30*a;
+    ctx.strokeStyle='#FFE100'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.arc(f.x,f.y-30,96,0,7); ctx.stroke();
+    ctx.lineWidth=2;
+    for(let i=0;i<12;i++){
+      const ta=i*Math.PI/6;
+      ctx.beginPath();
+      ctx.moveTo(f.x+Math.cos(ta)*86,f.y-30+Math.sin(ta)*86);
+      ctx.lineTo(f.x+Math.cos(ta)*96,f.y-30+Math.sin(ta)*96);
+      ctx.stroke();
+    }
+    ctx.globalAlpha=.72*a;
+    ctx.lineWidth=4; ctx.lineCap='round';
+    for(const [len,spd] of [[62,-5.5],[86,-1.4]]){
+      const ha=-Math.PI/2+G.t*spd;
+      ctx.beginPath(); ctx.moveTo(f.x,f.y-30);
+      ctx.lineTo(f.x+Math.cos(ha)*len,f.y-30+Math.sin(ha)*len); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // cỗ máy thời gian bay tới, đón Doraemon rồi lượn đi
+  if(t>=P[1]){
+    const a=clamp((t-P[1])/(P[2]-P[1]),0,1);
+    const out=clamp((t-P[2])/(P[3]-P[2]),0,1);
+    const mx=f.x+(1-a)*150-out*160, my=f.y-46-(1-a)*70-out*30;
+    ctx.save();
+    ctx.globalAlpha=clamp(1-out*1.1,0,1);
+    ctx.translate(mx,my);
+    ctx.globalAlpha*=.5;
+    ctx.fillStyle='#FFE100';
+    ctx.beginPath(); ctx.ellipse(0,0,44,20,0,0,7); ctx.fill();
+    ctx.globalAlpha=clamp(1-out*1.1,0,1);
+    // thân máy: mặt trên vàng, thân kính xanh, chân đế
+    ctx.fillStyle='#F5C518'; ctx.strokeStyle='#8A6A00'; ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.ellipse(0,0,26,11,0,0,7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#BFE4FF'; ctx.globalAlpha*=.85;
+    ctx.beginPath(); ctx.ellipse(0,-8,17,11,0,Math.PI,0); ctx.fill();
+    ctx.globalAlpha=clamp(1-out*1.1,0,1);
+    ctx.strokeStyle='#5A6A78'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.ellipse(0,-8,17,11,0,Math.PI,0); ctx.stroke();
+    ctx.fillStyle='#E07A2B';
+    ctx.beginPath(); ctx.ellipse(0,9,20,4.6,0,0,7); ctx.fill();
+    ctx.restore();
+  }
+}
+/* Ăn mừng sau khi đã dùng Time Machine: vài bóng mờ chạy NGƯỢC về phía sau, đúng kiểu
+   thời gian vừa được tua lại, rồi mới trở về hình Doraemon đang ngồi ăn dorayaki. */
+function drawDoraGhosts(f){
+  if(!G.over||!f.alive||f.key!=='dora'||!f.tmDone)return;
+  const cyc=(G.t*.55)%1;
+  for(let i=0;i<3;i++){
+    const q=(cyc+i*.333)%1;
+    ctx.save();
+    ctx.globalAlpha=(1-q)*.34;
+    ctx.translate(f.x-(f.face<0?-1:1)*q*74, f.y+20-q*6);
+    ctx.scale((f.face<0?-1:1)*(1-q*.12),1-q*.12);
+    try{ ctx.filter='blur(1.6px)'; }catch(e){}
+    const img=sprite(f);
+    if(img){ const h=f.spriteH, w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
+    else vector({key:'dora',pose:'idle',moving:false,injured:false});
+    try{ ctx.filter='none'; }catch(e){}
+    ctx.restore();
+  }
+}
 function drawProj(p){
   ctx.save();
+  if(p.type==='aircan'){                      // Air Cannon: một VÒNG khí nén, không phải tia
+    ctx.translate(p.x,p.y); ctx.rotate(p.ang);
+    const pu=1+Math.sin(G.t*18+p.wob)*.07;
+    ctx.globalAlpha=.22; ctx.fillStyle='#BFE4FF';
+    ctx.beginPath(); ctx.ellipse(-8,0,30*pu,24*pu,0,0,7); ctx.fill();
+    ctx.globalAlpha=.85; ctx.strokeStyle='#EAF7FF'; ctx.lineWidth=6;
+    ctx.beginPath(); ctx.ellipse(0,0,15*pu,20*pu,0,0,7); ctx.stroke();
+    ctx.globalAlpha=.6; ctx.strokeStyle='#7FD0FF'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.ellipse(0,0,21*pu,26*pu,0,0,7); ctx.stroke();
+    // gió xoáy kéo dài phía sau
+    ctx.globalAlpha=.45; ctx.strokeStyle='#D6F2FF'; ctx.lineWidth=2.4; ctx.lineCap='round';
+    for(let i=0;i<4;i++){
+      const o=Math.sin(G.t*20+i*1.7+p.wob)*12;
+      ctx.beginPath(); ctx.moveTo(-18,o*.4); ctx.lineTo(-42-i*11,o); ctx.stroke();
+    }
+    ctx.restore(); return;
+  }
+  if(p.type==='smalllight'){                  // tia sáng vàng nhạt, bay thẳng không bẻ cong
+    ctx.translate(p.x,p.y); ctx.rotate(p.ang);
+    ctx.globalAlpha=.3; ctx.fillStyle='#FFF3B0';
+    ctx.beginPath(); ctx.ellipse(-6,0,26,10,0,0,7); ctx.fill();
+    ctx.globalAlpha=.95; ctx.fillStyle='#FFF9DC';
+    ctx.beginPath(); ctx.ellipse(0,0,14,5,0,0,7); ctx.fill();
+    ctx.fillStyle='#FFFFFF';
+    ctx.beginPath(); ctx.ellipse(3,0,7,2.6,0,0,7); ctx.fill();
+    ctx.restore(); return;
+  }
   if(p.type==='gbeam'){                       // luồng khí tím của Ginyu
     ctx.translate(p.x,p.y); ctx.rotate(p.ang);
     ctx.globalAlpha=.28; ctx.fillStyle='#7B34D6';
@@ -5676,6 +6795,8 @@ function draw(){
   camApply();
   arenaFloor();
   drawGarden();
+  if(G.timeWarp) drawTimeWarp();
+  drawDoraDoors();
   for(const e of G.fx){
     ctx.save(); const a=clamp(e.life/(e.ml||.4),0,1);
     if(e.type==='ring'){ ctx.globalAlpha=a*.85; ctx.strokeStyle=e.color; ctx.lineWidth=4;
@@ -5738,6 +6859,15 @@ function draw(){
         ctx.stroke();
       }
     }
+    else if(e.type==='gadget'){
+      // bảo bối văng ra khỏi túi thần kỳ khi Doraemon gục xuống
+      ctx.globalAlpha=a;
+      ctx.translate(e.x,e.y); ctx.rotate(e.rot+(1-a)*e.vr);
+      ctx.fillStyle=e.color; ctx.strokeStyle='#3A4450'; ctx.lineWidth=1.2;
+      if(e.shape===0){ ctx.beginPath(); ctx.arc(0,0,5,0,7); ctx.fill(); ctx.stroke(); }
+      else if(e.shape===1){ ctx.fillRect(-6,-3,12,6); ctx.strokeRect(-6,-3,12,6); }
+      else { ctx.beginPath(); ctx.moveTo(0,-6); ctx.lineTo(5,4); ctx.lineTo(-5,4); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    }
     else if(e.type==='eagle'){
       drawWings(e.x,e.y,1.1+(1-a)*1.6,Math.sin(G.t*12),'#FFD9A0',a*.9);
     }
@@ -5793,6 +6923,7 @@ function draw(){
   drawForestGrip();
   drawBindShadow();
   drawGinyuFlash();
+  for(const f of order) drawDoraGhosts(f);
   if(!G.flashback) for(const f of order) drawBars(f);   // hồi tưởng thì giấu thanh máu cho sạch hình
 
   /* Bong bóng thoại vẽ SAU CÙNG trong đám chữ nổi. Băng-rôn tên chiêu và số sát thương
@@ -6022,13 +7153,16 @@ function winnerBanner(){
   ctx.fillStyle='rgba(8,6,20,.45)'; ctx.fillRect(10,10,W-20,H-20);
   ctx.translate(W/2,H/2-40); ctx.scale(pop,pop);
   ctx.textAlign='center';
+  // Doraemon có dòng ăn mừng riêng theo đúng yêu cầu, thay cho cặp WINNER + tên
+  const dora=w.key==='dora'&&!w.swapAs;
   ctx.font='900 15px "Space Mono",monospace';
-  ctx.lineWidth=6; ctx.strokeStyle='#000'; ctx.strokeText('WINNER',0,-42);
-  ctx.fillStyle='#fff'; ctx.fillText('WINNER',0,-42);
-  ctx.font='900 46px "Be Vietnam Pro",sans-serif';
-  ctx.lineWidth=10; ctx.strokeStyle='#000'; ctx.strokeText(w.name.toUpperCase(),0,4);
-  ctx.lineWidth=4; ctx.strokeStyle='#fff'; ctx.strokeText(w.name.toUpperCase(),0,4);
-  ctx.fillStyle=w.color; ctx.fillText(w.name.toUpperCase(),0,4);
+  ctx.lineWidth=6; ctx.strokeStyle='#000'; ctx.strokeText(dora?'FOURTH-DIMENSIONAL POCKET':'WINNER',0,-42);
+  ctx.fillStyle='#fff'; ctx.fillText(dora?'FOURTH-DIMENSIONAL POCKET':'WINNER',0,-42);
+  const big=dora?'DORAEMON WINS!':w.name.toUpperCase();
+  ctx.font=`900 ${dora?38:46}px "Be Vietnam Pro",sans-serif`;
+  ctx.lineWidth=10; ctx.strokeStyle='#000'; ctx.strokeText(big,0,4);
+  ctx.lineWidth=4; ctx.strokeStyle='#fff'; ctx.strokeText(big,0,4);
+  ctx.fillStyle=w.color; ctx.fillText(big,0,4);
   ctx.restore();
 }
 function overlay(t,s){
@@ -6800,6 +7934,37 @@ function testGinyuChange(){
   ginyuChange(f);
   say('[Thử nghiệm] Ép Ginyu tung CHANGE!!! ngay tại chỗ.','m');
 }
+function findDora(){
+  const f=findFighter('dora');
+  if(!f){ say('Cần có Doraemon trong trận mới thử được.','m'); return null; }
+  if(G.over){ newGame(); return findFighter('dora'); }
+  ac(); if(MUSIC.on) startMusic();
+  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(f.drEntry){ f.drEntry=null; f.drHide=false; f.pose='idle'; }
+  return f;
+}
+function testDoraShrink(){
+  const f=findDora(); if(!f)return;
+  const e=drSlTarget(f)||foeOf(f);
+  if(!e){ say('Không có mục tiêu nào để thu nhỏ.','m'); return; }
+  drShrink(e);
+  say('[Thử nghiệm] Ép Small Light thu nhỏ đối thủ.','m');
+}
+function testDoraDoor(){
+  const f=findDora(); if(!f)return;
+  if(f.edT>0){ say('Doraemon đang ở trong cửa rồi.','m'); return; }
+  f.edCd=0; doraEscape(f);
+  say('[Thử nghiệm] Ép Doraemon chui Emergency Door.','m');
+}
+function testDoraTime(){
+  const f=findDora(); if(!f)return;
+  if(!drCanTime(f)){ say('Time Machine đã dùng một lần rồi.','m'); return; }
+  f.hp=0; doraTime(f);
+  say('[Thử nghiệm] Ép Doraemon dùng Time Machine: Second Chance.','m');
+}
+el('testDoraShrink').addEventListener('click',testDoraShrink);
+el('testDoraDoor').addEventListener('click',testDoraDoor);
+el('testDoraTime').addEventListener('click',testDoraTime);
 el('testGinyuAura').addEventListener('click',testGinyuAura);
 el('testGinyuChange').addEventListener('click',testGinyuChange);
 el('testSuz2').addEventListener('click',testSuz2);
