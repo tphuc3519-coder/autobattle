@@ -84,23 +84,33 @@ async function waitGame(page, fnBody, limit) {
     const roll = await page.evaluate(() => {
       const G = window.__G(), GN = window.__GN;
       const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f !== g);
+      g.gnProbeDone = false;
       const seen = { daze: 0, rage: 0, atk: 0, def: 0 };
+      // lần đầu địch sôi máu rơi vào nhịp thứ mấy — thế thăm dò chỉ được phép hiện ở đó
+      let rage1 = -1, def1 = -1;
       for (let i = 0; i < 60; i++) {
         e.gnDaze = 0; e.gnRage = 0; g.gnState = null;
         window.__ginyuAura(g);
         if (e.gnDaze > 0) seen.daze++;
-        if (e.gnRage > 0) seen.rage++;
+        if (e.gnRage > 0) { seen.rage++; if (rage1 < 0) rage1 = i; }
         if (g.gnState === 'atk') seen.atk++;
-        if (g.gnState === 'def') seen.def++;
+        if (g.gnState === 'def') { seen.def++; if (def1 < 0) def1 = i; }
       }
-      return { seen, dazeT: GN.dazeT, rageT: GN.rageT };
+      return { seen, rage1, def1, dazeT: GN.dazeT, rageT: GN.rageT };
     });
     ok('aura có đủ hai nhánh 50/50',
       roll.seen.daze > 10 && roll.seen.rage > 10 && roll.seen.daze + roll.seen.rage === 60,
       `${roll.seen.daze} ngơ ngác / ${roll.seen.rage} sôi máu trên 60 lần`);
-    ok('ngơ ngác thì Ginyu hưng phấn, sôi máu thì Ginyu thăm dò',
-      roll.seen.atk === roll.seen.daze && roll.seen.def === roll.seen.rage,
-      `hưng phấn ${roll.seen.atk} / thăm dò ${roll.seen.def}`);
+    ok('ngơ ngác thì Ginyu luôn hưng phấn',
+      roll.seen.atk === 60 - roll.seen.def && roll.seen.atk >= roll.seen.daze,
+      `hưng phấn ${roll.seen.atk} / thăm dò ${roll.seen.def} trên 60 lần`);
+    /* Thế thăm dò là phản ứng MỘT LẦN: hiện đúng ở nhịp địch sôi máu lần đầu, sau đó
+       dù địch có sôi máu bao nhiêu lần nữa anh cũng vào thẳng thế chiến đấu. */
+    ok('thế thăm dò chỉ hiện đúng một lần trong cả trận',
+      roll.seen.def === 1, `hiện ${roll.seen.def} lần trên 60 nhịp aura`);
+    ok('và đúng ở nhịp địch sôi máu lần đầu tiên',
+      roll.def1 >= 0 && roll.def1 === roll.rage1,
+      `sôi máu lần đầu ở nhịp ${roll.rage1}, thăm dò ở nhịp ${roll.def1}`);
 
     // hệ số của hai thế đứng phải ăn thật vào sát thương và thời gian choáng
     const mult = await page.evaluate(() => {
@@ -118,6 +128,7 @@ async function waitGame(page, fnBody, limit) {
       };
       const a = meas('atk'), d = meas('def');
       g.gnState = null; g.gnStateT = 0; window.__gnStatus(g, 0);
+      g.gnProbeDone = false;
       return { a, d, GN: { atk: GN.atk, def: GN.def } };
     });
     ok('thế hưng phấn: +50% dmg, +50% dmg nhận, choáng dài thêm 40%',
@@ -421,6 +432,7 @@ async function waitGame(page, fnBody, limit) {
     const crowd = await page.evaluate(() => {
       const G = window.__G();
       const g = G.fighters.find(f => f.key === 'ginyu');
+      g.gnProbeDone = true;              // đã thăm dò rồi: luật ba người vẫn phải thắng trần này
       const n = window.__gnCrowd();
       const seen = { atk: 0, def: 0, daze: 0 };
       for (let i = 0; i < 40; i++) {
@@ -435,7 +447,7 @@ async function waitGame(page, fnBody, limit) {
     });
     ok('có đồng minh thứ ba trên sàn thì đếm được 3 người có thanh máu',
       crowd.n >= 3, `đếm ${crowd.n}, đồng minh ${crowd.ally}`);
-    ok('ba người trở lên: dù ai dính hiệu ứng gì Ginyu cũng ở thế thăm dò',
+    ok('ba người trở lên: luôn thăm dò, kể cả khi đã dùng hết lần thăm dò của mình',
       crowd.seen.atk === 0 && crowd.seen.def === 40 && crowd.seen.daze > 5,
       `hưng phấn ${crowd.seen.atk} / thăm dò ${crowd.seen.def}, có ${crowd.seen.daze} lần địch ngơ ngác`);
 

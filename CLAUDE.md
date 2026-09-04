@@ -406,7 +406,14 @@ nhịp** — họ đứng nhìn chứ chưa được đánh. Hết ba dáng thì
 | Nhánh | Địch chịu | Ginyu vào thế |
 |---|---|---|
 | ngơ ngác (`gnDaze`, `GN.dazeT = gs(8)`) | −90% tốc chạy, −50% tốc ra chiêu | **hưng phấn** `gnState='atk'` |
-| sôi máu (`gnRage`, `GN.rageT = gs(6)`) | +50% tốc chạy, +30% tốc ra chiêu | **thăm dò** `gnState='def'` |
+| sôi máu (`gnRage`, `GN.rageT = gs(6)`) | +50% tốc chạy, +30% tốc ra chiêu | **thăm dò** `gnState='def'` — chỉ lần đầu |
+
+> **Thế thăm dò là phản ứng ĐÚNG MỘT LẦN trong cả trận** (`f.gnProbeDone`). Thăm dò xong là
+> anh biết người biết ta rồi: từ đó dù địch có sôi máu bao nhiêu lần nữa, cứ tới nhịp aura
+> là anh vào thẳng thế chiến đấu. Bản mô tả gốc nói đúng chỗ này — *"sau 10s thăm dò, Ginyu
+> trở lại bình thường, và cứ mỗi 12s thì Ginyu vào trạng thái **chiến đấu** như bình thường"*
+> — bản đầu tôi làm nhầm thành bốc 50/50 mỗi nhịp nên một trận thấy thế thăm dò tới hai lần.
+> **Luật ba người trở lên thắng trần này**: đông người thì anh luôn thăm dò, không bị chặn.
 
 - **Hưng phấn** (`GN.atk`, `gs(8)`): +50% dmg gây ra, **+50% dmg phải chịu — nhân sau mọi
   lớp phòng thủ**, +40% thời gian dính khống chế, +50% tốc ra chiêu, +60% tốc chạy. Bao
@@ -414,8 +421,12 @@ nhịp** — họ đứng nhìn chứ chưa được đánh. Hết ba dáng thì
 - **Thăm dò** (`GN.def`, `gs(10)`): −60% dmg nhận, +40% kháng hiệu ứng, đổi lại −40% dmg
   gây ra và −40% tốc ra chiêu. Vỏ khí xanh mỏng hơn hẳn.
 - **Ba người có thanh máu trở lên trên sàn thì anh LUÔN chọn thế thăm dò**, dù ai dính hiệu
-  ứng gì — `gnCrowd() >= 3` (đếm bằng đúng cờ `summon && !ally` mà `drawBars()` dùng, nên
-  Goku / Gohan / phân thân không tính, còn Ayanokouji thì có).
+  ứng gì và dù đã dùng hết lần thăm dò — `gnCrowd() >= 3` (đếm bằng đúng cờ `summon && !ally`
+  mà `drawBars()` dùng, nên Goku / Gohan / phân thân không tính, còn Ayanokouji thì có).
+
+Thứ tự ưu tiên khi chọn thế đứng, viết thẳng trong `ginyuAura()`: **đông người → thăm dò**,
+không thì **địch ngơ ngác → hưng phấn**, không thì **địch sôi máu → thăm dò nếu còn lần,
+hết lần thì hưng phấn**.
 
 > **Hồi chiêu của aura KHÔNG cộng dồn với quãng đang vận thế đứng.** `ginyuTick()` `return`
 > sớm suốt lúc `f.gnState` còn — đồng hồ `f.gnAura` đứng yên hẳn — rồi nạp lại đủ `auraCd`
