@@ -1,9 +1,9 @@
-/* Chạy đủ 15 cặp đấu (10 cặp khác nhau + 5 trận gương) song song, xem có trận nào
+/* Chạy đủ 21 cặp đấu (15 cặp khác nhau + 6 trận gương) song song, xem có trận nào
    ném lỗi trang không và các cơ chế lớn có thật sự nổ ra không.
    Chạy: node tools/t_reg.js */
 const { build, playwright } = require('./probe');
 
-const K = ['kono', 'chichi', 'tsubasa', 'shika', 'suzune'];
+const K = ['kono', 'chichi', 'tsubasa', 'shika', 'suzune', 'ginyu'];
 const MOC = 60;          // giây trong trận, đủ để một trận ngã ngũ
 
 (async () => {
@@ -38,6 +38,13 @@ const MOC = 60;          // giây trong trận, đủ để một trận ngã ng
         const troi = G.t - t0;
         if (chang === 0 && troi > 8) { chang = 1; for (const f of G.fighters) f.hp = Math.min(f.hp, f.maxHp * .18); }
         if (chang === 1 && troi > 16) { chang = 2; for (const f of G.fighters) f.hp = Math.min(f.hp, f.maxHp * .08); }
+        /* Chặng thứ ba, chỉ dành cho Captain Ginyu: chiêu 4 của anh chỉ nổ khi máu chạm 0,
+           mà ép máu theo tỉ lệ thì không bao giờ tới. Đánh thẳng một đòn chí mạng vào anh. */
+        if (chang === 2 && troi > 22) {
+          chang = 3;
+          const g = G.fighters.find(f => f.key === 'ginyu' && !f.summon && !f.swapAs && !f.gnChangeDone);
+          if (g) window.__hurt(g, 99999, G.fighters.find(f => f !== g && f.team !== g.team));
+        }
         for (const f of G.fighters) {
           if (f.lazy) seen.add('lazy');
           if (f.bind) seen.add('bind');
@@ -53,6 +60,16 @@ const MOC = 60;          // giây trong trận, đủ để một trận ngã ng
           if (f.key === 'suzune' && f.form >= 2) seen.add('suz-f2');
           if (f.key === 'suzune' && f.form >= 3) seen.add('suz-f3');
           if (f.decT > 0) seen.add('decision');
+          if (f.gnEntry) seen.add('ginyu-entry');
+          if (f.gnState === 'atk') seen.add('ginyu-excited');
+          if (f.gnState === 'def') seen.add('ginyu-probing');
+          if (f.gnDaze > 0) seen.add('ginyu-daze');
+          if (f.gnRage > 0) seen.add('ginyu-rage');
+          if (f.gnTired > 0) seen.add('ginyu-tired');
+          if (f.gnFlash) seen.add('ginyu-flash');
+          if (f.gnChange) seen.add('ginyu-change');
+          if (f.gnPanic) seen.add('ginyu-panic');
+          if (f.swapAs === 'ginyu') seen.add('ginyu-swap');
         }
         if (G.over || G.t - t0 > moc) { clearInterval(id); xong(); }
       }, 60);
@@ -63,7 +80,14 @@ const MOC = 60;          // giây trong trận, đủ để một trận ngã ng
     return { a, c, ...r, errors };
   };
 
-  const out = await Promise.all(pairs.map(run));
+  /* Chạy theo từng đợt chứ đừng mở cả 21 trang một lúc: máy test không có GPU, mở hết
+     cùng lúc thì mỗi trận chỉ trôi được 1~2 giây trong trận và mấy cơ chế máu thấp không
+     kịp nổ ra — nhìn thì vẫn "sạch lỗi" nhưng chẳng kiểm được gì. */
+  const LO = 5;
+  const out = [];
+  for (let i = 0; i < pairs.length; i += LO) {
+    out.push(...await Promise.all(pairs.slice(i, i + LO).map(run)));
+  }
   let hong = 0;
   for (const r of out) {
     if (r.errors.length) hong++;

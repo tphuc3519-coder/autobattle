@@ -11,7 +11,7 @@ thì phải tạo bản sao có gắn thêm móc (xem mục Kiểm thử).
 
 ## 0. Bản đồ `index.html`
 
-File dài ~4100 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên ---------- */`,
+File dài ~6600 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên ---------- */`,
 **tìm bằng cách grep chính cái tên đó** thay vì nhớ số dòng (số dòng đổi liên tục):
 
 | Khu | Có gì |
@@ -21,14 +21,15 @@ File dài ~4100 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên --
 | `sprite slots` | `SPR`, `COLORS`, `HP`, `SETS` — danh sách ô dán ảnh |
 | `bảng nhân vật chơi được` | mọi hằng số cân bằng của Kono / ChiChi / Tsubasa |
 | `Horikita Suzune` (khối hằng) | cả cụm `SUZ`, `SUZ_BUBBLE` |
+| `Captain Ginyu` (khối hằng) | cả cụm `GN`, `GN_PROJ_BODY`, `GN_SHOUT`, `GN_CHANGE_LINE` |
 | `Shikamaru` (khối hằng) | `gs()`, cả cụm `SHIKA`, các hằng tuổi thọ hình (`GRUMBLE_LIFE`…) |
-| *(kế đó)* | `CHARS` — `init` / `think` / `gauge` / mảng `skills` của năm nhân vật |
+| *(kế đó)* | `CHARS` — `init` / `think` / `gauge` / mảng `skills` của sáu nhân vật |
 | *(kế đó)* | `Store` — IndexedDB, khoá `spr_*` / `sfx_*`, nạp và xoá ảnh |
 | `âm thanh` | `SFX_EVENTS`, `synth()`, `SFX_FULL/MAXLEN/SEG/POS/ACTIVE`, `sfx()`, `playBuffer()` |
 | `nhạc nền` | nhạc nền tự sinh |
 | `state` | `mk()`, `mkChar()`, `foeOf()`, `newGame()`, `later()`, `pop()`, `setPose()` |
 | `damage` | `stunFx()`, `tryEvade()`, **`hurt()`**, `counters()`, `finish()` |
-| `Konohamaru` / `ChiChi` / `Shikamaru` / `Ozora Tsubasa` / `Horikita Suzune` | thân các chiêu thức |
+| `Konohamaru` / `ChiChi` / `Shikamaru` / `Ozora Tsubasa` / `Horikita Suzune` / `Captain Ginyu` | thân các chiêu thức |
 | `AI` | `MELEE_MIN/MAX/BAND/GAP`, `orbWant()`, `aiVec()`, `dodgeVec()`, `playerVec()` |
 | `step` | một hàm to — toàn bộ mô phỏng một bước 1/120 giây |
 | `draw` | `vector()`, `sprite()`, `drawFighter()`, `drawGarden()`, `drawForestGrip()`, `bombAt()`, `tendril()`, phân cảnh, băng-rôn |
@@ -72,9 +73,9 @@ while (acc >= 1/120) { step(1/120); acc -= 1/120; }
 
 ---
 
-## 2. Năm nhân vật và những con số đã chốt
+## 2. Sáu nhân vật và những con số đã chốt
 
-Cả năm đều **1000 máu** (`HP`). Bảng `CHARS` là nơi khai tất cả: mỗi nhân vật có
+Cả sáu đều **1000 máu** (`HP`). Bảng `CHARS` là nơi khai tất cả: mỗi nhân vật có
 `init(f)`, `think(f,e,d,auto)`, `gauge(f)` và mảng `skills` (chuỗi HTML hiển thị trong
 màn chọn nhân vật — nhớ cập nhật khi đổi số).
 
@@ -382,6 +383,144 @@ quyết định đúng, +5% tỉ lệ hồi máu, +6% lượng hồi máu, +8% m
 > +8% miễn thương"* hai lần. Hiểu là **+8% miễn thương và +8% kháng hiệu ứng** — vì form 3
 > vốn có sẵn cặp 10%/10%, cộng dồn theo cặp mới cân. Trần 5 bậc để miễn thương không chạy
 > tới 100%. Nếu người dùng muốn khác thì sửa `SUZ.st`.
+
+### Captain Ginyu (`ginyu`)
+Toàn bộ trong hằng `GN`, khai theo lối của Shikamaru / Horikita (giây người chơi bọc `gs()`).
+Nhân vật cận chiến, **mọi chữ hiện ra trong game là tiếng Anh** — người dùng chốt riêng cho
+nhân vật này; nhật ký vẫn tiếng Việt như mấy người kia.
+
+**Màn chào sân — đừng bỏ, đây là cả tính cách nhân vật.** Bấm *Bắt đầu* thì anh **chưa có
+mặt trên sàn**: `init()` gọi `ginyuEnter(f)` đẩy anh ra ngoài mép sàn (`gnEntry.ph='fly'`),
+rồi `ginyuTick()` kéo anh vào đúng chỗ đứng trong **`GN.flyT = gs(1.5)`** — tức **đúng 1.5
+giây thật ở thanh tốc độ gốc**, người dùng cần con số này để canh file tiếng, đừng đổi.
+Đáp xuống là chạy **ba dáng `dance1/dance2/dance3` liên tục** (`GN.danceT`) và hô
+`GN_SHOUT = 'GINYU FORCE!'`. Suốt cả hai pha, `ginyuTick` đặt `lock` cho **mọi đối thủ mỗi
+nhịp** — họ đứng nhìn chứ chưa được đánh. Hết ba dáng thì gọi thẳng `ginyuAura(f)`.
+
+> Quãng bay đo bằng giây TRONG TRẬN nên `step()` chỉ chạy khi trận đang chạy — đó chính là
+> lý do anh không bay lúc màn hình còn đứng ở "PRESS START". Đổi thanh tốc độ thì 1.5 giây
+> thật cũng đổi theo, đúng như mọi hằng số khác trong game.
+
+**Nội tại — Ginyu's Aura.** Mỗi `GN.auraCd = gs(12)` aura phủ kín sàn một lần, bốc 50/50:
+
+| Nhánh | Địch chịu | Ginyu vào thế |
+|---|---|---|
+| ngơ ngác (`gnDaze`, `GN.dazeT = gs(8)`) | −90% tốc chạy, −50% tốc ra chiêu | **hưng phấn** `gnState='atk'` |
+| sôi máu (`gnRage`, `GN.rageT = gs(6)`) | +50% tốc chạy, +30% tốc ra chiêu | **thăm dò** `gnState='def'` |
+
+- **Hưng phấn** (`GN.atk`, `gs(8)`): +75% dmg gây ra, **+50% dmg phải chịu — nhân sau mọi
+  lớp phòng thủ**, +30% thời gian dính khống chế, +50% tốc ra chiêu, +60% tốc chạy. Bao
+  quanh anh là **luồng khí tím** kiểu Dragon Ball (`gnAuraDraw`).
+- **Thăm dò** (`GN.def`, `gs(10)`): −60% dmg nhận, +40% kháng hiệu ứng, đổi lại −40% dmg
+  gây ra và −40% tốc ra chiêu. Vỏ khí xanh mỏng hơn hẳn.
+- **Ba người có thanh máu trở lên trên sàn thì anh LUÔN chọn thế thăm dò**, dù ai dính hiệu
+  ứng gì — `gnCrowd() >= 3` (đếm bằng đúng cờ `summon && !ally` mà `drawBars()` dùng, nên
+  Goku / Gohan / phân thân không tính, còn Ayanokouji thì có).
+
+**Bốn chiêu:**
+- **1 · Basic** — đấm hoặc đá, `GN.hitDmg = 35`, hồi chiêu `cm(GN.atkCd)` = `cm(.22)`, tức
+  nhanh hơn ChiChi (`cm(.25)`) một nhịp. 25% kèm choáng `gs(.75)`.
+- **2 · Ginyu's Beam** — mỗi `gs(8)` bắn **6 luồng khí tím**, mỗi luồng 35 dmg, choáng
+  `gs(1)` và **hất lùi 340** (Twin Shot của Tsubasa mới 260 — người dùng muốn đẩy xa hơn).
+  Bay `420` (Masenko `330`) nhưng **độ lệch tỉ lệ thuận với khoảng cách**
+  (`GN.beamSpread * d/GN.beamFar`), nên xa thì tản rộng. **Trúng đủ 3 luồng** thì dính
+  *Worn Out*: −60% tốc chạy, −40% tốc ra chiêu, −25% dmg trong `gs(7)`. Đếm bằng
+  `t.gnBeamHits`, đặt lại 0 ở đầu mỗi loạt.
+- **3 · Ginyu's Flash** — đứng trụ gồng `gs(1.75)` (`gnFlash.ph='charge'`, `f.lock`), rồi
+  nối **một luồng sáng tím LIỀN MẠCH** từ anh sang địch: to như Kamehameha nhưng vẽ theo lối
+  dải bóng của Shikamaru (`drawGinyuFlash()`, gọi **sau** khi vẽ nhân vật, cạnh
+  `drawBindShadow()`). 100 dmg, choáng `gs(3.5)`, **hết choáng mới tới** quãng −80% tốc chạy
+  / −25% tốc ra chiêu trong `gs(5)` — xếp hàng qua `e.gnSlowAfter`, `gnStatus()` mở nó ra
+  đúng lúc `stun<=0`.
+- **4 · CHANGE!!!** — xem mục riêng bên dưới.
+
+#### CHANGE!!! — hoán đổi thân xác
+
+`hurt()` chặn ngay trước `finish()`: `gnCanChange(t)` đúng thì gọi `ginyuChange(t)` thay vì
+cho chết. Chỉ **một lần**, và chỉ khi hồn anh **còn nằm trong thân xác của chính mình** —
+thân xác Ginyu do địch điều khiển (`swapAs==='foe'`) thì chết là chết thật.
+
+- Anh **đứng nguyên chỗ ngã xuống**, không dịch đi đâu: `gnChangeTick()` ghim lại `x/y` mỗi
+  nhịp và xoá sạch vận tốc. Suốt lúc này `hurt()` trả `false` (`if(t.gnChange)`) nên không
+  ai cắt ngang được.
+- Tia sáng **phóng ra từ MIỆNG** (`f.y+20-f.spriteH*.86`), không phải từ tay. Dáng `change`
+  vẽ miệng há to đúng chỗ đó.
+- **Tỉ lệ trúng theo khoảng cách**, tách hẳn ra hàm `gnChangeOdds(d)` cho test đo được:
+  gần nhất `GN.changeHi = .85` (**không bao giờ 100%**), xa nhất `GN.changeLo = .18` (nằm
+  trong khoảng 15~20% người dùng yêu cầu), nội suy tuyến tính giữa `changeNear`/`changeFar`.
+  Bốc trúng thì tia bám theo địch (`homing`), bốc trượt thì lệch hẳn `0.4~1.0 rad`.
+- **Ba người trở lên**: `gnChangeTarget()` chọn người **máu cao nhất**; nhưng va chạm đọc
+  trong vòng duyệt đạn nên **chạm ai trước thì nhập luôn vào người đó**.
+- **Chỉ nhập được vào đấu thủ chính.** Tia CHANGE **xuyên thẳng qua** đồng minh và viện
+  binh (`f.summon`) chứ không bám vào họ: Ayanokouji hay Goku vốn là khách trên sàn, hết
+  giờ là đi — cướp xác họ thì chẳng còn gì để cướp. Chỗ chặn nằm ở cả `gnChangeTarget()`
+  lẫn nhánh va chạm lẫn `ginyuPossess()`.
+
+**Trúng — `ginyuPossess(g,t)`.** Nguyên tắc: **hồn đổi chỗ, THÂN XÁC đứng yên.** Không đụng
+tới `key`, `spriteH`, `color`, vị trí — chỉ đổi **`name`** và cờ điều khiển. Nhờ vậy ra đúng
+cái người dùng muốn: **thân xác A mà chữ B trên thanh máu**, và ngược lại.
+
+| | thân xác | `name` hiện ra | `swapAs` | còn dùng được gì |
+|---|---|---|---|---|
+| object cũ của Ginyu | Ginyu | tên đối thủ | `'foe'` | **chỉ** đấm đá của Ginyu, dmg ×`GN.swapHost` = 50% |
+| object cũ của đối thủ | của họ | `Captain Ginyu` | `'ginyu'` | beam + flash của Ginyu (dmg ×`.35`, hiệu ứng ×`.30`) và **đòn tay mượn** của thân xác đó |
+
+- Máu: thân xác Ginyu về đúng **15% máu tối đa** (`GN.changeKeep`), thân xác cướp được
+  **cộng thêm 20% máu tối đa** (`GN.changeGain`).
+- **Đòn tay mượn** gọi thẳng chiêu 1 gốc của thân xác đó (`gnBorrowBasic`). Thân xác **hệ
+  ném / sút** (`GN_PROJ_BODY` = kono / tsubasa / shika) **giữ nguyên sát thương** nhưng ngắm
+  hỏng bét: `f.aimOff` làm đạn vẹo đi tới ±1.05 rad ngay khi rời tay và **mất luôn khả năng
+  dò tìm** (`p.noHome`). Thân xác cận chiến thì `f.missOdds = .55`, `hurt()` in chữ `MISS`.
+- Nội tại của thân xác bị cướp **tắt hết**: vòng duyệt nội tại theo ngưỡng máu `continue`
+  khi `f.swapAs`, `shikaPassive`/`suzPassive`/`eagleTick` cũng thế, và `suzCp()` trả về ngay.
+  Thanh phụ đọc `CHARS['ginyu'].gauge` chứ không đọc thanh của thân xác.
+
+**Trượt — `ginyuChangeMiss(f)`.** Máu về **1**, `gnPanic=true`, chạy nhanh **2.5~3 lần**
+(`GN.panicMove`, bốc một lần rồi giữ trong `f.gnPanicMul`), dáng riêng `panic` (mắt trắng
+dã, hai tay giơ lên), và **mọi thứ anh tung ra chỉ còn 30%** — dmg qua `gnOut`, hiệu ứng
+qua `gnCcCut`. Aura tắt hẳn từ lúc này.
+
+**Ăn mừng trong thân xác người khác.** `drawFighter()` cuối khối vẽ thân người: `G.over` và
+`f.swapAs==='ginyu'` thì vẽ đè hình Ginyu với `ctx.filter='blur(2.2px)'` và alpha nhấp nháy
+theo `sin(G.t*2.1)` — nhoè hiện ra rồi nhoè tan, lặp mãi. `ctx.filter` đắt nhưng chỉ chạy
+lúc trận đã xong nên không đụng tới nhịp khung hình. Chữ dưới thanh máu và băng-rôn WINNER
+vốn đã đọc `f.name` nên tự ra `CAPTAIN GINYU`.
+
+#### Bộ hệ số dùng chung — đừng nhân hai lần
+
+Aura của Ginyu bám vào **mọi nhân vật**, nên `gnStatus(f,dt)` chạy cho **từng người mỗi
+nhịp** và **dựng lại từ đầu** (đừng cộng trừ dần — hiệu ứng chồng nhau là lệch ngay):
+
+| Trường | Ăn ở đâu |
+|---|---|
+| `f.moveMul` | tốc chạy trong `step()` |
+| `f.castMul` | nhịp trôi hồi chiêu trong `step()` |
+| `f.dmgTake` | `hurt()`, **sau** `dmgRes` — nên +50% của thế hưng phấn xuyên qua phòng thủ |
+| `f.ccTake` / `f.gnCcRes` | `stunFx()` |
+| `f.gnOut` | hệ số chung của trạng thái · mệt mỏi · hoảng loạn |
+| `f.dmgOut` | `gnOut` × phần cắt của **chiêu mượn**, `hurt()` nhân vào khi `raw` không bật |
+
+> **`hurt()` có thêm tham số thứ bảy `raw`.** Mấy chiêu do chính Ginyu viết ra đã tự nhân
+> `gnDmg(f)` rồi nên truyền `raw=true` để `hurt()` **không** nhân `src.dmgOut` lần nữa;
+> chiêu mượn của thân xác khác là hàm có sẵn, không với tay vào trong được, nên vẫn đi
+> đường `dmgOut`. Thêm chiêu mới cho Ginyu thì nhớ cặp `gnDmg()` + `raw=true`, đừng quên
+> một trong hai.
+
+**Ô dán ảnh riêng**: `fly` · `dance1/2/3` · `beam` · `flash` · `change` · `panic`, cộng
+`idle/punch/kick/hurt/injured`. Thiếu ảnh thì lùi về ô gần nghĩa nhất (`flash` → `beam` →
+`atk1` → `idle`). Dáng vector vẽ da tím, hai sừng, giáp trắng lực lượng Frieza, scouter
+xanh — tay chân là **đoạn chi xoay quanh gốc vai/hông** (`chi()`, góc 0 là chỉ thẳng
+xuống), nên đổi dáng chỉ việc đổi mấy con số góc ở đầu nhánh.
+
+**Ô dán tiếng**: nhóm riêng `Captain Ginyu` trong `SFX_GROUPS`, mười ô —
+`ginyu_fly`, 🎙`ginyu_force`, `ginyu_aura`, `ginyu_excited`, `ginyu_probe`, `ginyu_beam`,
+`ginyu_flash`, 🎙`ginyu_change`, `ginyu_swap`, `ginyu_miss`. Hai ô giọng bị cắt đúng bằng
+bong bóng thoại (`GN_FORCE_LIFE` / `GN_CHANGE_LIFE` trong `SFX_MAXLEN`). **Đấm đá thì mượn
+thẳng `sfx('punch')` của ChiChi**, đúng lối đã chốt cho Horikita — đừng dựng ô mới.
+
+Nút thử tay: `#testGinyuAura` (ép aura toả ngay) và `#testGinyuChange` (ép tung CHANGE).
+Kiểm bằng `node tools/t_ginyu.js`.
+
 
 ---
 
@@ -701,7 +840,7 @@ nên đổi độ phân giải không phải tính lại toạ độ. `recCanvas
 Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 
 ```bash
-node tools/t_reg.js     # 15 cặp đấu song song, bắt lỗi trang, xem cơ chế lớn có nổ không
+node tools/t_reg.js     # 21 cặp đấu song song, bắt lỗi trang, xem cơ chế lớn có nổ không
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
@@ -713,7 +852,16 @@ node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp
                         # ba ô giọng của anh + hai ô xuất hiện + bảng tiếng chia nhóm,
                         # lãnh địa Nara trói ai có thanh máu và chia đều dmg (trận thứ hai: shika vs suzune),
                         # cước chia tay không nện vào miễn thương, bốn ô dáng riêng của form 3
+node tools/t_ginyu.js   # Captain Ginyu: bay vào sân đúng 1.5s và địch bị khoá, hai nhánh aura,
+                        # hai thế đứng nhân đúng hệ số, 6 luồng khí + mốc mệt mỏi, flash gồng
+                        # rồi mới bắn và ghì chân sau khi hết choáng, CHANGE bắn từ miệng,
+                        # đứng nguyên chỗ ngã, đổi hồn giữ nguyên thân xác (thân A chữ B),
+                        # bắn trượt thì 1 máu + hoảng loạn, luật ba người thì luôn thăm dò
 ```
+
+> **`t_reg.js` giờ chạy 21 trận song song** (6 nhân vật). Máy test yếu thì mỗi trận trôi
+> chậm hẳn và nhiều trận báo "còn đánh" thay vì "kết thúc" — đó là chuyện bình thường,
+> mục cần xem là dòng cuối `DAT 21/21 tran sach loi`. Muốn soi kỹ một cặp thì chạy riêng.
 
 Tất cả trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng
 hoặc tới `step()`.**
@@ -764,6 +912,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 | Test treo cứng, không lỗi không thoát | `pickLine()` bốc lại tới khi ra chỉ số **khác lần trước**, mà test ghim `Math.random` một hằng số nên vòng `do…while` không bao giờ ra | gọi `window.__resetLines()` (móc trong `probe.js`) trước mỗi lần ghim `Math.random` rồi mới gọi `suzDecide` — lần bốc đầu chắc chắn ăn, `pen` cũng thành số cố định để đo |
 | Cước chia tay của Ayanokouji thỉnh thoảng không gây dmg | rơi trúng 0.75 giây tự miễn thương của Sexy no Jutsu, `hurt()` trả false ngay từ đầu hàm | treo cú lao lại trước mặt địch cho tới khi hết miễn thương (`SUZ.guardKickWait` làm trần chờ), và sửa dòng nhật ký báo nhầm thành "bị né" |
 | Ảnh tơi tả của Horikita không hiện | `sprite()` bật cờ `inj` bằng `set.injured` — ô lùi chung, còn ô thật là `injured2`/`injured3` | cờ đọc `injArr` chọn theo form; bỏ luôn hai ô lùi chung khỏi bảng |
+| `t_bubble.js` đổ oan ở nhánh "đảo thứ tự" | mốc `trang > .5` nằm đúng chỗ phép đo dao động 49~51% tuỳ lần bốc vị trí — đổ chừng hai trên ba lần, và đổ y hệt trên `origin/main` | hạ mốc xuống `.45`; bằng chứng thật rằng bong bóng nằm trên vẫn là dòng "viền vàng 0%" ngay dưới, còn lúc bị đè thì nền trắng tụt hẳn dưới 40% |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---
@@ -786,5 +935,12 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 - Bộ ảnh thẻ nhân vật (dựng bằng script trong thư mục nháp, chụp bằng Playwright,
   `deviceScaleFactor: 2`, font **Liberation Sans** — DejaVu Sans Mono thiếu chữ tiếng Việt có dấu)
   đang cũ: chưa có Shikamaru lẫn Horikita, và chưa cập nhật vài con số của Tsubasa/ChiChi.
+- Ô tiếng của Captain Ginyu cũng mới chỉ có tiếng tự tạo trong `synth()`; hai ô giọng
+  (`ginyu_force`, `ginyu_change`) đang chờ người dùng thu file. Quãng bay vào sân cố tình
+  để đúng **1.5 giây thật ở thanh tốc độ gốc** để người dùng canh tiếng — đổi thanh tốc độ
+  thì con số đó đổi theo, đây không phải lỗi.
+- **Cân bằng của Ginyu chưa ai chỉnh.** Mọi con số là do người dùng đọc ra, tôi khai đúng
+  như vậy; đo thử thì anh thắng khá đậm (ví dụ vs ChiChi còn ~700 máu). Muốn hạ thì sửa
+  `GN.hitDmg` / `GN.atk` chứ đừng đụng vào cơ chế.
 - Ô tiếng của Horikita/Ayanokouji mới chỉ có tiếng tự tạo trong `synth()`; hai ô đọc nối tiếp
   (`suz_decide`, `suz_wrong`) đang chờ người dùng thu file TTS theo `SUZ_DECISIONS` / `SUZ_WRONG`.

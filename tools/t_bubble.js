@@ -64,7 +64,11 @@ function datCanh(page, themBanner) {
   });
   await page.waitForTimeout(250);
   const c = await dem(page);
-  ok(c.trang > .5, `dao thu tu trong mang van the (nen trang ${(c.trang * 100).toFixed(1)}%)`);
+  /* Mốc 50% quá sát: chỗ chồng nhau đo ra 49~51% tuỳ lần bốc vị trí, nên nhánh này đổ oan
+     chừng hai trên ba lần — kể cả trên bản chưa đụng tới gì. Bằng chứng thật rằng bong bóng
+     nằm trên vẫn là dòng "viền vàng 0%" ngay dưới; nền trắng chỉ cần đủ cao để phân biệt
+     với lúc bị băng-rôn đè lên (lúc đó tụt hẳn xuống dưới 40%). */
+  ok(c.trang > .45, `dao thu tu trong mang van the (nen trang ${(c.trang * 100).toFixed(1)}%)`);
 
   /* không có câu thoại thì băng-rôn tên chiêu vẫn phải vẽ như cũ */
   await page.evaluate(() => {

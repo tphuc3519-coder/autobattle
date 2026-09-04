@@ -41,6 +41,13 @@ window.__SETS=SETS; window.__getCtx=()=>ctx; window.__sprite=sprite;
    một hằng số là treo vòng lặp. Gọi cái này trước để lần bốc đầu chắc chắn ăn. */
 window.__resetLines=()=>{ lastDecision=-1; lastWrong=-1; };
 window.__DECISIONS=SUZ_DECISIONS; window.__WRONGS=SUZ_WRONG;
+window.__GN=GN; window.__ginyuAura=ginyuAura; window.__ginyuState=ginyuState;
+window.__ginyuChange=ginyuChange; window.__ginyuPossess=ginyuPossess;
+window.__ginyuChangeMiss=ginyuChangeMiss; window.__gnChangeTarget=gnChangeTarget;
+window.__ginyuBeam=ginyuBeam; window.__ginyuFlash=ginyuFlash; window.__ginyuStrike=ginyuStrike;
+window.__gnChangeOdds=gnChangeOdds; window.__gnChangeFire=gnChangeFire;
+window.__gnCanChange=gnCanChange; window.__gnCrowd=gnCrowd; window.__gnDmg=gnDmg;
+window.__gnStatus=gnStatus; window.__gnBeamHit=gnBeamHit; window.__gnFlashHit=gnFlashHit; window.__GN_PROJ=GN_PROJ_BODY; window.__knock=knock;
 `;
 
 /* Trả về đường dẫn file probe. Ghi ra thư mục tạm để không bẩn repo. */
