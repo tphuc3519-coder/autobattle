@@ -156,6 +156,8 @@
     <button id="testSuz2" title="Ép Ayanokouji nhảy vào đỡ đòn, sang form 2">🧪 Test Horikita F2</button>
     <button id="testSuzAya" title="Nạp đủ 150 điểm lớp để Ayanokouji vào sân">🧪 Test Ayanokouji</button>
     <button id="testSuz3" title="Ép Ayanokouji rời sàn để Horikita sang form 3">🧪 Test Horikita F3</button>
+    <button id="testGinyuAura" title="Ép aura Ginyu toả ra ngay">🧪 Test aura Ginyu</button>
+    <button id="testGinyuChange" title="Ép Ginyu tung CHANGE!!! ngay">🧪 Test CHANGE</button>
   </div>
 
   <div class="stage"><canvas id="arena" width="620" height="620"></canvas></div>
@@ -261,9 +263,9 @@ let G=null, running=false, speedMul=BASE_SPEED, mode='auto', autoSkill=true;
 const keys={};
 
 /* ---------- sprite slots ---------- */
-const SPR={kono:{},chichi:{},tsubasa:{},shika:{},suzune:{},ayanokouji:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
-const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',suzune:'#7FC8FF'};
-const HP={kono:1000,chichi:1000,tsubasa:1000,shika:1000,suzune:1000};
+const SPR={kono:{},chichi:{},tsubasa:{},shika:{},suzune:{},ginyu:{},ayanokouji:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
+const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',suzune:'#7FC8FF',ginyu:'#A05CFF'};
+const HP={kono:1000,chichi:1000,tsubasa:1000,shika:1000,suzune:1000,ginyu:1000};
 const CAST={mul:1.8};
 const cm=v=>v*CAST.mul;
 const SETS=[
@@ -272,6 +274,7 @@ const SETS=[
   {key:'tsubasa', name:'Ozora Tsubasa', poses:[['idle','Thủ thế'],['atk1','Sút bóng'],['bicycle','Overhead kick'],['atk2','Drive shot'],['wings','Đôi cánh đại bàng'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['wounded','Chấn thương (lúc kích hoạt nội tại)']]},
   {key:'shika', name:'Shikamaru', poses:[['idle','Thủ thế'],['lazy','Ngồi lười (đầu trận)'],['atk1','Phóng shuriken'],['stab','Đâm sau lưng'],['atk2','Kết ấn trói bóng'],['ulti','Mở lãnh địa'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
   {key:'suzune', name:'Horikita Suzune', poses:[['idle','Thủ thế (form 2)'],['scared','Thủ thế sợ hãi (form 1)'],['stand3','Thủ thế (form 3)'],['block','Thủ chéo hai tay (chịu đòn)'],['punch','Đấm (form 1/2)'],['kick','Đá (form 1/2)'],['think','Đứng suy nghĩ (form 2)'],['punch3','Đấm (form 3)'],['kick3','Đá (form 3)'],['think3','Đứng suy nghĩ (form 3)'],['right2','Quyết định đúng (form 2)'],['wrong2','Quyết định sai (form 2)'],['right3','Quyết định đúng (form 3)'],['wrong3','Quyết định sai (form 3)'],['hurt','Trúng đòn'],['injured2','Tơi tả <20% máu (form 1/2)'],['injured3','Tơi tả <20% máu (form 3)'],['thinkHurt2','Tơi tả khi đứng suy nghĩ (form 2)'],['thinkHurt3','Tơi tả khi đứng suy nghĩ (form 3)']]},
+  {key:'ginyu', name:'Captain Ginyu', poses:[['idle','Thủ thế'],['fly','Bay vào sân (đầu trận)'],['dance1','Ginyu Force · dáng 1'],['dance2','Ginyu Force · dáng 2'],['dance3','Ginyu Force · dáng 3'],['punch','Đấm'],['kick','Đá'],['beam','Ginyu Beam'],['flash','Ginyu Flash'],['change','CHANGE!!!'],['panic','Hoảng hốt (bắn trượt Change)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
   {key:'ayanokouji', name:'Ayanokouji', poses:[['idle','Đứng'],['guard','Đỡ đòn thay Horikita'],['strike','Đòn đột kích'],['leave','Rời sàn đấu']]},
   {key:'nara', name:'Con nai nhà Nara', poses:[['idle','Đứng cạnh Shikamaru trong lãnh địa']]},
   {key:'garden', name:'Phong cảnh lãnh địa', poses:[['idle','Ảnh nền khu rừng nhà Nara']]},
@@ -409,6 +412,53 @@ const SUZ_THINK_LIFE=SUZ.decThink+gs(.9);
    để vừa dùng cho talk() vừa dùng làm trần độ dài của ô giọng — hai chỗ không được lệch
    nhau, tiếng không bao giờ được sống lâu hơn bong bóng. */
 const AYA_STAND_LIFE=SUZ_BUBBLE*1.4, AYA_JOIN_LIFE=2.5, AYA_BYE_LIFE=2.2;
+/* ---------- Captain Ginyu ----------
+   Khai theo lối của Shikamaru / Horikita: mọi mốc thời gian viết bằng giây NGƯỜI CHƠI
+   rồi bọc gs() để đổi sang giây trong trận. Riêng nhịp ra đòn tay bám theo thanh
+   "tốc độ ra chiêu" nên để dạng hệ số thô rồi bọc cm() ngay tại chỗ gọi — khai sẵn
+   cm(.22) vào hằng thì đổi thanh tốc độ xong con số vẫn đứng yên.
+   Mọi chữ hiện ra trong game của nhân vật này đều là tiếng Anh. */
+const GN={
+  flyT:gs(1.5),              // bấm Bắt đầu là bay vào sân, đúng 1.5 giây người chơi
+  danceT:gs(2.4),            // ba dáng Ginyu Force chạy liên tục rồi mới toả aura
+  auraCd:gs(12),             // nhịp toả aura, cũng là hồi chiêu của "trạng thái chiến đấu"
+  /* Aura phủ kín sàn: 50% làm địch ngơ ngác (có lợi cho Ginyu), 50% làm địch sôi máu */
+  dazeT:gs(8),  dazeMove:.10, dazeCast:.50,
+  rageT:gs(6),  rageMove:1.50, rageCast:1.30,
+  /* Địch ngơ ngác -> Ginyu hưng phấn; địch sôi máu -> Ginyu lùi về thăm dò */
+  atk:{t:gs(8),  dmg:1.75, take:1.50, cc:1.30, cast:1.50, move:1.60},
+  def:{t:gs(10), take:.40,  ccRes:.40, dmg:.60,  cast:.60},
+  /* Chiêu 1 — đấm/đá, nhanh hơn ChiChi (cm(.25)) một nhịp và nặng đòn hơn hẳn */
+  atkCd:.22, hitDmg:35, hitStun:gs(.75), hitStunOdds:.25,
+  /* Chiêu 2 — Ginyu Beam: sáu luồng khí tím, bay nhanh hơn Masenko, càng xa càng lệch */
+  beamCd:gs(8), beamN:6, beamDmg:35, beamSpd:420, beamGap:.16,
+  beamStun:gs(1), beamKb:340, beamSpread:.42, beamFar:460,
+  tiredHits:3, tiredT:gs(7), tiredMove:.40, tiredCast:.60, tiredDmg:.75,
+  /* Chiêu 3 — Ginyu Flash: gồng 1.75 giây rồi nối một luồng sáng tím liền mạch */
+  flashCd:gs(14), flashCharge:gs(1.75), flashHold:gs(.6),
+  flashDmg:100, flashStun:gs(3.5), flashSlowT:gs(5), flashMove:.20, flashCast:.75,
+  /* Chiêu 4 — CHANGE!!! Tia sáng phóng ra từ MIỆNG, càng gần càng dễ trúng nhưng
+     gần nhất cũng không bao giờ chắc ăn, xa nhất chỉ còn 18%. */
+  changeSpd:520, changeNear:70, changeFar:520, changeHi:.85, changeLo:.18,
+  changeKeep:.15,            // thân xác Ginyu còn 15% máu tối đa
+  changeGain:.20,            // thân xác đối thủ được cộng thêm 20% máu tối đa
+  swapSelf:.35,              // vào thân xác người khác: beam / flash chỉ còn 35% dmg
+  swapSelfCc:.30,            // ... và hiệu ứng chỉ còn 30%
+  swapBody:.40,              // mượn chiêu tay của thân xác đó: còn 40% dmg
+  swapHost:.50,              // đối thủ trong thân xác Ginyu: đấm đá còn 50% dmg
+  aimOff:1.05,               // ... và đạn mượn thân xác lệch tới hơn 60 độ
+  panicMove:[2.5,3.0],       // bắn trượt: máu về 1, chạy nhanh gấp 2.5~3 lần
+  panicCut:.30               // ... đổi lại dmg và hiệu ứng chỉ còn 30%
+};
+/* Thân xác nào cầm chiêu ném / sút thì Ginyu mượn được nguyên sát thương, chỉ mất
+   độ chính xác (người dùng: "chỉ không giảm dmg nếu đối phương là người hệ dùng
+   shuriken hay kunai nổ hay bóng đá"). */
+const GN_PROJ_BODY=new Set(['kono','tsubasa','shika']);
+/* Câu thoại và tuổi thọ bong bóng của chúng. Khai TRƯỚC SFX_MAXLEN vì trần độ dài
+   của ô giọng bám theo đúng mấy con số này — tiếng không được sống lâu hơn hình. */
+const GN_SHOUT='GINYU FORCE!';
+const GN_CHANGE_LINE='My turn — the last technique... CHANGE!!!';
+const GN_FORCE_LIFE=2.2, GN_CHANGE_LIFE=2.6;
 const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
@@ -522,6 +572,47 @@ const CHARS={
     // Không ghi form, không ghi bậc: người chơi tự thấy cô đổi khác qua dáng và đòn đánh.
     gauge:f=>({pct:clamp(f.cp/SUZ.cpMax,0,1), fill:'#7FC8FF',
                txt:`Class: ${Math.round(f.cp)}/${SUZ.cpMax}`})
+  }
+  ,ginyu:{
+    name:'Captain Ginyu', short:'Ginyu', tag:'Ginyu Force · Melee', emoji:'👑', color:'#A05CFF', alt:'#C9A0FF',
+    role:'melee', speed:104, dodge:.7, male:true,
+    skills:[
+      `<b>Entrance</b> He does not start on the arena — he flies in over ${rts(GN.flyT)}s, lands, runs the three Ginyu Force poses and yells "${GN_SHOUT}" while the foe can only stand and watch`,
+      `<b>Passive · Ginyu's Aura</b> every ${rts(GN.auraCd)}s the aura floods the arena — <b>50%</b> the foe is caught off guard (−${Math.round((1-GN.dazeMove)*100)}% move, −${Math.round((1-GN.dazeCast)*100)}% cast for ${rts(GN.dazeT)}s), <b>50%</b> the foe's blood boils instead (+${Math.round((GN.rageMove-1)*100)}% move, +${Math.round((GN.rageCast-1)*100)}% cast for ${rts(GN.rageT)}s)`,
+      `<b>Passive · Battle Stance</b> foe caught off guard ⇒ Ginyu goes <b>excited</b> for ${rts(GN.atk.t)}s: +${Math.round((GN.atk.dmg-1)*100)}% damage dealt, +${Math.round((GN.atk.cast-1)*100)}% cast, +${Math.round((GN.atk.move-1)*100)}% move — but +${Math.round((GN.atk.take-1)*100)}% damage taken (straight through his defence) and +${Math.round((GN.atk.cc-1)*100)}% longer crowd control`,
+      `<b>Passive · Probing Stance</b> foe's blood boils ⇒ Ginyu goes <b>defensive</b> for ${rts(GN.def.t)}s: −${Math.round((1-GN.def.take)*100)}% damage taken, +${Math.round(GN.def.ccRes*100)}% CC resist, but −${Math.round((1-GN.def.dmg)*100)}% damage dealt and −${Math.round((1-GN.def.cast)*100)}% cast speed · with <b>three or more fighters</b> on the field he always takes this stance`,
+      `<b>1</b> Punch &amp; Kick — ${GN.hitDmg} dmg, a shade faster than ChiChi, ${Math.round(GN.hitStunOdds*100)}% to stun ${rts(GN.hitStun)}s`,
+      `<b>2</b> Ginyu Beam — every ${rts(GN.beamCd)}s, ${GN.beamN} purple ki bolts, ${GN.beamDmg} dmg each, knocks far back and stuns ${rts(GN.beamStun)}s · faster than Masenko but it strays at range · <b>${GN.tiredHits}+ bolts</b> land ⇒ Worn Out: −${Math.round((1-GN.tiredMove)*100)}% move, −${Math.round((1-GN.tiredCast)*100)}% cast, −${Math.round((1-GN.tiredDmg)*100)}% damage for ${rts(GN.tiredT)}s`,
+      `<b>3</b> Ginyu Flash — he plants his feet and charges ${rts(GN.flashCharge)}s, then one unbroken purple pillar locks onto the foe: ${GN.flashDmg} dmg, stun ${rts(GN.flashStun)}s, then −${Math.round((1-GN.flashMove)*100)}% move and −${Math.round((1-GN.flashCast)*100)}% cast for ${rts(GN.flashSlowT)}s`,
+      `<b>4 · CHANGE!!!</b> At 0 HP he does not die — he stops where he fell and fires a body-change beam from his mouth. It strays badly: only ${Math.round(GN.changeLo*100)}% to connect across the arena, up to ${Math.round(GN.changeHi*100)}% point blank, never certain · with three or more fighters he aims at the highest HP one and possesses whoever the beam touches first`,
+      `<b>4 · hit</b> souls swap — his old body drops to ${Math.round(GN.changeKeep*100)}% max HP, the stolen body gains ${Math.round(GN.changeGain*100)}% max HP. In the foe's body he keeps his own beam and flash at −${Math.round((1-GN.swapSelf)*100)}% damage and −${Math.round((1-GN.swapSelfCc)*100)}% effect, and borrows their basic attack at −${Math.round((1-GN.swapBody)*100)}% (no cut for shuriken / explosive kunai / football bodies, but his aim in a stolen body is wretched). The foe, stuck in Ginyu's body, is left with Ginyu's punch and kick at −${Math.round((1-GN.swapHost)*100)}%`,
+      `<b>4 · miss</b> he is left on 1 HP, bolts around the arena at ${GN.panicMove[0]}–${GN.panicMove[1]}× his own speed in a blind panic, and everything he does lands for only ${Math.round(GN.panicCut*100)}%`],
+    init(f){
+      f.cds={s1:cm(GN.atkCd),s2:GN.beamCd,s3:GN.flashCd};
+      f.gnEntry=null; f.gnAura=GN.auraCd; f.gnState=null; f.gnStateT=0;
+      f.gnFlash=null; f.gnChangeDone=false; f.gnPanic=false;
+      ginyuEnter(f);
+    },
+    think(f,e,d,auto){
+      if(f.gnEntry||f.gnFlash||f.gnChange)return;
+      if(f.swapAs) return ginyuSwapThink(f,e,d,auto);
+      if(f.cds.s3<=0&&(auto?d<520:keys['l'])){ f.cds.s3=GN.flashCd+GN.flashCharge; ginyuFlash(f,e); return; }
+      if(f.cds.s2<=0&&(auto?d<GN.beamFar:keys['k'])){ f.cds.s2=GN.beamCd; ginyuBeam(f,e); return; }
+      if(f.cds.s1<=0&&d<f.r+e.r+MELEE_REACH&&(auto||keys['j'])){ f.cds.s1=cm(GN.atkCd); ginyuStrike(f,e); }
+    },
+    /* Thanh phụ chỉ nói đúng một chuyện: aura tới đâu rồi, hay đang đứng ở thế nào.
+       Không dán chữ giải thích lên sàn — cùng luật với Horikita. */
+    gauge:f=>{
+      if(f.gnPanic) return {pct:1, fill:'#FF7A7A', txt:'PANIC · 1 HP'};
+      if(f.swapAs==='ginyu') return {pct:1, fill:'#A05CFF', txt:'STOLEN BODY'};
+      if(f.swapAs==='foe')   return {pct:1, fill:'#8FA6C8', txt:'TRAPPED IN GINYU'};
+      if(f.gnState==='atk') return {pct:clamp(f.gnStateT/GN.atk.t,0,1), fill:'#C77DFF',
+                                    txt:`EXCITED ${(f.gnStateT*RT).toFixed(1)}s`};
+      if(f.gnState==='def') return {pct:clamp(f.gnStateT/GN.def.t,0,1), fill:'#7FE0FF',
+                                    txt:`PROBING ${(f.gnStateT*RT).toFixed(1)}s`};
+      return {pct:clamp(1-f.gnAura/GN.auraCd,0,1), fill:'#A05CFF',
+              txt:`Aura: ${(Math.max(0,f.gnAura)*RT).toFixed(1)}s`};
+    }
   }
 };
 const CKEYS=Object.keys(CHARS);
@@ -730,7 +821,8 @@ async function loadSaved(){
    thì giữ nguyên đời đời — đổi là xoá sạch tiếng người dùng đã nạp. */
 const SFX_GROUPS={
   crit:'Chung', throw:'Konohamaru', punch:'ChiChi', kick:'Ozora Tsubasa',
-  shika_lazy:'Shikamaru', suz_think:'Horikita Suzune', aya_appear:'Ayanokouji'
+  shika_lazy:'Shikamaru', suz_think:'Horikita Suzune', aya_appear:'Ayanokouji',
+  ginyu_fly:'Captain Ginyu'
 };
 const SFX_EVENTS=[
   ['crit','Chí mạng'],['stun','Choáng'],['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt'],
@@ -762,7 +854,18 @@ const SFX_EVENTS=[
   ['aya_join','🎙 GIỌNG · Câu lúc anh vào sân sát cánh lần cuối'],
   ['aya_strike','Ayanokouji đột kích'],
   ['aya_bye','🎙 GIỌNG · "This is where I take my leave." (lúc anh rời sàn)'],
-  ['aya_leave','Ayanokouji rời sàn']
+  ['aya_leave','Ayanokouji rời sàn'],
+
+  ['ginyu_fly','Ginyu bay vào sân (đầu trận)'],
+  ['ginyu_force','🎙 GIỌNG · "GINYU FORCE!" (lúc nhảy ba dáng)'],
+  ['ginyu_aura','Aura Ginyu lan ra khắp sàn'],
+  ['ginyu_excited','Vào thế hưng phấn (luồng khí tím)'],
+  ['ginyu_probe','Vào thế thăm dò phòng thủ'],
+  ['ginyu_beam','Ginyu Beam phóng ra'],
+  ['ginyu_flash','Ginyu Flash — luồng sáng nối vào địch'],
+  ['ginyu_change','🎙 GIỌNG · "CHANGE!!!" (câu cuối trước khi hoán đổi thân xác)'],
+  ['ginyu_swap','Hoán đổi thân xác thành công'],
+  ['ginyu_miss','Change bắn trượt — Ginyu hoảng hốt']
 ];
 const SFXBUF={};
 let AC=null, volume=.6, muted=false, lastSfx={};
@@ -967,6 +1070,29 @@ function synth(name,c,g){
                       noise(c,g,{dur:.22,f0:2600,f1:500,vol:.2,q:1.4}); break;
     case 'aya_leave': tone(c,g,{type:'sine',f0:330,f1:110,dur:.9,vol:.16});
                       noise(c,g,{dur:.8,f0:900,f1:200,vol:.09,type:'lowpass'}); break;
+    case 'ginyu_fly': tone(c,g,{type:'sine',f0:120,f1:520,dur:1.4,vol:.2});
+                      noise(c,g,{dur:1.4,f0:300,f1:2200,vol:.14,q:.8}); break;
+    case 'ginyu_force':[0,.26,.52].forEach((d,i)=>tone(c,g,{type:'square',f0:210+i*70,f1:210+i*70,dur:.2,vol:.18,delay:d}));
+                      tone(c,g,{type:'sawtooth',f0:350,f1:180,dur:.5,vol:.13,delay:.8}); break;
+    case 'ginyu_aura':tone(c,g,{type:'sawtooth',f0:60,f1:240,dur:1.1,vol:.24});
+                      noise(c,g,{dur:1.1,f0:200,f1:1800,vol:.16,q:1.2}); break;
+    case 'ginyu_excited':[0,.1,.2].forEach((d,i)=>tone(c,g,{type:'sawtooth',f0:220+i*160,f1:340+i*200,dur:.3,vol:.16,delay:d}));
+                      noise(c,g,{dur:.6,f0:400,f1:2600,vol:.12}); break;
+    case 'ginyu_probe':[0,.14].forEach((d,i)=>tone(c,g,{type:'sine',f0:300-i*90,f1:200-i*70,dur:.34,vol:.16,delay:d}));
+                      noise(c,g,{dur:.5,f0:1200,f1:300,vol:.09,type:'lowpass'}); break;
+    case 'ginyu_beam':tone(c,g,{type:'sawtooth',f0:640,f1:210,dur:.26,vol:.24});
+                      noise(c,g,{dur:.24,f0:2800,f1:600,vol:.16,q:1.6}); break;
+    case 'ginyu_flash':tone(c,g,{type:'sawtooth',f0:150,f1:640,dur:.9,vol:.26});
+                      tone(c,g,{type:'square',f0:75,f1:320,dur:.9,vol:.1});
+                      noise(c,g,{dur:.9,f0:500,f1:3000,vol:.18,q:2}); break;
+    case 'ginyu_change':[0,.3,.6].forEach((d,i)=>tone(c,g,{type:'square',f0:180+i*120,f1:180+i*120,dur:.24,vol:.17,delay:d}));
+                      tone(c,g,{type:'sawtooth',f0:900,f1:120,dur:.7,vol:.2,delay:.9});
+                      noise(c,g,{dur:.7,f0:3200,f1:400,vol:.14,delay:.9}); break;
+    case 'ginyu_swap':tone(c,g,{type:'sine',f0:900,f1:120,dur:.8,vol:.24});
+                      tone(c,g,{type:'sine',f0:120,f1:900,dur:.8,vol:.2});
+                      noise(c,g,{dur:.8,f0:400,f1:2600,vol:.14}); break;
+    case 'ginyu_miss':tone(c,g,{type:'square',f0:520,f1:150,dur:.45,vol:.2});
+                      noise(c,g,{dur:.45,f0:2000,f1:300,vol:.14,type:'lowpass'}); break;
     default:        noise(c,g,{dur:.1,f0:1200,vol:.2});
   }
 }
@@ -990,7 +1116,9 @@ const SFX_MAXLEN={
   aya_leave:SUZ_BUBBLE*RT,
   // ba ô giọng của Ayanokouji: mỗi câu cắt đúng bằng bong bóng đang treo câu đó
   aya_stand:AYA_STAND_LIFE*RT, aya_join:AYA_JOIN_LIFE*RT, aya_bye:AYA_BYE_LIFE*RT,
-  suz_form2:2.4, suz_form3:2.8
+  suz_form2:2.4, suz_form3:2.8,
+  // hai ô giọng của Ginyu: cắt đúng bằng bong bóng đang treo câu đó
+  ginyu_force:GN_FORCE_LIFE*RT, ginyu_change:GN_CHANGE_LIFE*RT
 };
 /* File dài thì đọc nối tiếp từng đoạn, hết file thì quay lại đầu. Mặc định mỗi đoạn
    2.2 giây; hai ô dưới đây lấy độ dài đoạn theo đúng thứ giới hạn chúng.
@@ -1369,6 +1497,13 @@ function mk(o){
 
     goals:0, vuln:0, exhaust:0, prewing:false, prewingDone:false, prewingA:0,
     chakra:0, lazy:false, awake:false, evade:0, outCut:0, weak:false,
+    /* Captain Ginyu: mấy hệ số nhân dùng chung cho MỌI nhân vật (aura của anh bám
+       vào người khác), nên khai thẳng ở đây với giá trị trung tính. */
+    moveMul:1, castMul:1, dmgOut:1, gnOut:1, dmgTake:1, ccTake:1, gnCcRes:0,
+    gnSelfCut:1, gnCcCut:1, missOdds:0, aimOff:0, gnBodyProj:false,
+    gnDaze:0, gnRage:0, gnTired:0, gnSlow:0, gnSlowAfter:0, gnBeamHits:0,
+    gnEntry:null, gnAura:0, gnState:null, gnStateT:0, gnFlash:null, gnChange:null,
+    gnChangeDone:false, gnPanic:false, gnPanicMul:1, swapAs:null, gnSoul:null,
     bind:null, bindGuard:false, bindPending:false, lazyTalk:0, wakeT:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
 }
@@ -1445,6 +1580,8 @@ function stunFx(f,dur,kind){
   }
   if(f.prewing) dur*=PREWING_STUN;               // Pre-Wings: gồng được, choáng ngắn lại
   if(f.ccRes>0) dur*=(1-f.ccRes);                // Horikita form 3: kháng hiệu ứng, choáng ngắn lại
+  if(f.gnCcRes>0) dur*=(1-f.gnCcRes);            // Ginyu đang ở thế thăm dò: kháng hiệu ứng
+  if(f.ccTake&&f.ccTake!==1) dur*=f.ccTake;      // Ginyu đang hưng phấn: dính khống chế lâu hơn
   if(f.key==='shika'&&f.bind&&f.bind.guard){     // lần bù: đứng vững, không cắt được
     G.floats.push({x:f.x,y:f.y-104,txt:'UNBREAKABLE',color:'#CFC6FF',
       life:.9,ml:.9,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
@@ -1482,22 +1619,35 @@ function tryEvade(t,kind){
 }
 /* Trả về true nếu đòn thật sự trúng. Chỗ nào còn gắn thêm choáng hay sát thương duy trì
    sau cú đánh thì phải xem giá trị này, nếu không né xong vẫn dính phần đuôi. */
-function hurt(t,amt,src,crit,kind,tint){
+/* raw=true: chỗ gọi đã tự nhân hệ số sát thương của mình rồi (mấy chiêu do chính
+   Captain Ginyu viết ra dùng gnDmg()), nên đừng nhân src.dmgOut lần nữa. */
+function hurt(t,amt,src,crit,kind,tint,raw){
   if(!t.alive||G.over)return false;
   if(t.leaving>0)return false;              // Ayanokouji đang rời sàn: không ăn đòn nữa
   // Ayanokouji nhảy vào đỡ thay: suốt quãng này Horikita không mất một giọt máu nào
   if(t.ayaG&&t.ayaG.t>0){ ayaBlock(t,amt,src); return false; }
+  if(t.gnChange)return false;               // đang tung CHANGE!!!: không ai cắt ngang được
   if(t.invuln>0){
     pop(t.x,t.y,'IMMUNE',t.color||'#FFF3C4',false);
     ring(t.x,t.y,52,'#FF9AD5',.3);
     return false;
   }
+  /* Ginyu mượn chiêu tay của thân xác vừa cướp được: tay chân người ta anh dùng
+     chưa quen nên trượt là chuyện thường. Chỉ ăn vào chiêu MƯỢN, chiêu của chính
+     anh (raw=true) thì vẫn ngắm chuẩn. */
+  if(src&&!raw&&src.missOdds>0&&chance(src.missOdds)){
+    G.floats.push({x:t.x,y:t.y-88,txt:'MISS',color:'#C9A0FF',life:.9,ml:.9,banner:true,sc:.6});
+    return false;
+  }
   if(tryEvade(t,kind))return false;
+  if(src&&!raw&&src.dmgOut!==undefined&&src.dmgOut!==1) amt*=src.dmgOut;
   if(src&&src.outCut>0) amt*=(1-src.outCut);   // đứng trong lãnh địa thì đánh yếu hẳn
   if(t.vuln>0) amt*=1.5;                    // dính Twin Shot: nhận thêm 50% sát thương
   if(t.eagle) amt*=.3;                      // Wings of the Eagle: miễn 70% sát thương
   else if(t.prewing) amt*=PREWING_RES;      // Pre-Wings: miễn 35% sát thương
   if(t.dmgRes>0) amt*=(1-t.dmgRes);         // Horikita form 3: miễn thương cộng dồn theo mốc điểm lớp
+  // Ginyu: hưng phấn thì ăn thêm 50% sát thương (xuyên qua phòng thủ), thăm dò thì chỉ ăn 40%
+  if(t.dmgTake!==undefined&&t.dmgTake!==1) amt*=t.dmgTake;
   if(t.dash&&t.dash.guard) amt*=CHICHI_DASH_RES;   // đang lao tới: nhận ít sát thương hơn
   t.hp=Math.max(0,t.hp-amt);
   t.flash=crit?.2:.12; t.recoil=crit?1.4:1;
@@ -1521,6 +1671,10 @@ function hurt(t,amt,src,crit,kind,tint){
     G.flashScreen=Math.max(G.flashScreen,.07);
   }
   counters(src,t);
+  /* Chiêu 4 — CHANGE!!! Máu về 0 nhưng Captain Ginyu chưa chết: anh đứng nguyên chỗ
+     ngã xuống và bắn tia hoán đổi thân xác. Chỉ đúng một lần, và chỉ khi hồn anh còn
+     nằm trong thân xác của chính mình. */
+  if(t.hp<=0&&!t.summon&&gnCanChange(t)){ ginyuChange(t); return true; }
   if(t.hp<=0&&!t.summon){ t.alive=false; finish(src); }
   return true;                              // đòn đã trúng: chỗ gọi được phép gắn thêm choáng / duy trì
 }
@@ -2391,6 +2545,7 @@ function suzHeal(f,pct){
 /* Tích điểm lớp. Form 2 chặn ở 150 và chính lúc chạm trần là Ayanokouji bước ra;
    form 3 thì cứ đủ 150 lại đổi thành một bậc cộng dồn rồi tính lại từ 0. */
 function suzCp(f,n){
+  if(f.swapAs)return;                      // Ginyu đang ngồi trong thân xác này: bỏ máy điểm lớp
   if(n<=0)return;
   f.cp+=n;
   G.floats.push({x:f.x+36,y:f.y-46,txt:'+'+Math.round(n)+' CP',color:'#7FC8FF',life:.9,ml:.9,sc:.55});
@@ -2822,6 +2977,391 @@ function ayaGuardEnd(f){
   if(f.alive&&!G.over) suzForm2(f);
 }
 
+/* ================= Captain Ginyu ================= */
+/* Đội trưởng biệt đội Ginyu. Bốn thứ làm nên nhân vật này, đừng gộp lại:
+     1. màn chào sân — bay vào sân đúng 1.5 giây người chơi, đáp xuống, chạy ba dáng
+        Ginyu Force rồi hô "GINYU FORCE!" trong lúc đối phương chỉ được đứng nhìn;
+     2. nội tại aura — cứ 12 giây phủ kín sàn một lần, 50/50 làm địch ngơ ngác hoặc
+        sôi máu, rồi đẩy chính anh vào thế hưng phấn hay thế thăm dò tương ứng;
+     3. ba chiêu thường — đấm đá, sáu luồng khí tím, và một luồng sáng liền mạch;
+     4. CHANGE!!! — máu về 0 thì anh không chết mà cướp lấy thân xác đối thủ.
+   Mọi chữ hiện ra trong game của nhân vật này là tiếng Anh; nhật ký vẫn tiếng Việt
+   như mấy nhân vật kia. */
+
+/* Chỉ đúng một lần, và chỉ khi hồn anh còn nằm trong thân xác của chính mình:
+   thân xác Ginyu do đối thủ điều khiển (swapAs==='foe') thì chết là chết thật. */
+const gnCanChange=f=>!!f&&f.key==='ginyu'&&!f.summon&&!f.swapAs&&!f.gnChangeDone&&!f.gnChange;
+/* Ai đang đứng trên sàn mà CÓ THANH MÁU — dùng chung cờ với drawBars(). Ba người trở
+   lên thì Ginyu luôn chọn thế thăm dò, dù ai dính hiệu ứng gì. */
+function gnCrowd(){
+  let n=0;
+  for(const f of G.fighters) if(f&&f.alive&&f.hp>0&&!(f.summon&&!f.ally)&&!(f.leaving>0)) n++;
+  return n;
+}
+/* Hệ số sát thương cho mấy chiêu do CHÍNH Ginyu viết ra. Chúng gọi hurt() với raw=true
+   nên không đi qua src.dmgOut — nhân ở đây một lần, đừng nhân hai lần. */
+const gnDmg=f=>(f.gnOut===undefined?1:f.gnOut)*(f.gnSelfCut||1);
+/* Hệ số thời lượng hiệu ứng: vào thân xác người khác thì choáng/mệt chỉ còn 30%. */
+const gnCc=(f,dur)=>dur*(f.gnCcCut||1);
+
+/* Dựng lại toàn bộ hệ số nhân của MỘT người mỗi nhịp. Chạy cho mọi nhân vật chứ không
+   riêng Ginyu: aura của anh bám vào người khác, nên ai cũng có thể đang ngơ ngác,
+   sôi máu, mệt mỏi hay bị luồng sáng ghì chân. Tính lại từ đầu mỗi nhịp thay vì cộng
+   trừ dần — cộng trừ dần thì hiệu ứng chồng nhau là lệch ngay. */
+function gnStatus(f,dt){
+  for(const k of ['gnDaze','gnRage','gnTired','gnSlow']) if(f[k]>0) f[k]=Math.max(0,f[k]-dt);
+  // luồng sáng ghì chân chỉ bắt đầu SAU khi hết choáng, đúng như mô tả chiêu
+  if(f.gnSlowAfter>0&&f.stun<=0){ f.gnSlow=Math.max(f.gnSlow,f.gnSlowAfter); f.gnSlowAfter=0; }
+  let mv=1, ct=1, out=1, take=1, cc=1, ccr=0;
+  if(f.gnDaze>0){ mv*=GN.dazeMove; ct*=GN.dazeCast; }
+  if(f.gnRage>0){ mv*=GN.rageMove; ct*=GN.rageCast; }
+  if(f.gnTired>0){ mv*=GN.tiredMove; ct*=GN.tiredCast; out*=GN.tiredDmg; }
+  if(f.gnSlow>0){ mv*=GN.flashMove; ct*=GN.flashCast; }
+  if(f.gnState==='atk'){ out*=GN.atk.dmg; take*=GN.atk.take; cc*=GN.atk.cc; ct*=GN.atk.cast; mv*=GN.atk.move; }
+  else if(f.gnState==='def'){ take*=GN.def.take; ccr=GN.def.ccRes; out*=GN.def.dmg; ct*=GN.def.cast; }
+  if(f.gnPanic){ mv*=(f.gnPanicMul||GN.panicMove[0]); out*=GN.panicCut; }
+  f.moveMul=mv; f.castMul=ct; f.dmgTake=take; f.ccTake=cc; f.gnCcRes=ccr;
+  f.gnOut=out;
+  /* dmgOut chỉ ăn vào chiêu MƯỢN của thân xác vừa cướp được (những hàm có sẵn của
+     nhân vật kia, không với tay vào trong được). Chiêu của chính Ginyu đi đường
+     gnDmg() nên phải để dmgOut sạch phần cắt này. */
+  f.dmgOut=out*((f.swapAs==='ginyu'&&!f.gnBodyProj)?GN.swapBody:1);
+}
+
+/* ---- màn chào sân: bay vào rồi nhảy ba dáng ---- */
+function ginyuEnter(f){
+  /* Bấm Bắt đầu mới bay — step() chỉ chạy khi trận đang chạy, nên quãng bay đúng
+     flyT giây trong trận = 1.5 giây thật ở thanh tốc độ gốc. */
+  f.gnEntry={ph:'fly', t:GN.flyT, max:GN.flyT, hx:f.x, hy:f.y,
+             x0:clamp(f.x+rnd(-90,90),PAD,W-PAD), y0:f.team===0?-160:H+160, cried:false};
+  f.x=f.gnEntry.x0; f.y=f.gnEntry.y0;
+  f.pose='fly'; f.poseT=0;
+}
+function ginyuTick(f,dt){
+  const E=f.gnEntry;
+  if(E){
+    // suốt màn chào sân đối phương chỉ được đứng nhìn, chưa được đánh
+    for(const o of G.fighters) if(o.team!==f.team&&!(o.summon&&!o.ally)) o.lock=Math.max(o.lock,.3);
+    f.lock=Math.max(f.lock,.3);
+    E.t-=dt;
+    if(E.ph==='fly'){
+      if(!E.cried){ E.cried=true; sfx('ginyu_fly'); say('Captain Ginyu chưa có mặt trên sàn — anh đang bay tới.','m'); }
+      const p=clamp(1-E.t/E.max,0,1), ease=p*p*(3-2*p);
+      f.x=E.x0+(E.hx-E.x0)*ease;
+      f.y=E.y0+(E.hy-E.y0)*ease;
+      f.face=E.hx>=W/2?-1:1;
+      f.pose='fly'; f.poseT=0;
+      f.ghostT-=dt;
+      if(f.ghostT<=0){ f.ghostT=.07;
+        G.fx.push({type:'ghost',x:f.x,y:f.y,face:f.face,key:'ginyu',pose:'fly',h:f.spriteH,life:.3,ml:.3}); }
+      if(E.t<=0){
+        f.x=E.hx; f.y=E.hy;
+        E.ph='dance'; E.t=GN.danceT; E.max=GN.danceT;
+        ring(f.x,f.y,150,'#A05CFF',.55);
+        for(let i=0;i<10;i++) G.fx.push({type:'dust',x:f.x+rnd(-28,28),y:f.y+18,r:6,life:.5,ml:.5});
+        sfx('ginyu_force');
+        G.callBanner={txt:GN_SHOUT,color:'#A05CFF',life:GN_FORCE_LIFE,ml:GN_FORCE_LIFE};
+        talk(f.x,f.y-126,GN_SHOUT,GN_FORCE_LIFE,true);
+        say('Ginyu đáp xuống, chạy đủ ba dáng Ginyu Force và hô to "GINYU FORCE!".','m');
+      }
+      return;
+    }
+    // ba dáng chạy liên tục cho tới hết màn chào sân
+    f.pose=['dance1','dance2','dance3'][Math.floor((E.max-E.t)*7)%3];
+    f.poseT=0;
+    if(E.t<=0){ f.gnEntry=null; f.pose='idle'; ginyuAura(f); }
+    return;
+  }
+  if(f.gnFlash) gnFlashTick(f,dt);
+  if(f.gnChange) gnChangeTick(f,dt);
+  if(f.gnPanic&&f.pose==='idle'){ f.pose='panic'; f.poseT=0; }
+  // hoán đổi thân xác / hoảng loạn thì nội tại aura tắt hẳn: lúc đó anh còn hồn vía đâu
+  if(f.swapAs||f.gnPanic||f.gnChange) return;
+  if(f.gnState){
+    f.gnStateT-=dt;
+    if(f.gnStateT<=0){
+      f.gnState=null; f.gnStateT=0;
+      G.floats.push({x:f.x,y:f.y-104,txt:'BACK TO NORMAL',color:'#C9A0FF',
+        life:1.1,ml:1.1,banner:true,sc:.6});
+    }
+  }
+  f.gnAura-=dt;
+  if(f.gnAura<=0) ginyuAura(f);
+}
+
+/* ---- nội tại: aura phủ kín sàn ---- */
+function ginyuAura(f){
+  f.gnAura=GN.auraCd;
+  const foes=G.fighters.filter(o=>o&&o.team!==f.team&&o.alive&&o.hp>0&&!(o.summon&&!o.ally)&&!(o.leaving>0));
+  if(!foes.length) return;
+  sfx('ginyu_aura');
+  for(let i=0;i<3;i++) later(i*.12,()=>{ if(!G.over) ring(f.x,f.y,W*.95+i*160,'#A05CFF',.75); });
+  G.flashScreen=Math.max(G.flashScreen,.06);
+  const daze=chance(.5);
+  for(const o of foes){
+    if(daze){ o.gnDaze=Math.max(o.gnDaze,GN.dazeT); o.gnRage=0; }
+    else    { o.gnRage=Math.max(o.gnRage,GN.rageT); o.gnDaze=0; }
+    G.floats.push({x:o.x,y:o.y-118,
+      txt:daze?`OFF GUARD −${Math.round((1-GN.dazeMove)*100)}% MOVE / −${Math.round((1-GN.dazeCast)*100)}% CAST ${rts(GN.dazeT)}s`
+              :`BLOOD BOILING +${Math.round((GN.rageMove-1)*100)}% MOVE / +${Math.round((GN.rageCast-1)*100)}% CAST ${rts(GN.rageT)}s`,
+      color:daze?'#C9A0FF':'#FF9A6E',life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.05,.05)});
+    ring(o.x,o.y,124,daze?'#C9A0FF':'#FF9A6E',.5);
+  }
+  say(daze?'Aura Ginyu tràn khắp sàn — đối phương ngơ ngác, mất hẳn cảnh giác.'
+          :'Aura Ginyu tràn khắp sàn — nhưng đối phương sôi máu, càng đánh càng hăng.','m');
+  /* Ba người trở lên có thanh máu thì anh không dám hưng phấn nữa, luôn lùi về thăm dò. */
+  ginyuState(f,(daze&&gnCrowd()<3)?'atk':'def');
+}
+function ginyuState(f,which){
+  f.gnState=which;
+  f.gnStateT=which==='atk'?GN.atk.t:GN.def.t;
+  sfx(which==='atk'?'ginyu_excited':'ginyu_probe');
+  ring(f.x,f.y,142,which==='atk'?'#C77DFF':'#7FE0FF',.5);
+  G.floats.push({x:f.x,y:f.y-120,txt:which==='atk'?'BATTLE STANCE · EXCITED':'PROBING STANCE · GUARDED',
+    color:which==='atk'?'#C77DFF':'#7FE0FF',life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  say(which==='atk'
+    ?`Ginyu bốc luồng khí tím — đánh mạnh hơn ${Math.round((GN.atk.dmg-1)*100)}% nhưng hở sườn: ăn thêm ${Math.round((GN.atk.take-1)*100)}% sát thương và dính khống chế lâu hơn.`
+    :`Ginyu lùi lại thăm dò — chỉ ăn ${Math.round(GN.def.take*100)}% sát thương, đổi lại đánh và ra chiêu chậm hẳn.`,'m');
+}
+
+/* ---- chiêu 1: đấm / đá ---- */
+function ginyuStrike(f,e){
+  const kick=chance(.5);
+  setPose(f,kick?'kick':'punch',cm(.24)); aim(f,e,.9); sfx('punch');
+  const landed=hurt(e,GN.hitDmg*gnDmg(f),f,false,undefined,undefined,true);
+  G.fx.push({type:'punch',x:(f.x+e.x)/2,y:(f.y+e.y)/2,life:.16,ml:.16});
+  if(!landed) return;
+  if(chance(GN.hitStunOdds)&&stunFx(e,gnCc(f,GN.hitStun),'spark')){
+    sfx('stun');
+    G.floats.push({x:e.x,y:e.y-104,txt:`STUNNED ${rts(GN.hitStun)}s`,color:'#C9A0FF',
+      life:1.2,ml:1.2,banner:true,sc:.6});
+  }
+}
+
+/* ---- chiêu 2: Ginyu's Beam — sáu luồng khí tím ---- */
+function ginyuBeam(f,e){
+  setPose(f,'beam',cm(.6)); aim(f,e,1.1);
+  e.gnBeamHits=0;
+  G.floats.push({x:f.x,y:f.y-106,txt:'GINYU BEAM!',color:f.color,life:1.5,ml:1.5,
+    banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.06,.06)});
+  say(`Ginyu gồng khí — ${GN.beamN} luồng khí tím bắn ra, mỗi luồng ${GN.beamDmg} dmg và hất địch văng xa.`,'m');
+  for(let i=0;i<GN.beamN;i++) later(cm(.2)+i*cm(GN.beamGap),()=>{
+    if(!f.alive||G.over||G.freeze>0)return;
+    const tg=aimTarget(f)||e;
+    if(!tg||!tg.alive)return;
+    const d=dist(f,tg);
+    // càng xa càng lệch: sát mặt thì gần như chuẩn, hết sàn thì tản rộng hẳn
+    const sp=GN.beamSpread*clamp(d/GN.beamFar,0,1);
+    const a=Math.atan2(tg.y-f.y,tg.x-f.x)+rnd(-sp,sp);
+    if(Math.abs(Math.cos(a))>.12) f.face=Math.cos(a)>=0?1:-1;
+    f.ax=Math.cos(a); f.ay=Math.sin(a); f.lunge=Math.max(f.lunge,.55);
+    G.proj.push({type:'gbeam',team:f.team,owner:f,x:f.x+Math.cos(a)*28,y:f.y-26+Math.sin(a)*28,
+      vx:Math.cos(a)*GN.beamSpd,vy:Math.sin(a)*GN.beamSpd,r:15,dmg:GN.beamDmg*gnDmg(f),
+      life:3,ang:a,wob:rnd(0,9)});
+    sfx('ginyu_beam');
+    ring(f.x+Math.cos(a)*24,f.y-26+Math.sin(a)*24,42,'#C9A0FF',.24);
+    G.flashScreen=Math.max(G.flashScreen,.04);
+  });
+}
+function gnBeamHit(p,t){
+  const o=p.owner;
+  ring(t.x,t.y,88,'#C9A0FF',.4);
+  const landed=hurt(t,p.dmg,o,false,'big',undefined,true);
+  sfx('hit');
+  if(!landed)return;
+  knock(t,p.vx,p.vy,GN.beamKb);
+  stunFx(t,gnCc(o,GN.beamStun),'spark');
+  t.gnBeamHits=(t.gnBeamHits||0)+1;
+  if(t.gnBeamHits===GN.tiredHits){
+    t.gnTired=Math.max(t.gnTired,gnCc(o,GN.tiredT));
+    G.floats.push({x:t.x,y:t.y-118,
+      txt:`WORN OUT −${Math.round((1-GN.tiredMove)*100)}% MOVE / −${Math.round((1-GN.tiredCast)*100)}% CAST / −${Math.round((1-GN.tiredDmg)*100)}% DMG ${rts(GN.tiredT)}s`,
+      color:'#BFA8E8',life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.05,.05)});
+    say(`Trúng ${GN.tiredHits} luồng khí — đối thủ mệt nhoài trong ${rts(GN.tiredT)} giây.`,'m');
+  }
+}
+
+/* ---- chiêu 3: Ginyu's Flash — luồng sáng liền mạch, không đứt quãng ---- */
+function ginyuFlash(f,e){
+  f.gnFlash={ph:'charge',t:GN.flashCharge,e};
+  f.lock=Math.max(f.lock,GN.flashCharge+GN.flashHold);
+  setPose(f,'flash',GN.flashCharge+GN.flashHold);
+  aim(f,e,.4);
+  sfx('ginyu_flash');
+  G.floats.push({x:f.x,y:f.y-106,txt:'GINYU FLASH!',color:f.color,life:1.6,ml:1.6,
+    banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.06,.06)});
+  say(`Ginyu đứng trụ, dồn khí ${rts(GN.flashCharge)} giây — luồng sáng tím sắp bám thẳng vào đối thủ.`,'m');
+}
+function gnFlashTick(f,dt){
+  const F=f.gnFlash; if(!F)return;
+  const tg=aimTarget(f);
+  const e=(tg&&tg.alive)?tg:F.e;
+  if(!e||!e.alive||!f.alive||G.over){ f.gnFlash=null; f.lock=0; return; }
+  F.e=e;
+  F.t-=dt;
+  f.pose='flash'; f.poseT=0;
+  aim(f,e,.35);
+  if(F.ph==='charge'){
+    if(chance(dt*22)) G.fx.push({type:'dust',x:f.x+rnd(-24,24),y:f.y+rnd(-6,18),r:4,life:.4,ml:.4});
+    if(F.t<=0){ F.ph='fire'; F.t=GN.flashHold; gnFlashHit(f,e); }
+  }else if(F.t<=0){
+    f.gnFlash=null; f.lock=0; f.pose='idle';
+  }
+}
+function gnFlashHit(f,e){
+  G.flashScreen=Math.max(G.flashScreen,.16);
+  ring(e.x,e.y,150,'#C9A0FF',.55);
+  const landed=hurt(e,GN.flashDmg*gnDmg(f),f,'GINYU FLASH!','big',undefined,true);
+  if(!landed){ say('Ginyu Flash trượt — đối thủ lách được luồng sáng.','m'); return; }
+  const st=stunFx(e,gnCc(f,GN.flashStun),'shock');
+  if(st) sfx('shock');
+  e.gnSlowAfter=Math.max(e.gnSlowAfter||0,gnCc(f,GN.flashSlowT));
+  G.floats.push({x:e.x,y:e.y-118,
+    txt:st?`STUNNED ${rts(GN.flashStun)}s · THEN −${Math.round((1-GN.flashMove)*100)}% MOVE ${rts(GN.flashSlowT)}s`
+          :`−${Math.round((1-GN.flashMove)*100)}% MOVE ${rts(GN.flashSlowT)}s`,
+    color:'#C9A0FF',life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  say(`Luồng sáng ghì chặt — ${GN.flashDmg} dmg, choáng ${rts(GN.flashStun)} giây rồi mất ${Math.round((1-GN.flashMove)*100)}% tốc chạy thêm ${rts(GN.flashSlowT)} giây.`,'m');
+}
+
+/* ---- chiêu 4: CHANGE!!! ---- */
+/* Ba người trở lên thì anh nhắm vào người máu cao nhất; bắn trúng ai trên đường đi
+   thì nhập luôn vào người đó, đúng như yêu cầu. */
+function gnChangeTarget(f){
+  let best=null;
+  for(const o of G.fighters){
+    // chỉ nhập được vào ĐẤU THỦ CHÍNH: đồng minh và viện binh vốn là khách trên sàn,
+    // hết giờ là họ đi, cướp xác họ thì chẳng còn gì để cướp
+    if(!o||o.team===f.team||!o.alive||o.hp<=0||o.summon||o.leaving>0)continue;
+    if(!best||o.hp>best.hp) best=o;
+  }
+  return best;
+}
+/* Tỉ lệ trúng của tia CHANGE theo khoảng cách: sát mặt cũng chỉ tới changeHi chứ không
+   bao giờ chắc ăn, đứng hết sàn thì rơi về changeLo. Tách hẳn ra để test đo được. */
+function gnChangeOdds(d){
+  const k=clamp((d-GN.changeNear)/(GN.changeFar-GN.changeNear),0,1);
+  return GN.changeHi+(GN.changeLo-GN.changeHi)*k;
+}
+function ginyuChange(f){
+  f.gnChangeDone=true;
+  f.hp=1; f.alive=true;
+  f.dash=null; f.bind=null; f.gnFlash=null; f.dots.length=0;
+  f.gnState=null; f.gnStateT=0; f.gnAura=Infinity;
+  f.vx=f.vy=f.dvx=f.dvy=f.kbx=f.kby=0;
+  // đứng nguyên chỗ ngã xuống, không dịch đi đâu hết
+  f.gnChange={ph:'call', t:gs(.5), tgt:gnChangeTarget(f), x:f.x, y:f.y};
+  f.lock=Math.max(f.lock,gs(6));
+  setPose(f,'change',gs(6));
+  G.freeze=1.8; G.freezeAt=f;
+  G.flashScreen=Math.max(G.flashScreen,.5);
+  sfx('ginyu_change');
+  G.callBanner={txt:'CHANGE!!!',color:'#FFF3C4',life:CALL_BANNER_LIFE,ml:CALL_BANNER_LIFE};
+  talk(f.x,f.y-126,GN_CHANGE_LINE,GN_CHANGE_LIFE,true);
+  say('Ginyu gục xuống — nhưng chưa chết. Đến lượt anh tung chiêu cuối: CHANGE!!!','m');
+}
+function gnChangeTick(f,dt){
+  const C=f.gnChange; if(!C)return;
+  // đứng đúng chỗ ngã xuống: kéo về nếu có thứ gì đẩy anh đi
+  f.x=C.x; f.y=C.y; f.vx=f.vy=f.dvx=f.dvy=f.kbx=f.kby=0;
+  f.lock=Math.max(f.lock,.3);
+  f.pose='change'; f.poseT=0;
+  if(C.ph!=='call')return;
+  C.t-=dt;
+  if(C.t<=0) gnChangeFire(f);
+}
+function gnChangeFire(f){
+  const C=f.gnChange; if(!C)return;
+  const tg=(C.tgt&&C.tgt.alive&&C.tgt.hp>0&&!(C.tgt.leaving>0))?C.tgt:gnChangeTarget(f);
+  if(!tg){ ginyuChangeMiss(f); return; }
+  const p=gnChangeOdds(dist(f,tg));
+  const ok=chance(p);
+  const aim0=Math.atan2(bodyCY(tg)-(f.y+20-f.spriteH*.86),tg.x-f.x);
+  const a=ok?aim0:aim0+(chance(.5)?1:-1)*rnd(.4,1.0);
+  // tia phóng ra từ MIỆNG cho nó thật, không phải từ tay
+  const mx=f.x+Math.cos(a)*14, my=f.y+20-f.spriteH*.86;
+  C.ph='beam';
+  f.face=Math.cos(a)>=0?1:-1;
+  G.proj.push({type:'change',team:f.team,owner:f,x:mx,y:my,
+    vx:Math.cos(a)*GN.changeSpd,vy:Math.sin(a)*GN.changeSpd,r:13,dmg:1,life:2.6,ang:a,
+    homing:ok,tgt:ok?tg:null,turn:7});
+  G.flashScreen=Math.max(G.flashScreen,.2);
+  say(`Tia hoán đổi phóng ra từ miệng Ginyu — ở khoảng cách này tỉ lệ trúng chỉ ${Math.round(p*100)}%.`,'m');
+}
+/* Hồn đổi chỗ, THÂN XÁC đứng yên: mỗi object vẫn giữ nguyên hình dáng của nó, chỉ đổi
+   TÊN trên thanh máu và người điều khiển. Nhờ vậy thân xác A mà chữ B, đúng yêu cầu. */
+function ginyuPossess(g,t){
+  if(!g||!t||g.swapAs||t.swapAs||!t.alive||t.summon)return;
+  g.gnChange=null; g.lock=0; g.pose='idle';
+  const gname=g.name, tname=t.name;
+  g.swapAs='foe';   g.gnSoul=t.key;  g.name=tname;
+  t.swapAs='ginyu'; t.gnSoul='ginyu'; t.name=gname;
+  g.hp=Math.max(1,Math.round(g.maxHp*GN.changeKeep));
+  t.hp=Math.min(t.maxHp,Math.round(t.hp+t.maxHp*GN.changeGain));
+  /* Đối thủ kẹt trong thân xác Ginyu: chỉ còn đúng đấm đá của Ginyu, dmg còn một nửa. */
+  g.gnSelfCut=GN.swapHost; g.gnCcCut=1; g.missOdds=0; g.aimOff=0;
+  g.cds={s1:cm(GN.atkCd)};
+  g.gnState=null; g.gnStateT=0; g.gnAura=Infinity; g.gnFlash=null; g.gnPanic=false;
+  g.bind=null; g.domain=null; g.decT=0; g.eagle=false;
+  /* Ginyu trong thân xác địch: beam và flash của anh vẫn dùng được nhưng yếu hẳn, còn
+     đòn tay thì mượn của thân xác đó — thân xác hệ ném/sút giữ nguyên sát thương nhưng
+     ngắm thì hỏng bét, thân xác cận chiến thì đấm hụt liên tục. */
+  const projBody=GN_PROJ_BODY.has(t.key);
+  t.gnBodyProj=projBody;
+  t.gnSelfCut=GN.swapSelf; t.gnCcCut=GN.swapSelfCc;
+  t.missOdds=projBody?0:.55;
+  t.aimOff=projBody?GN.aimOff:0;
+  t.cds={s1:0,s2:GN.beamCd,s3:GN.flashCd};
+  t.gnState=null; t.gnStateT=0; t.gnAura=Infinity; t.gnFlash=null; t.gnPanic=false;
+  t.bind=null; t.domain=null; t.decT=0; t.lock=0;
+  G.freeze=1.8; G.freezeAt=t;
+  G.flashScreen=1;
+  sfx('ginyu_swap');
+  G.callBanner={txt:'CHANGE!!!',color:'#FFF3C4',life:CALL_BANNER_LIFE,ml:CALL_BANNER_LIFE};
+  ring(g.x,g.y,168,'#FFF3C4',.6); ring(t.x,t.y,168,'#A05CFF',.6);
+  say(`Tia hoán đổi trúng ${tname} — hai linh hồn đổi chỗ cho nhau!`,'m');
+  say(`${gname} giờ ngồi trong thân xác ${tname}; thân xác cũ của anh còn ${Math.round(GN.changeKeep*100)}% máu và do ${tname} điều khiển.`,'m');
+  later(.6,()=>{ if(!G.over&&t.alive) talk(t.x,t.y-124,'This body will do nicely.',SUZ_BUBBLE,true); },true);
+}
+function ginyuChangeMiss(f){
+  if(!f||f.swapAs||f.gnPanic)return;
+  f.gnChange=null; f.lock=0;
+  f.hp=1;
+  f.gnPanic=true; f.gnPanicMul=rnd(GN.panicMove[0],GN.panicMove[1]);
+  f.gnCcCut=GN.panicCut;              // hiệu ứng anh gây ra cũng chỉ còn 30%
+  f.pose='panic'; f.poseT=0;
+  sfx('ginyu_miss');
+  ring(f.x,f.y,140,'#FF7A7A',.5);
+  G.floats.push({x:f.x,y:f.y-118,txt:'CHANGE MISSED! · 1 HP · PANIC',color:'#FF9A9A',
+    life:1.8,ml:1.8,banner:true,gold:true,tilt:rnd(-.06,.06)});
+  say(`Tia hoán đổi bay trượt! Ginyu chỉ còn 1 máu, hoảng hốt phóng loạn khắp sàn — mọi thứ anh tung ra chỉ còn ${Math.round(GN.panicCut*100)}%.`,'m');
+}
+
+/* ---- điều khiển sau khi hoán đổi thân xác ---- */
+function ginyuSwapThink(f,e,d,auto){
+  if(f.swapAs==='foe'){
+    // kẹt trong thân xác Ginyu: chỉ còn đúng đấm đá của Ginyu
+    if(f.cds.s1<=0&&d<f.r+e.r+MELEE_REACH&&(auto||keys['j'])){ f.cds.s1=cm(GN.atkCd); ginyuStrike(f,e); }
+    return;
+  }
+  if(f.cds.s3<=0&&(auto?d<520:keys['l'])){ f.cds.s3=GN.flashCd+GN.flashCharge; ginyuFlash(f,e); return; }
+  if(f.cds.s2<=0&&(auto?d<GN.beamFar:keys['k'])){ f.cds.s2=GN.beamCd; ginyuBeam(f,e); return; }
+  if(f.cds.s1<=0&&(auto||keys['j'])) gnBorrowBasic(f,e,d);
+}
+/* Đòn tay mượn của thân xác vừa cướp được: gọi thẳng chiêu 1 gốc của nhân vật đó, để
+   sát thương và dáng vẫn là của họ. Phần yếu đi nằm ở f.dmgOut (gnStatus dựng), phần
+   ngắm hỏng nằm ở f.missOdds / f.aimOff. */
+function gnBorrowBasic(f,e,d){
+  const reach=f.r+e.r+MELEE_REACH;
+  switch(f.key){
+    case 'kono':    if(d<460){ f.cds.s1=cm(1.35); shuriken(f,e); } break;
+    case 'shika':   if(d<500){ f.cds.s1=cm(SHIKA.atkCd); shikaThrow(f,e); } break;
+    case 'tsubasa': if(d<520){ f.cds.s1=cm(1.35); basicShot(f,e); } break;
+    case 'chichi':  if(d<reach){ f.cds.s1=cm(.25); melee(f,e); } break;
+    case 'suzune':  if(d<f.r+e.r+SUZ.atkRange){ f.cds.s1=suzTune(f).atkCd; suzStrike(f,e); } break;
+    default:        if(d<reach){ f.cds.s1=cm(GN.atkCd); ginyuStrike(f,e); } break;
+  }
+}
+
 /* ---------- AI ---------- */
 /* Cận chiến thì đứng cách nhau một quãng chứ đừng dán vào người ta. Tầm tay của cả
    ChiChi lẫn Horikita là r+r+16 = 68, nên điểm lượn phải nằm DƯỚI mốc đó mới ra đòn
@@ -2967,9 +3507,14 @@ function step(dt){
     f.prewingA=clamp(f.prewingA+dt*(f.prewing?.62:-1.4),0,1);
     if(f.lock>0) f.lock=Math.max(0,f.lock-dt);
     if(f.unhideT>0){ f.unhideT-=dt; if(f.unhideT<=0){ f.hidden=false; f.lock=0; } }
-    if(f.eagle) eagleTick(f,dt);
-    if(f.key==='shika'&&!f.summon&&f.alive){ shikaPassive(f,dt); bindTick(f,dt); domainTick(f,dt); }
-    if(f.key==='suzune'&&!f.summon&&f.alive) suzPassive(f,dt);
+    if(f.eagle&&!f.swapAs) eagleTick(f,dt);
+    // hệ số nhân của Ginyu bám vào mọi người, nên dựng lại cho từng người mỗi nhịp
+    gnStatus(f,dt);
+    if(f.key==='shika'&&!f.summon&&f.alive&&!f.swapAs){ shikaPassive(f,dt); bindTick(f,dt); domainTick(f,dt); }
+    if(f.key==='suzune'&&!f.summon&&f.alive&&!f.swapAs) suzPassive(f,dt);
+    /* Chạy cho cả ba trường hợp: chính Ginyu, thân xác Ginyu do địch điều khiển, và
+       thân xác địch đang có hồn Ginyu — chiêu 3 của anh cần được đếm nhịp ở cả hai chỗ. */
+    if(!f.summon&&f.alive&&(f.key==='ginyu'||f.swapAs)) ginyuTick(f,dt);
     // người khiêu khích rời sàn thì đối thủ nhắm lại vào mục tiêu thật
     if(f.tauntBy&&(!f.tauntBy.alive||f.tauntBy.hp<=0||f.tauntBy.leaving>0||G.fighters.indexOf(f.tauntBy)<0)) f.tauntBy=null;
     if(f.outCut>0&&!(foeOf(f)&&foeOf(f).domain)) f.outCut=0;
@@ -3041,7 +3586,7 @@ function step(dt){
     // vùng chết: ý định quá yếu thì đứng yên hẳn, không rung
     let tvx=0, tvy=0;
     if(m>.34){
-      const spd=f.speed*(f.lunge>.35?.55:1)*(f.exhaust>0?EXHAUST_MUL:1);
+      const spd=f.speed*(f.lunge>.35?.55:1)*(f.exhaust>0?EXHAUST_MUL:1)*(f.moveMul||1);
       tvx=v.x/m*spd; tvy=v.y/m*spd;
     }
     // lọc mượt hướng đi để không đảo chiều đột ngột từng khung
@@ -3112,7 +3657,7 @@ function step(dt){
   }
 
   for(const f of [k,c]){                        // kiệt sức thì hồi chiêu chạy chậm 25%
-    const rate=dt*(f.exhaust>0?EXHAUST_MUL:1)*(f.prewing?PREWING_CAST:1)*(f.castBuff||1);
+    const rate=dt*(f.exhaust>0?EXHAUST_MUL:1)*(f.prewing?PREWING_CAST:1)*(f.castBuff||1)*(f.castMul||1);
     for(const key in f.cds) f.cds[key]=Math.max(0,f.cds[key]-rate);
   }
   const d=dist(k,c);
@@ -3122,12 +3667,17 @@ function step(dt){
     const auto=!isPlayer(f)||autoSkill;
     const C=CHARS[f.key];
     const tg=aimTarget(f);
-    if(C&&C.think&&tg) C.think(f,tg,tg===foeOf(f)?d:dist(f,tg),auto);
+    if(!tg)continue;
+    const dd=tg===foeOf(f)?d:dist(f,tg);
+    // hoán đổi thân xác rồi thì bảng CHARS của thân xác không còn đúng nữa
+    if(f.swapAs) ginyuSwapThink(f,tg,dd,auto);
+    else if(C&&C.think) C.think(f,tg,dd,auto);
   }
 
   // nội tại kích hoạt theo ngưỡng máu
   for(const f of [k,c]){
     if(!f.alive||f.hp<=0)continue;
+    if(f.swapAs)continue;                       // Ginyu đã cướp xác: nội tại của thân xác tắt hẳn
     if(f.key==='chichi' && !f.summonDone && f.hp<=f.maxHp*.20){
       ring(f.x,f.y,120,'#FFD400',.45);
       G.flashScreen=Math.max(G.flashScreen,.07);
@@ -3194,6 +3744,7 @@ function step(dt){
     const a=G.fighters[i], b=G.fighters[j];
     if(!a||!b||!a.alive||!b.alive)continue;
     if(a.dash||b.dash||a.leaving>0||b.leaving>0)continue;
+    if(a.gnEntry||b.gnEntry||a.gnChange||b.gnChange)continue;   // đang bay vào sân / đang tung CHANGE
     const wa=(a.summon&&!a.ally)?0:1, wb=(b.summon&&!b.ally)?0:1;
     if(!wa&&!wb)continue;
     const dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy)||.01, need=a.r+b.r+MELEE_GAP;
@@ -3236,6 +3787,17 @@ function step(dt){
   for(let i=G.proj.length-1;i>=0;i--){
     const p=G.proj[i];
     if(!p) continue;
+    /* Ginyu vào thân xác người khác thì tay chân không quen: đạn vừa rời tay đã vẹo
+       hẳn sang một bên và mất luôn khả năng dò tìm. Chiêu của chính anh không dính. */
+    if(p.gnSkew===undefined){
+      p.gnSkew=1;
+      const ow=p.owner;
+      if(ow&&ow.aimOff>0&&p.type!=='gbeam'&&p.type!=='change'){
+        const a=Math.atan2(p.vy,p.vx)+rnd(-ow.aimOff,ow.aimOff), sp=Math.hypot(p.vx,p.vy);
+        p.vx=Math.cos(a)*sp; p.vy=Math.sin(a)*sp;
+        p.ang=a; p.homing=false; p.tgt=null; p.noHome=true;
+      }
+    }
     if(p.type==='drive'&&p.rise>0){
       p.rise-=dt;
       p.wing=(p.wing||0)+dt;
@@ -3247,7 +3809,7 @@ function step(dt){
         say('Bóng ngoặt lại như đại bàng chao cánh — lao thẳng vào mục tiêu!','g');
       }
     }
-    if(p.homing){
+    if(p.homing&&!p.noHome){
       const tg=(p.tgt&&p.tgt.alive&&!p.tgt.leaving)?p.tgt:(aimTarget(p.owner)||foeOf(p.owner));
       if(tg&&tg.alive){
         const sp=Math.hypot(p.vx,p.vy)||1;
@@ -3331,6 +3893,13 @@ function step(dt){
     if(!dead && !(p.dmg<=0)) for(const f of G.fighters){
       // đồng minh (Ayanokouji) là thứ duy nhất trong nhóm summon ăn được đạn — chắn thay là việc của anh
       if(f.team===p.team||!f.alive||f.leaving>0||(f.summon&&!f.ally))continue;
+      // tia CHANGE: chạm ai trước thì nhập luôn vào người đó, kể cả không phải mục tiêu
+      // tia CHANGE xuyên qua đồng minh / viện binh, chỉ bám vào đấu thủ chính
+      if(p.type==='change'){
+        if(!f.summon&&hitsBody(p,f)){ p.done=true; ginyuPossess(p.owner,f); dead=true; break; }
+        continue;
+      }
+      if(p.type==='gbeam'&&hitsBody(p,f)){ gnBeamHit(p,f); dead=true; break; }
       if(p.type==='decision'&&hitsBody(p,f)){ suzDecisionHit(p,f); dead=true; break; }
       if(p.type==='kunai'&&hitsBody(p,f)){ explode(p); dead=true; break; }
       if((p.type==='ball'||p.type==='drive'||p.type==='twin')&&hitsBody(p,f)){ ballHit(p,f); dead=true; break; }
@@ -3358,6 +3927,7 @@ function step(dt){
       }
     }
     if(p.gone) dead=true;
+    if(dead&&p.type==='change'&&!p.done&&p.owner) ginyuChangeMiss(p.owner);
     if(dead&&p.type==='twin'&&p.owner) later(.25,()=>releaseTwin(p.owner));
     if(dead)G.proj.splice(i,1);
   }
@@ -3612,6 +4182,78 @@ function vector(f){
         ctx.beginPath(); ctx.moveTo(10,y+16); ctx.lineTo(4,y+16); ctx.lineTo(8,y+9); ctx.closePath(); ctx.fill();
       }
     }
+  }else if(f.key==='ginyu'){
+    /* Đội trưởng Ginyu: da tím, hai sừng, giáp trắng của lực lượng Frieza, scouter xanh
+       trên mắt phải. Tay chân vẽ bằng đoạn chi xoay quanh gốc vai / hông (góc 0 là chỉ
+       thẳng xuống, âm là hất về phía trước) nên đổi dáng chỉ việc đổi mấy con số góc. */
+    const skin='#9C63D6', deep='#6B3EA0', suit='#2A1B3D', armor='#EFF1F7', trim='#F0723A';
+    const P=f.pose||'idle';
+    const chi=(x0,y0,ang,len,w,col)=>{
+      ctx.save(); ctx.translate(x0,y0); ctx.rotate(ang); ctx.fillStyle=col;
+      if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(-w/2,0,w,len,w*.45); ctx.fill(); }
+      else ctx.fillRect(-w/2,0,w,len);
+      ctx.restore();
+    };
+    const wob=Math.sin(t)*.22;
+    // góc hai tay và hai chân theo từng dáng — đây là chỗ tách các tư thế ra khỏi nhau
+    let aL=-.28, aR=.28, lL=.06+sw*.02, lR=-.06-sw*.02, tilt=0, drop=0;
+    if(P==='fly'){ aL=2.5; aR=-2.5; lL=.34; lR=.24; tilt=-.5; drop=-6; }
+    else if(P==='dance1'){ aL=2.55; aR=-2.55; lL=.4; lR=-.4; }
+    else if(P==='dance2'){ aL=.55; aR=-1.62; lL=.3; lR=-.16; tilt=.12; }
+    else if(P==='dance3'){ aL=-1.15; aR=1.15; lL=-.2; lR=.34; tilt=-.14; }
+    else if(P==='punch'){ aL=.62; aR=-1.52; lL=.24; lR=-.3; tilt=-.1; }
+    else if(P==='kick'){ aL=.9; aR=.5; lL=.2; lR=-1.15; tilt=.16; }
+    else if(P==='beam'){ aL=-1.34; aR=-1.62; lL=.26; lR=-.26; tilt=-.08; }
+    else if(P==='flash'){ aL=-1.5; aR=-1.5; lL=.3; lR=-.3; tilt=-.06; }
+    else if(P==='change'){ aL=1.3; aR=-1.3; lL=.22; lR=-.22; tilt=.22; }
+    else if(P==='panic'){ aL=2.8+wob; aR=-2.8-wob; lL=.5; lR=-.5; tilt=wob; }
+    else if(P==='hurt'||P==='injured'){ aL=.5; aR=-.5; tilt=.18; }
+    ctx.save();
+    ctx.translate(0,drop); ctx.rotate(tilt);
+    // hai chân
+    chi(-7,y+10,lL,16,9,suit); chi(7,y+10,lR,16,9,suit);
+    ctx.fillStyle=deep; ctx.fillRect(-12,y+24,10,4); ctx.fillRect(2,y+24,10,4);
+    // tay sau vẽ trước thân, tay trước vẽ sau — cho ra chiều sâu
+    chi(-11,y-6,aL,17,8,skin);
+    torso(0,y-8,23,25,suit);
+    ctx.fillStyle=armor;                                  // giáp ngực
+    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(-13,y-9,26,17,5); ctx.fill(); }
+    else ctx.fillRect(-13,y-9,26,17);
+    ctx.fillStyle=trim; ctx.fillRect(-13,y+4,26,3);       // dải cam dưới giáp
+    ctx.fillStyle=suit; ctx.fillRect(-4,y-9,8,13);        // khoảng hở giữa ngực
+    ctx.fillStyle=armor; ctx.fillRect(-17,y-10,7,7); ctx.fillRect(10,y-10,7,7);   // đệm vai
+    chi(11,y-6,aR,17,8,skin);
+    // đầu
+    ctx.fillStyle=skin; ctx.beginPath(); ctx.arc(0,y-20,12,0,7); ctx.fill();
+    ctx.fillStyle=deep;                                   // hai sừng
+    ctx.beginPath(); ctx.moveTo(-11,y-27); ctx.lineTo(-6,y-36); ctx.lineTo(-3,y-26); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(11,y-27); ctx.lineTo(6,y-36); ctx.lineTo(3,y-26); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#1B1428';
+    if(P==='panic'){                                      // hoảng hốt: mắt mở trắng dã
+      ctx.fillStyle='#FFFFFF';
+      ctx.beginPath(); ctx.arc(-3,y-21,3.4,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(6,y-21,3.4,0,7); ctx.fill();
+      ctx.fillStyle='#1B1428';
+      ctx.beginPath(); ctx.arc(-3,y-21,1.3,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(6,y-21,1.3,0,7); ctx.fill();
+    }else{
+      ctx.fillRect(-5,y-22,4,3); ctx.fillRect(3,y-22,4,3);
+    }
+    // miệng: lúc tung CHANGE thì há to, tia sáng bắn ra từ đúng chỗ này
+    ctx.fillStyle='#3A1030';
+    if(P==='change'){ ctx.beginPath(); ctx.ellipse(2,y-14,5.5,4.5,0,0,7); ctx.fill(); }
+    else ctx.fillRect(-2,y-14,7,2);
+    ctx.fillStyle='#5CE07A'; ctx.fillRect(6,y-24,9,5);    // scouter
+    ctx.strokeStyle='#5CE07A'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(6,y-22); ctx.lineTo(-1,y-22); ctx.stroke();
+    if(f.injured){
+      ctx.strokeStyle='#8E1023'; ctx.lineWidth=2.4; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-9,y+1); ctx.lineTo(-2,y+8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(4,y-24); ctx.lineTo(10,y-19); ctx.stroke();
+      ctx.fillStyle='#2B2B3C';
+      ctx.beginPath(); ctx.moveTo(-13,y+8); ctx.lineTo(-8,y+2); ctx.lineTo(-4,y+8); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
   }else if(f.key==='ayanokouji'){
     const guard=(f.pose==='guard'), strike=(f.pose==='strike');
     const kk=strike?Math.sin(clamp(f.poseT||0,0,1)*Math.PI):0;
@@ -3792,6 +4434,13 @@ function sprite(f){
     else if(pk==='kick') arr=set.punch||set.atk1||set.idle;
     else if(pk==='think') arr=set.idle;
     else if(pk==='decide') arr=set.think||set.idle;   // 'decide' chỉ còn là TƯ THẾ, không còn ô dán ảnh
+    // Ginyu: thiếu ảnh dáng nào thì lùi về ô gần nghĩa nhất, đừng lùi thẳng về ô đứng
+    else if(pk==='dance1'||pk==='dance2'||pk==='dance3') arr=set.idle;
+    else if(pk==='fly') arr=set.idle;
+    else if(pk==='beam') arr=set.atk1||set.idle;
+    else if(pk==='flash') arr=set.beam||set.atk1||set.idle;
+    else if(pk==='change') arr=set.beam||set.flash||set.idle;
+    else if(pk==='panic') arr=set.hurt||set.injured||set.idle;
     else if(pk==='strike') arr=set.atk1||set.idle;
     else if(pk==='guard') arr=set.idle;
     else if(pk==='leave') arr=set.idle;
@@ -3949,6 +4598,8 @@ function drawFighter(f){
     ctx.restore();
   }
 
+  gnAuraDraw(f,f.x+ox,f.y+20-hop);
+
   ctx.save();
   ctx.translate(f.x+ox, f.y+20+oy*.4-hop);
   // Ngồi lười: nếu đã có ảnh dáng ngồi riêng thì vẽ nguyên, đừng bóp gì cả.
@@ -3967,6 +4618,23 @@ function drawFighter(f){
   }
   if(img){ const h=f.spriteH, w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
   else vector(f);
+  /* Ginyu thắng trong thân xác người khác: lúc ăn mừng thì hình Ginyu nhoè nhoè hiện lên
+     đè lên thân xác đó rồi nhoè đi, cứ thế lặp lại. Chỉ chạy lúc trận đã kết thúc nên
+     ctx.filter đắt đỏ cũng không ảnh hưởng nhịp khung hình lúc đang đánh. */
+  if(G.over&&f.swapAs==='ginyu'&&f.alive){
+    const a=Math.pow(Math.max(0,Math.sin(G.t*2.1)),1.3);
+    if(a>.02){
+      ctx.save();
+      ctx.globalAlpha=a;
+      try{ ctx.filter='blur(2.2px)'; }catch(e){}
+      const gset=SPR.ginyu||{}, garr=gset.idle;
+      const gimg=(garr&&garr.length)?garr[0]:null;
+      if(gimg){ const h=f.spriteH, w2=gimg.width/gimg.height*h; ctx.drawImage(gimg,-w2/2,-h,w2,h); }
+      else vector({key:'ginyu',pose:'idle',moving:false,injured:false});
+      try{ ctx.filter='none'; }catch(e){}
+      ctx.restore();
+    }
+  }
   ctx.restore();
 
   if(bodyTint){
@@ -4232,7 +4900,10 @@ function drawBars(f){
     ctx.fillStyle=f.color; ctx.fillText(f.name.toUpperCase(),x+w/2,y-4);
   }
   bar(x,y,w,h,f.hp/f.maxHp,f.color,String(Math.ceil(f.hp)));
-  const C=CHARS[f.key];
+  /* Hoán đổi thân xác rồi thì thanh phụ của thân xác không còn nói đúng chuyện gì nữa
+     (Rage / Goal / Chakra là của người kia), nên đọc thanh của Ginyu — chữ trên thanh máu
+     cũng đã là tên của linh hồn đang ngồi trong đó chứ không phải tên thân xác. */
+  const C=CHARS[f.swapAs?'ginyu':f.key];
   if(C&&C.gauge){ const gg=C.gauge(f); bar(x,y+h+2,w,20,gg.pct,gg.fill||'#FFE100',gg.txt); }
   // dòng trạng thái: tên hiệu ứng đang mang và chỉ số của nó
   let ly=y+h+42;
@@ -4258,6 +4929,13 @@ function drawBars(f){
   if(f.key==='shika'&&f.weak) lines.push({t:'CHAKRA SPENT · NO STRANGLE · −30% SHURIKEN', c:'#A79BD6', s:9});
   if(f.outCut>0) lines.push({t:`IN THE FOREST · −${Math.round(SHIKA.domainOutCut*100)}% DAMAGE DEALT`, c:'#B7A6FF', s:9});
   if(f.dash&&f.dash.guard) lines.push({t:'FLYING KICK · CC IMMUNE · −30% DMG', c:'#FFC0CE', s:10});
+  if(f.gnDaze>0) lines.push({t:`OFF GUARD −${Math.round((1-GN.dazeMove)*100)}% MOVE / −${Math.round((1-GN.dazeCast)*100)}% CAST (${(f.gnDaze*RT).toFixed(1)}s)`, c:'#C9A0FF', s:9});
+  if(f.gnRage>0) lines.push({t:`BLOOD BOILING +${Math.round((GN.rageMove-1)*100)}% MOVE / +${Math.round((GN.rageCast-1)*100)}% CAST (${(f.gnRage*RT).toFixed(1)}s)`, c:'#FF9A6E', s:9});
+  if(f.gnTired>0) lines.push({t:`WORN OUT −${Math.round((1-GN.tiredMove)*100)}% MOVE / −${Math.round((1-GN.tiredCast)*100)}% CAST / −${Math.round((1-GN.tiredDmg)*100)}% DMG (${(f.gnTired*RT).toFixed(1)}s)`, c:'#BFA8E8', s:9});
+  if(f.gnSlow>0) lines.push({t:`PINNED DOWN −${Math.round((1-GN.flashMove)*100)}% MOVE / −${Math.round((1-GN.flashCast)*100)}% CAST (${(f.gnSlow*RT).toFixed(1)}s)`, c:'#C9A0FF', s:9});
+  if(f.gnState==='atk') lines.push({t:`EXCITED +${Math.round((GN.atk.dmg-1)*100)}% DMG · +${Math.round((GN.atk.take-1)*100)}% DMG TAKEN · +${Math.round((GN.atk.cc-1)*100)}% CC`, c:'#C77DFF', s:9});
+  if(f.gnState==='def') lines.push({t:`PROBING −${Math.round((1-GN.def.take)*100)}% DMG TAKEN · +${Math.round(GN.def.ccRes*100)}% CC RESIST · −${Math.round((1-GN.def.dmg)*100)}% DMG`, c:'#7FE0FF', s:9});
+  if(f.gnPanic) lines.push({t:`PANIC · ${GN.panicMove[0]}–${GN.panicMove[1]}× MOVE · EVERYTHING AT ${Math.round(GN.panicCut*100)}%`, c:'#FF9A9A', s:9});
   if(f.invuln>0) lines.push({t:`IMMUNE (${(f.invuln*RT).toFixed(1)}s)`, c:'#FF9AD5', s:11});
   ctx.lineWidth=3; ctx.strokeStyle='#000';
   lines.forEach(L=>{
@@ -4500,8 +5178,136 @@ function drawBindShadow(){
     ctx.restore();
   }
 }
+/* Luồng khí đặc trưng kiểu Dragon Ball bao quanh Captain Ginyu. Ba trạng thái ba màu:
+   hưng phấn thì tím rực và cao ngọn, thăm dò thì một lớp vỏ xanh mỏng ôm sát người,
+   hoảng loạn thì đỏ và giật liên hồi. Màn chào sân cũng mượn luôn ngọn lửa tím này. */
+function gnAuraDraw(f,cx,foot){
+  const dance=f.gnEntry&&f.gnEntry.ph==='dance';
+  let col=null, str=0;
+  if(f.gnPanic){ col='#FF6B6B'; str=.7+Math.sin(G.t*18)*.25; }
+  else if(f.gnState==='atk'){ col='#A05CFF'; str=1; }
+  else if(dance){ col='#A05CFF'; str=clamp(1-f.gnEntry.t/f.gnEntry.max,0,1); }
+  else if(f.gnState==='def'){ col='#7FE0FF'; str=.42; }
+  if(!col||str<=.02)return;
+  const gy=foot-f.spriteH*.52, top=foot-f.spriteH*1.05;
+  ctx.save();
+  ctx.globalAlpha=.22*str;
+  const gr=(78+Math.sin(G.t*5)*6)*(.8+str*.3);
+  ctx.drawImage(glowSprite(),cx-gr,gy-gr,gr*2,gr*2);
+  ctx.restore();
+  // ngọn khí: mấy lưỡi lửa dựng đứng, mép ngoài nhạt, lõi sáng
+  ctx.save();
+  ctx.globalAlpha=.5*str;
+  ctx.strokeStyle=col; ctx.lineWidth=4; ctx.lineCap='round'; ctx.lineJoin='round';
+  for(let i=0;i<7;i++){
+    const px=cx+((i-3)/3)*30+Math.sin(G.t*7+i*1.4)*4;
+    const h=(f.spriteH*.34)*(.55+((i*7)%5)/6)*(.7+str*.5);
+    ctx.beginPath();
+    ctx.moveTo(px,foot-6);
+    ctx.quadraticCurveTo(px+Math.sin(G.t*9+i)*10, top+h*.6, px+Math.sin(G.t*6+i*2)*5, top-h*.2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha=.85*str;
+  ctx.strokeStyle='#F0E2FF'; ctx.lineWidth=1.6;
+  for(let i=0;i<4;i++){
+    const px=cx+((i-1.5)/1.5)*20+Math.sin(G.t*8+i*1.9)*3;
+    const h=(f.spriteH*.26)*(.6+((i*5)%4)/5);
+    ctx.beginPath();
+    ctx.moveTo(px,foot-8);
+    ctx.quadraticCurveTo(px+Math.sin(G.t*11+i)*7, top+h*.7, px, top+h*.1);
+    ctx.stroke();
+  }
+  ctx.restore();
+  // sỏi đá bốc lên quanh chân
+  ctx.save();
+  ctx.globalAlpha=.6*str;
+  ctx.fillStyle=col;
+  for(let i=0;i<6;i++){
+    const tt=(G.t*.8+i*.167)%1;
+    ctx.globalAlpha=(1-tt)*.6*str;
+    ctx.beginPath();
+    ctx.arc(cx+Math.sin(i*2.4+G.t)*34, foot+8-tt*46, 2.2-tt, 0, 7);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+/* Ginyu's Flash: lúc gồng là quả cầu khí phình dần trong lòng bàn tay, lúc bắn là một
+   luồng sáng LIỀN MẠCH nối thẳng từ anh vào người địch — không đứt quãng như Kamehameha,
+   mà bám theo địch y như dải bóng của Shikamaru, chỉ khác là to và tím. Gọi SAU khi vẽ
+   nhân vật để luồng sáng nằm trên người, đúng thứ tự của drawBindShadow(). */
+function drawGinyuFlash(){
+  for(const f of G.fighters){
+    const F=f.gnFlash; if(!F||!F.e||!f.alive)continue;
+    const e=F.e;
+    const mx=f.x+(f.face<0?-1:1)*12, my=f.y+20-f.spriteH*.68;
+    if(F.ph==='charge'){
+      const p=clamp(1-F.t/GN.flashCharge,0,1);
+      const rr=7+p*15;
+      ctx.save();
+      ctx.globalAlpha=.3+p*.4;
+      ctx.drawImage(glowSprite(),mx-rr*3,my-rr*3,rr*6,rr*6);
+      ctx.globalAlpha=.92; ctx.fillStyle='#C9A0FF';
+      ctx.beginPath(); ctx.arc(mx,my,rr,0,7); ctx.fill();
+      ctx.fillStyle='#F3E6FF';
+      ctx.beginPath(); ctx.arc(mx,my,rr*.5,0,7); ctx.fill();
+      ctx.globalAlpha=.55; ctx.strokeStyle='#A05CFF'; ctx.lineWidth=2.4; ctx.lineCap='round';
+      for(let i=0;i<5;i++){
+        const a=G.t*4+i*1.257, L=rr+14+Math.sin(G.t*9+i)*5;
+        ctx.beginPath(); ctx.moveTo(mx+Math.cos(a)*rr,my+Math.sin(a)*rr);
+        ctx.lineTo(mx+Math.cos(a)*L,my+Math.sin(a)*L); ctx.stroke();
+      }
+      ctx.restore();
+      continue;
+    }
+    const ex=e.x, ey=bodyCY(e);
+    const a=clamp(F.t/GN.flashHold,0,1);
+    const ang=Math.atan2(ey-my,ex-mx), L=Math.hypot(ex-mx,ey-my);
+    const w=36*(.72+a*.28);
+    ctx.save();
+    ctx.translate(mx,my); ctx.rotate(ang);
+    ctx.globalAlpha=.30*a; ctx.fillStyle='#5E23A8'; ctx.fillRect(0,-w/2,L,w);
+    ctx.globalAlpha=.78*a; ctx.fillStyle='#A05CFF'; ctx.fillRect(0,-w*.32,L,w*.64);
+    ctx.globalAlpha=.96*a; ctx.fillStyle='#F3E6FF'; ctx.fillRect(0,-w*.13,L,w*.26);
+    ctx.globalAlpha=.45*a; ctx.strokeStyle='#FFFFFF'; ctx.lineWidth=2; ctx.lineCap='round';
+    for(let i=0;i<4;i++){
+      const yy=Math.sin(G.t*22+i*1.7)*w*.3;
+      ctx.beginPath(); ctx.moveTo(6,yy); ctx.lineTo(L-6,yy*.35); ctx.stroke();
+    }
+    ctx.restore();
+    ctx.save();
+    ctx.globalAlpha=.7*a;
+    ctx.drawImage(glowSprite(),ex-58,ey-58,116,116);
+    ctx.restore();
+  }
+}
 function drawProj(p){
   ctx.save();
+  if(p.type==='gbeam'){                       // luồng khí tím của Ginyu
+    ctx.translate(p.x,p.y); ctx.rotate(p.ang);
+    ctx.globalAlpha=.28; ctx.fillStyle='#7B34D6';
+    ctx.beginPath(); ctx.ellipse(-6,0,32,14,0,0,7); ctx.fill();
+    ctx.globalAlpha=.9; ctx.fillStyle='#A05CFF';
+    ctx.beginPath(); ctx.ellipse(0,0,20,9,0,0,7); ctx.fill();
+    ctx.fillStyle='#E6CCFF';
+    ctx.beginPath(); ctx.ellipse(2,0,11,4.6,0,0,7); ctx.fill();
+    ctx.globalAlpha=.55; ctx.strokeStyle='#C9A0FF'; ctx.lineWidth=2.4; ctx.lineCap='round';
+    for(let i=0;i<3;i++){ const o=Math.sin(p.wob+i*2.1+G.t*16)*6;
+      ctx.beginPath(); ctx.moveTo(-16,o); ctx.lineTo(-40-i*10,o*1.5); ctx.stroke(); }
+    ctx.restore(); return;
+  }
+  if(p.type==='change'){                      // tia hoán đổi thân xác: trắng ngả vàng
+    ctx.translate(p.x,p.y); ctx.rotate(Math.atan2(p.vy,p.vx));
+    ctx.globalAlpha=.3; ctx.fillStyle='#FFE9A8';
+    ctx.beginPath(); ctx.ellipse(-10,0,40,13,0,0,7); ctx.fill();
+    ctx.globalAlpha=.95; ctx.fillStyle='#FFF6D0';
+    ctx.beginPath(); ctx.ellipse(0,0,24,7,0,0,7); ctx.fill();
+    ctx.fillStyle='#FFFFFF';
+    ctx.beginPath(); ctx.ellipse(4,0,13,3.2,0,0,7); ctx.fill();
+    ctx.globalAlpha=.5; ctx.strokeStyle='#FFF6D0'; ctx.lineWidth=2;
+    for(let i=0;i<4;i++){ const o=Math.sin(G.t*22+i*1.6)*7;
+      ctx.beginPath(); ctx.moveTo(-18,o); ctx.lineTo(-48-i*8,o*1.4); ctx.stroke(); }
+    ctx.restore(); return;
+  }
   if(p.type==='shuriken'){
     ctx.translate(p.x,p.y); ctx.rotate(p.spin); ctx.fillStyle=p.bounced?'#FFE100':'#E9EEF7'; ctx.strokeStyle='#000'; ctx.lineWidth=1.5;
     for(let i=0;i<4;i++){ ctx.rotate(Math.PI/2); ctx.beginPath(); ctx.moveTo(0,-3.5); ctx.lineTo(11,0); ctx.lineTo(0,3.5); ctx.closePath(); ctx.fill(); ctx.stroke(); }
@@ -4963,6 +5769,7 @@ function draw(){
   drawNaraDeer();
   drawForestGrip();
   drawBindShadow();
+  drawGinyuFlash();
   if(!G.flashback) for(const f of order) drawBars(f);   // hồi tưởng thì giấu thanh máu cho sạch hình
 
   /* Bong bóng thoại vẽ SAU CÙNG trong đám chữ nổi. Băng-rôn tên chiêu và số sát thương
@@ -5948,6 +6755,30 @@ function testSuz3(){
   suzForm3(f);
   say('[Thử nghiệm] Ép Horikita sang form 3.','m');
 }
+function testGinyuAura(){
+  if(G.over){ newGame(); }
+  const f=findFighter('ginyu');
+  if(!f){ say('Cần có Captain Ginyu trong trận mới thử được.','m'); return; }
+  ac(); if(MUSIC.on) startMusic();
+  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(f.gnEntry){ f.gnEntry=null; f.pose='idle'; }
+  ginyuAura(f);
+  say('[Thử nghiệm] Ép aura Ginyu toả ra ngay.','m');
+}
+function testGinyuChange(){
+  if(G.over){ newGame(); }
+  const f=findFighter('ginyu');
+  if(!f){ say('Cần có Captain Ginyu trong trận mới thử được.','m'); return; }
+  if(!gnCanChange(f)){ say('Ginyu đã dùng CHANGE một lần rồi.','m'); return; }
+  ac(); if(MUSIC.on) startMusic();
+  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(f.gnEntry){ f.gnEntry=null; f.pose='idle'; }
+  f.hp=0;
+  ginyuChange(f);
+  say('[Thử nghiệm] Ép Ginyu tung CHANGE!!! ngay tại chỗ.','m');
+}
+el('testGinyuAura').addEventListener('click',testGinyuAura);
+el('testGinyuChange').addEventListener('click',testGinyuChange);
 el('testSuz2').addEventListener('click',testSuz2);
 el('testSuzAya').addEventListener('click',testSuzAya);
 el('testSuz3').addEventListener('click',testSuz3);
