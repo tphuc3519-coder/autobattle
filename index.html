@@ -583,7 +583,7 @@ const CHARS={
       `<b>Entrance</b> He does not start on the arena — he flies in over ${rts(GN.flyT)}s, lands, runs the three Ginyu Force poses and yells "${GN_SHOUT}" while the foe can only stand and watch`,
       `<b>Passive · Ginyu's Aura</b> the aura floods the arena: <b>50%</b> the foe is caught off guard (−${Math.round((1-GN.dazeMove)*100)}% move, −${Math.round((1-GN.dazeCast)*100)}% cast for ${rts(GN.dazeT)}s), <b>50%</b> the foe's blood boils instead (+${Math.round((GN.rageMove-1)*100)}% move, +${Math.round((GN.rageCast-1)*100)}% cast for ${rts(GN.rageT)}s) · the ${rts(GN.auraCd)}s cooldown only starts once his stance has run out — the two never overlap`,
       `<b>Passive · Battle Stance</b> foe caught off guard ⇒ Ginyu goes <b>excited</b> for ${rts(GN.atk.t)}s: +${Math.round((GN.atk.dmg-1)*100)}% damage dealt, +${Math.round((GN.atk.cast-1)*100)}% cast, +${Math.round((GN.atk.move-1)*100)}% move — but +${Math.round((GN.atk.take-1)*100)}% damage taken (straight through his defence) and +${Math.round((GN.atk.cc-1)*100)}% longer crowd control`,
-      `<b>Passive · Probing Stance</b> foe's blood boils ⇒ Ginyu goes <b>defensive</b> for ${rts(GN.def.t)}s: −${Math.round((1-GN.def.take)*100)}% damage taken, +${Math.round(GN.def.ccRes*100)}% CC resist, but −${Math.round((1-GN.def.dmg)*100)}% damage dealt and −${Math.round((1-GN.def.cast)*100)}% cast speed · with <b>three or more fighters</b> on the field he always takes this stance`,
+      `<b>Passive · Probing Stance</b> the <b>first time</b> a foe's blood boils ⇒ Ginyu goes <b>defensive</b> for ${rts(GN.def.t)}s: −${Math.round((1-GN.def.take)*100)}% damage taken, +${Math.round(GN.def.ccRes*100)}% CC resist, but −${Math.round((1-GN.def.dmg)*100)}% damage dealt and −${Math.round((1-GN.def.cast)*100)}% cast speed. He only ever sizes a foe up <b>once</b> — after that every aura drops him straight into the battle stance · the exception is <b>three or more fighters</b> on the field, where he always stays defensive`,
       `<b>1</b> Punch &amp; Kick — ${GN.hitDmg} dmg, a shade faster than ChiChi, ${Math.round(GN.hitStunOdds*100)}% to stun ${rts(GN.hitStun)}s`,
       `<b>2</b> Ginyu Beam — every ${rts(GN.beamCd)}s, ${GN.beamN} purple ki bolts, ${GN.beamDmg} dmg each, knocks far back and stuns ${rts(GN.beamStun)}s · faster than Masenko but it strays at range · <b>${GN.tiredHits}+ bolts</b> land ⇒ Worn Out: −${Math.round((1-GN.tiredMove)*100)}% move, −${Math.round((1-GN.tiredCast)*100)}% cast, −${Math.round((1-GN.tiredDmg)*100)}% damage for ${rts(GN.tiredT)}s`,
       `<b>3</b> Ginyu Flash — he plants his feet and charges ${rts(GN.flashCharge)}s, then one unbroken purple pillar locks onto the foe: ${GN.flashDmg} dmg, stun ${rts(GN.flashStun)}s, then −${Math.round((1-GN.flashMove)*100)}% move and −${Math.round((1-GN.flashCast)*100)}% cast for ${rts(GN.flashSlowT)}s`,
@@ -593,7 +593,7 @@ const CHARS={
     init(f){
       f.cds={s1:cm(GN.atkCd),s2:GN.beamCd,s3:GN.flashCd};
       f.gnEntry=null; f.gnAura=GN.auraCd; f.gnState=null; f.gnStateT=0;
-      f.gnFlash=null; f.gnChangeDone=false; f.gnPanic=false;
+      f.gnFlash=null; f.gnChangeDone=false; f.gnProbeDone=false; f.gnPanic=false;
       ginyuEnter(f);
     },
     think(f,e,d,auto){
@@ -1506,7 +1506,7 @@ function mk(o){
     gnSelfCut:1, gnCcCut:1, missOdds:0, aimOff:0, gnBodyProj:false,
     gnDaze:0, gnRage:0, gnTired:0, gnSlow:0, gnSlowAfter:0, gnBeamHits:0,
     gnEntry:null, gnAura:0, gnState:null, gnStateT:0, gnFlash:null, gnChange:null,
-    gnChangeDone:false, gnPanic:false, gnPanicMul:1, swapAs:null, gnSoul:null,
+    gnChangeDone:false, gnProbeDone:false, gnPanic:false, gnPanicMul:1, swapAs:null, gnSoul:null,
     bind:null, bindGuard:false, bindPending:false, lazyTalk:0, wakeT:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
 }
@@ -3117,12 +3117,21 @@ function ginyuAura(f){
   }
   say(daze?'Aura Ginyu tràn khắp sàn — đối phương ngơ ngác, mất hẳn cảnh giác.'
           :'Aura Ginyu tràn khắp sàn — nhưng đối phương sôi máu, càng đánh càng hăng.','m');
-  /* Ba người trở lên có thanh máu thì anh không dám hưng phấn nữa, luôn lùi về thăm dò. */
-  ginyuState(f,(daze&&gnCrowd()<3)?'atk':'def');
+  /* Chọn thế đứng, theo đúng thứ tự ưu tiên:
+       1. Ba người có thanh máu trở lên thì anh không dám hưng phấn nữa, LUÔN lùi về thăm
+          dò — đây là luật đứng riêng, không bị trần một lần chặn.
+       2. Địch ngơ ngác thì anh hưng phấn.
+       3. Địch sôi máu thì anh lùi về thăm dò — nhưng CHỈ ĐÚNG MỘT LẦN trong cả trận.
+          Thăm dò xong là anh biết người biết ta rồi, từ đó dù địch có sôi máu nữa thì
+          cứ tới nhịp aura là anh vào thẳng thế chiến đấu. */
+  const crowd=gnCrowd()>=3;
+  const which=crowd?'def':(daze?'atk':(f.gnProbeDone?'atk':'def'));
+  ginyuState(f,which);
 }
 function ginyuState(f,which){
   f.gnState=which;
   f.gnStateT=which==='atk'?GN.atk.t:GN.def.t;
+  if(which==='def') f.gnProbeDone=true;      // thăm dò xong là hết, lần sau vào thẳng thế chiến đấu
   sfx(which==='atk'?'ginyu_excited':'ginyu_probe');
   ring(f.x,f.y,142,which==='atk'?'#C77DFF':'#7FE0FF',.5);
   G.floats.push({x:f.x,y:f.y-120,txt:which==='atk'?'BATTLE STANCE · EXCITED':'PROBING STANCE · GUARDED',
