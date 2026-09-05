@@ -11,7 +11,7 @@ thì phải tạo bản sao có gắn thêm móc (xem mục Kiểm thử).
 
 ## 0. Bản đồ `index.html`
 
-File dài ~6600 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên ---------- */`,
+File dài ~7500 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên ---------- */`,
 **tìm bằng cách grep chính cái tên đó** thay vì nhớ số dòng (số dòng đổi liên tục):
 
 | Khu | Có gì |
@@ -22,14 +22,15 @@ File dài ~6600 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên --
 | `bảng nhân vật chơi được` | mọi hằng số cân bằng của Kono / ChiChi / Tsubasa |
 | `Horikita Suzune` (khối hằng) | cả cụm `SUZ`, `SUZ_BUBBLE` |
 | `Captain Ginyu` (khối hằng) | cả cụm `GN`, `GN_PROJ_BODY`, `GN_SHOUT`, `GN_CHANGE_LINE` |
+| `Doraemon` (khối hằng) | cả cụm `DORA`, `DORA_HI`, `DORA_HI_LIFE` |
 | `Shikamaru` (khối hằng) | `gs()`, cả cụm `SHIKA`, các hằng tuổi thọ hình (`GRUMBLE_LIFE`…) |
-| *(kế đó)* | `CHARS` — `init` / `think` / `gauge` / mảng `skills` của sáu nhân vật |
+| *(kế đó)* | `CHARS` — `init` / `think` / `gauge` / mảng `skills` của bảy nhân vật |
 | *(kế đó)* | `Store` — IndexedDB, khoá `spr_*` / `sfx_*`, nạp và xoá ảnh |
 | `âm thanh` | `SFX_EVENTS`, `synth()`, `SFX_FULL/MAXLEN/SEG/POS/ACTIVE`, `sfx()`, `playBuffer()` |
-| `nhạc nền` | nhạc nền tự sinh |
+| `nhạc nền` | nhạc nền tự sinh, `THEMES` / `setTheme()` — đổi sang theme du hành thời gian |
 | `state` | `mk()`, `mkChar()`, `foeOf()`, `newGame()`, `later()`, `pop()`, `setPose()` |
 | `damage` | `stunFx()`, `tryEvade()`, **`hurt()`**, `counters()`, `finish()` |
-| `Konohamaru` / `ChiChi` / `Shikamaru` / `Ozora Tsubasa` / `Horikita Suzune` / `Captain Ginyu` | thân các chiêu thức |
+| `Konohamaru` / `ChiChi` / `Shikamaru` / `Ozora Tsubasa` / `Horikita Suzune` / `Captain Ginyu` / `Doraemon` | thân các chiêu thức |
 | `AI` | `MELEE_MIN/MAX/BAND/GAP`, `orbWant()`, `aiVec()`, `dodgeVec()`, `playerVec()` |
 | `step` | một hàm to — toàn bộ mô phỏng một bước 1/120 giây |
 | `draw` | `vector()`, `sprite()`, `drawFighter()`, `drawGarden()`, `drawForestGrip()`, `bombAt()`, `tendril()`, phân cảnh, băng-rôn |
@@ -73,9 +74,9 @@ while (acc >= 1/120) { step(1/120); acc -= 1/120; }
 
 ---
 
-## 2. Sáu nhân vật và những con số đã chốt
+## 2. Bảy nhân vật và những con số đã chốt
 
-Cả sáu đều **1000 máu** (`HP`). Bảng `CHARS` là nơi khai tất cả: mỗi nhân vật có
+Cả bảy đều **1000 máu** (`HP`). Bảng `CHARS` là nơi khai tất cả: mỗi nhân vật có
 `init(f)`, `think(f,e,d,auto)`, `gauge(f)` và mảng `skills` (chuỗi HTML hiển thị trong
 màn chọn nhân vật — nhớ cập nhật khi đổi số).
 
@@ -550,6 +551,162 @@ Nút thử tay: `#testGinyuAura` (ép aura toả ngay) và `#testGinyuChange` (�
 Kiểm bằng `node tools/t_ginyu.js`.
 
 
+
+### Doraemon (`dora`)
+Toàn bộ trong hằng `DORA`, khai theo lối của Shikamaru / Horikita / Ginyu (giây người chơi
+bọc `gs()`). Fighter kiểu **Control – Utility – Survival**: đòn tay nhẹ, nhưng cái túi thần
+kỳ đủ để làm chậm, giữ khoảng cách, chạy thoát và lật ngược thế trận.
+
+> **Mọi chữ hiện ra trong game của nhân vật này là tiếng Anh** — tên nhân vật, tên chiêu,
+> tên trạng thái, buff, debuff, băng-rôn, dòng dưới thanh máu. Nhật ký vẫn tiếng Việt như
+> mấy nhân vật kia. `t_dora.js` quét cả mảng `skills` để chắc không lẫn một chữ có dấu nào,
+> và soi đủ mười ba cái tên người dùng liệt kê.
+
+> **Model phải giữ đúng hình dáng nguyên tác**: thân tròn xanh, bụng trắng, **bàn tay tròn
+> không có ngón**, mũi đỏ, chuông vàng, và cái túi thần kỳ trước bụng. Hàm `paw()` trong
+> `doraVector()` vẽ bàn tay là một hình tròn — **đừng bao giờ đổi thành nắm đấm có ngón**.
+> Bảo bối là **đồ vật cầm trên tay** (ống Air Cannon, đèn Small Light, chong chóng), không
+> phải chiêu năng lượng kiểu Dragon Ball.
+
+**Màn ra mắt — Anywhere Door.** Bấm *Bắt đầu* thì anh **chưa có mặt trên sàn** (`f.drHide`,
+`drawFighter()` và `drawBars()` đều return sớm). Bốn pha, mốc nằm trong `DORA.doorPh`, tổng
+đúng **1.5 giây người chơi** để ghép tiếng:
+
+| Quãng | Có gì |
+|---|---|
+| 0 → 0.35s | cửa hồng hiện ra cùng ánh sáng nhẹ (`doorA` dâng lên) |
+| 0.35 → 0.75s | cửa mở ra (`doorOpen` dâng lên) |
+| 0.75 → 1.2s | Doraemon bước ra, nhìn quanh rồi giơ một tay lên |
+| 1.2 → 1.5s | cửa đóng lại và biến mất |
+
+Suốt cả 1.5 giây, `drEntryTick()` đặt `lock` cho mọi đối thủ mỗi nhịp — họ đứng chờ, không
+di chuyển cũng không đánh. Trận chỉ thật sự bắt đầu khi cửa biến mất hẳn.
+
+**Nội tại 1 — Take-copter.** Địch xa hơn **55% chiều dài sàn** VÀ suốt `copIdle` (2.5 giây
+người chơi) không đánh trúng ai (`f.drNoHit`, `counters()` đặt lại về 0 mỗi lần anh gây được
+sát thương) thì chong chóng lên đầu: **+70% tốc chạy**, hiệu ứng làm chậm **chỉ còn 60% hiệu
+lực**, **+20% né đạn** (`dodgeVec` nhân thêm), tối đa **4 giây**, **hết sớm ngay khi vào đủ
+tầm vung tay**. Hồi chiêu 15 giây. Bay là là (`DORA.copHover`), không bao giờ rời sàn.
+- **Dải bóng của Shikamaru không bám được vào người đang bay**: `bindTick()` có nhánh riêng
+  cắt dải bóng khi `e.copter>0`. Đây là "chướng ngại vật thấp" mà người dùng nêu.
+
+**Nội tại 2 — Emergency Door.** Sắp ăn **một đòn bất kỳ** thì **60%** anh chui qua cửa thay
+vì chịu trận — `drTryEscape()` gọi từ `hurt()` **trước cả nhánh né**, nên đòn đó coi như
+không trúng và **không gây một điểm sát thương nào**.
+- Suốt `edT` anh **không thể bị tấn công** (`hurt()` return false khi `t.edT>0`) và không
+  hiện trên sàn.
+- Ra khỏi cửa: **xoá hiệu ứng làm chậm** (`dis`, `gnSlow`, `gnDaze`, `gnTired`, `exhaust`),
+  **giữ nguyên choáng, cháy, độc và mọi debuff khác** — **kể cả Shrunk**, vì đó là một lần
+  biến hình chứ không phải một lớp làm chậm. Rồi **+40% tốc chạy trong 2 giây**.
+- Chỗ đáp: `drSafeSpot()` bốc 24 điểm trên vòng tròn bán kính **30% chiều dài sàn**, loại
+  hết điểm nằm trong model người khác, chấm theo `khoảng cách tới địch gần nhất − 140 × số
+  địch đứng trong 190px`. Nhờ phần trừ đó, **có ba người trở lên thì anh thoát khỏi chỗ đông
+  địch nhất và không bao giờ nhảy sang chỗ còn đông hơn**. Điểm luôn clamp vào trong sàn.
+- Hồi chiêu 8 giây.
+
+**Chiêu 1 — Basic Attack.** Combo **ba đòn**, mỗi đòn cách nhau **0.6 giây người chơi**:
+đấm 15 → đá 15 → **lao bụng / húc đầu 20**, đòn ba **đẩy lùi mạnh hơn đòn thường của Ginyu
+lẫn ChiChi** (`slamKb 340`) và **choáng 0.6 giây**. Mỗi đòn **25%** để lại **Disoriented**
+1.5 giây (−20% tốc chạy, −15% tốc ra chiêu). Nhịp ra đòn chậm hơn cả Ginyu (`cm(.22)`) lẫn
+ChiChi (`cm(.25)`): cả combo mất 1.2 giây rồi mới `cm(.5)` hồi chiêu.
+- Địch lùi ra khỏi tầm giữa chừng thì combo bỏ dở và chỉ chờ **nửa** hồi chiêu.
+- **`drReach()` xoá `f.drCombo`**: rút bảo bối là bỏ dở combo tay, đừng để chạy cả hai.
+
+**Chiêu 2 — Air Cannon.** Mỗi 10 giây: thò tay vào túi, lắp ống vào tay, **đứng yên ngắm
+0.7 giây**, rồi bắn **một VÒNG khí nén trắng xanh** có gió xoáy (`drawProj` nhánh `aircan`)
+— **không phải tia năng lượng liên tục kiểu Kamehameha**.
+- **100 dmg · đẩy lùi 22% chiều dài sàn · choáng 3 giây · cắt ngang mọi chiêu đang gồng**
+  (`drInterrupt()`: dải bóng và cú đâm của Shikamaru, Ginyu Flash, và chính bảo bối của
+  Doraemon). **Quãng đứng suy nghĩ của Horikita thì KHÔNG đụng vào** — máy quyết định của cô
+  là một chuỗi trạng thái, cắt giữa chừng là hỏng cả mạch chứ không phải chỉ mất một chiêu.
+- Lực đẩy: `knock()` nhận `W * acKbDist * 6` vì lực đẩy tắt dần theo `exp(-6t)`, nên quãng
+  đi được đúng bằng `power/6`. Đo được **131px** trên mốc 136px.
+- **Độ chính xác tra bảng `DORA.acAcc`** rồi nội suy tuyến tính: gần **75~90%**, trung bình
+  **50~60%**, xa nhất **30~40%**. Đo được 84% / 55% / 36%.
+- **Xuyên tối đa hai người** (`p.hitList`), người thứ hai chỉ chịu **60% sát thương và 60%
+  thời gian choáng**.
+- Bị đánh trong **0.35 giây đầu** thì chiêu đứt và **chỉ phải chờ nửa hồi chiêu**; qua mốc
+  đó thì bắn rồi, không huỷ được nữa.
+- Địch đang **Shrunk** thì Air Cannon **không** cộng thêm sát thương, chỉ **đẩy xa thêm 40%**
+  — phần +40% đó nằm ở `f.kbTake` của Shrunk chứ không khai riêng, **đừng cộng hai lần**.
+
+**Chiêu 3 — Small Light.** Mỗi 18 giây: cầm hai tay, **ngắm 1 giây**, bắn một tia vàng nhạt
+**bay nhanh nhưng KHÔNG bẻ cong đuổi theo**. Trúng thì **35 dmg** + **Shrunk 7 giây**:
+
+| | |
+|---|---|
+| model | còn **55%** kích thước (`f.szMul`) |
+| **vòng ăn đòn** | **chỉ nhỏ đi 15%** (`shrunkHit .85` → `f.r` và `bodyRY()`) |
+| tốc chạy | −55% · tốc ra chiêu −40% · sát thương gây ra −35% |
+| tầm đánh thường | −20% (`f.reachMul`, mọi chỗ kiểm tầm đọc qua `meleeReach(f)`) |
+| lực đẩy phải chịu | +40% (`f.kbTake`, `knock()` nhân vào) |
+
+- **Model 55% mà hitbox chỉ 85% là CỐ Ý lệch nhau** — nhỏ hitbox theo model thì đối phương
+  gần như không đánh trúng được nữa.
+- **Không cộng dồn**: tia thứ hai chỉ làm mới đồng hồ về tối đa 7 giây, hệ số giữ nguyên.
+- Bị đánh lúc đang ngắm thì **hướng bắn lệch** (`A.jolt`), chứ chiêu không đứt.
+- Hết hiệu ứng thì model **phình lại từ từ trong 0.4 giây**. Nhịp bước phải nhân `1 −
+  shrunkSize` vì quãng đi chỉ là 0.45 dải chứ không phải cả dải 0→1 — **từng thiếu chỗ này
+  nên phình lại chỉ mất 45% thời gian đã hẹn**.
+- Ba người trở lên: `drSlTarget()` chọn **người gây tổng sát thương cao nhất** (`f.dmgDealt`,
+  `hurt()` cộng dồn), bằng nhau thì **máu hiện tại cao nhất**, và **bỏ qua ai đang Shrunk**.
+
+**Chiêu 4 — Time Machine: Second Chance.** Máu về 0 thì `hurt()` chặn trước `finish()` và
+gọi `doraTime()`. **Một lần mỗi trận**; dùng rồi mà mất máu tiếp là thua bình thường.
+- Phân cảnh dài **2.2 giây người chơi**, bốn pha trong `DORA.tmPh`: ngã xuống + camera tiến
+  lại · Time Machine hiện ra · vòng thời gian quay ngược · trở lại sân.
+- `G.freeze` đóng băng cả sàn nên **đồng hồ buff, debuff và hồi chiêu của MỌI người đứng
+  yên** — không ai mất thời gian hiệu ứng vì đoạn phân cảnh. Hẹn giờ của chính phân cảnh
+  gắn cờ `cine` nên vẫn chạy.
+- **Đổi hẳn không khí**: `G.timeWarp` vẽ nền tối, mặt đồng hồ **kim chạy ngược**, vệt thời
+  gian giật lùi, và **cỗ máy bay tới đón rồi lượn đi**; `setTheme('time')` đổi luôn nhạc nền
+  sang thang nguyên cung không có chủ âm, hết phân cảnh thì trả về `'main'`.
+- **Đạn của chính anh bị xoá sạch** lúc mở phân cảnh, nếu không quay xong là có hai loạt
+  cùng bay.
+- Quay về: vị trí và máu của **1~3 giây người chơi trước** (bốc ngẫu nhiên, có cả số lẻ) đọc
+  từ `f.hist` — lấy mẫu mỗi 0.12 giây, giữ 4 giây. **Máu hồi lại không quá 20% máu tối đa**.
+  Chưa đủ 4 giây dữ liệu thì về **chỗ xuất phát với 20% máu tối đa**.
+- Xoá sạch debuff **trên anh**, cắt **40% phần còn lại** của mọi hồi chiêu, **không hồi lại
+  Panic Mode**, và **không** đụng tới máu / vị trí / trạng thái của bất kỳ ai khác.
+- Rồi **Future Knowledge 5 giây**: −30% dmg nhận, +35% tốc chạy, +45% tốc ra chiêu, +25% độ
+  chính xác của cả Air Cannon lẫn Small Light, kháng 35% làm chậm và choáng.
+
+> **`drPanicOn()` return sớm khi `f.fk>0`.** Không có dòng này thì anh vừa tua về với 20%
+> máu là ăn một đòn rồi hoảng lại ngay — coi như Time Machine có hồi Panic Mode, đúng thứ
+> người dùng cấm. Anh vừa xem trước chuyện sắp xảy ra thì không có lý gì hoảng.
+
+**Panic Mode / Prepared Mode.** *Người dùng chỉ mô tả cảm giác ("hơi hoảng loạn khi gặp nguy
+hiểm, nhưng sau đó tìm được đúng bảo bối và phản công"), không cho con số — phần dưới là tôi
+tự chốt, muốn đổi thì sửa `DORA.panic*` / `DORA.prep*`.*
+- Vào **Panic Mode** khi máu tụt xuống 35%, hoặc ăn trọn một đòn bằng 15% máu tối đa. Trong
+  2.5 giây: **lùi thẳng ra và chạy loạn** (`doraVec` nhánh riêng, nhiễu bước ×2.2), lục túi
+  quýnh quáng (−15% tốc ra chiêu).
+- Hết hoảng là **Prepared Mode** 6 giây: +25% tốc ra chiêu và quay lại tấn công.
+
+**AI.** `doraVec()` thay hẳn nhánh `ranged` của `aiVec()`, ba kiểu đi:
+hoảng thì lùi và chạy loạn · **cả hai bảo bối đang hồi** thì mới chịu áp sát đánh tay ·
+còn lại giữ đúng `want = 205` để rút đồ ra dùng. Thứ tự bấm chiêu trong `think()`: **Small
+Light trước, Air Cannon sau, hết cả hai mới tới combo tay**; Take-copter và Emergency Door
+là nội tại chạy ngoài `think()`.
+
+**Ăn mừng / gục ngã.**
+- Thắng: một cánh Anywhere Door hiện phía sau (`drawDoraDoors`), anh **ngồi ăn dorayaki**
+  (dáng `win`), băng-rôn ghi **`DORAEMON WINS!`** thay cho cặp WINNER + tên, chữ dưới thanh
+  máu vẫn là `Doraemon`.
+- Đã dùng Time Machine rồi mới thắng thì `drawDoraGhosts()` vẽ **vài bóng mờ chạy ngược về
+  phía sau** rồi mới trở lại hình anh đang ăn — đúng kiểu thời gian vừa được tua lại.
+- Thua: dáng `down` (ngã ngồi, hai mắt thành dấu ✕), **vài bảo bối rơi ra khỏi túi**
+  (fx `gadget`). **Không máu me, không hiệu ứng chết chóc** — anh chỉ bị hạ gục và bất tỉnh.
+
+**Ô dán ảnh riêng**: `pocket` · `punch` · `kick` · `slam` · `aircannon` · `smalllight` ·
+`copter` · `win` · `down`, cộng `idle/hurt/injured`.
+**Ô dán tiếng**: nhóm riêng `Doraemon`, mười một ô, một ô 🎙 giọng (`dora_hi`) cắt đúng bằng
+bong bóng thoại. **Đấm đá mượn thẳng `sfx('punch')` của ChiChi**, đúng lối đã chốt cho
+Horikita và Ginyu — đừng dựng ô mới.
+
+Nút thử tay: `#testDoraShrink`, `#testDoraDoor`, `#testDoraTime`.
+Kiểm bằng `node tools/t_dora.js`.
+
 ---
 
 ## 2b. Khoảng cách khi cận chiến — đừng dán vào nhau
@@ -868,7 +1025,7 @@ nên đổi độ phân giải không phải tính lại toạ độ. `recCanvas
 Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 
 ```bash
-node tools/t_reg.js     # 21 cặp đấu song song, bắt lỗi trang, xem cơ chế lớn có nổ không
+node tools/t_reg.js     # 28 cặp đấu, chạy theo đợt, bắt lỗi trang, xem cơ chế lớn có nổ không
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
@@ -885,9 +1042,16 @@ node tools/t_ginyu.js   # Captain Ginyu: bay vào sân đúng 1.5s và địch b
                         # rồi mới bắn và ghì chân sau khi hết choáng, CHANGE bắn từ miệng,
                         # đứng nguyên chỗ ngã, đổi hồn giữ nguyên thân xác (thân A chữ B),
                         # bắn trượt thì 1 máu + hoảng loạn, luật ba người thì luôn thăm dò
+node tools/t_dora.js    # Doraemon: Anywhere Door đúng 1.5s bốn pha và địch chỉ đứng chờ,
+                        # combo 15/15/20 cách nhau 0.6s, Air Cannon (ba dải chính xác, đẩy
+                        # 22% sàn, xuyên hai người, đứt trong 0.35s đầu), Small Light (model
+                        # 55% mà hitbox 85%, không cộng dồn, phình lại đúng 0.4s), Emergency
+                        # Door (miễn thương, chỉ xoá slow, đáp trong sàn), Take-copter,
+                        # Time Machine (2.2s, trần hồi máu 20%, cắt 40% hồi chiêu, không hồi
+                        # Panic Mode), và chữ hiển thị đều bằng tiếng Anh
 ```
 
-> **`t_reg.js` giờ chạy 21 trận song song** (6 nhân vật). Máy test yếu thì mỗi trận trôi
+> **`t_reg.js` giờ chạy 28 trận** (7 nhân vật), theo đợt 5 trang một lượt. Máy test yếu thì mỗi trận trôi
 > chậm hẳn và nhiều trận báo "còn đánh" thay vì "kết thúc" — đó là chuyện bình thường,
 > mục cần xem là dòng cuối `DAT 21/21 tran sach loi`. Muốn soi kỹ một cặp thì chạy riêng.
 
@@ -940,6 +1104,9 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 | Test treo cứng, không lỗi không thoát | `pickLine()` bốc lại tới khi ra chỉ số **khác lần trước**, mà test ghim `Math.random` một hằng số nên vòng `do…while` không bao giờ ra | gọi `window.__resetLines()` (móc trong `probe.js`) trước mỗi lần ghim `Math.random` rồi mới gọi `suzDecide` — lần bốc đầu chắc chắn ăn, `pen` cũng thành số cố định để đo |
 | Cước chia tay của Ayanokouji thỉnh thoảng không gây dmg | rơi trúng 0.75 giây tự miễn thương của Sexy no Jutsu, `hurt()` trả false ngay từ đầu hàm | treo cú lao lại trước mặt địch cho tới khi hết miễn thương (`SUZ.guardKickWait` làm trần chờ), và sửa dòng nhật ký báo nhầm thành "bị né" |
 | Ảnh tơi tả của Horikita không hiện | `sprite()` bật cờ `inj` bằng `set.injured` — ô lùi chung, còn ô thật là `injured2`/`injured3` | cờ đọc `injArr` chọn theo form; bỏ luôn hai ô lùi chung khỏi bảng |
+| Model bị thu nhỏ phình lại quá nhanh | nhịp bước tính bằng `dt/growT` — đó là phần của cả dải 0→1, trong khi quãng đi thật chỉ là `1 − shrunkSize` = 0.45 dải | nhân thêm đúng quãng đó: `span*dt/growT`; đo lại ra đúng 0.4 giây người chơi |
+| Hệ số nhân cộng dồn khi gọi lẻ `drStatus()` | `gnStatus()` GÁN còn `drStatus()` NHÂN CHỒNG, nên gọi `drStatus()` một mình là nhân dồn qua từng nhịp | gộp thành một cửa duy nhất `statusTick(f,dt)`; test cũng phải gọi qua đó |
+| Time Machine "hồi lại Panic Mode" | tua về với 20% máu là dưới ngưỡng hoảng, ăn một đòn là hoảng lại ngay | `drPanicOn()` return sớm khi `f.fk>0` — đang biết trước tương lai thì không hoảng |
 | `t_bubble.js` đổ oan ở nhánh "đảo thứ tự" | mốc `trang > .5` nằm đúng chỗ phép đo dao động 49~51% tuỳ lần bốc vị trí — đổ chừng hai trên ba lần, và đổ y hệt trên `origin/main` | hạ mốc xuống `.45`; bằng chứng thật rằng bong bóng nằm trên vẫn là dòng "viền vàng 0%" ngay dưới, còn lúc bị đè thì nền trắng tụt hẳn dưới 40% |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
@@ -963,6 +1130,12 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 - Bộ ảnh thẻ nhân vật (dựng bằng script trong thư mục nháp, chụp bằng Playwright,
   `deviceScaleFactor: 2`, font **Liberation Sans** — DejaVu Sans Mono thiếu chữ tiếng Việt có dấu)
   đang cũ: chưa có Shikamaru lẫn Horikita, và chưa cập nhật vài con số của Tsubasa/ChiChi.
+- Ô tiếng của Doraemon cũng mới chỉ có tiếng tự tạo trong `synth()`; ô giọng `dora_hi` đang
+  chờ người dùng thu file (giọng Nhật cũng được — chỉ **chữ hiển thị** mới bắt buộc tiếng
+  Anh). Quãng ra mắt cố tình để đúng **1.5 giây thật ở thanh tốc độ gốc** để canh tiếng.
+- **Panic Mode / Prepared Mode của Doraemon là con số tôi tự chốt** (35% máu · một đòn 15%
+  máu tối đa · 2.5 giây hoảng · 6 giây Prepared · −15% / +25% tốc ra chiêu). Người dùng chỉ
+  mô tả cảm giác chứ không cho số; muốn khác thì sửa `DORA.panic*` / `DORA.prep*`.
 - Ô tiếng của Captain Ginyu cũng mới chỉ có tiếng tự tạo trong `synth()`; hai ô giọng
   (`ginyu_force`, `ginyu_change`) đang chờ người dùng thu file. Quãng bay vào sân cố tình
   để đúng **1.5 giây thật ở thanh tốc độ gốc** để người dùng canh tiếng — đổi thanh tốc độ

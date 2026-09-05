@@ -41,6 +41,14 @@ window.__SETS=SETS; window.__getCtx=()=>ctx; window.__sprite=sprite;
    một hằng số là treo vòng lặp. Gọi cái này trước để lần bốc đầu chắc chắn ăn. */
 window.__resetLines=()=>{ lastDecision=-1; lastWrong=-1; };
 window.__DECISIONS=SUZ_DECISIONS; window.__WRONGS=SUZ_WRONG;
+window.__DORA=DORA; window.__doraEnter=doraEnter; window.__doraEscape=doraEscape;
+window.__doraTime=doraTime; window.__drTimeBack=drTimeBack; window.__drShrink=drShrink;
+window.__doraAirCannon=doraAirCannon; window.__doraSmallLight=doraSmallLight;
+window.__doraCombo=doraCombo; window.__drAcOdds=drAcOdds; window.__drSlTarget=drSlTarget;
+window.__drSafeSpot=drSafeSpot; window.__drCanTime=drCanTime; window.__drStatus=drStatus; window.__statusTick=statusTick;
+window.__drTryEscape=drTryEscape; window.__drInterrupt=drInterrupt; window.__drAcHit=drAcHit;
+window.__drSlHit=drSlHit; window.__drDisorient=drDisorient; window.__drPanicOn=drPanicOn;
+window.__meleeReach=meleeReach; window.__MUSIC=MUSIC; window.__doraVector=doraVector;
 window.__GN=GN; window.__ginyuAura=ginyuAura; window.__ginyuState=ginyuState;
 window.__ginyuChange=ginyuChange; window.__ginyuPossess=ginyuPossess;
 window.__ginyuChangeMiss=ginyuChangeMiss; window.__gnChangeTarget=gnChangeTarget;

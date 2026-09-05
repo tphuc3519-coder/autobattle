@@ -1,9 +1,9 @@
-/* Chạy đủ 21 cặp đấu (15 cặp khác nhau + 6 trận gương) song song, xem có trận nào
+/* Chạy đủ 28 cặp đấu (21 cặp khác nhau + 7 trận gương) song song, xem có trận nào
    ném lỗi trang không và các cơ chế lớn có thật sự nổ ra không.
    Chạy: node tools/t_reg.js */
 const { build, playwright } = require('./probe');
 
-const K = ['kono', 'chichi', 'tsubasa', 'shika', 'suzune', 'ginyu'];
+const K = ['kono', 'chichi', 'tsubasa', 'shika', 'suzune', 'ginyu', 'dora'];
 const MOC = 60;          // giây trong trận, đủ để một trận ngã ngũ
 
 (async () => {
@@ -44,6 +44,8 @@ const MOC = 60;          // giây trong trận, đủ để một trận ngã ng
           chang = 3;
           const g = G.fighters.find(f => f.key === 'ginyu' && !f.summon && !f.swapAs && !f.gnChangeDone);
           if (g) window.__hurt(g, 99999, G.fighters.find(f => f !== g && f.team !== g.team));
+          const dd = G.fighters.find(f => f.key === 'dora' && !f.summon && !f.tmDone);
+          if (dd) { dd.edCd = 999; window.__hurt(dd, 99999, G.fighters.find(f => f !== dd && f.team !== dd.team)); }
         }
         for (const f of G.fighters) {
           if (f.lazy) seen.add('lazy');
@@ -70,6 +72,17 @@ const MOC = 60;          // giây trong trận, đủ để một trận ngã ng
           if (f.gnChange) seen.add('ginyu-change');
           if (f.gnPanic) seen.add('ginyu-panic');
           if (f.swapAs === 'ginyu') seen.add('ginyu-swap');
+          if (f.drEntry) seen.add('dora-entry');
+          if (f.copter > 0) seen.add('dora-copter');
+          if (f.edT > 0) seen.add('dora-door');
+          if (f.dis > 0) seen.add('dora-disoriented');
+          if (f.shrunk > 0) seen.add('dora-shrunk');
+          if (f.drAim) seen.add('dora-aim');
+          if (f.drCombo) seen.add('dora-combo');
+          if (f.tm) seen.add('dora-time');
+          if (f.fk > 0) seen.add('dora-future');
+          if (f.panic > 0) seen.add('dora-panic');
+          if (f.prep > 0) seen.add('dora-prepared');
         }
         if (G.over || G.t - t0 > moc) { clearInterval(id); xong(); }
       }, 60);
