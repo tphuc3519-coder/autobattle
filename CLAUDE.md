@@ -494,8 +494,12 @@ cái người dùng muốn: **thân xác A mà chữ B trên thanh máu**, và n
 | object cũ của Ginyu | Ginyu | tên đối thủ | `'foe'` | **chỉ** đấm đá của Ginyu, dmg ×`GN.swapHost` = 50% |
 | object cũ của đối thủ | của họ | `Captain Ginyu` | `'ginyu'` | beam + flash của Ginyu (dmg ×`.35`, hiệu ứng ×`.30`) và **đòn tay mượn** của thân xác đó |
 
-- Máu: thân xác Ginyu về đúng **15% máu tối đa** (`GN.changeKeep`), thân xác cướp được
-  **cộng thêm 20% máu tối đa** (`GN.changeGain`).
+- Máu: **cả hai thân xác cùng về 20% máu tối đa của chính nó** (`GN.changeHp`) — ngang
+  nhau, bất kể trước đó ai đang bao nhiêu máu.
+  *(Bản đầu để lệch: 15% cho thân xác Ginyu, còn thân xác cướp được thì CỘNG THÊM 20% vào
+  lượng máu đang có — nên cướp đúng lúc địch còn nhiều máu là ăn đứt. Người dùng bác: "cân
+  bằng Ginyu là khi change thì cả 2 thân xác có lượng máu ngang nhau (20%) chứ đừng lệch
+  máu". Hai hằng `changeKeep` / `changeGain` gộp thành một `changeHp`.)*
 - **Đòn tay mượn** gọi thẳng chiêu 1 gốc của thân xác đó (`gnBorrowBasic`). Thân xác **hệ
   ném / sút** (`GN_PROJ_BODY` = kono / tsubasa / shika) **giữ nguyên sát thương** nhưng ngắm
   hỏng bét: `f.aimOff` làm đạn vẹo đi tới ±1.05 rad ngay khi rời tay và **mất luôn khả năng
@@ -666,28 +670,30 @@ gọi `doraTime()`. **Một lần mỗi trận**; dùng rồi mà mất máu ti�
 - Quay về: vị trí và máu của **1~3 giây người chơi trước** (bốc ngẫu nhiên, có cả số lẻ) đọc
   từ `f.hist` — lấy mẫu mỗi 0.12 giây, giữ 4 giây. **Máu hồi lại không quá 20% máu tối đa**.
   Chưa đủ 4 giây dữ liệu thì về **chỗ xuất phát với 20% máu tối đa**.
-- Xoá sạch debuff **trên anh**, cắt **40% phần còn lại** của mọi hồi chiêu, **không hồi lại
-  Panic Mode**, và **không** đụng tới máu / vị trí / trạng thái của bất kỳ ai khác.
+- Xoá sạch debuff **trên anh**, cắt **40% phần còn lại** của mọi hồi chiêu, và **không**
+  đụng tới máu / vị trí / trạng thái của bất kỳ ai khác.
 - Rồi **Future Knowledge 5 giây**: −30% dmg nhận, +35% tốc chạy, +45% tốc ra chiêu, +25% độ
   chính xác của cả Air Cannon lẫn Small Light, kháng 35% làm chậm và choáng.
 
-> **`drPanicOn()` return sớm khi `f.fk>0`.** Không có dòng này thì anh vừa tua về với 20%
-> máu là ăn một đòn rồi hoảng lại ngay — coi như Time Machine có hồi Panic Mode, đúng thứ
-> người dùng cấm. Anh vừa xem trước chuyện sắp xảy ra thì không có lý gì hoảng.
+> **Panic Mode / Prepared Mode đã BỎ HẲN.** Bản mô tả gốc có nêu cảm giác *"hơi hoảng loạn
+> khi gặp nguy hiểm, nhưng sau đó tìm được đúng bảo bối và phản công"*, và tôi từng dựng
+> thành hai trạng thái thật (dưới 35% máu hoặc ăn một đòn nặng thì hoảng 2.5 giây rồi
+> Prepared 6 giây). Người dùng bác: **"bỏ hết cái panic mode j đó đi, loạn quá"** — anh lùi
+> ra chạy loạn giữa trận nhìn rối, cộng thêm hai dòng chữ nữa dưới thanh máu. Đã gỡ sạch:
+> hằng số, hai trạng thái, nhánh AI, dòng trạng thái, thanh phụ và cả hai cái tên trong
+> danh sách chữ tiếng Anh. **Đừng dựng lại.**
+>
+> Kéo theo đó, luật *"Time Machine không hồi lại Panic Mode"* thành vô nghĩa — không còn
+> Panic Mode để mà hồi. Cùng lúc đó `drPanicOn()` biến mất nên nhánh chặn `f.fk>0` cũng đi
+> theo. Ô tiếng `dora_panic` thì **giữ nguyên TÊN KHOÁ** (bản có nó đã merge, người dùng có
+> thể đã nạp file) nhưng đổi nhãn thành *"Doraemon bị hạ gục (bảo bối rơi khỏi túi)"* —
+> đúng chỗ duy nhất còn gọi nó, trong `finish()`.
 
-**Panic Mode / Prepared Mode.** *Người dùng chỉ mô tả cảm giác ("hơi hoảng loạn khi gặp nguy
-hiểm, nhưng sau đó tìm được đúng bảo bối và phản công"), không cho con số — phần dưới là tôi
-tự chốt, muốn đổi thì sửa `DORA.panic*` / `DORA.prep*`.*
-- Vào **Panic Mode** khi máu tụt xuống 35%, hoặc ăn trọn một đòn bằng 15% máu tối đa. Trong
-  2.5 giây: **lùi thẳng ra và chạy loạn** (`doraVec` nhánh riêng, nhiễu bước ×2.2), lục túi
-  quýnh quáng (−15% tốc ra chiêu).
-- Hết hoảng là **Prepared Mode** 6 giây: +25% tốc ra chiêu và quay lại tấn công.
-
-**AI.** `doraVec()` thay hẳn nhánh `ranged` của `aiVec()`, ba kiểu đi:
-hoảng thì lùi và chạy loạn · **cả hai bảo bối đang hồi** thì mới chịu áp sát đánh tay ·
-còn lại giữ đúng `want = 205` để rút đồ ra dùng. Thứ tự bấm chiêu trong `think()`: **Small
-Light trước, Air Cannon sau, hết cả hai mới tới combo tay**; Take-copter và Emergency Door
-là nội tại chạy ngoài `think()`.
+**AI.** `doraVec()` thay hẳn nhánh `ranged` của `aiVec()`, hai kiểu đi:
+**cả hai bảo bối đang hồi** thì mới chịu áp sát đánh tay · còn lại giữ đúng `want = 205`
+để rút đồ ra dùng. Thứ tự bấm chiêu trong `think()`: **Small Light trước, Air Cannon sau,
+hết cả hai mới tới combo tay**; Take-copter và Emergency Door là nội tại chạy ngoài
+`think()`.
 
 **Ăn mừng / gục ngã.**
 - Thắng: một cánh Anywhere Door hiện phía sau (`drawDoraDoors`), anh **ngồi ăn dorayaki**
@@ -1047,8 +1053,8 @@ node tools/t_dora.js    # Doraemon: Anywhere Door đúng 1.5s bốn pha và đ�
                         # 22% sàn, xuyên hai người, đứt trong 0.35s đầu), Small Light (model
                         # 55% mà hitbox 85%, không cộng dồn, phình lại đúng 0.4s), Emergency
                         # Door (miễn thương, chỉ xoá slow, đáp trong sàn), Take-copter,
-                        # Time Machine (2.2s, trần hồi máu 20%, cắt 40% hồi chiêu, không hồi
-                        # Panic Mode), và chữ hiển thị đều bằng tiếng Anh
+                        # Time Machine (2.2s, trần hồi máu 20%, cắt 40% hồi chiêu), và chữ
+                        # hiển thị đều bằng tiếng Anh
 ```
 
 > **`t_reg.js` giờ chạy 28 trận** (7 nhân vật), theo đợt 5 trang một lượt. Máy test yếu thì mỗi trận trôi
@@ -1106,7 +1112,6 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 | Ảnh tơi tả của Horikita không hiện | `sprite()` bật cờ `inj` bằng `set.injured` — ô lùi chung, còn ô thật là `injured2`/`injured3` | cờ đọc `injArr` chọn theo form; bỏ luôn hai ô lùi chung khỏi bảng |
 | Model bị thu nhỏ phình lại quá nhanh | nhịp bước tính bằng `dt/growT` — đó là phần của cả dải 0→1, trong khi quãng đi thật chỉ là `1 − shrunkSize` = 0.45 dải | nhân thêm đúng quãng đó: `span*dt/growT`; đo lại ra đúng 0.4 giây người chơi |
 | Hệ số nhân cộng dồn khi gọi lẻ `drStatus()` | `gnStatus()` GÁN còn `drStatus()` NHÂN CHỒNG, nên gọi `drStatus()` một mình là nhân dồn qua từng nhịp | gộp thành một cửa duy nhất `statusTick(f,dt)`; test cũng phải gọi qua đó |
-| Time Machine "hồi lại Panic Mode" | tua về với 20% máu là dưới ngưỡng hoảng, ăn một đòn là hoảng lại ngay | `drPanicOn()` return sớm khi `f.fk>0` — đang biết trước tương lai thì không hoảng |
 | `t_bubble.js` đổ oan ở nhánh "đảo thứ tự" | mốc `trang > .5` nằm đúng chỗ phép đo dao động 49~51% tuỳ lần bốc vị trí — đổ chừng hai trên ba lần, và đổ y hệt trên `origin/main` | hạ mốc xuống `.45`; bằng chứng thật rằng bong bóng nằm trên vẫn là dòng "viền vàng 0%" ngay dưới, còn lúc bị đè thì nền trắng tụt hẳn dưới 40% |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
@@ -1133,9 +1138,6 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 - Ô tiếng của Doraemon cũng mới chỉ có tiếng tự tạo trong `synth()`; ô giọng `dora_hi` đang
   chờ người dùng thu file (giọng Nhật cũng được — chỉ **chữ hiển thị** mới bắt buộc tiếng
   Anh). Quãng ra mắt cố tình để đúng **1.5 giây thật ở thanh tốc độ gốc** để canh tiếng.
-- **Panic Mode / Prepared Mode của Doraemon là con số tôi tự chốt** (35% máu · một đòn 15%
-  máu tối đa · 2.5 giây hoảng · 6 giây Prepared · −15% / +25% tốc ra chiêu). Người dùng chỉ
-  mô tả cảm giác chứ không cho số; muốn khác thì sửa `DORA.panic*` / `DORA.prep*`.
 - Ô tiếng của Captain Ginyu cũng mới chỉ có tiếng tự tạo trong `synth()`; hai ô giọng
   (`ginyu_force`, `ginyu_change`) đang chờ người dùng thu file. Quãng bay vào sân cố tình
   để đúng **1.5 giây thật ở thanh tốc độ gốc** để người dùng canh tiếng — đổi thanh tốc độ

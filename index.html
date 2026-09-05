@@ -447,8 +447,10 @@ const GN={
   /* Chiêu 4 — CHANGE!!! Tia sáng phóng ra từ MIỆNG, càng gần càng dễ trúng nhưng
      gần nhất cũng không bao giờ chắc ăn, xa nhất chỉ còn 18%. */
   changeSpd:520, changeNear:70, changeFar:520, changeHi:.85, changeLo:.18,
-  changeKeep:.15,            // thân xác Ginyu còn 15% máu tối đa
-  changeGain:.20,            // thân xác đối thủ được cộng thêm 20% máu tối đa
+  /* Hoán đổi xong thì CẢ HAI thân xác cùng về 20% máu tối đa của chính nó — ngang
+     nhau, không bên nào lợi hơn. Bản đầu để lệch (15% cho thân xác Ginyu, còn thân xác
+     cướp được thì CỘNG THÊM 20% vào máu đang có) nên ai đang nhiều máu là ăn đứt. */
+  changeHp:.20,
   swapSelf:.35,              // vào thân xác người khác: beam / flash chỉ còn 35% dmg
   swapSelfCc:.30,            // ... và hiệu ứng chỉ còn 30%
   swapBody:.40,              // mượn chiêu tay của thân xác đó: còn 40% dmg
@@ -510,12 +512,7 @@ const DORA={
   tmHistT:gs(4),             // giữ bấy nhiêu giây người chơi lịch sử vị trí + máu
   tmHealCap:.20,             // hồi lại không quá 20% máu tối đa
   tmCdCut:.40,               // hồi chiêu đang chạy được cắt 40% phần còn lại
-  fkT:gs(5), fkTake:.70, fkMove:1.35, fkCast:1.45, fkAcc:.25, fkCcRes:.35,
-  /* Panic Mode / Prepared Mode — xem ghi chú trong CLAUDE.md, phần này tôi tự chốt */
-  panicHp:.35,               // tụt xuống mức này là hoảng
-  panicBurst:.15,            // hoặc ăn trọn một đòn nặng bằng bấy nhiêu máu tối đa
-  panicT:gs(2.5), panicCast:.85, panicJit:2.2,
-  prepT:gs(6), prepCast:1.25
+  fkT:gs(5), fkTake:.70, fkMove:1.35, fkCast:1.45, fkAcc:.25, fkCcRes:.35
 };
 /* Tuổi thọ bong bóng thoại của Doraemon. Khai TRƯỚC SFX_MAXLEN vì trần độ dài ô giọng
    bám theo đúng con số này — tiếng không được sống lâu hơn hình. */
@@ -647,7 +644,7 @@ const CHARS={
       `<b>2</b> Ginyu Beam — every ${rts(GN.beamCd)}s, ${GN.beamN} purple ki bolts sprayed wide, ${GN.beamDmg} dmg each, knocks far back and ${Math.round(GN.beamStunOdds*100)}% to stun ${rts(GN.beamStun)}s · faster than Masenko and it strays badly, worse the further out he is · <b>${GN.tiredHits}+ bolts</b> land ⇒ Worn Out: −${Math.round((1-GN.tiredMove)*100)}% move, −${Math.round((1-GN.tiredCast)*100)}% cast, −${Math.round((1-GN.tiredDmg)*100)}% damage for ${rts(GN.tiredT)}s`,
       `<b>3</b> Ginyu Flash — he plants his feet and charges ${rts(GN.flashCharge)}s, then one unbroken purple pillar locks onto the foe: ${GN.flashDmg} dmg, stun ${rts(GN.flashStun)}s, then −${Math.round((1-GN.flashMove)*100)}% move and −${Math.round((1-GN.flashCast)*100)}% cast for ${rts(GN.flashSlowT)}s`,
       `<b>4 · CHANGE!!!</b> At 0 HP he does not die — he stops where he fell and fires a body-change beam from his mouth. It strays badly: only ${Math.round(GN.changeLo*100)}% to connect across the arena, up to ${Math.round(GN.changeHi*100)}% point blank, never certain · with three or more fighters he aims at the highest HP one and possesses whoever the beam touches first`,
-      `<b>4 · hit</b> souls swap — his old body drops to ${Math.round(GN.changeKeep*100)}% max HP, the stolen body gains ${Math.round(GN.changeGain*100)}% max HP. In the foe's body he keeps his own beam and flash at −${Math.round((1-GN.swapSelf)*100)}% damage and −${Math.round((1-GN.swapSelfCc)*100)}% effect, and borrows their basic attack at −${Math.round((1-GN.swapBody)*100)}% (no cut for shuriken / explosive kunai / football bodies, but his aim in a stolen body is wretched). The foe, stuck in Ginyu's body, is left with Ginyu's punch and kick at −${Math.round((1-GN.swapHost)*100)}%`,
+      `<b>4 · hit</b> souls swap — <b>both bodies land on ${Math.round(GN.changeHp*100)}% of their own max HP</b>, dead even, whatever they were on before. In the foe's body he keeps his own beam and flash at −${Math.round((1-GN.swapSelf)*100)}% damage and −${Math.round((1-GN.swapSelfCc)*100)}% effect, and borrows their basic attack at −${Math.round((1-GN.swapBody)*100)}% (no cut for shuriken / explosive kunai / football bodies, but his aim in a stolen body is wretched). The foe, stuck in Ginyu's body, is left with Ginyu's punch and kick at −${Math.round((1-GN.swapHost)*100)}%`,
       `<b>4 · miss</b> he is left on 1 HP, bolts around the arena at ${GN.panicMove[0]}–${GN.panicMove[1]}× his own speed in a blind panic, and everything he does lands for only ${Math.round(GN.panicCut*100)}%`],
     init(f){
       f.cds={s1:cm(GN.atkCd),s2:GN.beamCd,s3:GN.flashCd};
@@ -688,14 +685,13 @@ const CHARS={
       `<b>2 · Air Cannon</b> every ${rts(DORA.acCd)}s — ${rts(DORA.acAim)}s to aim, then a ring of compressed air for ${DORA.acDmg} dmg, ${Math.round(DORA.acKbDist*100)}% of the arena in knockback, ${rts(DORA.acStun)}s stun, and it cuts any channelled skill short · accuracy runs ${Math.round(DORA.acAcc[1][1]*100)}–${Math.round(DORA.acAcc[0][1]*100)}% up close down to ${Math.round(DORA.acAcc[5][1]*100)}–${Math.round(DORA.acAcc[4][1]*100)}% across the arena · pierces <b>two</b> bodies, the second takes ${Math.round(DORA.acPierce2*100)}% · a hit inside the first ${rts(DORA.acBreak)}s cancels it for half the cooldown`,
       `<b>3 · Small Light</b> every ${rts(DORA.slCd)}s — ${rts(DORA.slAim)}s to aim, then a pale yellow beam for ${DORA.slDmg} dmg that leaves the foe <b>Shrunk</b> at ${Math.round(DORA.shrunkSize*100)}% size for ${rts(DORA.shrunkT)}s: −${Math.round((1-DORA.shrunkMove)*100)}% move, −${Math.round((1-DORA.shrunkCast)*100)}% cast, −${Math.round((1-DORA.shrunkDmg)*100)}% damage dealt, −${Math.round((1-DORA.shrunkReach)*100)}% melee reach, +${Math.round((DORA.shrunkKb-1)*100)}% knockback taken · it never stacks, a second beam only refreshes the timer · the beam does not curve`,
       `<b>4 · Time Machine: Second Chance</b> at 0 HP he does not fall — the Time Machine rolls in and winds him back ${DORA.tmBackLo}–${DORA.tmBackHi}s: his old spot, his old HP (never more than ${Math.round(DORA.tmHealCap*100)}% of max healed), every debuff gone, ${Math.round(DORA.tmCdCut*100)}% off what is left of his cooldowns · <b>once per match</b>, and only he is rewound`,
-      `<b>4 · Future Knowledge</b> ${rts(DORA.fkT)}s after the rewind — −${Math.round((1-DORA.fkTake)*100)}% damage taken, +${Math.round((DORA.fkMove-1)*100)}% move, +${Math.round((DORA.fkCast-1)*100)}% cast, +${Math.round(DORA.fkAcc*100)}% accuracy on both Air Cannon and Small Light, ${Math.round(DORA.fkCcRes*100)}% resist to slows and stuns`,
-      `<b>Passive · Panic Mode / Prepared Mode</b> dropping under ${Math.round(DORA.panicHp*100)}% HP, or eating one blow worth ${Math.round(DORA.panicBurst*100)}% of his max, sends him scrambling for ${rts(DORA.panicT)}s — he backs off and fumbles in the pocket (−${Math.round((1-DORA.panicCast)*100)}% cast). Then he finds the right gadget: <b>Prepared Mode</b> for ${rts(DORA.prepT)}s at +${Math.round((DORA.prepCast-1)*100)}% cast, and he goes back on the offensive`],
+      `<b>4 · Future Knowledge</b> ${rts(DORA.fkT)}s after the rewind — −${Math.round((1-DORA.fkTake)*100)}% damage taken, +${Math.round((DORA.fkMove-1)*100)}% move, +${Math.round((DORA.fkCast-1)*100)}% cast, +${Math.round(DORA.fkAcc*100)}% accuracy on both Air Cannon and Small Light, ${Math.round(DORA.fkCcRes*100)}% resist to slows and stuns`],
     init(f){
       f.cds={s1:0,s2:DORA.acCd,s3:gs(3)};
       f.drEntry=null; f.drAim=null; f.drCombo=null;
       f.copter=0; f.copCd=DORA.copCd*.4; f.copIdle=0; f.drNoHit=0;
       f.edCd=0; f.edT=0; f.edSpeed=0;
-      f.fk=0; f.panic=0; f.prep=0; f.tmDone=false; f.tm=null;
+      f.fk=0; f.tmDone=false; f.tm=null;
       f.hist=[]; f.histT=0;
       doraEnter(f);
     },
@@ -715,8 +711,6 @@ const CHARS={
                          txt:`Future Knowledge ${(f.fk*RT).toFixed(1)}s`};
       if(f.copter>0) return {pct:clamp(f.copter/DORA.copT,0,1), fill:'#FFD34D',
                              txt:`Take-copter ${(f.copter*RT).toFixed(1)}s`};
-      if(f.panic>0) return {pct:clamp(f.panic/DORA.panicT,0,1), fill:'#FF9A6E', txt:'Panic Mode'};
-      if(f.prep>0) return {pct:clamp(f.prep/DORA.prepT,0,1), fill:'#7DEBAB', txt:'Prepared Mode'};
       const nAc=f.cds.s2<=0, nSl=f.cds.s3<=0, nEd=f.edCd<=0;
       const n=(nAc?1:0)+(nSl?1:0)+(nEd?1:0);
       return {pct:n/3, fill:'#7FD0FF', txt:`Pocket: ${n}/3 ready`};
@@ -983,7 +977,7 @@ const SFX_EVENTS=[
   ['dora_shrink','Đối thủ bị thu nhỏ'],
   ['dora_copter','Take-copter quay cánh'],
   ['dora_escape','Chui qua Emergency Door'],
-  ['dora_panic','Doraemon hoảng hốt'],
+  ['dora_panic','Doraemon bị hạ gục (bảo bối rơi khỏi túi)'],
   ['dora_time','Time Machine khởi động'],
   ['dora_win','Ngồi ăn dorayaki ăn mừng']
 ];
@@ -1678,7 +1672,7 @@ function mk(o){
     /* Doraemon: Disoriented và Shrunk là thứ anh dán lên NGƯỜI KHÁC, nên khai chung ở đây */
     dis:0, shrunk:0, szMul:1, hitMul:1, reachMul:1, kbTake:1, drCcRes:0, dmgDealt:0,
     copter:0, copCd:0, drNoHit:0, edCd:0, edT:0, edMoved:false, edSpeed:0, edFrom:null, edTo:null,
-    fk:0, panic:0, prep:0, panicOn:false, panicSeen:false,
+    fk:0,
     drEntry:null, drAim:null, drCombo:null, drHide:false, tm:null, tmDone:false,
     hist:[], histT:0, startX:0, startY:0,
     bind:null, bindGuard:false, bindPending:false, lazyTalk:0, wakeT:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
@@ -3526,8 +3520,9 @@ function ginyuPossess(g,t){
   const gname=g.name, tname=t.name;
   g.swapAs='foe';   g.gnSoul=t.key;  g.name=tname;
   t.swapAs='ginyu'; t.gnSoul='ginyu'; t.name=gname;
-  g.hp=Math.max(1,Math.round(g.maxHp*GN.changeKeep));
-  t.hp=Math.min(t.maxHp,Math.round(t.hp+t.maxHp*GN.changeGain));
+  // cả hai thân xác cùng về 20% máu tối đa của chính nó, không bên nào lệch hơn bên nào
+  g.hp=Math.max(1,Math.round(g.maxHp*GN.changeHp));
+  t.hp=Math.max(1,Math.round(t.maxHp*GN.changeHp));
   /* Đối thủ kẹt trong thân xác Ginyu: chỉ còn đúng đấm đá của Ginyu, dmg còn một nửa. */
   g.gnSelfCut=GN.swapHost; g.gnCcCut=1; g.missOdds=0; g.aimOff=0;
   g.cds={s1:cm(GN.atkCd)};
@@ -3550,7 +3545,7 @@ function ginyuPossess(g,t){
   G.callBanner={txt:'CHANGE!!!',color:'#FFF3C4',life:CALL_BANNER_LIFE,ml:CALL_BANNER_LIFE};
   ring(g.x,g.y,168,'#FFF3C4',.6); ring(t.x,t.y,168,'#A05CFF',.6);
   say(`Tia hoán đổi trúng ${tname} — hai linh hồn đổi chỗ cho nhau!`,'m');
-  say(`${gname} giờ ngồi trong thân xác ${tname}; thân xác cũ của anh còn ${Math.round(GN.changeKeep*100)}% máu và do ${tname} điều khiển.`,'m');
+  say(`${gname} giờ ngồi trong thân xác ${tname}; thân xác cũ của anh do ${tname} điều khiển. Cả hai thân xác cùng về ${Math.round(GN.changeHp*100)}% máu tối đa, ngang nhau.`,'m');
   later(.6,()=>{ if(!G.over&&t.alive) talk(t.x,t.y-124,'This body will do nicely.',SUZ_BUBBLE,true); },true);
 }
 function ginyuChangeMiss(f){
@@ -3599,8 +3594,7 @@ function gnBorrowBasic(f,e,d){
      1. màn ra mắt — Anywhere Door, đúng 1.5 giây người chơi chia làm bốn pha;
      2. hai nội tại tự chạy — Take-copter (đuổi kịp) và Emergency Door (chạy thoát);
      3. ba chiêu bấm tay — combo ba đòn, Air Cannon, Small Light;
-     4. Time Machine: Second Chance — máu về 0 thì quay ngược chính mình 1~3 giây;
-     5. Panic Mode / Prepared Mode — hoảng trước, tìm được đúng bảo bối rồi phản công.
+     4. Time Machine: Second Chance — máu về 0 thì quay ngược chính mình 1~3 giây.
    MỌI chữ hiện ra trong game của nhân vật này là tiếng Anh, kể cả tên trạng thái. */
 
 /* Tầm tay cận chiến của một người: Small Light rút ngắn tầm của người bị thu nhỏ, nên
@@ -3616,19 +3610,9 @@ const drCanTime=f=>!!f&&f.key==='dora'&&!f.summon&&!f.swapAs&&!f.tmDone&&!f.tm;
    hệ số cộng dồn qua từng nhịp; vì vậy chỉ có đúng một cửa vào là hàm này. */
 function statusTick(f,dt){ gnStatus(f,dt); drStatus(f,dt); }
 function drStatus(f,dt){
-  for(const k of ['dis','shrunk','copter','fk','edSpeed','panic','prep']) if(f[k]>0) f[k]=Math.max(0,f[k]-dt);
+  for(const k of ['dis','shrunk','copter','fk','edSpeed']) if(f[k]>0) f[k]=Math.max(0,f[k]-dt);
   if(f.copCd>0) f.copCd=Math.max(0,f.copCd-dt);
   if(f.edCd>0) f.edCd=Math.max(0,f.edCd-dt);
-  // hết hoảng là tìm được đúng bảo bối: chuyển thẳng sang Prepared Mode
-  if(f.panicOn&&!(f.panic>0)){
-    f.panicOn=false;
-    if(f.alive&&!G.over&&f.key==='dora'){
-      f.prep=DORA.prepT;
-      G.floats.push({x:f.x,y:f.y-112,txt:'PREPARED MODE',color:'#7DEBAB',
-        life:1.4,ml:1.4,banner:true,gold:true,tilt:rnd(-.05,.05)});
-      say('Doraemon lục xong túi — tìm được đúng bảo bối và bắt đầu phản công.','m');
-    }
-  }
   // hết Shrunk: trả lại vòng ăn đòn, tầm tay và lực đẩy phải chịu
   if(f.hitMul!==1&&!(f.shrunk>0)){
     f.hitMul=1; f.reachMul=1; f.kbTake=1;
@@ -3645,8 +3629,6 @@ function drStatus(f,dt){
   let slow=1, fast=1, ct=1, out=1, take=1, ccr=0;
   if(f.dis>0){ slow*=DORA.disMove; ct*=DORA.disCast; }
   if(f.shrunk>0){ slow*=DORA.shrunkMove; ct*=DORA.shrunkCast; out*=DORA.shrunkDmg; }
-  if(f.panic>0) ct*=DORA.panicCast;
-  if(f.prep>0) ct*=DORA.prepCast;
   if(f.fk>0){ ct*=DORA.fkCast; fast*=DORA.fkMove; take*=DORA.fkTake; ccr=Math.max(ccr,DORA.fkCcRes); }
   if(f.copter>0) fast*=DORA.copMove;
   if(f.edSpeed>0) fast*=DORA.edSpeed;
@@ -3889,19 +3871,6 @@ function drOnHurt(t,amt){
   }else if(A&&A.kind==='sl'){
     A.jolt+=(chance(.5)?1:-1)*rnd(.10,.26);
   }
-  if(amt>=t.maxHp*DORA.panicBurst||t.hp<=t.maxHp*DORA.panicHp) drPanicOn(t);
-}
-function drPanicOn(f){
-  if(!f||f.panic>0||f.tm||!f.alive||G.over)return;
-  /* Đang mang Future Knowledge thì không hoảng: anh vừa xem trước chuyện sắp xảy ra.
-     Đây cũng là chỗ giữ đúng luật "Time Machine không hồi lại Panic Mode" — quay về với
-     20% máu mà lại hoảng ngay thì coi như có hồi. */
-  if(f.fk>0)return;
-  f.panic=DORA.panicT; f.panicOn=true; f.prep=0;
-  sfx('dora_panic');
-  G.floats.push({x:f.x,y:f.y-112,txt:'PANIC MODE',color:'#FF9A6E',
-    life:1.4,ml:1.4,banner:true,gold:true,tilt:rnd(-.06,.06)});
-  say('Doraemon hoảng hốt — lùi lại, quýnh quáng lục túi tìm bảo bối.','m');
 }
 
 /* ---- chiêu 2: Air Cannon ---- */
@@ -4105,7 +4074,6 @@ function drTimeBack(f){
   for(const k in f.cds) f.cds[k]=Math.max(0,f.cds[k]*(1-DORA.tmCdCut));
   f.copCd=Math.max(0,f.copCd*(1-DORA.tmCdCut));
   f.edCd=Math.max(0,f.edCd*(1-DORA.tmCdCut));
-  f.panic=0; f.panicOn=false;              // không hồi lại Panic Mode
   f.fk=DORA.fkT;
   f.hist.length=0; f.histT=0;
   f.pose='idle'; f.poseT=0;
@@ -4122,12 +4090,7 @@ function doraVec(f,e){
   const d=dist(f,e)||1, ux=(e.x-f.x)/d, uy=(e.y-f.y)/d;
   const wd=Math.hypot(f.wx-f.x,f.wy-f.y)||1, wxu=(f.wx-f.x)/wd, wyu=(f.wy-f.y)/wd;
   let x=0,y=0;
-  const jit=f.panic>0?DORA.panicJit:1;
-  if(f.panic>0){
-    // hoảng: lùi thẳng ra và chạy loạn, chưa nghĩ ra dùng bảo bối nào
-    x-=ux*1.25; y-=uy*1.25;
-    x+=wxu*.5+f.jx*.8*jit; y+=wyu*.5+f.jy*.8*jit;
-  }else if(f.cds.s2>0&&f.cds.s3>0&&!f.drAim){
+  if(f.cds.s2>0&&f.cds.s3>0&&!f.drAim){
     // cả hai bảo bối đang hồi: lúc này mới chịu áp sát đánh tay
     const want=orbWant(f);
     if(d>want+MELEE_BAND){ x+=ux; y+=uy; }
@@ -4157,9 +4120,6 @@ function doraTick(f,dt){
   drCopterTick(f,dt,e,d);
   drAimTick(f,dt);
   drComboTick(f,dt);
-  if(f.hp>0&&f.hp<=f.maxHp*DORA.panicHp&&f.panic<=0&&f.prep<=0&&!f.panicSeen){
-    f.panicSeen=true; drPanicOn(f);
-  }
 }
 
 /* ---------- AI ---------- */
@@ -5768,8 +5728,6 @@ function drawBars(f){
   if(f.shrunk>0) lines.push({t:`SHRUNK −${Math.round((1-DORA.shrunkMove)*100)}% MOVE / −${Math.round((1-DORA.shrunkDmg)*100)}% DMG / +${Math.round((DORA.shrunkKb-1)*100)}% KNOCKBACK (${(f.shrunk*RT).toFixed(1)}s)`, c:'#FFF3B0', s:9});
   if(f.copter>0) lines.push({t:`TAKE-COPTER +${Math.round((DORA.copMove-1)*100)}% MOVE · SLOWS −${Math.round(DORA.copSlowRes*100)}% (${(f.copter*RT).toFixed(1)}s)`, c:'#FFD34D', s:9});
   if(f.fk>0) lines.push({t:`FUTURE KNOWLEDGE −${Math.round((1-DORA.fkTake)*100)}% DMG TAKEN · +${Math.round((DORA.fkCast-1)*100)}% CAST (${(f.fk*RT).toFixed(1)}s)`, c:'#FFE100', s:9});
-  if(f.panic>0) lines.push({t:'PANIC MODE', c:'#FF9A6E', s:10});
-  if(f.prep>0) lines.push({t:`PREPARED MODE +${Math.round((DORA.prepCast-1)*100)}% CAST`, c:'#7DEBAB', s:9});
   if(f.invuln>0) lines.push({t:`IMMUNE (${(f.invuln*RT).toFixed(1)}s)`, c:'#FF9AD5', s:11});
   ctx.lineWidth=3; ctx.strokeStyle='#000';
   lines.forEach(L=>{

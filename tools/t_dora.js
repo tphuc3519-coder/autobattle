@@ -81,7 +81,7 @@ async function waitGame(page, body, limit) {
     const combo = await page.evaluate(() => new Promise(res => {
       const G = window.__G(), D = window.__DORA;
       const f = G.fighters.find(x => x.key === 'dora'), e = G.fighters.find(x => x !== f);
-      f.drAim = null; f.drCombo = null; f.panic = 0; f.prep = 0; f.copter = 0;
+      f.drAim = null; f.drCombo = null; f.copter = 0;
       f.cds.s2 = 99; f.cds.s3 = 99; f.edCd = 99;   // đừng để AI rút bảo bối cắt ngang combo
       window.__statusTick(f, 0);
       e.evade = 0; e.dodge = 0; e.dmgRes = 0; e.ccRes = 0; e.gnCcRes = 0; e.drCcRes = 0;
@@ -312,7 +312,6 @@ async function waitGame(page, body, limit) {
       const G = window.__G(), D = window.__DORA;
       const f = G.fighters.find(x => x.key === 'dora');
       f.copter = 0; f.gnDaze = 0; f.dis = 0; f.shrunk = 0; f.fk = 0; f.edSpeed = 0;
-      f.panic = 0; f.prep = 0;
       window.__statusTick(f, 0);
       const base = +f.moveMul.toFixed(3);
       f.copter = D.copT; window.__statusTick(f, 0);
@@ -347,7 +346,7 @@ async function waitGame(page, body, limit) {
       const G = window.__G(), D = window.__DORA;
       const f = G.fighters.find(x => x.key === 'dora'), e = G.fighters.find(x => x !== f);
       f.edCd = 999;                                  // đừng để cửa thoát hiểm nuốt mất cú chết
-      f.dis = D.disT; f.gnDaze = 1; f.stun = 1; f.panic = D.panicT; f.panicOn = true;
+      f.dis = D.disT; f.gnDaze = 1; f.stun = 1;
       f.dots.push({ dps: 10, left: 2, acc: 0, src: e, tint: 'red' });
       f.cds.s2 = D.acCd; f.cds.s3 = D.slCd;
       const cd0 = { s2: f.cds.s2, s3: f.cds.s3 };
@@ -367,7 +366,7 @@ async function waitGame(page, body, limit) {
           res({ projMine0, inCine, cine: +(G.t - t0).toFixed(2), tot: D.tmT,
                 hp: Math.round(f.hp), cap: Math.round(f.maxHp * D.tmHealCap),
                 dis: f.dis, daze: f.gnDaze, stun: +f.stun.toFixed(2), dots: f.dots.length,
-                panic: f.panic, fk: +f.fk.toFixed(2), fkWant: D.fkT,
+                fk: +f.fk.toFixed(2), fkWant: D.fkT,
                 cdCut: { s2: +(f.cds.s2 / cd0.s2).toFixed(2), s3: +(f.cds.s3 / cd0.s3).toFixed(2) },
                 want: +(1 - D.tmCdCut).toFixed(2), done: f.tmDone,
                 foeSame: Math.round(e.hp) === Math.round(eHp0) && Math.abs(e.x - ex0) < 1 && Math.abs(e.y - ey0) < 1,
@@ -394,7 +393,6 @@ async function waitGame(page, body, limit) {
     ok('xoá sạch debuff đang mang trên người anh',
       tm.dis === 0 && tm.daze === 0 && tm.stun === 0 && tm.dots === 0,
       `slow ${tm.dis}/${tm.daze} · choáng ${tm.stun} · dot ${tm.dots}`);
-    ok('không hồi lại Panic Mode', tm.panic === 0, `panic=${tm.panic}`);
     ok('hồi chiêu đang chạy bị cắt 40% phần còn lại',
       Math.abs(tm.cdCut.s2 - tm.want) < .02 && Math.abs(tm.cdCut.s3 - tm.want) < .02,
       `còn ${tm.cdCut.s2} và ${tm.cdCut.s3} (chuẩn ${tm.want})`);
@@ -415,7 +413,7 @@ async function waitGame(page, body, limit) {
     const fkm = await page.evaluate(() => {
       const G = window.__G(), D = window.__DORA;
       const f = G.fighters.find(x => x.key === 'dora');
-      f.fk = 0; f.dis = 0; f.shrunk = 0; f.panic = 0; f.prep = 0; f.copter = 0; f.edSpeed = 0;
+      f.fk = 0; f.dis = 0; f.shrunk = 0; f.copter = 0; f.edSpeed = 0;
       window.__statusTick(f, 0);
       const b = { mv: +f.moveMul.toFixed(3), ct: +f.castMul.toFixed(3), take: +f.dmgTake.toFixed(3) };
       f.fk = D.fkT; window.__statusTick(f, 0);
@@ -463,14 +461,15 @@ async function waitGame(page, body, limit) {
       const C = window.__CHARS.dora;
       const txt = [C.name, C.tag].concat(C.skills).join(' ');
       const viet = txt.match(/[ăâđêôơưÁÀÃẢẠăắằẵẳặâấầẫẩậéèẽẻẹêếềễểệíìĩỉịóòõỏọôốồỗổộơớờỡởợúùũủụưứừữửựýỳỹỷỵđ]/gi);
-      const must = ['Doraemon','Fourth-Dimensional Pocket','Take-copter','Emergency Door','Panic Mode',
-                    'Prepared Mode','Basic Attack','Air Cannon','Small Light','Shrunk','Disoriented',
+      /* Panic Mode / Prepared Mode đã bỏ hẳn theo yêu cầu, nên không còn trong danh sách. */
+      const must = ['Doraemon','Fourth-Dimensional Pocket','Take-copter','Emergency Door',
+                    'Basic Attack','Air Cannon','Small Light','Shrunk','Disoriented',
                     'Time Machine: Second Chance','Future Knowledge'];
       return { viet: viet ? [...new Set(viet)] : [], thieu: must.filter(m => txt.indexOf(m) < 0) };
     });
     ok('bảng kỹ năng của Doraemon không lẫn một chữ tiếng Việt nào',
       eng.viet.length === 0, eng.viet.join(',') || 'sạch');
-    ok('đủ mười ba cái tên tiếng Anh người dùng yêu cầu',
+    ok('đủ mười một cái tên tiếng Anh còn lại đều có mặt',
       eng.thieu.length === 0, eng.thieu.join(' · ') || 'đủ');
 
     ok('bảng tiếng/ảnh không lỗi trang', errors.length === 0, errors.join(' | '));

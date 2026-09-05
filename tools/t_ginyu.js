@@ -256,8 +256,11 @@ async function waitGame(page, fnBody, limit) {
       let charge = 0, fired = 0, dmg = 0, stun = 0, pend = 0, slow = 0;
       const id = setInterval(() => {
         if (g.gnFlash && g.gnFlash.ph === 'charge') charge = G.t - t0;
+        /* Lấy mốc CAO NHẤT thay vì đọc một lần: choáng tụt dần từng nhịp, mà máy bận thì
+           lượt đọc rơi trễ cả chục khung — đo ra 1.68 trên mốc 1.75 và đổ oan. */
+        stun = Math.max(stun, e.stun); pend = Math.max(pend, e.gnSlowAfter);
         if (g.gnFlash && g.gnFlash.ph === 'fire' && !fired) {
-          fired = G.t - t0; dmg = hp0 - e.hp; stun = e.stun; pend = e.gnSlowAfter;
+          fired = G.t - t0; dmg = hp0 - e.hp;
         }
         if (fired && e.stun <= 0 && e.gnSlow > 0) slow = e.gnSlow;
         if (slow > 0 || G.t - t0 > 8) {
@@ -400,8 +403,9 @@ async function waitGame(page, fnBody, limit) {
       window.__ginyuPossess(g, e);
       return {
         gName, eName,
-        gBody: g.key, gShows: g.name, gHp: g.hp, gWant: Math.round(g.maxHp * GN.changeKeep), gAs: g.swapAs,
-        eBody: e.key, eShows: e.name, eHp: e.hp, eWant: Math.round(eHp0 + e.maxHp * GN.changeGain), eAs: e.swapAs,
+        gBody: g.key, gShows: g.name, gHp: g.hp, gWant: Math.round(g.maxHp * GN.changeHp), gAs: g.swapAs,
+        eBody: e.key, eShows: e.name, eHp: e.hp, eWant: Math.round(e.maxHp * GN.changeHp), eAs: e.swapAs,
+        eHp0,
         eProj: e.gnBodyProj, eMiss: e.missOdds, eAim: e.aimOff, eCut: e.gnSelfCut, eCc: e.gnCcCut,
         gCut: g.gnSelfCut
       };
@@ -412,8 +416,14 @@ async function waitGame(page, fnBody, limit) {
     ok('thân xác đối thủ vẫn là của họ nhưng chữ trên thanh máu là Captain Ginyu',
       swap.eBody === 'kono' && swap.eShows === swap.gName && swap.eAs === 'ginyu',
       `${swap.eBody} -> "${swap.eShows}"`);
-    ok('thân xác Ginyu về đúng 15% máu tối đa', swap.gHp === swap.gWant, `${swap.gHp}/${swap.gWant}`);
-    ok('thân xác cướp được cộng đúng 20% máu tối đa', swap.eHp === swap.eWant, `${swap.eHp}/${swap.eWant}`);
+    /* Cân bằng: hoán đổi xong thì CẢ HAI thân xác cùng về 20% máu tối đa, không lệch.
+       Thân xác địch trước đó đang 50% máu — nếu còn kiểu cộng dồn cũ thì nó phải ra 70%. */
+    ok('cả hai thân xác cùng về đúng 20% máu tối đa',
+      swap.gHp === swap.gWant && swap.eHp === swap.eWant,
+      `Ginyu ${swap.gHp}/${swap.gWant} · thân xác cướp được ${swap.eHp}/${swap.eWant}`);
+    ok('không bên nào lệch máu so với bên kia',
+      swap.gHp === swap.eHp && swap.eHp !== swap.eHp0,
+      `${swap.gHp} vs ${swap.eHp} (trước khi đổi thân xác địch đang ${swap.eHp0})`);
     ok('đối thủ kẹt trong thân xác Ginyu chỉ còn 50% dmg', Math.abs(swap.gCut - .5) < .001, `${swap.gCut}`);
     ok('thân xác hệ ném (Konohamaru): không giảm dmg nhưng ngắm hỏng hẳn',
       swap.eProj === true && swap.eMiss === 0 && swap.eAim > 1,
