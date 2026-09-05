@@ -81,8 +81,6 @@ const MOC = 60;          // giây trong trận, đủ để một trận ngã ng
           if (f.drCombo) seen.add('dora-combo');
           if (f.tm) seen.add('dora-time');
           if (f.fk > 0) seen.add('dora-future');
-          if (f.panic > 0) seen.add('dora-panic');
-          if (f.prep > 0) seen.add('dora-prepared');
         }
         if (G.over || G.t - t0 > moc) { clearInterval(id); xong(); }
       }, 60);
