@@ -685,9 +685,32 @@ gọi `doraTime()`. **Một lần mỗi trận**; dùng rồi mà mất máu ti�
 >
 > Kéo theo đó, luật *"Time Machine không hồi lại Panic Mode"* thành vô nghĩa — không còn
 > Panic Mode để mà hồi. Cùng lúc đó `drPanicOn()` biến mất nên nhánh chặn `f.fk>0` cũng đi
-> theo. Ô tiếng `dora_panic` thì **giữ nguyên TÊN KHOÁ** (bản có nó đã merge, người dùng có
-> thể đã nạp file) nhưng đổi nhãn thành *"Doraemon bị hạ gục (bảo bối rơi khỏi túi)"* —
-> đúng chỗ duy nhất còn gọi nó, trong `finish()`.
+> theo. Ô tiếng thì lần đầu **giữ nguyên tên khoá `dora_panic`**, nhưng người dùng nhắc lại
+> *"bỏ ngay panic mode của doraemon"* nên giờ **đổi hẳn tên khoá thành `dora_down`** —
+> chữ "panic" không còn ở đâu trong phần Doraemon nữa. Đây là ngoại lệ duy nhất của luật
+> "khoá giữ nguyên đời đời" ở mục 4: ô đó **chưa bao giờ có file người dùng nạp** (mục 11
+> ghi rõ tiếng Doraemon mới chỉ có tiếng tự tạo), nên đổi tên không xoá mất gì. Chỗ duy
+> nhất gọi nó vẫn là `finish()`.
+
+> **Nội tại Fourth-Dimensional Pocket đã BỎ HẲN.** Từng có một dòng nội tại trong mảng
+> `skills` (*"he reaches into the pocket on his belly before every gadget…"*), một dáng
+> `pocket` (thò tay vào túi) chạy 0.25~0.3 giây trước mỗi bảo bối và trước Take-copter, một
+> ô dán ảnh `pocket`, ô tiếng `dora_pocket`, thanh phụ `Pocket: n/3 ready` và dòng
+> `FOURTH-DIMENSIONAL POCKET` trên băng-rôn thắng. Người dùng bác: **"bỏ cái vụ pocket
+> luôn"**. Đã gỡ sạch cả sáu chỗ. **Đừng dựng lại.**
+>
+> Kéo theo đó:
+> - `drReach()` đặt thẳng dáng `aircannon` / `smalllight`, `drAimTick()` cũng vậy — **quãng
+>   ngắm vẫn nguyên** (`acAim` 0.7s / `slAim` 1s), chỉ mất pha thò tay vào túi ở đầu.
+> - `drCopterOn()` đặt dáng `copter` và chỉ còn `sfx('dora_copter')`.
+> - Thanh phụ đổi sang **`Gadget: n.ns` / `Gadget ready`** — đọc bảo bối nào sắp xong trước
+>   (`min(cds.s2, cds.s3)`), đúng kiểu đồng hồ của mấy nhân vật kia.
+> - Băng-rôn thắng trở lại cặp **`WINNER` + `DORAEMON WINS!`**.
+> - `sprite()` bỏ nhánh `pk==='pocket'`, và hai nhánh lùi của `aircannon`/`smalllight` không
+>   còn đọc `set.pocket`.
+>
+> **Cái túi vẽ trên bụng thì GIỮ NGUYÊN** — đó là hình dáng nguyên tác, không phải cơ chế.
+> Chỉ bỏ nhánh vẽ lỗ đen trong túi lúc thò tay vào (`P==='pocket'`).
 
 **AI.** `doraVec()` thay hẳn nhánh `ranged` của `aiVec()`, hai kiểu đi:
 **cả hai bảo bối đang hồi** thì mới chịu áp sát đánh tay · còn lại giữ đúng `want = 205`
@@ -697,16 +720,16 @@ hết cả hai mới tới combo tay**; Take-copter và Emergency Door là nội
 
 **Ăn mừng / gục ngã.**
 - Thắng: một cánh Anywhere Door hiện phía sau (`drawDoraDoors`), anh **ngồi ăn dorayaki**
-  (dáng `win`), băng-rôn ghi **`DORAEMON WINS!`** thay cho cặp WINNER + tên, chữ dưới thanh
-  máu vẫn là `Doraemon`.
+  (dáng `win`), băng-rôn ghi **`WINNER` + `DORAEMON WINS!`** thay cho cặp WINNER + tên, chữ
+  dưới thanh máu vẫn là `Doraemon`.
 - Đã dùng Time Machine rồi mới thắng thì `drawDoraGhosts()` vẽ **vài bóng mờ chạy ngược về
   phía sau** rồi mới trở lại hình anh đang ăn — đúng kiểu thời gian vừa được tua lại.
 - Thua: dáng `down` (ngã ngồi, hai mắt thành dấu ✕), **vài bảo bối rơi ra khỏi túi**
   (fx `gadget`). **Không máu me, không hiệu ứng chết chóc** — anh chỉ bị hạ gục và bất tỉnh.
 
-**Ô dán ảnh riêng**: `pocket` · `punch` · `kick` · `slam` · `aircannon` · `smalllight` ·
+**Ô dán ảnh riêng**: `punch` · `kick` · `slam` · `aircannon` · `smalllight` ·
 `copter` · `win` · `down`, cộng `idle/hurt/injured`.
-**Ô dán tiếng**: nhóm riêng `Doraemon`, mười một ô, một ô 🎙 giọng (`dora_hi`) cắt đúng bằng
+**Ô dán tiếng**: nhóm riêng `Doraemon`, mười ô, một ô 🎙 giọng (`dora_hi`) cắt đúng bằng
 bong bóng thoại. **Đấm đá mượn thẳng `sfx('punch')` của ChiChi**, đúng lối đã chốt cho
 Horikita và Ginyu — đừng dựng ô mới.
 

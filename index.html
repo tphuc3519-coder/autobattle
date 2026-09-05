@@ -278,7 +278,7 @@ const SETS=[
   {key:'shika', name:'Shikamaru', poses:[['idle','Thủ thế'],['lazy','Ngồi lười (đầu trận)'],['atk1','Phóng shuriken'],['stab','Đâm sau lưng'],['atk2','Kết ấn trói bóng'],['ulti','Mở lãnh địa'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
   {key:'suzune', name:'Horikita Suzune', poses:[['idle','Thủ thế (form 2)'],['scared','Thủ thế sợ hãi (form 1)'],['stand3','Thủ thế (form 3)'],['block','Thủ chéo hai tay (chịu đòn)'],['punch','Đấm (form 1/2)'],['kick','Đá (form 1/2)'],['think','Đứng suy nghĩ (form 2)'],['punch3','Đấm (form 3)'],['kick3','Đá (form 3)'],['think3','Đứng suy nghĩ (form 3)'],['right2','Quyết định đúng (form 2)'],['wrong2','Quyết định sai (form 2)'],['right3','Quyết định đúng (form 3)'],['wrong3','Quyết định sai (form 3)'],['hurt','Trúng đòn'],['injured2','Tơi tả <20% máu (form 1/2)'],['injured3','Tơi tả <20% máu (form 3)'],['thinkHurt2','Tơi tả khi đứng suy nghĩ (form 2)'],['thinkHurt3','Tơi tả khi đứng suy nghĩ (form 3)']]},
   {key:'ginyu', name:'Captain Ginyu', poses:[['idle','Thủ thế'],['fly','Bay vào sân (đầu trận)'],['dance1','Ginyu Force · dáng 1'],['dance2','Ginyu Force · dáng 2'],['dance3','Ginyu Force · dáng 3'],['punch','Đấm'],['kick','Đá'],['beam','Ginyu Beam'],['flash','Ginyu Flash'],['change','CHANGE!!!'],['panic','Hoảng hốt (bắn trượt Change)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
-  {key:'dora', name:'Doraemon', poses:[['idle','Thủ thế'],['pocket','Thò tay vào túi thần kỳ'],['punch','Đấm (bàn tay tròn)'],['kick','Đá'],['slam','Lao bụng / húc đầu (đòn 3)'],['aircannon','Air Cannon'],['smalllight','Small Light'],['copter','Take-copter (bay)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Ngồi ăn dorayaki (thắng)'],['down','Ngã ngồi, choáng váng (thua)']]},
+  {key:'dora', name:'Doraemon', poses:[['idle','Thủ thế'],['punch','Đấm (bàn tay tròn)'],['kick','Đá'],['slam','Lao bụng / húc đầu (đòn 3)'],['aircannon','Air Cannon'],['smalllight','Small Light'],['copter','Take-copter (bay)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Ngồi ăn dorayaki (thắng)'],['down','Ngã ngồi, choáng váng (thua)']]},
   {key:'ayanokouji', name:'Ayanokouji', poses:[['idle','Đứng'],['guard','Đỡ đòn thay Horikita'],['strike','Đòn đột kích'],['leave','Rời sàn đấu']]},
   {key:'nara', name:'Con nai nhà Nara', poses:[['idle','Đứng cạnh Shikamaru trong lãnh địa']]},
   {key:'garden', name:'Phong cảnh lãnh địa', poses:[['idle','Ảnh nền khu rừng nhà Nara']]},
@@ -678,7 +678,6 @@ const CHARS={
     role:'ranged', want:205, speed:96, dodge:.85, male:true,
     skills:[
       `<b>Entrance</b> He is not on the arena when the bell rings — a pink <b>Anywhere Door</b> fades in, opens, he steps out, looks around and raises a hand, then the door shuts. The whole thing takes ${rts(DORA.doorT)}s and the foe can only wait`,
-      `<b>Passive · Fourth-Dimensional Pocket</b> he reaches into the pocket on his belly before every gadget, and puts it away afterwards — three gadgets come out on their own`,
       `<b>Passive · Take-copter</b> foe more than ${Math.round(DORA.copFar*100)}% of the arena away and nothing landed for ${rts(DORA.copIdle)}s ⇒ the propeller goes on his head for ${rts(DORA.copT)}s: +${Math.round((DORA.copMove-1)*100)}% move, low obstacles (Shadow Strangle included) cannot hold him, slows lose ${Math.round(DORA.copSlowRes*100)}% of their bite, +${Math.round(DORA.copDodge*100)}% projectile dodge · ends early once he is close enough to swing · every ${rts(DORA.copCd)}s`,
       `<b>Passive · Emergency Door</b> ${Math.round(DORA.edOdds*100)}% of the time an incoming hit makes him dive through a pink door instead: untouchable in transit, every slow washed off (stun, burn and the rest stay), out again ${Math.round(DORA.edDist*100)}% of the arena away on the far side of the foe, +${Math.round((DORA.edSpeed-1)*100)}% move for ${rts(DORA.edSpeedT)}s · deals no damage · every ${rts(DORA.edCd)}s`,
       `<b>1 · Basic Attack</b> three round-handed blows ${DORA.hit[0]} / ${DORA.hit[1]} / ${DORA.hit[2]} dmg, ${rts(DORA.hitGap)}s apart — the third is a belly charge that knocks back hard and stuns ${rts(DORA.slamStun)}s · each blow ${Math.round(DORA.disOdds*100)}% to leave <b>Disoriented</b> for ${rts(DORA.disT)}s (−${Math.round((1-DORA.disMove)*100)}% move, −${Math.round((1-DORA.disCast)*100)}% cast)`,
@@ -703,7 +702,7 @@ const CHARS={
       if(f.cds.s2<=0&&(auto?d<540:keys['k'])){ f.cds.s2=DORA.acCd; doraAirCannon(f,e); return; }
       if(f.cds.s1<=0&&!f.drCombo&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])) doraCombo(f,e);
     },
-    /* Thanh phụ nói đúng một chuyện: cái túi đang có sẵn bảo bối nào. Không dán chữ
+    /* Thanh phụ nói đúng một chuyện: bảo bối gần nhất còn bao lâu nữa. Không dán chữ
        giải thích lên sàn — cùng luật với Horikita và Ginyu. */
     gauge:f=>{
       if(f.tm) return {pct:1, fill:'#FFE100', txt:'Time Machine'};
@@ -711,9 +710,9 @@ const CHARS={
                          txt:`Future Knowledge ${(f.fk*RT).toFixed(1)}s`};
       if(f.copter>0) return {pct:clamp(f.copter/DORA.copT,0,1), fill:'#FFD34D',
                              txt:`Take-copter ${(f.copter*RT).toFixed(1)}s`};
-      const nAc=f.cds.s2<=0, nSl=f.cds.s3<=0, nEd=f.edCd<=0;
-      const n=(nAc?1:0)+(nSl?1:0)+(nEd?1:0);
-      return {pct:n/3, fill:'#7FD0FF', txt:`Pocket: ${n}/3 ready`};
+      const w=Math.max(0,Math.min(f.cds.s2,f.cds.s3)), full=Math.min(DORA.acCd,DORA.slCd);
+      return {pct:clamp(1-w/full,0,1), fill:'#7FD0FF',
+              txt:w<=0?'Gadget ready':`Gadget: ${(w*RT).toFixed(1)}s`};
     }
   }
 };
@@ -971,13 +970,12 @@ const SFX_EVENTS=[
 
   ['dora_door','Anywhere Door hiện ra / mở ra'],
   ['dora_hi','🎙 GIỌNG · Doraemon bước ra chào sân'],
-  ['dora_pocket','Thò tay vào túi thần kỳ lấy bảo bối'],
   ['dora_aircannon','Air Cannon bắn ra'],
   ['dora_smalllight','Small Light bắn tia'],
   ['dora_shrink','Đối thủ bị thu nhỏ'],
   ['dora_copter','Take-copter quay cánh'],
   ['dora_escape','Chui qua Emergency Door'],
-  ['dora_panic','Doraemon bị hạ gục (bảo bối rơi khỏi túi)'],
+  ['dora_down','Doraemon bị hạ gục'],
   ['dora_time','Time Machine khởi động'],
   ['dora_win','Ngồi ăn dorayaki ăn mừng']
 ];
@@ -1212,8 +1210,6 @@ function synth(name,c,g){
                       noise(c,g,{dur:.7,f0:600,f1:2400,vol:.09,q:1.2,delay:.3}); break;
     case 'dora_hi':   [0,.18,.4].forEach((d,i)=>tone(c,g,{type:'square',f0:520+i*90,f1:520+i*90,dur:.14,vol:.14,delay:d}));
                       tone(c,g,{type:'sine',f0:780,f1:620,dur:.3,vol:.1,delay:.6}); break;
-    case 'dora_pocket':noise(c,g,{dur:.24,f0:900,f1:260,vol:.16,type:'lowpass'});
-                      tone(c,g,{type:'sine',f0:300,f1:520,dur:.2,vol:.1}); break;
     case 'dora_aircannon':tone(c,g,{type:'sine',f0:90,f1:40,dur:.5,vol:.3});
                       noise(c,g,{dur:.5,f0:1800,f1:200,vol:.28,q:.7,type:'lowpass'}); break;
     case 'dora_smalllight':tone(c,g,{type:'sine',f0:1400,f1:520,dur:.3,vol:.18});
@@ -1224,7 +1220,7 @@ function synth(name,c,g){
                       noise(c,g,{dur:.9,f0:500,f1:900,vol:.14,q:3}); break;
     case 'dora_escape':tone(c,g,{type:'sine',f0:660,f1:1320,dur:.28,vol:.18});
                       noise(c,g,{dur:.3,f0:800,f1:2600,vol:.12}); break;
-    case 'dora_panic':[0,.1,.2].forEach((d,i)=>tone(c,g,{type:'square',f0:420+i*130,f1:520+i*150,dur:.12,vol:.13,delay:d})); break;
+    case 'dora_down':[0,.1,.2].forEach((d,i)=>tone(c,g,{type:'square',f0:420+i*130,f1:520+i*150,dur:.12,vol:.13,delay:d})); break;
     case 'dora_time': tone(c,g,{type:'sawtooth',f0:420,f1:70,dur:1.6,vol:.24});
                       tone(c,g,{type:'sine',f0:210,f1:35,dur:1.6,vol:.16});
                       noise(c,g,{dur:1.6,f0:2600,f1:200,vol:.14,q:1.4,type:'lowpass'}); break;
@@ -1889,7 +1885,7 @@ function finish(w){
       for(let i=0;i<7;i++) G.fx.push({type:'gadget',x:loser.x+rnd(-10,10),y:loser.y+rnd(-16,6),
         rot:rnd(0,6),vr:rnd(-4,4),shape:i%3,life:1.6,ml:1.6,
         color:['#F5C518','#D8E4EE','#FF9AD5','#7FD0FF'][i%4]});
-      sfx('dora_panic');
+      sfx('dora_down');
     }
     G.loserFx={f:loser,t:0,puff:0};
     ring(loser.x,loser.y-10,140,loser.color,.5);
@@ -3702,8 +3698,8 @@ function drCopterTick(f,dt,e,d){
 }
 function drCopterOn(f){
   f.copter=DORA.copT; f.copCd=DORA.copCd; f.drNoHit=0;
-  setPose(f,'pocket',gs(.3));
-  sfx('dora_pocket'); sfx('dora_copter');
+  setPose(f,'copter',gs(.3));
+  sfx('dora_copter');
   ring(f.x,f.y,92,'#FFD34D',.42);
   G.floats.push({x:f.x,y:f.y-116,
     txt:`TAKE-COPTER +${Math.round((DORA.copMove-1)*100)}% MOVE ${rts(DORA.copT)}s`,
@@ -3714,7 +3710,7 @@ function drCopterOff(f,why){
   if(!(f.copter>0))return;
   f.copter=0;
   f.pose='idle'; f.poseT=0;
-  say(`Take-copter cất lại vào túi — ${why}.`,'m');
+  say(`Take-copter tắt — ${why}.`,'m');
 }
 
 /* ---- nội tại 2: Emergency Door ---- */
@@ -3836,13 +3832,12 @@ function drDisorient(t){
     color:'#BFE4FF',life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
 }
 
-/* ---- lấy bảo bối: thò tay vào túi rồi mới rút vật ra ---- */
+/* ---- lấy bảo bối: cầm thẳng bảo bối lên ngắm ---- */
 function drReach(f,kind,e,cd){
   f.drCombo=null;                    // rút bảo bối là bỏ dở combo tay, đừng chạy cả hai
   f.drAim={kind, t:cd, e, age:0, jolt:0};
   f.lock=Math.max(f.lock,cd+gs(.2));
-  setPose(f,'pocket',gs(.25));
-  sfx('dora_pocket');
+  setPose(f,kind==='ac'?'aircannon':'smalllight',gs(.25));
 }
 function drAimTick(f,dt){
   const A=f.drAim; if(!A)return;
@@ -3850,8 +3845,7 @@ function drAimTick(f,dt){
   const e=(tg&&tg.alive)?tg:A.e;
   if(!e||!e.alive||G.over||!f.alive){ f.drAim=null; f.lock=0; return; }
   A.e=e; A.age+=dt; A.t-=dt;
-  // pha đầu là thò tay vào túi, sau đó mới cầm bảo bối lên ngắm
-  f.pose = A.age<gs(.25)?'pocket':(A.kind==='ac'?'aircannon':'smalllight');
+  f.pose = A.kind==='ac'?'aircannon':'smalllight';
   f.poseT=0;
   aim(f,e,.3);
   f.lock=Math.max(f.lock,.2);
@@ -3890,7 +3884,7 @@ function doraAirCannon(f,e){
   drReach(f,'ac',e,DORA.acAim);
   G.floats.push({x:f.x,y:f.y-106,txt:'AIR CANNON',color:f.color,life:1.4,ml:1.4,
     banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
-  say('Doraemon thò tay vào túi, lắp Air Cannon vào tay và ngắm.','m');
+  say('Doraemon lắp Air Cannon vào tay và ngắm.','m');
 }
 function drAcFire(f,e,A){
   const d=dist(f,e);
@@ -5207,10 +5201,9 @@ function sprite(f){
     else if(pk==='think') arr=set.idle;
     else if(pk==='decide') arr=set.think||set.idle;   // 'decide' chỉ còn là TƯ THẾ, không còn ô dán ảnh
     // Doraemon: thiếu ảnh dáng nào thì lùi về ô gần nghĩa nhất
-    else if(pk==='pocket') arr=set.idle;
     else if(pk==='slam') arr=set.punch||set.kick||set.idle;
-    else if(pk==='aircannon') arr=set.pocket||set.idle;
-    else if(pk==='smalllight') arr=set.pocket||set.aircannon||set.idle;
+    else if(pk==='aircannon') arr=set.idle;
+    else if(pk==='smalllight') arr=set.aircannon||set.idle;
     else if(pk==='copter') arr=set.idle;
     else if(pk==='win') arr=set.idle;
     else if(pk==='down') arr=set.injured||set.hurt||set.idle;
@@ -6099,7 +6092,6 @@ function doraVector(f){
   if(P==='punch'){ aL=.5; aR=-1.5; lean=-.1; }
   else if(P==='kick'){ aL=.8; aR=.4; legR=-1.15; lean=.16; }
   else if(P==='slam'){ aL=1.1; aR=-1.1; lean=-.34; }
-  else if(P==='pocket'){ aL=-.2; aR=-.55; lean=.06; }
   else if(P==='aircannon'){ aL=.5; aR=-1.52; lean=-.06; }
   else if(P==='smalllight'){ aL=-1.28; aR=-1.5; lean=-.05; }
   else if(P==='copter'){ aL=-.7; aR=.7; legL=.5; legR=-.5; }
@@ -6131,9 +6123,6 @@ function doraVector(f){
   // túi thần kỳ: nửa vòng tròn ngay trước bụng
   ctx.fillStyle='#E7F3FB'; ctx.strokeStyle=deep; ctx.lineWidth=1.6;
   ctx.beginPath(); ctx.arc(0,y+7,8.5,0,Math.PI); ctx.fill(); ctx.stroke();
-  if(P==='pocket'){                                  // thò tay vào túi lấy bảo bối
-    ctx.fillStyle='#0E2233'; ctx.beginPath(); ctx.arc(0,y+8,6.4,0,Math.PI); ctx.fill();
-  }
   // vòng cổ đỏ + chuông vàng
   ctx.strokeStyle=red; ctx.lineWidth=4;
   ctx.beginPath(); ctx.moveTo(-13,y-11); ctx.lineTo(13,y-11); ctx.stroke();
@@ -7114,8 +7103,8 @@ function winnerBanner(){
   // Doraemon có dòng ăn mừng riêng theo đúng yêu cầu, thay cho cặp WINNER + tên
   const dora=w.key==='dora'&&!w.swapAs;
   ctx.font='900 15px "Space Mono",monospace';
-  ctx.lineWidth=6; ctx.strokeStyle='#000'; ctx.strokeText(dora?'FOURTH-DIMENSIONAL POCKET':'WINNER',0,-42);
-  ctx.fillStyle='#fff'; ctx.fillText(dora?'FOURTH-DIMENSIONAL POCKET':'WINNER',0,-42);
+  ctx.lineWidth=6; ctx.strokeStyle='#000'; ctx.strokeText('WINNER',0,-42);
+  ctx.fillStyle='#fff'; ctx.fillText('WINNER',0,-42);
   const big=dora?'DORAEMON WINS!':w.name.toUpperCase();
   ctx.font=`900 ${dora?38:46}px "Be Vietnam Pro",sans-serif`;
   ctx.lineWidth=10; ctx.strokeStyle='#000'; ctx.strokeText(big,0,4);
