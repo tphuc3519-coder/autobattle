@@ -447,8 +447,10 @@ const GN={
   /* Chiêu 4 — CHANGE!!! Tia sáng phóng ra từ MIỆNG, càng gần càng dễ trúng nhưng
      gần nhất cũng không bao giờ chắc ăn, xa nhất chỉ còn 18%. */
   changeSpd:520, changeNear:70, changeFar:520, changeHi:.85, changeLo:.18,
-  changeKeep:.15,            // thân xác Ginyu còn 15% máu tối đa
-  changeGain:.20,            // thân xác đối thủ được cộng thêm 20% máu tối đa
+  /* Hoán đổi xong thì CẢ HAI thân xác cùng về 20% máu tối đa của chính nó — ngang
+     nhau, không bên nào lợi hơn. Bản đầu để lệch (15% cho thân xác Ginyu, còn thân xác
+     cướp được thì CỘNG THÊM 20% vào máu đang có) nên ai đang nhiều máu là ăn đứt. */
+  changeHp:.20,
   swapSelf:.35,              // vào thân xác người khác: beam / flash chỉ còn 35% dmg
   swapSelfCc:.30,            // ... và hiệu ứng chỉ còn 30%
   swapBody:.40,              // mượn chiêu tay của thân xác đó: còn 40% dmg
@@ -642,7 +644,7 @@ const CHARS={
       `<b>2</b> Ginyu Beam — every ${rts(GN.beamCd)}s, ${GN.beamN} purple ki bolts sprayed wide, ${GN.beamDmg} dmg each, knocks far back and ${Math.round(GN.beamStunOdds*100)}% to stun ${rts(GN.beamStun)}s · faster than Masenko and it strays badly, worse the further out he is · <b>${GN.tiredHits}+ bolts</b> land ⇒ Worn Out: −${Math.round((1-GN.tiredMove)*100)}% move, −${Math.round((1-GN.tiredCast)*100)}% cast, −${Math.round((1-GN.tiredDmg)*100)}% damage for ${rts(GN.tiredT)}s`,
       `<b>3</b> Ginyu Flash — he plants his feet and charges ${rts(GN.flashCharge)}s, then one unbroken purple pillar locks onto the foe: ${GN.flashDmg} dmg, stun ${rts(GN.flashStun)}s, then −${Math.round((1-GN.flashMove)*100)}% move and −${Math.round((1-GN.flashCast)*100)}% cast for ${rts(GN.flashSlowT)}s`,
       `<b>4 · CHANGE!!!</b> At 0 HP he does not die — he stops where he fell and fires a body-change beam from his mouth. It strays badly: only ${Math.round(GN.changeLo*100)}% to connect across the arena, up to ${Math.round(GN.changeHi*100)}% point blank, never certain · with three or more fighters he aims at the highest HP one and possesses whoever the beam touches first`,
-      `<b>4 · hit</b> souls swap — his old body drops to ${Math.round(GN.changeKeep*100)}% max HP, the stolen body gains ${Math.round(GN.changeGain*100)}% max HP. In the foe's body he keeps his own beam and flash at −${Math.round((1-GN.swapSelf)*100)}% damage and −${Math.round((1-GN.swapSelfCc)*100)}% effect, and borrows their basic attack at −${Math.round((1-GN.swapBody)*100)}% (no cut for shuriken / explosive kunai / football bodies, but his aim in a stolen body is wretched). The foe, stuck in Ginyu's body, is left with Ginyu's punch and kick at −${Math.round((1-GN.swapHost)*100)}%`,
+      `<b>4 · hit</b> souls swap — <b>both bodies land on ${Math.round(GN.changeHp*100)}% of their own max HP</b>, dead even, whatever they were on before. In the foe's body he keeps his own beam and flash at −${Math.round((1-GN.swapSelf)*100)}% damage and −${Math.round((1-GN.swapSelfCc)*100)}% effect, and borrows their basic attack at −${Math.round((1-GN.swapBody)*100)}% (no cut for shuriken / explosive kunai / football bodies, but his aim in a stolen body is wretched). The foe, stuck in Ginyu's body, is left with Ginyu's punch and kick at −${Math.round((1-GN.swapHost)*100)}%`,
       `<b>4 · miss</b> he is left on 1 HP, bolts around the arena at ${GN.panicMove[0]}–${GN.panicMove[1]}× his own speed in a blind panic, and everything he does lands for only ${Math.round(GN.panicCut*100)}%`],
     init(f){
       f.cds={s1:cm(GN.atkCd),s2:GN.beamCd,s3:GN.flashCd};
@@ -3518,8 +3520,9 @@ function ginyuPossess(g,t){
   const gname=g.name, tname=t.name;
   g.swapAs='foe';   g.gnSoul=t.key;  g.name=tname;
   t.swapAs='ginyu'; t.gnSoul='ginyu'; t.name=gname;
-  g.hp=Math.max(1,Math.round(g.maxHp*GN.changeKeep));
-  t.hp=Math.min(t.maxHp,Math.round(t.hp+t.maxHp*GN.changeGain));
+  // cả hai thân xác cùng về 20% máu tối đa của chính nó, không bên nào lệch hơn bên nào
+  g.hp=Math.max(1,Math.round(g.maxHp*GN.changeHp));
+  t.hp=Math.max(1,Math.round(t.maxHp*GN.changeHp));
   /* Đối thủ kẹt trong thân xác Ginyu: chỉ còn đúng đấm đá của Ginyu, dmg còn một nửa. */
   g.gnSelfCut=GN.swapHost; g.gnCcCut=1; g.missOdds=0; g.aimOff=0;
   g.cds={s1:cm(GN.atkCd)};
@@ -3542,7 +3545,7 @@ function ginyuPossess(g,t){
   G.callBanner={txt:'CHANGE!!!',color:'#FFF3C4',life:CALL_BANNER_LIFE,ml:CALL_BANNER_LIFE};
   ring(g.x,g.y,168,'#FFF3C4',.6); ring(t.x,t.y,168,'#A05CFF',.6);
   say(`Tia hoán đổi trúng ${tname} — hai linh hồn đổi chỗ cho nhau!`,'m');
-  say(`${gname} giờ ngồi trong thân xác ${tname}; thân xác cũ của anh còn ${Math.round(GN.changeKeep*100)}% máu và do ${tname} điều khiển.`,'m');
+  say(`${gname} giờ ngồi trong thân xác ${tname}; thân xác cũ của anh do ${tname} điều khiển. Cả hai thân xác cùng về ${Math.round(GN.changeHp*100)}% máu tối đa, ngang nhau.`,'m');
   later(.6,()=>{ if(!G.over&&t.alive) talk(t.x,t.y-124,'This body will do nicely.',SUZ_BUBBLE,true); },true);
 }
 function ginyuChangeMiss(f){

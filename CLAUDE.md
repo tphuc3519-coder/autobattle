@@ -494,8 +494,12 @@ cái người dùng muốn: **thân xác A mà chữ B trên thanh máu**, và n
 | object cũ của Ginyu | Ginyu | tên đối thủ | `'foe'` | **chỉ** đấm đá của Ginyu, dmg ×`GN.swapHost` = 50% |
 | object cũ của đối thủ | của họ | `Captain Ginyu` | `'ginyu'` | beam + flash của Ginyu (dmg ×`.35`, hiệu ứng ×`.30`) và **đòn tay mượn** của thân xác đó |
 
-- Máu: thân xác Ginyu về đúng **15% máu tối đa** (`GN.changeKeep`), thân xác cướp được
-  **cộng thêm 20% máu tối đa** (`GN.changeGain`).
+- Máu: **cả hai thân xác cùng về 20% máu tối đa của chính nó** (`GN.changeHp`) — ngang
+  nhau, bất kể trước đó ai đang bao nhiêu máu.
+  *(Bản đầu để lệch: 15% cho thân xác Ginyu, còn thân xác cướp được thì CỘNG THÊM 20% vào
+  lượng máu đang có — nên cướp đúng lúc địch còn nhiều máu là ăn đứt. Người dùng bác: "cân
+  bằng Ginyu là khi change thì cả 2 thân xác có lượng máu ngang nhau (20%) chứ đừng lệch
+  máu". Hai hằng `changeKeep` / `changeGain` gộp thành một `changeHp`.)*
 - **Đòn tay mượn** gọi thẳng chiêu 1 gốc của thân xác đó (`gnBorrowBasic`). Thân xác **hệ
   ném / sút** (`GN_PROJ_BODY` = kono / tsubasa / shika) **giữ nguyên sát thương** nhưng ngắm
   hỏng bét: `f.aimOff` làm đạn vẹo đi tới ±1.05 rad ngay khi rời tay và **mất luôn khả năng
