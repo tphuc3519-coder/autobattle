@@ -453,7 +453,7 @@ async function waitGame(page, body, limit) {
       return S ? S.poses.map(p => p[0]) : null;
     });
     ok('có ô dán ảnh riêng cho từng bảo bối và cho màn thắng / thua',
-      slots && ['pocket', 'aircannon', 'smalllight', 'copter', 'slam', 'win', 'down'].every(k => slots.includes(k)),
+      slots && ['aircannon', 'smalllight', 'copter', 'slam', 'win', 'down'].every(k => slots.includes(k)),
       slots ? slots.join(',') : 'không có');
 
     // mọi chữ hiển thị trong game của nhân vật này phải là tiếng Anh
@@ -461,15 +461,16 @@ async function waitGame(page, body, limit) {
       const C = window.__CHARS.dora;
       const txt = [C.name, C.tag].concat(C.skills).join(' ');
       const viet = txt.match(/[ăâđêôơưÁÀÃẢẠăắằẵẳặâấầẫẩậéèẽẻẹêếềễểệíìĩỉịóòõỏọôốồỗổộơớờỡởợúùũủụưứừữửựýỳỹỷỵđ]/gi);
-      /* Panic Mode / Prepared Mode đã bỏ hẳn theo yêu cầu, nên không còn trong danh sách. */
-      const must = ['Doraemon','Fourth-Dimensional Pocket','Take-copter','Emergency Door',
+      /* Panic Mode / Prepared Mode và nội tại Fourth-Dimensional Pocket đã bỏ hẳn theo
+         yêu cầu, nên không còn trong danh sách. */
+      const must = ['Doraemon','Take-copter','Emergency Door',
                     'Basic Attack','Air Cannon','Small Light','Shrunk','Disoriented',
                     'Time Machine: Second Chance','Future Knowledge'];
       return { viet: viet ? [...new Set(viet)] : [], thieu: must.filter(m => txt.indexOf(m) < 0) };
     });
     ok('bảng kỹ năng của Doraemon không lẫn một chữ tiếng Việt nào',
       eng.viet.length === 0, eng.viet.join(',') || 'sạch');
-    ok('đủ mười một cái tên tiếng Anh còn lại đều có mặt',
+    ok('đủ mười cái tên tiếng Anh còn lại đều có mặt',
       eng.thieu.length === 0, eng.thieu.join(' · ') || 'đủ');
 
     ok('bảng tiếng/ảnh không lỗi trang', errors.length === 0, errors.join(' | '));
