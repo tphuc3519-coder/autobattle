@@ -113,7 +113,8 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
 - **Mini Rasengan — cửa thoát khi bị vây cận chiến.** Bị người khác đứng dí sát (trong
   `r + MELEE_REACH + KONO_MINI_PAD`) suốt **2.5 giây người chơi** (`KONO_MINI_T`) mà **không
   gây nổi một điểm sát thương nào** thì cậu xoáy một quả nhỏ: **40 dmg** (`KONO_MINI_DMG`) và
-  **hất lùi 18% chiều dài sàn** (`KONO_MINI_KB`), hồi chiêu **12 giây người chơi**
+  **hất lùi 30% chiều dài sàn** (`KONO_MINI_KB`, cũ 18% — người dùng nâng lên:
+    *"Mini rasengan bay khoảng 30% sàn"*), hồi chiêu **12 giây người chơi**
   (`KONO_MINI_CD`). Dáng dùng lại **đúng dáng Rasengan** (`setPose(f,'ulti',…)`).
   - **Đếm trong `konoTick()` chứ không đếm trong `think()`**: lúc bị quây cậu hay dính choáng,
     mà `think()` không chạy khi đang choáng — đếm ở đó thì cửa thoát không bao giờ mở.
@@ -1583,7 +1584,7 @@ node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, 
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ nổ là AoE nhạt dần
                         # 100%->40% rồi tắt hẳn + bén lửa 5 dmg/s trong 3s (nổ vào tường cũng
-                        # lan ra), và Mini Rasengan gỡ vây 40 dmg + hất 18% sàn, hồi chiêu 12s
+                        # lan ra), và Mini Rasengan gỡ vây 40 dmg + hất 30% sàn, hồi chiêu 12s
 node tools/t_chichi.js  # viện binh của ChiChi: Kamehameha 400 dmg + choáng 2s rồi ghì chân 4s
                         # (hết choáng mới tới), Masenko 100 dmg mỗi đợt + chồng lớp −10%/−7%
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch

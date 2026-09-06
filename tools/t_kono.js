@@ -131,7 +131,7 @@ function ok(name, pass, note) {
     mini.ban > 0 && Math.abs(mini.ban - mini.K.miniT) < .05,
     `bung ra ở giây ${(mini.ban * mini.RT).toFixed(2)} người chơi`);
   ok('Mini Rasengan gây đúng 40 dmg', mini.mat === mini.K.mini, `${mini.mat} dmg`);
-  ok('và hất địch lùi khoảng 18% chiều dài sàn',
+  ok(`và hất địch lùi khoảng ${Math.round(mini.K.miniKb * 100)}% chiều dài sàn`,
     Math.abs(mini.day - mini.W * mini.K.miniKb) < mini.W * .04,
     `bay ${mini.day}px (chuẩn ~${Math.round(mini.W * mini.K.miniKb)}px)`);
   ok('dùng lại đúng dáng Rasengan', mini.dang === 'ulti', `dáng "${mini.dang}"`);
