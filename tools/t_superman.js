@@ -4,9 +4,9 @@
      2. nội tại: Man of Steel (giảm 20% dmg vật lý, burn ăn đủ, trần 60%, giảm lực đẩy
         và thời gian choáng, đòn dưới 25 dmg không làm ngã), Kryptonian Flight,
         Last Son's Resolve rồi Solar Fatigue;
-     3. bốn chiêu: combo 34/34/50 cách nhau 0.55s, Heat Vision 4×22 + Burning,
-        Freeze Breath (Frozen / Chilled / vỡ băng ở 100 dmg), Meteor Strike 145+30
-        (195 khi địch đang Frozen), đánh trượt thì nằm 1.3 giây;
+     3. bốn chiêu: combo 24/24/35 cách nhau 0.55s, Heat Vision 4×15 + Burning,
+        Freeze Breath (Frozen / Chilled / vỡ băng ở 100 dmg), Meteor Strike 102+21
+        (137 khi địch đang Frozen), đánh trượt thì nằm 1.3 giây;
      4. trần khống chế cứng 3.5 giây, phần thừa đổi thành làm chậm 40%;
      5. chữ hiển thị đều bằng tiếng Anh.
    Chạy: node tools/t_superman.js */
@@ -162,9 +162,9 @@ function ok(name, pass, note) {
                W: window.__WH().W, SUP: { hit: SUP.hit, gap: SUP.hitGap, cd: SUP.hitCd, stun: SUP.upStun, kb: SUP.upKb },
                RT: window.__RT };
     });
-    ok('combo đúng ba đòn 34 / 34 / 50 = 118 dmg',
-      combo.hits.length === 3 && combo.hits[0].dmg === 34 && combo.hits[1].dmg === 34 &&
-      combo.hits[2].dmg === 50,
+    ok('combo đúng ba đòn 24 / 24 / 35 = 83 dmg',
+      combo.hits.length === 3 && combo.hits[0].dmg === 24 && combo.hits[1].dmg === 24 &&
+      combo.hits[2].dmg === 35,
       combo.hits.map(h => h.dmg).join(' + ') + ' = ' + combo.hits.reduce((a, b) => a + b.dmg, 0));
     ok('hai đòn cách nhau đúng 0.55 giây người chơi',
       combo.hits.length === 3 &&
@@ -219,13 +219,13 @@ function ok(name, pass, note) {
     });
     ok('gồng 0.65 giây người chơi rồi mới bắn',
       Math.abs(heat.aimEnd * heat.RT - .65) < .05, `gồng ${(heat.aimEnd * heat.RT).toFixed(2)}s`);
-    ok('tia nhiệt gây đúng bốn nhịp 22 dmg = 88',
-      heat.ticks.length === 4 && heat.ticks.every(x => x === 22),
+    ok('tia nhiệt gây đúng bốn nhịp 15 dmg = 60',
+      heat.ticks.length === 4 && heat.ticks.every(x => x === 15),
       heat.ticks.join(' + ') + ' = ' + heat.ticks.reduce((a, b) => a + b, 0));
-    ok('trúng đủ bốn nhịp thì bốc cháy 5 dmg/giây trong 4 giây người chơi (tổng 108)',
-      heat.nBurn === 1 && Math.abs(heat.burnDps / heat.RT - 5) < .001 &&
-      Math.abs(heat.burnT * heat.RT - 4) < .02 && Math.abs(heat.burnTotal - 20) < .5,
-      `${(heat.burnDps / heat.RT)} dmg/s × ${(heat.burnT * heat.RT).toFixed(2)}s = ${heat.burnTotal} · tổng ${88 + heat.burnTotal}`);
+    ok('trúng đủ bốn nhịp thì bốc cháy 3.5 dmg/giây trong 4 giây người chơi (tổng 74)',
+      heat.nBurn === 1 && Math.abs(heat.burnDps / heat.RT - 3.5) < .001 &&
+      Math.abs(heat.burnT * heat.RT - 4) < .02 && Math.abs(heat.burnTotal - 14) < .5,
+      `${(heat.burnDps / heat.RT)} dmg/s × ${(heat.burnT * heat.RT).toFixed(2)}s = ${heat.burnTotal} · tổng ${60 + heat.burnTotal}`);
     ok('đang bị chiếu thì chậm chân, nhưng không choáng và không bị đẩy lùi',
       heat.slow && heat.kb === 0 && heat.stun === 0,
       `chậm ${heat.slow} · lực đẩy ${heat.kb} · choáng ${heat.stun}`);
@@ -321,8 +321,8 @@ function ok(name, pass, note) {
     });
     ok('hít vào 0.9 giây người chơi rồi mới thổi',
       Math.abs(cold.aimEnd * cold.RT - .9) < .05, `hít ${(cold.aimEnd * cold.RT).toFixed(2)}s`);
-    ok('trúng giữa nón: 45 dmg và đóng băng 2.2 giây người chơi',
-      cold.dmg === 45 && Math.abs(cold.frozen * cold.RT - 2.2) < .05 && cold.locked,
+    ok('trúng giữa nón: 32 dmg và đóng băng 2.2 giây người chơi',
+      cold.dmg === 32 && Math.abs(cold.frozen * cold.RT - 2.2) < .05 && cold.locked,
       `${cold.dmg} dmg · Frozen ${(cold.frozen * cold.RT).toFixed(2)}s`);
     ok('đang Frozen vẫn ăn đòn, và đủ 100 dmg thì lớp băng vỡ ngay',
       cold.stillFrozen && cold.broke, `40 dmg chưa vỡ, thêm 70 nữa thì vỡ`);
@@ -335,8 +335,8 @@ function ok(name, pass, note) {
       cold.reFreeze === false);
     ok('Chilled giảm 50% tốc chạy và 25% tốc ra chiêu',
       cold.SUP.move === .5 && cold.SUP.cast === .75);
-    ok('đứng ở rìa nón chỉ ăn 25 dmg / Frozen 1s / Chilled 2.5s, tối đa ba người',
-      cold.SUP.edge[0] === 25 && Math.abs(cold.SUP.edge[1] * cold.RT - 1) < .001 &&
+    ok('đứng ở rìa nón chỉ ăn 18 dmg / Frozen 1s / Chilled 2.5s, tối đa ba người',
+      cold.SUP.edge[0] === 18 && Math.abs(cold.SUP.edge[1] * cold.RT - 1) < .001 &&
       Math.abs(cold.SUP.edge[2] * cold.RT - 2.5) < .001 && cold.SUP.max === 3);
 
     const coldMore = await page.evaluate(() => {
@@ -444,16 +444,16 @@ function ok(name, pass, note) {
       Math.abs(meteor.prepEnd * meteor.RT - 1.2) < .06, `${(meteor.prepEnd * meteor.RT).toFixed(2)}s`);
     ok('có bay lên cao thật rồi mới bổ xuống, không phải dịch chuyển tức thời',
       meteor.rise > 120, `lên tới ${meteor.rise}px`);
-    ok('cú đấm trúng: 145 + 30 chấn động = 175 dmg',
-      meteor.dmg === 175, `${meteor.dmg} dmg`);
+    ok('cú đấm trúng: 102 + 21 chấn động = 123 dmg',
+      meteor.dmg === 123, `${meteor.dmg} dmg`);
     ok('quật ngã 1.5 giây người chơi và hất lùi 20% chiều dài sàn',
       Math.abs(meteor.down * meteor.RT - 1.5) < .05 &&
       Math.abs(meteor.kb / 6 / meteor.W - .20) < .015,
       `ngã ${(meteor.down * meteor.RT).toFixed(2)}s · đẩy ${(meteor.kb / 6).toFixed(0)}px = ${(meteor.kb / 6 / meteor.W * 100).toFixed(1)}%`);
     ok('vùng chấn động để lại làm chậm 2 giây người chơi',
       Math.abs(meteor.quake * meteor.RT - 2) < .05, `${(meteor.quake * meteor.RT).toFixed(2)}s`);
-    ok('địch đang Frozen: thêm đúng 20 Shatter Damage, tổng 195 và không hơn',
-      meteor.dmgFrozen === 195, `${meteor.dmgFrozen} dmg`);
+    ok('địch đang Frozen: thêm đúng 14 Shatter Damage, tổng 137 và không hơn',
+      meteor.dmgFrozen === 137, `${meteor.dmgFrozen} dmg`);
     ok('đánh trượt thì nằm 1.3 giây và Man of Steel tụt còn 10%',
       Math.abs(meteor.missDown * meteor.RT - 1.3) < .05 && Math.abs(meteor.missTake - .1) < .001,
       `nằm ${(meteor.missDown * meteor.RT).toFixed(2)}s · giảm dmg ${(meteor.missTake * 100).toFixed(0)}%`);
@@ -463,6 +463,25 @@ function ok(name, pass, note) {
     ok('độ chính xác 80% gần · 60% trung bình · 50% xa nhất',
       meteor.near === .8 && meteor.mid === .6 && meteor.far === .5,
       `${meteor.near} / ${meteor.mid} / ${meteor.far}`);
+
+    /* ---- toàn bộ sát thương đúng cỡ 70% so với bản đầu ---- */
+    const cut = await page.evaluate(() => {
+      const SUP = window.__SUP, RT = window.__RT;
+      // [tên, số cũ, số mới]
+      return [
+        ['combo', 118, SUP.hit[0] + SUP.hit[1] + SUP.hit[2]],
+        ['heat vision (4 nhịp)', 88, SUP.hvN * SUP.hvDmg],
+        ['burning mỗi giây', 5, SUP.hvBurnDps / RT],
+        ['freeze breath giữa nón', 45, SUP.fbDmg],
+        ['freeze breath rìa nón', 25, SUP.fbEdgeDmg],
+        ['meteor strike', 145, SUP.msDmg],
+        ['vùng chấn động', 30, SUP.msQuakeDmg],
+        ['shatter damage', 20, SUP.msShatter]
+      ].map(([n, a, b]) => ({ n, a, b, r: +(b / a).toFixed(3) }));
+    });
+    ok('TOÀN BỘ sát thương hạ xuống còn cỡ 70% so với bản đầu',
+      cut.every(x => x.r >= .66 && x.r <= .73),
+      cut.map(x => `${x.n} ${x.a}->${x.b} (${Math.round(x.r * 100)}%)`).join(' · '));
 
     /* ---- trần khống chế cứng 3.5 giây ---- */
     const cc = await page.evaluate(() => {
