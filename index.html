@@ -445,10 +445,13 @@ const GN={
   /* Chiêu 2 — Ginyu Beam: sáu luồng khí tím bắn từa lưa. Bay rất nhanh, ra dồn dập, và
      lệch sẵn một góc ngay cả lúc sát mặt (beamSpreadNear) rồi toác hẳn ra khi đứng xa. */
   beamCd:gs(10), beamN:6, beamDmg:18, beamSpd:560, beamGap:.11,
+  /* Giữ dáng thêm bấy nhiêu sau luồng CUỐI. Dáng bắn phải sống hết loạt rồi mới thôi:
+     để dáng ngắn hơn loạt thì anh về thế đứng trong khi khí vẫn đang phun ra. */
+  beamTail:.2,
   beamStun:gs(1.5), beamStunOdds:.15, beamKb:340, beamSpread:.95, beamSpreadNear:.22, beamFar:460,
   tiredHits:3, tiredT:gs(7), tiredMove:.40, tiredCast:.60, tiredDmg:.75,
   /* Chiêu 3 — Ginyu Flash: gồng 1.75 giây rồi nối một luồng sáng tím liền mạch */
-  flashCd:gs(17), flashCharge:gs(1.75), flashHold:gs(.6),
+  flashCd:gs(17), flashCharge:gs(1.75), flashHold:gs(.6), flashTail:gs(.5),
   flashDmg:100, flashStun:gs(3.5), flashSlowT:gs(5), flashMove:.20, flashCast:.75,
   /* Chiêu 4 — CHANGE!!! Tia sáng phóng ra từ MIỆNG, càng gần càng dễ trúng nhưng
      gần nhất cũng không bao giờ chắc ăn, xa nhất chỉ còn 18%. */
@@ -3590,15 +3593,25 @@ function ginyuStrike(f,e){
 
 /* ---- chiêu 2: Ginyu's Beam — sáu luồng khí tím ---- */
 function ginyuBeam(f,e){
-  setPose(f,'beam',cm(.6)); aim(f,e,1.1);
+  /* Dáng bắn phải sống HẾT LOẠT rồi mới thôi. Loạt kéo dài từ luồng đầu (cm(.2)) tới
+     luồng cuối (cộng thêm beamN-1 nhịp beamGap), rồi giữ thêm beamTail cho có nhịp thu
+     tay về. Trước đây cắm cứng cm(.6) — ngắn hơn loạt hẳn nửa giây người chơi, nên anh
+     đứng thẳng người lại trong khi hai luồng cuối vẫn đang phun ra. */
+  const span=cm(.2)+(GN.beamN-1)*cm(GN.beamGap)+cm(GN.beamTail);
+  setPose(f,'beam',span); aim(f,e,1.1);
   e.gnBeamHits=0;
   G.floats.push({x:f.x,y:f.y-106,txt:'GINYU BEAM!',color:f.color,life:1.5,ml:1.5,
     banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.06,.06)});
   say(`Ginyu gồng khí — ${GN.beamN} luồng khí tím bắn tứ tung, mỗi luồng ${GN.beamDmg} dmg, hất địch văng xa và ${Math.round(GN.beamStunOdds*100)}% choáng ${rts(GN.beamStun)} giây.`,'m');
-  for(let i=0;i<GN.beamN;i++) later(cm(.2)+i*cm(GN.beamGap),()=>{
+  for(let i=0;i<GN.beamN;i++){
+    const at=cm(.2)+i*cm(GN.beamGap);
+    later(at,()=>{
     if(!f.alive||G.over||G.freeze>0)return;
     const tg=aimTarget(f)||e;
     if(!tg||!tg.alive)return;
+    /* Đặt lại dáng ở từng luồng: ăn đòn giữa loạt thì hurt() đè sang dáng chịu đòn một
+       nhịp, xong phải trở về dáng bắn chứ không được nằm luôn ở đó. */
+    setPose(f,'beam',span-at);
     const d=dist(f,tg);
     // sát mặt đã lệch sẵn một góc, càng xa càng toác — bắn từa lưa chứ không ngắm
     const sp=GN.beamSpreadNear+(GN.beamSpread-GN.beamSpreadNear)*clamp(d/GN.beamFar,0,1);
@@ -3611,7 +3624,8 @@ function ginyuBeam(f,e){
     sfx('ginyu_beam');
     ring(f.x+Math.cos(a)*24,f.y-26+Math.sin(a)*24,42,'#C9A0FF',.24);
     G.flashScreen=Math.max(G.flashScreen,.04);
-  });
+    });
+  }
 }
 function gnBeamHit(p,t){
   const o=p.owner;
@@ -3660,7 +3674,10 @@ function gnFlashTick(f,dt){
     if(chance(dt*22)) G.fx.push({type:'dust',x:f.x+rnd(-24,24),y:f.y+rnd(-6,18),r:4,life:.4,ml:.4});
     if(F.t<=0){ F.ph='fire'; F.t=GN.flashHold; gnFlashHit(f,e); }
   }else if(F.t<=0){
-    f.gnFlash=null; f.lock=0; f.pose='idle';
+    // luồng sáng tắt rồi vẫn giữ dáng thêm một nhịp cho có chỗ thu tay về, đừng bật
+    // về thế đứng ngay trong cùng một khung hình
+    f.gnFlash=null; f.lock=0;
+    setPose(f,'flash',GN.flashTail);
   }
 }
 function gnFlashHit(f,e){

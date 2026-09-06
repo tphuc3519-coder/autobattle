@@ -577,6 +577,48 @@ async function waitGame(page, fnBody, limit) {
       aura.def.n < aura.atk.n * .7,
       `thăm dò ${aura.def.n} điểm ảnh so với hưng phấn ${aura.atk.n}`);
 
+    /* Dáng ra chiêu phải SỐNG HẾT chiêu rồi mới thôi. Chạy tay từng bước (hẹn giờ +
+       ginyuTick + đồng hồ dáng) để đo chính xác mốc dáng tắt so với mốc luồng cuối. */
+    const pose = await page.evaluate(() => {
+      const G = window.__G(), GN = window.__GN, RT = window.__RT, dt = 1 / 120;
+      const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f !== g);
+      const run = (ten, ban) => {
+        g.gnState = null; g.gnStateT = 0; g.gnFlash = null; g.gnEntry = null;
+        g.gnPanic = false; g.lock = 0; g.stun = 0; g.pose = 'idle'; g.poseT = 0;
+        g.cds = { s1: 99, s2: 0, s3: 0 };
+        e.x = g.x + 200; e.y = g.y; e.maxHp = 99999; e.hp = e.maxHp; e.evade = 0;
+        G.proj.length = 0; G.timers.length = 0;
+        ban();
+        let poseEnd = -1, lastShot = -1, xong = -1, seen = 0;
+        for (let i = 0; i < 900; i++) {
+          const t = i * dt;
+          for (let k = G.timers.length - 1; k >= 0; k--) {
+            const tm = G.timers[k]; tm.t -= dt;
+            if (tm.t <= 0) { G.timers.splice(k, 1); try { tm.fn(); } catch (err) { } }
+          }
+          G.t += dt;
+          if (g.poseT > 0) { g.poseT -= dt; if (g.poseT <= 0) g.pose = 'idle'; }
+          window.__ginyuTick(g, dt);
+          const n = G.proj.filter(p => p.type === 'gbeam').length;
+          if (n > seen) { seen = n; lastShot = t; }
+          if (poseEnd < 0 && g.pose !== ten) poseEnd = t;
+          if (ten === 'flash' && !g.gnFlash && xong < 0 && t > .05) xong = t;
+        }
+        G.proj.length = 0; G.timers.length = 0;
+        return { poseEnd: poseEnd * RT, lastShot: lastShot * RT, xong: xong * RT };
+      };
+      const beam = run('beam', () => window.__ginyuBeam(g, e));
+      const flash = run('flash', () => window.__ginyuFlash(g, e));
+      g.pose = 'idle'; g.poseT = 0; g.lock = 0;
+      return { beam, flash, n: GN.beamN };
+    });
+    ok(`dáng Ginyu Beam sống hết cả ${pose.n} luồng rồi mới thôi`,
+      pose.beam.poseEnd > pose.beam.lastShot + .2,
+      `luồng cuối ở giây ${pose.beam.lastShot.toFixed(2)}, dáng giữ tới ${pose.beam.poseEnd.toFixed(2)} (thừa ${(pose.beam.poseEnd - pose.beam.lastShot).toFixed(2)}s)`);
+    ok('dáng Ginyu Flash sống hết luồng sáng rồi còn giữ thêm một nhịp',
+      pose.flash.poseEnd > pose.flash.xong + .2,
+      `luồng sáng tắt ở giây ${pose.flash.xong.toFixed(2)}, dáng giữ tới ${pose.flash.poseEnd.toFixed(2)} (thừa ${(pose.flash.poseEnd - pose.flash.xong).toFixed(2)}s)`);
+
     ok('bảng tiếng/ảnh không lỗi trang', errors.length === 0, errors.join(' | '));
     await browser.close();
   }

@@ -487,6 +487,28 @@ lỗi cũ quay lại.
   sát mặt** rồi toác tới 0.95 rad khi đứng xa. Đo được: trung bình 0.19 rad ở 60px và
   0.45 rad ở 430px. **Trúng đủ 3 luồng** thì dính *Worn Out*: −60% tốc chạy, −40% tốc ra
   chiêu, −25% dmg trong `gs(7)`. Đếm bằng `t.gnBeamHits`, đặt lại 0 ở đầu mỗi loạt.
+
+> **Dáng ra chiêu phải SỐNG HẾT chiêu rồi mới thôi** — người dùng bác bản cũ: *"dáng lúc
+> Ginyu beam hay flash là dáng đó phải tồn tại đến khi Ginyu xong dáng chứ, sao hết nhanh
+> vậy?"*. Đo được bản cũ: dáng `beam` tắt ở giây **2.15** (người chơi) trong khi luồng cuối
+> mãi giây **2.70** mới bắn ra — anh đứng thẳng người lại trong lúc hai luồng vẫn đang phun.
+> Nguyên nhân: `setPose(f,'beam',cm(.6))` cắm cứng một con số **ngắn hơn cả loạt bắn**.
+>
+> - Giờ độ dài dáng tính thẳng từ nhịp bắn: `cm(.2) + (beamN−1)·cm(beamGap) + cm(beamTail)`.
+>   Đổi `beamN` hay `beamGap` thì dáng tự dài theo, không phải nhớ sửa hai chỗ.
+> - **Mỗi luồng tự đặt lại dáng** (`setPose(f,'beam', span−at)` trong từng `later`): ăn đòn
+>   giữa loạt thì `hurt()` đè sang dáng chịu đòn một nhịp, xong phải trở về dáng bắn chứ
+>   không được nằm luôn ở đó.
+> - `GN.beamTail` / `GN.flashTail` là **nhịp giữ dáng SAU khi chiêu đã xong**, để anh có chỗ
+>   thu tay về chứ không bật về thế đứng ngay trong cùng một khung hình. Đo lại: dáng beam
+>   giữ tới giây 3.42 (thừa 0.72s sau luồng cuối), dáng flash tới 2.87 (thừa 0.52s sau khi
+>   luồng sáng tắt).
+> - `change` và `panic` **không dính lỗi này**: hai dáng đó tự đặt lại mỗi nhịp trong
+>   `gnChangeTick()` với `poseT=0`, nên chúng sống đúng bằng trạng thái. Đừng đổi chúng sang
+>   kiểu đếm ngược.
+>
+> `t_ginyu.js` chấm bằng cách chạy tay từng bước (hẹn giờ + `ginyuTick` + đồng hồ dáng) rồi
+> so mốc dáng tắt với mốc luồng cuối / lúc luồng sáng tắt — đòi dư ít nhất 0.2 giây.
 - **3 · Ginyu's Flash** — hồi chiêu `gs(17)`, đứng trụ gồng `gs(1.75)` (`gnFlash.ph='charge'`, `f.lock`), rồi
   nối **một luồng sáng tím LIỀN MẠCH** từ anh sang địch: to như Kamehameha nhưng vẽ theo lối
   dải bóng của Shikamaru (`drawGinyuFlash()`, gọi **sau** khi vẽ nhân vật, cạnh
