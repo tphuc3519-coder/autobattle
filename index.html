@@ -317,6 +317,19 @@ const EAGLE_DRIVE=.5;             // riêng Drive Shot còn ra nhanh gấp đôi
 const EAGLE_DRIVE_SPD=420;        // lúc Wings of the Eagle: drive bay thẳng vào địch, nhanh hơn cú sút thường
 const EAGLE_QUOTA={drive:2,bic:2}; // trong quãng cháy phải tung đủ chừng này
 const CHICHI_DASH_CD=5;           // ChiChi lao tới mỗi 5 giây trong trận, tức 10 giây người chơi thấy
+/* Viện binh của ChiChi. ChiChi là nhân vật CŨ nên mọi con số thời gian ở đây khai thẳng
+   bằng giây TRONG TRẬN (nhân đôi ra giây người chơi), đừng trộn với lối gs() của mấy
+   nhân vật mới — mà `gs()` cũng khai ở dưới nên viết gs() ở đây là dính TDZ. */
+const KAME_DMG=400;               // Kamehameha của Goku
+const KAME_STUN=1;                // choáng 2 giây người chơi
+const KAME_SLOW_T=2;              // HẾT choáng mới tới quãng ghì chân, 4 giây người chơi
+const KAME_SLOW_MOVE=.40;         // −60% tốc chạy
+const KAME_SLOW_CAST=.70;         // −30% tốc ra chiêu
+const MASENKO_DMG=100;            // mỗi đợt Masenko của Gohan, sát thương giữ nguyên
+const MASENKO_STACK_MOVE=.10;     // mỗi đợt trúng: −10% tốc chạy
+const MASENKO_STACK_CAST=.07;     // và −7% tốc ra chiêu — CỘNG DỒN theo số đợt trúng
+const MASENKO_STACK_MAX=5;        // trần đúng bằng số đợt của một lượt Masenko
+const MASENKO_STACK_T=2;          // mỗi đợt trúng làm mới đồng hồ về 4 giây người chơi
 
 /* ---------- Shikamaru ----------
    Mọi con số dưới đây viết theo giây người chơi rồi đổi sang giây trong trận bằng gs(),
@@ -643,7 +656,7 @@ const CHARS={
   chichi:{
     name:'ChiChi', short:'ChiChi', tag:'Housewife · Melee', emoji:'🍳', color:'#FF4D6D', alt:'#FF93A8',
     role:'melee', speed:106, dodge:.55, male:false,
-    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in, guaranteed crit, CC immune &amp; −30% dmg while dashing`,'<b>Passive</b> every 5 hits +5% crit','<b>Below 20% HP</b> calls Goku / Gohan'],
+    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in, guaranteed crit, CC immune &amp; −30% dmg while dashing`,'<b>Passive</b> every 5 hits +5% crit',`<b>Below 20% HP</b> calls Goku / Gohan — Goku's Kamehameha ${KAME_DMG} dmg, stun ${rts(KAME_STUN)}s then −${Math.round((1-KAME_SLOW_MOVE)*100)}% move / −${Math.round((1-KAME_SLOW_CAST)*100)}% cast for ${rts(KAME_SLOW_T)}s · Gohan's Masenko ${MASENKO_DMG} dmg a wave, each wave stacking −${Math.round(MASENKO_STACK_MOVE*100)}% move / −${Math.round(MASENKO_STACK_CAST*100)}% cast for ${rts(MASENKO_STACK_T)}s`],
     init(f){ f.cds={s1:0,s2:cm(3)}; f.dashCd=CHICHI_DASH_CD; f.hits=0; f.critBonus=0; },
     think(f,e,d,auto){
       if(f.cds.s1<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
@@ -1869,6 +1882,8 @@ function mk(o){
     moveMul:1, castMul:1, dmgOut:1, gnOut:1, dmgTake:1, ccTake:1, gnCcRes:0,
     gnSelfCut:1, gnCcCut:1, missOdds:0, aimOff:0, gnBodyProj:false,
     gnDaze:0, gnRage:0, gnTired:0, gnSlow:0, gnSlowAfter:0, gnBeamHits:0,
+    /* viện binh của ChiChi dán lên NGƯỜI KHÁC nên khai chung ở đây */
+    kameSlow:0, kameAfter:0, msSlow:0, msStack:0,
     gnEntry:null, gnAura:0, gnState:null, gnStateT:0, gnFlash:null, gnChange:null,
     gnChangeDone:false, gnProbeDone:false, gnPanic:false, gnPanicMul:1, swapAs:null, gnSoul:null,
     /* Doraemon: Disoriented và Shrunk là thứ anh dán lên NGƯỜI KHÁC, nên khai chung ở đây */
@@ -2880,15 +2895,52 @@ function summonHelp(c,force){
     say(`${name} bước ra từ khói — trận đấu tiếp tục!`,'g');
   },true);
 }
+/* ---- hiệu ứng ăn theo của hai chiêu viện binh ---- */
+/* Kamehameha: choáng trước, HẾT choáng mới tới quãng ghì chân — xếp hàng qua f.kameAfter
+   rồi summonStatus() mở ra đúng lúc `stun<=0`, cùng lối với luồng sáng của Ginyu.
+   Gọi hàm này SAU khi hurt() trả về true: né được thì không dính choáng ăn theo. */
+function kameHit(t){
+  if(!t||t.summon)return;
+  stunFx(t,KAME_STUN,'spark');
+  t.kameAfter=Math.max(t.kameAfter||0,KAME_SLOW_T);
+  G.floats.push({x:t.x,y:t.y-118,
+    txt:`KAMEHAMEHA · STUN ${rts(KAME_STUN)}s → −${Math.round((1-KAME_SLOW_MOVE)*100)}% MOVE / −${Math.round((1-KAME_SLOW_CAST)*100)}% CAST ${rts(KAME_SLOW_T)}s`,
+    color:'#FFD98A',life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  say(`Tia khí quật ${t.name} choáng ${rts(KAME_STUN)} giây, hết choáng còn lảo đảo thêm ${rts(KAME_SLOW_T)} giây.`,'g');
+}
+/* Masenko: mỗi đợt trúng chồng thêm một lớp ghì chân, và làm mới đồng hồ của cả chồng. */
+function masenkoHit(t){
+  if(!t||t.summon)return;
+  t.msStack=Math.min(MASENKO_STACK_MAX,(t.msStack||0)+1);
+  t.msSlow=MASENKO_STACK_T;
+  const n=t.msStack;
+  G.floats.push({x:t.x,y:t.y-112,
+    txt:`MASENKO ×${n} · −${Math.round(MASENKO_STACK_MOVE*n*100)}% MOVE / −${Math.round(MASENKO_STACK_CAST*n*100)}% CAST`,
+    color:'#E0C0FF',life:1.4,ml:1.4,banner:true,gold:true,sc:.8,tilt:rnd(-.05,.05)});
+  say(`Đợt Masenko thứ ${n} ghim vào ${t.name} — chậm thêm một lớp nữa.`,'g');
+}
+/* Hiệu ứng do viện binh của ChiChi để lại. Chạy SAU gnStatus (hàm đó GÁN đè hệ số) và
+   TRƯỚC drStatus, để cú nới hiệu ứng làm chậm của Take-copter còn đọc được phần này. */
+function summonStatus(f,dt){
+  if(f.kameSlow>0) f.kameSlow=Math.max(0,f.kameSlow-dt);
+  if(f.msSlow>0){ f.msSlow=Math.max(0,f.msSlow-dt); if(f.msSlow<=0) f.msStack=0; }
+  if(f.kameAfter>0&&f.stun<=0){ f.kameSlow=Math.max(f.kameSlow,f.kameAfter); f.kameAfter=0; }
+  if(f.kameSlow>0){ f.moveMul*=KAME_SLOW_MOVE; f.castMul*=KAME_SLOW_CAST; }
+  const n=Math.min(f.msStack||0,MASENKO_STACK_MAX);
+  if(n>0&&f.msSlow>0){
+    f.moveMul*=Math.max(.05,1-MASENKO_STACK_MOVE*n);
+    f.castMul*=Math.max(.05,1-MASENKO_STACK_CAST*n);
+  }
+}
 function summonFire(s,e){
   setPose(s,'atk1',3); aim(s,e,1.4);
   const a=Math.atan2(e.y-s.y,e.x-s.x);
   if(s.key==='goku'){
     G.proj.push({type:'kame',team:s.team,owner:s,x:s.x+Math.cos(a)*32,y:s.y+Math.sin(a)*32,
-      vx:Math.cos(a)*520,vy:Math.sin(a)*520,r:26,dmg:300,life:7,ang:a,bounce:0});
-    say('KA-ME-HA-ME-HAAA! Tia 300 dmg, nảy tường và yếu dần 10% mỗi lần.','g');
+      vx:Math.cos(a)*520,vy:Math.sin(a)*520,r:26,dmg:KAME_DMG,life:7,ang:a,bounce:0});
+    say(`KA-ME-HA-ME-HAAA! Tia ${KAME_DMG} dmg, choáng ${rts(KAME_STUN)} giây rồi ghì chân, nảy tường và yếu dần 10% mỗi lần.`,'g');
   }else{
-    say('MASENKO! 5 đợt, mỗi đợt 100 dmg.','g');
+    say(`MASENKO! 5 đợt, mỗi đợt ${MASENKO_DMG} dmg và một lớp ghì chân cộng dồn.`,'g');
     for(let i=0;i<5;i++) later(i*cm(.36),()=>{
       if(G.over)return;
       // ngắm đón đầu: chấm nơi địch sẽ tới sau quãng thời gian đạn bay
@@ -2903,7 +2955,7 @@ function summonFire(s,e){
       if(Math.abs(Math.cos(aa))>.12) s.face=Math.cos(aa)>=0?1:-1;
       s.ax=Math.cos(aa); s.ay=Math.sin(aa); s.lunge=Math.max(s.lunge,.6);
       G.proj.push({type:'masenko',team:s.team,owner:s,x:s.x+Math.cos(a2)*30,y:s.y+Math.sin(a2)*30,
-        vx:Math.cos(a2)*MASENKO_SPD,vy:Math.sin(a2)*MASENKO_SPD,r:20,dmg:100,life:3.4,ang:a2,wob:rnd(0,9)});
+        vx:Math.cos(a2)*MASENKO_SPD,vy:Math.sin(a2)*MASENKO_SPD,r:20,dmg:MASENKO_DMG,life:3.4,ang:a2,wob:rnd(0,9)});
       ring(s.x+Math.cos(a2)*26,s.y+Math.sin(a2)*26,46,'#FFF3B0',.26);
       G.fx.push({type:'bolt',x:s.x+Math.cos(a2)*26,y:s.y+Math.sin(a2)*26,ang:a2,life:.22,ml:.22,seed:rnd(0,9)});
       G.flashScreen=Math.max(G.flashScreen,.05);
@@ -3897,7 +3949,7 @@ const drCanTime=f=>!!f&&f.key==='dora'&&!f.summon&&!f.swapAs&&!f.tmDone&&!f.tm;
 /* Dựng lại toàn bộ hệ số nhân của một người. gnStatus() GÁN, drStatus() và supStatus()
    NHÂN CHỒNG lên — nên ba hàm đó phải đi liền nhau và đúng thứ tự này. Gọi lẻ một mình
    là hệ số cộng dồn qua từng nhịp; vì vậy chỉ có đúng một cửa vào là hàm này. */
-function statusTick(f,dt){ gnStatus(f,dt); drStatus(f,dt); supStatus(f,dt); }
+function statusTick(f,dt){ gnStatus(f,dt); summonStatus(f,dt); drStatus(f,dt); supStatus(f,dt); }
 function drStatus(f,dt){
   for(const k of ['dis','shrunk','copter','fk','edSpeed']) if(f[k]>0) f[k]=Math.max(0,f[k]-dt);
   if(f.copCd>0) f.copCd=Math.max(0,f.copCd-dt);
@@ -4087,6 +4139,7 @@ function drEscapeTick(f,dt){
     /* Xoá HIỆU ỨNG LÀM CHẬM, giữ nguyên choáng / cháy / độc và mọi debuff khác — kể cả
        Shrunk, vì đó là một lần biến hình chứ không phải một lớp làm chậm. */
     f.dis=0; f.gnSlow=0; f.gnSlowAfter=0; f.gnDaze=0; f.gnTired=0; f.exhaust=0;
+    f.kameSlow=0; f.kameAfter=0; f.msSlow=0; f.msStack=0;
     f.edSpeed=DORA.edSpeedT;
     sfx('dora_escape');
     ring(f.x,f.y,90,'#FF9AD5',.4);
@@ -4401,6 +4454,7 @@ function drTimeBack(f){
   // xoá sạch debuff đang mang trên người anh — chỉ trên anh thôi
   f.stun=0; f.dis=0; f.shrunk=0; f.dots.length=0;
   f.gnDaze=0; f.gnRage=0; f.gnTired=0; f.gnSlow=0; f.gnSlowAfter=0;
+  f.kameSlow=0; f.kameAfter=0; f.msSlow=0; f.msStack=0;
   f.exhaust=0; f.vuln=0; f.outCut=0; f.lock=0; f.kbx=0; f.kby=0;
   f.hitMul=1; f.reachMul=1; f.kbTake=1;
   if(f.r0!==undefined){ f.r=f.r0; f.r0=undefined; }
@@ -5765,7 +5819,8 @@ function step(dt){
           sfx('stun');
           say(`Phân thân đấm trúng — 60 dmg, choáng ${rts(.5)} giây và kiệt sức ${rts(EXHAUST_T)} giây.`,'k');
         }
-        if(p.type==='kame'){say(`Kamehameha xuyên trúng — ${Math.round(p.dmg)} dmg!`,'g');G.flashScreen=.2;}
+        if(p.type==='kame'){ kameHit(f); say(`Kamehameha xuyên trúng — ${Math.round(p.dmg)} dmg!`,'g'); G.flashScreen=.2; }
+        if(p.type==='masenko') masenkoHit(f);
         dead=true;break;
       }
     }

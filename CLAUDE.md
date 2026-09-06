@@ -101,6 +101,34 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
 - Nội tại: cứ 5 đòn +5% chí mạng.
 - Dưới 20% máu: gọi **Goku / Gohan**. Có phân cảnh đóng băng (`G.freeze`) + zoom camera.
 
+**Hai chiêu viện binh — đã buff.** Hằng số khai ngay dưới `CHICHI_DASH_CD`, và vì ChiChi là
+nhân vật **cũ** nên chúng viết thẳng bằng **giây trong trận** (nhân đôi ra giây người chơi) —
+`gs()` khai mãi dưới khối Shikamaru, viết `gs()` ở đó là dính TDZ.
+
+| | Cũ | Mới |
+|---|---|---|
+| **Kamehameha** (Goku) | 300 dmg, không hiệu ứng ăn theo | **400 dmg** (`KAME_DMG`) + **choáng 2 giây người chơi** (`KAME_STUN`) rồi **−60% tốc chạy / −30% tốc ra chiêu trong 4 giây** (`KAME_SLOW_*`) |
+| **Masenko** (Gohan) | 5 đợt × 100 dmg | vẫn **100 dmg mỗi đợt**, nhưng **mỗi đợt trúng chồng thêm −10% tốc chạy / −7% tốc ra chiêu** (`MASENKO_STACK_*`), trần 5 lớp |
+
+- **Ghì chân của Kamehameha chỉ bắt đầu SAU khi hết choáng**, xếp hàng qua `t.kameAfter` rồi
+  `summonStatus()` mở ra đúng lúc `stun<=0` — cùng lối với luồng sáng của Ginyu, đừng cộng
+  thẳng vào lúc trúng đòn.
+- **`kameHit()` / `masenkoHit()` gọi SAU khi `hurt()` trả về true** (mục 6): né được thì không
+  dính choáng lẫn ghì chân ăn theo. Tia vẫn là `kind='ult'` nên Shikamaru né được mà không
+  cộng dồn tỉ lệ, còn cửa thần kỳ của Doraemon chỉ né được 30%.
+- **`summonStatus(f,dt)` chạy trong `statusTick` giữa `gnStatus` và `drStatus`**: `gnStatus`
+  GÁN đè hệ số nên phải nằm sau nó, còn phải nằm trước `drStatus` để cú nới hiệu ứng làm chậm
+  của Take-copter đọc được phần này.
+- Chồng lớp Masenko **làm mới đồng hồ chung** mỗi lần trúng (`MASENKO_STACK_T` = 4 giây người
+  chơi); hết giờ là rơi sạch cả chồng chứ không rơi từng lớp.
+- Cả hai đều là **hiệu ứng làm chậm** nên Emergency Door của Doraemon xoá được, và Time
+  Machine cũng xoá khi anh tua ngược.
+
+> **Chỗ tự quyết:** bản yêu cầu không nêu **thời lượng** của chồng lớp Masenko, chỉ nêu mức
+> cộng dồn. Tôi lấy **4 giây người chơi**, đúng bằng quãng ghì chân của Kamehameha, và trần
+> **5 lớp** đúng bằng số đợt của một lượt Masenko (đủ 5 đợt = −50% tốc chạy / −35% tốc ra
+> chiêu). Muốn khác thì sửa `MASENKO_STACK_T` / `MASENKO_STACK_MAX`.
+
 ### Ozora Tsubasa (`tsubasa`)
 - Chiêu 1 Basic Shot 25 (10% ra Overhead Kick 40 + choáng), chiêu 2 Drive Shot 80 + cháy 5×3.
 - **5 goal** (`GOAL_MAX = 5`) mở Victory Twin Shot 150 + choáng.
@@ -1514,6 +1542,8 @@ Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 node tools/t_reg.js     # 36 cặp đấu, chạy theo đợt, bắt lỗi trang, xem cơ chế lớn có nổ không
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
+node tools/t_chichi.js  # viện binh của ChiChi: Kamehameha 400 dmg + choáng 2s rồi ghì chân 4s
+                        # (hết choáng mới tới), Masenko 100 dmg mỗi đợt + chồng lớp −10%/−7%
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
