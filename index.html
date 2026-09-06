@@ -487,11 +487,10 @@ const DORA={
      Mốc pha tính bằng giây trong trận, cộng dồn: cửa hiện · cửa mở · bước ra · cửa đóng. */
   doorT:gs(1.5), doorPh:[gs(.35),gs(.75),gs(1.2),gs(1.5)],
   /* Nội tại 1 — Take-copter */
-  /* Điều kiện đã NỚI HẲN theo yêu cầu: trước là địch phải xa hơn 55% chiều dài sàn VÀ
-     suốt 2.5 giây người chơi không đánh trúng ai — hai cửa đó chặn nhau nên cả trận anh
-     hiếm khi bay được lượt nào. */
-  copFar:.35,                // địch xa hơn 35% chiều dài sàn
-  copIdle:gs(1.2),           // và bấy nhiêu giây người chơi không đánh trúng ai
+  /* Điều kiện đã nới theo yêu cầu, rồi siết lại một nấc: gốc là 55% sàn / 2.5 giây, nới
+     hẳn xuống 35% / 1.2 giây, giờ chốt ở 40% / 2 giây. */
+  copFar:.40,                // địch xa hơn 40% chiều dài sàn
+  copIdle:gs(2),             // và bấy nhiêu giây người chơi không đánh trúng ai
   copT:gs(4), copCd:gs(15),
   copMove:2.50,              // +150% tốc chạy
   copSlowRes:.40,            // hiệu ứng làm chậm chỉ còn 60% hiệu lực

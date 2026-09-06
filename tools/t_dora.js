@@ -369,9 +369,9 @@ async function waitGame(page, body, limit) {
       Math.abs((1 - cop.chamBay / cop.mul) / (1 - cop.cham) - (1 - cop.res)) < .02,
       `chậm ${Math.round((1 - cop.cham) * 100)}% dưới đất, còn ${Math.round((1 - cop.chamBay / cop.mul) * 100)}% khi bay`);
 
-    /* Điều kiện cất cánh đã nới: địch chỉ cần xa hơn 35% chiều dài sàn và 1.2 giây người
-       chơi không đánh trúng ai. Đo bằng cách đẩy anh vào đúng quãng ở GIỮA mốc cũ và mốc
-       mới — mốc cũ thì không bay nổi, mốc mới thì phải bay. */
+    /* Điều kiện cất cánh: địch xa hơn 40% chiều dài sàn và 2 giây người chơi không đánh
+       trúng ai. Đo bằng cách đẩy anh vào đúng quãng ở GIỮA mốc gốc (55%) và mốc mới —
+       mốc gốc thì không bay nổi, mốc mới thì phải bay — rồi thử cả hai phía của mốc. */
     const gate = await page.evaluate(() => {
       const G = window.__G(), D = window.__DORA, WH = window.__WH();
       const f = G.fighters.find(x => x.key === 'dora'), e = G.fighters.find(x => x !== f);
@@ -386,17 +386,19 @@ async function waitGame(page, body, limit) {
         return bay;
       };
       return {
-        giua: thu(.45, D.copIdle + .01),      // xa 45% sàn: mốc cũ 55% thì trượt, mốc mới 35% thì ăn
-        choNgan: thu(.45, window.__gs(1)),     // mới chờ 1 giây người chơi: dưới mốc mới, chưa được bay
+        giua: thu(.45, D.copIdle + .01),      // xa 45% sàn: mốc gốc 55% thì trượt, mốc mới 40% thì ăn
+        choNgan: thu(.45, window.__gs(1.5)),   // mới chờ 1.5 giây người chơi: dưới mốc 2 giây
+        sat: thu(.38, D.copIdle + .01),        // 38% sàn: ngay dưới mốc, không được bay
         gan: thu(.20, D.copIdle + .01),        // đứng sát quá thì vẫn không bay
         far: D.copFar, idle: +(D.copIdle * window.__RT).toFixed(2), RT: window.__RT
       };
     });
-    ok('điều kiện cất cánh đã nới: xa 45% sàn và 1.2 giây không đánh trúng là bay được',
-      gate.giua === true && gate.far === .35 && Math.abs(gate.idle - 1.2) < .01,
+    ok('điều kiện cất cánh: xa 45% sàn và 2 giây không đánh trúng là bay được',
+      gate.giua === true && gate.far === .40 && Math.abs(gate.idle - 2) < .01,
       `mốc xa ${Math.round(gate.far * 100)}% sàn · chờ ${gate.idle}s người chơi`);
-    ok('nới rồi vẫn còn đủ hai cửa: đứng sát hoặc vừa đánh trúng thì không bay',
-      gate.gan === false && gate.choNgan === false);
+    ok('vẫn còn đủ hai cửa: dưới mốc xa hoặc chưa chờ đủ thì không bay',
+      gate.sat === false && gate.gan === false && gate.choNgan === false,
+      '38% sàn / 20% sàn / mới chờ 1.5s đều không cất cánh');
 
     /* Bay tới đâu nã một phát Air Cannon tới đó — ĐÚNG MỘT phát mỗi lượt bay, sát thương
        còn 70% và độ chính xác trừ thẳng 20 điểm. Chạy tay từng bước cho khỏi phụ thuộc
