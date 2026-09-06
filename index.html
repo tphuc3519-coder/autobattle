@@ -1994,6 +1994,11 @@ function tryEvade(t,kind){
    sau cú đánh thì phải xem giá trị này, nếu không né xong vẫn dính phần đuôi. */
 /* raw=true: chỗ gọi đã tự nhân hệ số sát thương của mình rồi (mấy chiêu do chính
    Captain Ginyu viết ra dùng gnDmg()), nên đừng nhân src.dmgOut lần nữa. */
+/* Đang KHÔNG thật sự đứng trên sàn thì không đòn nào chạm tới được: chui Emergency Door,
+   nấp trong màn ra mắt (Anywhere Door / bóng người trên cao), đang trong phân cảnh Time
+   Machine, hay đang mang lớp miễn thương. hurt() có sẵn từng lớp chặn này; gom lại một
+   hàm để mấy chỗ KHÔNG đi qua hurt() — như tia CHANGE của Ginyu — dùng chung, khỏi lệch. */
+const offField=f=>!!f&&(f.edT>0||f.drHide||f.supHide||!!f.tm||!!f.gnChange||f.invuln>0||f.leaving>0);
 function hurt(t,amt,src,crit,kind,tint,raw){
   if(!t.alive||G.over)return false;
   if(t.leaving>0)return false;              // Ayanokouji đang rời sàn: không ăn đòn nữa
@@ -5659,8 +5664,24 @@ function step(dt){
       // tia CHANGE: chạm ai trước thì nhập luôn vào người đó, kể cả không phải mục tiêu
       // tia CHANGE xuyên qua đồng minh / viện binh, chỉ bám vào đấu thủ chính
       if(p.type==='change'){
-        if(!f.summon&&hitsBody(p,f)){ p.done=true; ginyuPossess(p.owner,f); dead=true; break; }
-        continue;
+        if(f.summon||!hitsBody(p,f)||offField(f)) continue;
+        /* Tia này đã hụt anh một lần rồi thì thôi. Không nhớ thì có cảnh dở khóc dở
+           cười: anh chui cửa né được, mà drSafeSpot() lại đáp đúng vào đường bay, tia
+           đi thẳng tới đó tóm lại lần hai — lúc đó cửa đang hồi chiêu nên né kiểu gì
+           cũng dính. Đo được đúng cảnh đó: né xong vẫn 200/200 lần bị nhập. */
+        if(p.skip&&p.skip.indexOf(f)>=0) continue;
+        /* Cửa thần kỳ né được MỌI đòn, kể cả cú cướp xác. drTryEscape() vốn nằm trong
+           hurt(), mà tia này không đi qua hurt() nên phải gọi thẳng ở đây — thiếu dòng
+           này thì đo được 200/200 lần Doraemon bị nhập, không né nổi lần nào.
+           Né được thì tia bay tiếp qua chỗ anh vừa đứng và MẤT LUÔN khả năng dò tìm,
+           không thì nó vòng lại tóm anh ngay sau khi ra khỏi cửa và cú né thành vô nghĩa. */
+        if(drTryEscape(f)){
+          (p.skip||(p.skip=[])).push(f);
+          p.homing=false; p.tgt=null; p.noHome=true;
+          say('Doraemon chui qua Anywhere Door — tia CHANGE xuyên qua chỗ anh vừa đứng.','m');
+          continue;
+        }
+        p.done=true; ginyuPossess(p.owner,f); dead=true; break;
       }
       if(p.type==='gbeam'&&hitsBody(p,f)){ gnBeamHit(p,f); dead=true; break; }
       // luồng khí nén xuyên được tối đa hai người rồi mới tan

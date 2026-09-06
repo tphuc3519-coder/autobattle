@@ -536,6 +536,23 @@ thân xác Ginyu do địch điều khiển (`swapAs==='foe'`) thì chết là c
   Bốc trúng thì tia bám theo địch (`homing`), bốc trượt thì lệch hẳn `0.4~1.0 rad`.
 - **Ba người trở lên**: `gnChangeTarget()` chọn người **máu cao nhất**; nhưng va chạm đọc
   trong vòng duyệt đạn nên **chạm ai trước thì nhập luôn vào người đó**.
+> **Ba lớp chặn của nhánh va chạm tia CHANGE** — viết riêng vì tia này **không đi qua
+> `hurt()`**, nên mọi lớp chặn có sẵn trong `hurt()` đều không tự động áp vào:
+> 1. **`offField(f)`** — đang chui Emergency Door, còn nấp trong màn ra mắt (Anywhere Door
+>    hay bóng người trên cao của Superman), đang trong phân cảnh Time Machine, hay đang mang
+>    lớp miễn thương thì tia **xuyên qua chỗ trống**. Thiếu lớp này thì cướp được xác một
+>    người đang không hề đứng trên sàn.
+> 2. **`drTryEscape(f)`** — cửa thần kỳ của Doraemon né được **mọi đòn**, kể cả cú cướp xác.
+>    Người dùng chốt riêng chỗ này.
+> 3. **`p.skip`** — tia phải NHỚ là nó đã hụt ai rồi. Thiếu chỗ này thì có cảnh dở khóc dở
+>    cười: anh chui cửa né được, mà `drSafeSpot()` lại đáp đúng vào đường bay, tia đi thẳng
+>    tới đó **tóm lại lần hai** — lúc đó cửa đang hồi chiêu nên né kiểu gì cũng dính. Đo được
+>    đúng cảnh đó: sửa xong lớp 2 mà vẫn **200/200 lần bị nhập**, phải có thêm lớp 3 mới ra
+>    64.5%. Né được thì tia mất luôn khả năng dò tìm và bay tiếp qua chỗ anh vừa đứng.
+>
+> `t_dora.js` (trận 4, dora vs ginyu) chấm cả ba lớp: tỉ lệ né bám mốc 60%, cửa đang hồi
+> chiêu thì 0/30 né được, đang ở TRONG cửa thì 30/30 thoát.
+
 - **Chỉ nhập được vào đấu thủ chính.** Tia CHANGE **xuyên thẳng qua** đồng minh và viện
   binh (`f.summon`) chứ không bám vào họ: Ayanokouji hay Goku vốn là khách trên sàn, hết
   giờ là đi — cướp xác họ thì chẳng còn gì để cướp. Chỗ chặn nằm ở cả `gnChangeTarget()`
@@ -702,6 +719,12 @@ không trúng và **không gây một điểm sát thương nào**.
   địch nhất và không bao giờ nhảy sang chỗ còn đông hơn**. Điểm luôn clamp vào trong sàn.
 - Hồi chiêu **6 giây** (`DORA.edCd`). *(Trước là 8; người dùng bảo "giảm thời gian cooldown
   cửa thần kì của Doraemon".)*
+- **Né được cả tia CHANGE cướp xác của Ginyu.** Người dùng chốt: *"Doraemon cần phải né
+  được"*. Chỗ này phải viết riêng vì **tia CHANGE không đi qua `hurt()`** — nó gọi thẳng
+  `ginyuPossess()` từ vòng va chạm, mà `drTryEscape()` thì nằm trong `hurt()`. Đo bản cũ:
+  **200/200 lần bị nhập, không né nổi lần nào.** Giờ nhánh `change` gọi thẳng
+  `drTryEscape()`; đo lại **64.5% né được**, bám đúng mốc `edOdds = 60%`. Xem ba lớp chặn
+  ở mục CHANGE!!! của Captain Ginyu.
 
 **Chiêu 1 — Basic Attack.** Combo **ba đòn**, mỗi đòn cách nhau **0.6 giây người chơi**:
 đấm 15 → đá 15 → **lao bụng / húc đầu 20**, đòn ba **đẩy lùi mạnh hơn đòn thường của Ginyu
@@ -1454,6 +1477,7 @@ node tools/t_ginyu.js   # Captain Ginyu: bay vào sân đúng 1.5s và địch b
                         # đứng nguyên chỗ ngã, đổi hồn giữ nguyên thân xác (thân A chữ B),
                         # bắn trượt thì 1 máu + hoảng loạn, luật ba người thì luôn thăm dò
 node tools/t_dora.js    # Doraemon: Anywhere Door đúng 1.5s bốn pha và địch chỉ đứng chờ,
+                        # cửa thần kỳ né được cả tia CHANGE cướp xác của Ginyu (trận 4),
                         # combo 15/15/20 cách nhau 0.6s, Air Cannon (ba dải chính xác, đẩy
                         # 22% sàn, xuyên hai người, đứt trong 0.35s đầu), Small Light (model
                         # 55% mà hitbox 85%, không cộng dồn, phình lại đúng 0.4s), Emergency
