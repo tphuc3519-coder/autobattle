@@ -441,7 +441,7 @@ const GN={
   atk:{t:gs(8),  dmg:1.50, take:1.50, cc:1.40, cast:1.50, move:1.60},
   def:{t:gs(10), take:.40,  ccRes:.40, dmg:.60,  cast:.60},
   /* Chiêu 1 — đấm/đá, nhanh hơn ChiChi (cm(.25)) một nhịp và nặng đòn hơn hẳn */
-  atkCd:.22, hitDmg:25, hitStun:gs(.75), hitStunOdds:.25,
+  atkCd:.22, hitDmg:22, hitStun:gs(.75), hitStunOdds:.25,
   /* Chiêu 2 — Ginyu Beam: sáu luồng khí tím bắn từa lưa. Bay rất nhanh, ra dồn dập, và
      lệch sẵn một góc ngay cả lúc sát mặt (beamSpreadNear) rồi toác hẳn ra khi đứng xa. */
   beamCd:gs(10), beamN:6, beamDmg:18, beamSpd:560, beamGap:.11,
@@ -495,7 +495,7 @@ const DORA={
   copDodge:.20,              // né đạn tốt hơn 20%
   copHover:9,                // bay là là, không bao giờ rời sàn
   /* Nội tại 2 — Emergency Door */
-  edOdds:.60, edCd:gs(8), edDist:.30, edT:gs(.45),
+  edOdds:.60, edCd:gs(6), edDist:.30, edT:gs(.45),
   edSpeed:1.40, edSpeedT:gs(2),
   /* Chiêu 1 — Basic Attack: combo ba đòn, đòn ba đẩy lùi và choáng */
   hit:[15,15,20], hitGap:gs(.6), hitCd:cm(.5),
@@ -8023,7 +8023,13 @@ function versusBox(){
    băng-rôn cỡ đầy đủ còn 74%, mấy dòng phụ vốn đã nhỏ sẵn (có sc, không big) chỉ bớt
    nhẹ 15% cho khỏi mờ tịt. Chiêu "focus" — ultimate, biến thân, phân cảnh — gắn cờ
    focus:true và giữ nguyên cỡ chữ to. Số sát thương và bong bóng thoại không đụng tới. */
-const NAME_FULL=.74, NAME_SMALL=.85;
+const NAME_FULL=.62, NAME_SMALL=.74;
+/* Cỡ bong bóng thoại. Khai gom vào đây vì mấy con số này dùng ở HAI chỗ trong
+   drawFloat(): lượt đo khối chữ để kéo vào trong sàn, và lượt vẽ thật. Để rời ra thì
+   sửa một chỗ quên chỗ kia là khung lệch hẳn khỏi chữ. */
+const CHAT_BIG={f:21,lh:24,bh:36,pad:27}, CHAT_SM={f:14,lh:17,bh:27,pad:20};
+const chatBox=f=>f.big?CHAT_BIG:CHAT_SM;
+const chatFontOf=f=>`${f.big?900:800} ${chatBox(f).f}px "Be Vietnam Pro",sans-serif`;
 function floatScale(f){
   if(f.focus) return f.sc||1;
   return (f.sc||1)*((f.sc&&f.sc<1&&!f.big)?NAME_SMALL:NAME_FULL);
@@ -8042,8 +8048,9 @@ function drawFloat(f){
   const lns=String(f.txt).split('\n');
   let bw=0, bh;
   if(f.banner&&f.bubble&&!f.gold){
-    ctx.font=(f.big?'900 23px':'800 16px')+' "Be Vietnam Pro",sans-serif';
-    bh=(f.big?40:30)+(lns.length-1)*(f.big?26:19);
+    const C=chatBox(f);
+    ctx.font=chatFontOf(f);
+    bh=C.bh+(lns.length-1)*C.lh;
   }else if(f.banner){
     const px=(f.big?27:21)*floatScale(f);
     ctx.font=`900 ${Math.round(px)}px "Be Vietnam Pro",sans-serif`;
@@ -8058,7 +8065,7 @@ function drawFloat(f){
     bh=px+10;
   }
   for(const L of lns) bw=Math.max(bw,ctx.measureText(L).width);
-  bw=(bw+((f.banner&&f.bubble&&!f.gold)?(f.big?30:22):16))*s;
+  bw=(bw+((f.banner&&f.bubble&&!f.gold)?chatBox(f).pad:16))*s;
   bh*=s;
   /* Kéo vào KHUNG ĐANG NHÌN THẤY chứ không phải cả sàn: lúc phân cảnh camera zoom vào
      thì cửa sổ nhìn chỉ còn W/z × H/z quanh tâm camera, một chỗ nằm trong sàn vẫn có
@@ -8071,11 +8078,12 @@ function drawFloat(f){
   ctx.translate(fx,fy); ctx.scale(s,s);
   if(f.banner&&f.bubble&&!f.gold){
     ctx.rotate((f.tilt||0)+Math.sin(age*16)*.03);
-    ctx.font=(f.big?'900 23px':'800 16px')+' "Be Vietnam Pro",sans-serif';
+    const C=chatBox(f);
+    ctx.font=chatFontOf(f);
     // câu dài đã bẻ sẵn bằng \n thì khung cao theo số dòng, không để chữ tràn ra khỏi sàn
-    const ls=String(f.txt).split('\n'), lh=(f.big?26:19);
+    const ls=String(f.txt).split('\n'), lh=C.lh;
     let tw=0; for(const L of ls) tw=Math.max(tw,ctx.measureText(L).width);
-    const bw=tw+(f.big?30:22), bh=(f.big?40:30)+(ls.length-1)*lh;
+    const bw=tw+C.pad, bh=C.bh+(ls.length-1)*lh;
     const box=()=>{ ctx.beginPath();
       if(ctx.roundRect)ctx.roundRect(-bw/2,-bh/2-5,bw,bh,10); else ctx.rect(-bw/2,-bh/2-5,bw,bh); };
     const tail=()=>{ ctx.beginPath(); ctx.moveTo(-7,bh/2-5); ctx.lineTo(2,bh/2+7); ctx.lineTo(7,bh/2-5); ctx.closePath(); };
@@ -8090,7 +8098,7 @@ function drawFloat(f){
       box(); ctx.fill(); ctx.stroke(); tail(); ctx.fill(); ctx.stroke();
     }
     ctx.fillStyle=f.color;
-    const y0=(f.big?7:5)-(ls.length-1)*lh/2;
+    const y0=(f.big?6:4)-(ls.length-1)*lh/2;
     ls.forEach((L,i)=>ctx.fillText(L,0,y0+i*lh));
   }else if(f.banner){
     ctx.rotate((f.tilt||0)+Math.sin(age*22)*.04);

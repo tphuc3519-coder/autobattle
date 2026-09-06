@@ -478,8 +478,10 @@ lỗi cũ quay lại.
 > `GN.auraCd = gs(20)`, cơ chế không phải đụng tới.)*
 
 **Bốn chiêu:**
-- **1 · Basic** — đấm hoặc đá, `GN.hitDmg = 25`, hồi chiêu `cm(GN.atkCd)` = `cm(.22)`, tức
+- **1 · Basic** — đấm hoặc đá, `GN.hitDmg = 22`, hồi chiêu `cm(GN.atkCd)` = `cm(.22)`, tức
   nhanh hơn ChiChi (`cm(.25)`) một nhịp. 25% kèm choáng `gs(.75)`.
+  *(Đường đi của con số: 35 → 25 → **22**, người dùng hạ dần. Lần cuối: "nerf Ginyu 1 tí
+  dmg đánh tay đi — 1 chút thôi", nên chỉ bớt 3.)*
 - **2 · Ginyu's Beam** — mỗi `gs(10)` bắn **6 luồng khí tím**, mỗi luồng **18 dmg**, **15%
   choáng `gs(1.5)`** (`beamStunOdds` — không còn choáng chắc chắn như bản đầu) và **hất lùi 340** (Twin Shot của Tsubasa mới 260 — người dùng muốn đẩy xa hơn).
   Bay `560` và ra dồn dập (`beamGap .11`) — **bắn từa lưa chứ không ngắm**: độ lệch
@@ -685,7 +687,8 @@ không trúng và **không gây một điểm sát thương nào**.
   hết điểm nằm trong model người khác, chấm theo `khoảng cách tới địch gần nhất − 140 × số
   địch đứng trong 190px`. Nhờ phần trừ đó, **có ba người trở lên thì anh thoát khỏi chỗ đông
   địch nhất và không bao giờ nhảy sang chỗ còn đông hơn**. Điểm luôn clamp vào trong sàn.
-- Hồi chiêu 8 giây.
+- Hồi chiêu **6 giây** (`DORA.edCd`). *(Trước là 8; người dùng bảo "giảm thời gian cooldown
+  cửa thần kì của Doraemon".)*
 
 **Chiêu 1 — Basic Attack.** Combo **ba đòn**, mỗi đòn cách nhau **0.6 giây người chơi**:
 đấm 15 → đá 15 → **lao bụng / húc đầu 20**, đòn ba **đẩy lùi mạnh hơn đòn thường của Ginyu
@@ -1249,13 +1252,26 @@ quá". `drawFloat()` vì vậy nhân thêm một hệ số qua `floatScale(f)`:
 | Loại | Hệ số | Ví dụ |
 |---|---|---|
 | có cờ `focus:true` | **1** (giữ nguyên cỡ to) | `RASENGAN!`, `PRE-WINGS OF THE EAGLE` |
-| băng-rôn cỡ đầy đủ (`big`, hoặc không có `sc`) | `NAME_FULL = .74` | `FLYING KICK!`, `SHADOW STAB!`, `CRITICAL HIT!`, `EXHAUSTED …` |
-| dòng phụ vốn đã nhỏ sẵn (`sc` < 1, không `big`) | `NAME_SMALL = .85` | `DODGE`, `BLOCKED`, `GOAL 3/5` |
+| băng-rôn cỡ đầy đủ (`big`, hoặc không có `sc`) | `NAME_FULL = .62` | `FLYING KICK!`, `SHADOW STAB!`, `CRITICAL HIT!`, `EXHAUSTED …` |
+| dòng phụ vốn đã nhỏ sẵn (`sc` < 1, không `big`) | `NAME_SMALL = .74` | `DODGE`, `BLOCKED`, `GOAL 3/5` |
+
+> **Đã hạ hai lần.** Lần đầu `.74 / .85`, người dùng xem rồi bảo *"giảm cỡ chữ hiệu ứng
+> thêm nữa"* nên hạ tiếp xuống **`.62 / .74`** (nhỏ thêm chừng 15%). Muốn hạ nữa thì sửa
+> đúng hai hằng này, đừng đụng vào cỡ gốc 27/21 px — cỡ gốc còn dùng cho phép đo khối chữ.
 
 - Hệ số ăn vào **cả bề dày viền** (`lineWidth`), không thì chữ nhỏ mà viền vẫn dày, nhìn
   bết lại thành một cục.
-- **Số sát thương và bong bóng thoại không đụng tới** — người dùng chỉ chê tên chiêu / tên
-  hiệu ứng; chữ nói mà nhỏ đi thì đọc không kịp.
+- **Số sát thương không đụng tới** (34 px cho `big`, 22 px cho dòng thường) — chỗ đó người
+  dùng chưa bao giờ chê.
+- **Bong bóng thoại có hạ, nhưng chỉ một nấc nhẹ** (người dùng: *"cỡ chữ bubble chat cũng
+  giảm 1 tí luôn"*): `CHAT_BIG` 23→**21** px, `CHAT_SM` 16→**14** px. Chữ nói mà nhỏ quá thì
+  đọc không kịp, nên đừng hạ sâu như tên chiêu.
+
+> **Cỡ bong bóng gom vào `CHAT_BIG` / `CHAT_SM`.** Mấy con số này (cỡ chữ, chiều cao dòng,
+> chiều cao khung, đệm ngang) dùng ở **HAI chỗ** trong `drawFloat()`: lượt **đo khối chữ** để
+> kéo bong bóng vào trong sàn, và lượt **vẽ thật**. Trước đây chúng chép tay ở cả hai nơi —
+> sửa một chỗ quên chỗ kia là khung lệch hẳn khỏi chữ. Giờ đọc qua `chatBox(f)` và
+> `chatFontOf(f)`, muốn đổi cỡ thì sửa đúng một chỗ.
 - **Băng-rôn giữa màn** (`G.callBanner`: NARA CLAN FOREST, TWIN SHOT!!, WINGS OF THE EAGLE,
   GOKU!!, AYANOKOUJI…) đi đường riêng `drawCallBanner()`, **không** qua `floatScale()` —
   đó vốn là mấy cú focus nên phải to.

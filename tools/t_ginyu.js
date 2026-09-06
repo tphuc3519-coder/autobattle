@@ -283,7 +283,10 @@ async function waitGame(page, fnBody, limit) {
       const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f !== g);
       g.gnState = null; g.gnStateT = 0; g.gnSelfCut = 1; g.gnCcCut = 1;
       window.__gnStatus(g, 0);
+      /* Dọn sạch mọi thứ chặn choáng. ChiChi cứ 5 giây lại lao một cú Flying Kick, mà
+         lúc đang lao thì stunFx() trả về CC IMMUNE — rơi trúng nhịp đó là đo ra 0. */
       e.stun = 0; e.evade = 0; e.dmgRes = 0; e.ccRes = 0; e.prewing = false; e.eagle = false;
+      e.dash = null; e.invuln = 0; e.vuln = 0; e.gnCcRes = 0; e.drCcRes = 0; e.ccTake = 1;
       e.hp = e.maxHp; e.gnSlowAfter = 0;
       window.__gnStatus(e, 0);
       window.__gnFlashHit(g, e);
