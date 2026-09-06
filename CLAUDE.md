@@ -23,14 +23,15 @@ File dài ~7500 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên --
 | `Horikita Suzune` (khối hằng) | cả cụm `SUZ`, `SUZ_BUBBLE` |
 | `Captain Ginyu` (khối hằng) | cả cụm `GN`, `GN_PROJ_BODY`, `GN_SHOUT`, `GN_CHANGE_LINE` |
 | `Doraemon` (khối hằng) | cả cụm `DORA`, `DORA_HI`, `DORA_HI_LIFE` |
+| `Superman` (khối hằng) | cả cụm `SUP` |
 | `Shikamaru` (khối hằng) | `gs()`, cả cụm `SHIKA`, các hằng tuổi thọ hình (`GRUMBLE_LIFE`…) |
-| *(kế đó)* | `CHARS` — `init` / `think` / `gauge` / mảng `skills` của bảy nhân vật |
+| *(kế đó)* | `CHARS` — `init` / `think` / `gauge` / mảng `skills` của tám nhân vật |
 | *(kế đó)* | `Store` — IndexedDB, khoá `spr_*` / `sfx_*`, nạp và xoá ảnh |
 | `âm thanh` | `SFX_EVENTS`, `synth()`, `SFX_FULL/MAXLEN/SEG/POS/ACTIVE`, `sfx()`, `playBuffer()` |
 | `nhạc nền` | nhạc nền tự sinh, `THEMES` / `setTheme()` — đổi sang theme du hành thời gian |
 | `state` | `mk()`, `mkChar()`, `foeOf()`, `newGame()`, `later()`, `pop()`, `setPose()` |
 | `damage` | `stunFx()`, `tryEvade()`, **`hurt()`**, `counters()`, `finish()` |
-| `Konohamaru` / `ChiChi` / `Shikamaru` / `Ozora Tsubasa` / `Horikita Suzune` / `Captain Ginyu` / `Doraemon` | thân các chiêu thức |
+| `Konohamaru` / `ChiChi` / `Shikamaru` / `Ozora Tsubasa` / `Horikita Suzune` / `Captain Ginyu` / `Doraemon` / `Superman` | thân các chiêu thức |
 | `AI` | `MELEE_MIN/MAX/BAND/GAP`, `orbWant()`, `aiVec()`, `dodgeVec()`, `playerVec()` |
 | `step` | một hàm to — toàn bộ mô phỏng một bước 1/120 giây |
 | `draw` | `vector()`, `sprite()`, `drawFighter()`, `drawGarden()`, `drawForestGrip()`, `bombAt()`, `tendril()`, phân cảnh, băng-rôn |
@@ -74,9 +75,9 @@ while (acc >= 1/120) { step(1/120); acc -= 1/120; }
 
 ---
 
-## 2. Bảy nhân vật và những con số đã chốt
+## 2. Tám nhân vật và những con số đã chốt
 
-Cả bảy đều **1000 máu** (`HP`). Bảng `CHARS` là nơi khai tất cả: mỗi nhân vật có
+Bảy người đầu **1000 máu**, riêng **Superman 800 máu** (`HP`). Bảng `CHARS` là nơi khai tất cả: mỗi nhân vật có
 `init(f)`, `think(f,e,d,auto)`, `gauge(f)` và mảng `skills` (chuỗi HTML hiển thị trong
 màn chọn nhân vật — nhớ cập nhật khi đổi số).
 
@@ -736,6 +737,212 @@ Horikita và Ginyu — đừng dựng ô mới.
 Nút thử tay: `#testDoraShrink`, `#testDoraDoor`, `#testDoraTime`.
 Kiểm bằng `node tools/t_dora.js`.
 
+### Superman (`superman`)
+Toàn bộ trong hằng `SUP`, khai theo lối của Shikamaru / Horikita / Ginyu / Doraemon (giây
+người chơi bọc `gs()`). Fighter kiểu **Bruiser – Vanguard – Crowd Control**: đấm nặng, đuổi
+được bằng cách bay, lì đòn, và mang cả một bộ khống chế. Đổi lại **chiêu nào cũng có quãng
+chuẩn bị nhìn thấy rõ** để đối phương kịp né hoặc ngắt.
+
+> **Mọi chữ hiện ra trong game của nhân vật này là tiếng Anh** — tên nhân vật, tên chiêu, tên
+> buff, tên debuff, băng-rôn, dòng dưới thanh máu. Nhật ký vẫn tiếng Việt như mấy người kia.
+> `t_superman.js` quét cả mảng `skills` để chắc không lẫn một chữ có dấu nào, và soi đủ mười
+> bốn cái tên người dùng liệt kê.
+
+> **Anh là người DUY NHẤT không có 1000 máu: `HP.superman = 800`.** Cả bộ chiêu cân theo đúng
+> con số đó — đòn mạnh nhất 175 (195 khi địch đang Frozen), tức 21.875% thanh máu. **Không
+> chiêu nào được phép chạm mốc 200 trong một lần dùng**, và **không có chí mạng ngẫu nhiên**
+> (nhãn `METEOR STRIKE!` truyền vào `hurt()` chỉ là băng-rôn tên chiêu, đúng lối `RASENGAN!`
+> / `AIR CANNON!` — nó không nhân sát thương).
+
+> **Model phải giữ đúng hình tượng quen thuộc**: đồ xanh, biểu tượng chữ **S** đỏ trên nền
+> vàng giữa ngực, áo choàng đỏ, giày đỏ, tóc đen kèm lọn xoăn trước trán. Chữ **S** vẽ bằng
+> **nét bezier chứ không dùng font** (font headless hay thiếu ký tự). Áo choàng vẽ **đầu tiên**
+> nên luôn nằm sau lưng và chỉ trải về phía sau — lúc đánh nhau nó phất theo tốc chạy, lúc bay
+> hoặc lao xuống thì trải dài hẳn ra, nhưng **không bao giờ che mất thân người**.
+> Không có **teleport** ở bất cứ đâu: muốn đi nhanh thì phải bay hoặc lao qua quãng đó.
+
+**Màn xuất hiện — đừng bỏ.** Bấm *Bắt đầu* thì anh **chưa có mặt trên sàn**: `init()` gọi
+`supermanEnter(f)` đẩy anh lên cao (`supAir = SUP.entH`) và bật `supHide`. Bốn pha, mốc nằm
+trong `SUP.entPh`, tổng đúng **1.5 giây người chơi** để ghép tiếng:
+
+| Quãng | Có gì |
+|---|---|
+| 0 → 0.4s | chỉ là một **bóng người** trên cao, áo choàng bay trong gió (`drawSupEntry()`, `supHide` bật nên `drawFighter` bỏ qua anh) |
+| 0.4 → 1s | hiện rõ model, hạ độ cao bay xuống sân, để lại vệt bóng mờ |
+| 1 → 1.3s | tiếp đất bằng một chân, **một vòng bụi nhỏ** |
+| 1.3 → 1.5s | đứng thẳng, nắm hai tay, quay mặt về phía đối thủ |
+
+Suốt cả 1.5 giây, `supEntryTick()` đặt `lock` cho mọi đối thủ mỗi nhịp — họ đứng chờ, không
+di chuyển cũng không đánh. **Cú tiếp đất KHÔNG gây sát thương và KHÔNG choáng ai**: chỉ có
+`ring()` với mấy hạt bụi, không nổ. Test đo thẳng máu và `stun` của địch trong suốt màn này.
+
+**Chỉ số nền:** máu 800 · tốc chạy 108 (nhanh hơn trung bình cả bảng ~10%) · tốc ra đòn ở mức
+trung bình · cận chiến · lì đòn và chống đẩy lùi tốt · **không hồi máu tự động**, **không chí
+mạng**.
+
+**Nội tại 1 — Man of Steel.** `supResist(f)` là cửa duy nhất tính hệ số sát thương phải chịu;
+`hurt()` gọi nó thay cho nhánh `t.dmgRes` chung.
+- Giảm **20%** sát thương từ đòn vật lý, vũ khí và đạn năng lượng. 100 raw ⇒ mất đúng 80.
+- **`kind === 'dot'` và `kind === 'domain'` ăn đủ 100%** — đó là burn / poison / true damage /
+  sát thương theo phần trăm máu, da thép không chắn được.
+- **Không cộng dồn với chính nó, và trần tổng là 60%** (`steelCap`): buff giảm sát thương của
+  người khác (`f.dmgRes`) được **cộng vào rồi mới chặn trần**, nên dù có buff giảm 90% thì
+  anh vẫn mất 40 trên 100.
+- Giảm **35%** lực đẩy (`supKbTake()`, `knock()` nhân vào), bay thì thêm 50%, gồng Resolve thì
+  thêm 25% — **nhân dồn** chứ không cộng, để không bao giờ chạm mốc miễn nhiễm.
+- Giảm **15%** thời gian choáng do va chạm vật lý (`stunFx`, trừ `kind === 'ice'`).
+- **Đòn dưới 25 dmg không làm anh ngã người ra**: `hurt()` bỏ qua `setPose(t,'hurt')` và gần
+  như không giật lùi — vẫn mất máu, vẫn chớp sáng.
+- **Không miễn nhiễm hoàn toàn với bất cứ dạng khống chế nào**: choáng vẫn dính, dải bóng của
+  Shikamaru vẫn trói được (trừ lúc đang bay), CHANGE của Ginyu vẫn cướp được xác anh, Time
+  Machine vẫn chạy.
+
+**Nội tại 2 — Kryptonian Flight.** Đây là **hành vi di chuyển**, không phải chiêu, và không
+gây một điểm sát thương nào.
+- Điều kiện: địch xa hơn **50% chiều dài sàn** VÀ suốt **2 giây người chơi** vẫn không tiếp
+  cận được (`f.supStuck`; nhích vào trong tầm một nhịp là bộ đếm về 0).
+- Bay tối đa **3 giây**: +75% tốc chạy, +50% kháng lực đẩy, **dải bóng của Shikamaru không
+  giữ nổi** (`bindTick()` có nhánh riêng, đúng kiểu Take-copter).
+- **Không đánh thường khi đang bay** (think bỏ qua combo), **Heat Vision dùng được nhưng trừ
+  15% độ chính xác**, **Freeze Breath thì tuyệt đối không**, và Meteor Strike **tự hạ xuống
+  trước** khi bay lên lấy đà.
+- Vào đủ tầm vung tay là **hạ cánh ngay**; hồi chiêu **8 giây tính TỪ LÚC TIẾP ĐẤT**
+  (`supFlyOff` mới nạp `supFlyCd`), không phải từ lúc cất cánh.
+- `aiVec()` có nhánh riêng `supFlyVec()`: lúc bay thì **nhắm thẳng vào địch**, không lượn
+  vòng — bay là để đuổi, không phải để chạy trốn câu giờ.
+
+**Nội tại 3 — Last Son's Resolve.** Lần **đầu tiên** máu tụt xuống dưới **25% (200 HP)**:
+- 8 giây: +30% tốc chạy, +25% tốc ra chiêu, **+10% giảm sát thương (tổng thành 30%)**,
+  +25% kháng lực đẩy, và **cắt thẳng 2 giây người chơi** khỏi phần hồi chiêu còn lại của Heat
+  Vision lẫn Freeze Breath. **Không tăng sát thương gây ra.**
+- Hết 8 giây là **Solar Fatigue** 4 giây: −20% tốc chạy, −15% tốc ra chiêu, Man of Steel về
+  lại 20%.
+- **Một lần mỗi trận**: cờ `f.lsrDone` bật lên và giữ luôn, nên được người khác hồi máu lên
+  trên 25% rồi tụt xuống lại cũng không gọi lần hai.
+
+**Chiêu 1 — Basic Attack.** Combo **ba đòn**, mỗi đòn cách nhau **0.55 giây người chơi**:
+đấm thẳng tay phải 34 → **xoay người** đấm tay trái 34 → uppercut 50. Tổng **118** =
+14.75% thanh máu 800. Xong combo chờ **0.8 giây** mới đánh tiếp.
+- Đòn ba đẩy lùi **12% chiều dài sàn** và choáng **0.55 giây** (đi qua trần khống chế).
+- Mỗi đòn **10%** cắt một chiêu **đang trong giai đoạn chuẩn bị** (`supInterrupt()`) — và chỉ
+  thế, **không kèm choáng** ngoài hiệu ứng của đòn ba.
+- Địch bị hất ra khỏi tầm thì combo bỏ dở và chỉ chờ **nửa** hồi chiêu. **Không có teleport
+  đuổi theo**: anh phải chạy hoặc bay lại chỗ họ.
+- Dáng `punch` / `punch2` / `upper` tách hẳn nhau. Riêng `punch2` là cú **xoay người** nên tay
+  dẫn vẽ **đè lên thân** và với dài hơn (26 thay vì 17) — không nới thì nắm đấm dừng ngay giữa
+  ngực, nhìn như chưa đánh gì.
+- **Đấm đá mượn thẳng `sfx('punch')` của ChiChi**, đúng lối đã chốt cho Horikita / Ginyu /
+  Doraemon — đừng dựng ô mới.
+
+**Chiêu 2 — Heat Vision.** Mỗi **8.5 giây**: đứng yên, hai mắt đỏ rực **0.65 giây**, rồi bắn
+**hai tia từ ĐÚNG hai con mắt** trong **1.2 giây**.
+- Chiều cao mắt đọc qua `supEyeY(f)` = 84% chiều cao model, **không phải trán, không phải
+  miệng**. `drawSupHeat()` vẽ hai tia tách nhau ở gốc rồi **chụm dần vào nhau** khi bay xa.
+- **4 nhịp × 22 = 88 dmg**; trúng đủ cả bốn nhịp lên **cùng một người** thì dính **Burning**
+  5 dmg/giây trong 4 giây (**tổng tối đa 108**). Burning **không cộng dồn** — lần sau chỉ làm
+  mới đồng hồ (`supBurn()` xoá dot cũ có cờ `sup` rồi mới đẩy dot mới vào).
+- Đang bị chiếu: **−25% tốc chạy**, **không choáng**, **không đẩy lùi**.
+- **Chỉ được chỉnh hướng trong 0.3 giây đầu** (`SUP.hvTrack`), sau đó `A.ang` **khoá cứng** —
+  địch bước sang bên là tia chiếu hụt, anh không được xoay theo.
+- Độ chính xác `SUP.hvAcc`: **90% gần · 70% trung bình · 55% xa nhất**, bay thì **−15%**. Bốc
+  trúng/trượt **ngay lúc bắt đầu bắn**; trượt thì tia lệch hẳn 0.20~0.42 rad và ở nguyên đó.
+- Bị đánh trong **0.4 giây đầu** của quãng gồng ⇒ đứt chiêu, chờ **50%** hồi chiêu. Tia đã bắn
+  ra rồi thì **đòn nhẹ không cắt được**, chỉ **choáng / knockdown** mới cắt.
+- Ba người trở lên: mỗi nhịp **chỉ một người** ăn đòn, và **ai đứng chắn giữa đường thì ăn
+  trước** — tia **không xuyên qua** họ (`supHvHit()` chọn người gần nhất nằm trong nón).
+
+**Chiêu 3 — Freeze Breath.** Mỗi **11.5 giây**: hít sâu **0.9 giây** rồi thổi một luồng hơi
+**hình NÓN** trắng xanh kèm tinh thể băng (`drawSupFreeze()`). **Không bao giờ vẽ thành một
+tia laser mảnh.**
+- Trúng **giữa nón** (lệch góc ≤ `fbCore`): **45 dmg** + **Frozen 2.2 giây**, hết Frozen thì
+  **Chilled 4 giây** (−50% tốc chạy, −25% tốc ra chiêu).
+- **Frozen**: không đi được, không ra chiêu được (`supStatus` đặt `lock` mỗi nhịp), **nhưng
+  vẫn ăn đòn bình thường**. **Ăn đủ 100 dmg là lớp băng vỡ ngay** (`supIceBreak()`): choáng
+  kết thúc và đổi thành **Chilled đúng phần thời gian băng còn lại**.
+- **Đã Frozen thì không đóng băng lại**: lần Freeze Breath sau chỉ gây dmg và làm mới Chilled
+  (tối đa 4 giây).
+- **Đứng ở rìa nón**: 25 dmg / Frozen 1 giây / Chilled 2.5 giây. Ba người trở lên thì trúng
+  tối đa **ba người**, chỉ người nằm sát trục nón ăn đủ hiệu ứng (`o.chillAfter` nhớ giúp mỗi
+  người nhận đúng quãng Chilled của mình).
+- Bị đánh trong **0.5 giây đầu** ⇒ đứt chiêu, hồi chiêu còn **60%**. **Không dùng được khi
+  đang bay.**
+
+**Chiêu 4 — Meteor Strike.** Mỗi **17 giây**, đòn mạnh nhất.
+- Lùi nhẹ, **bay lên cao 0.65 giây**, treo trên không **0.55 giây** để **khoá hướng** — tổng
+  **1.2 giây** chuẩn bị, đủ rõ để địch kịp né.
+- Lao xuống theo **đường thẳng**: không bẻ hướng, không bám theo ai, không teleport. Điểm rơi
+  `M.tx/M.ty` chốt ở cuối pha `hold` và **không đổi nữa**, kể cả khi có ba người trên sàn.
+- Trúng: **145 dmg** + knockdown **1.5 giây** + hất lùi **20% chiều dài sàn**, kèm **vùng chấn
+  động** 30 dmg và −35% tốc chạy trong 2 giây ⇒ mục tiêu chính ăn **175**.
+- Địch đang **Frozen**: cú đấm 145 đã đủ 100 nên tự làm vỡ băng ngay trong `hurt()`, rồi cộng
+  thêm **20 Shatter Damage** đúng **một lần** ⇒ **195 và không hơn**.
+- Độ chính xác `SUP.msAcc`: **80% gần · 60% trung bình · 50% xa nhất**. Trượt thì điểm rơi
+  lệch hẳn 48~88px.
+- **Đánh trượt** ⇒ đập xuống đất, nằm **1.3 giây** không đánh được, và **Man of Steel tạm tụt
+  từ 20% xuống 10%** (`f.supMsDown`, `supResist()` đọc).
+- Bị **choáng trong 1.2 giây chuẩn bị** ⇒ huỷ chiêu, chờ **70%** hồi chiêu (`supMsCancel()`).
+- **Super Armor lúc đang lao**: `supMsTick` chạy trong vòng duyệt fighter nên **không bị `stun`
+  chặn** — đòn nhẹ không cắt được cú lao, nhưng **máu vẫn mất bình thường** và cái choáng đó
+  vẫn nằm nguyên trên người để ăn ngay sau khi tiếp đất. Đây không phải miễn nhiễm khống chế.
+- Ba người trở lên: `supMsTarget()` chọn **người gây cho anh nhiều sát thương nhất trong 6
+  giây gần nhất** (sổ `f.supLog`, `hurt()` ghi vào). Chỉ **một** người ăn 145; ai đứng trong
+  vùng chấn động chỉ ăn 30 + làm chậm.
+
+> **Hướng hất lùi của Meteor Strike phải có đường lui.** Lao trúng giữa người thì `prime.x-f.x`
+> và `prime.y-f.y` gần như bằng 0, `knock()` chuẩn hoá ra vector 0 và đẩy đi **0px** — đo được
+> đúng 0% thay vì 20%. Rơi vào trường hợp đó thì lấy luôn **hướng lao** (`f.ax/f.ay`) làm hướng
+> đẩy.
+
+**Trần khống chế cứng — `supCC()`.** Tổng thời gian **Frozen + stun + knockdown LIÊN TỤC do
+riêng Superman gây ra** không quá **3.5 giây** (`SUP.ccCap`). Mọi chỗ Superman gây khống chế
+đều phải đi qua hàm này, đừng gọi thẳng `stunFx()`.
+- Phần thừa **không biến mất** mà đổi thành **làm chậm 40%** (`SUP.ccSlow`) đúng bấy nhiêu giây.
+- Đúng ví dụ người dùng nêu: đóng băng 2.2 giây rồi Meteor Strike ngay sau ⇒ chỉ quật ngã thêm
+  **1.3 giây**, không phải 1.5, và 0.2 giây còn lại thành làm chậm.
+- "Liên tục" đo bằng `supCcT` (còn đang dính) và `supCcFree` (đã thở được bao lâu): **nghỉ đủ
+  1 giây người chơi** thì `supCcAcc` về 0 và chuỗi sau lại được đủ 3.5 giây.
+
+**AI — sáu bước, đúng thứ tự người dùng chốt** (`CHARS.superman.think`):
+1. địch quá xa ⇒ **Kryptonian Flight** (nội tại, chạy ngoài `think`);
+2. địch **đang chạy nhanh** ⇒ ưu tiên **Freeze Breath**;
+3. địch **đang Frozen** ⇒ ưu tiên **Meteor Strike**;
+4. địch **ít máu ở tầm trung** ⇒ **Heat Vision**;
+5. hết chiêu ⇒ áp sát **Basic Attack**;
+6. **dưới 200 HP** ⇒ đánh thận trọng hơn: chỉ bổ Meteor Strike trong `SUP.msSafe` chứ không
+   tung từ khoảng cách xa nhất.
+
+**Ăn mừng / gục ngã.**
+- Thắng: dáng `win` — đứng thẳng, **chống hai tay vào hông**, rồi `supAir` dâng dần lên 32px
+  nên anh **từ từ rời mặt đất**, áo choàng tung sau lưng. Băng-rôn ghi **`WINNER` +
+  `SUPERMAN WINS!`**, chữ dưới thanh máu vẫn là `Superman`. **Không phá gì của sàn đấu.**
+- Thắng lúc còn dưới 25% máu: `f.supWorn` bật, model có thêm **vài vệt bụi và vết xước** —
+  nhưng **biểu tượng chữ "S" và áo choàng giữ nguyên**, không rách, không mất.
+- Thua: dáng `ko` — chống một đầu gối xuống, **gượng dậy hai nhịp không nổi** rồi mới đổ hẳn.
+  `G.loserFx` mang cờ `sup` nên quãng nghiêng người bắt đầu muộn hơn (0.62 giây) và có một
+  nhịp nhún cố đứng lên. Áo choàng rũ theo người (`air` nhỏ hẳn ở hai dáng `ko`/`down`).
+  **Không máu me, không hiệu ứng chết chóc.**
+
+**Ô dán ảnh riêng**: `fly` · `land` · `punch` · `punch2` · `upper` · `heat` · `freeze` ·
+`meteor` · `down` · `win` · `ko`, cộng `idle/hurt/injured`. Thiếu ảnh thì lùi về ô gần nghĩa
+nhất (`meteor` → `fly` → `idle`, `freeze` → `heat` → `idle`, `ko` → `down` → `injured`).
+**Ô dán tiếng**: nhóm riêng `Superman` trong `SFX_GROUPS`, mười ba ô — `sup_enter`, `sup_land`,
+`sup_flight`, `sup_resolve`, `sup_fatigue`, `sup_heat`, `sup_freeze`, `sup_frozen`,
+`sup_shatter`, `sup_meteor`, `sup_impact`, `sup_win`, `sup_down`. `sup_enter` bị cắt đúng bằng
+màn xuất hiện (`SUP.entT*RT` trong `SFX_MAXLEN`) nên tiếng không sống lâu hơn hình.
+
+Nút thử tay: `#testSupFly`, `#testSupResolve`, `#testSupFreeze`, `#testSupMeteor`.
+Kiểm bằng `node tools/t_superman.js`.
+
+> **Chỗ đã tự quyết, nói rõ để sau này khỏi cãi nhau:**
+> - Bản mô tả nói Man of Steel không chắn được "burn, poison, true damage và damage theo phần
+>   trăm máu". Trong game hai loại đó đi đúng hai đường `kind='dot'` và `kind='domain'`, nên
+>   tôi lấy đúng hai cờ đó làm ranh giới. Lãnh địa Nara vì vậy ăn đủ vào anh.
+> - Vùng chấn động của Meteor Strike **vẫn nổ ra khi đánh trượt** — nó là cú va chạm với mặt
+>   đất chứ không phải phần đuôi của cú đấm. Ai đứng gần điểm rơi vẫn ăn 30 dmg và làm chậm,
+>   nên trần 195 không đổi.
+> - Trần 3.5 giây đo theo chuỗi **liên tục**, với "liên tục" = chưa thở được 1 giây người chơi
+>   (`SUP.ccFree`). Muốn khắt khe hơn thì nới con số đó.
+
 ---
 
 ## 2b. Khoảng cách khi cận chiến — đừng dán vào nhau
@@ -1054,7 +1261,7 @@ nên đổi độ phân giải không phải tính lại toạ độ. `recCanvas
 Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 
 ```bash
-node tools/t_reg.js     # 28 cặp đấu, chạy theo đợt, bắt lỗi trang, xem cơ chế lớn có nổ không
+node tools/t_reg.js     # 36 cặp đấu, chạy theo đợt, bắt lỗi trang, xem cơ chế lớn có nổ không
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
@@ -1078,11 +1285,20 @@ node tools/t_dora.js    # Doraemon: Anywhere Door đúng 1.5s bốn pha và đ�
                         # Door (miễn thương, chỉ xoá slow, đáp trong sàn), Take-copter,
                         # Time Machine (2.2s, trần hồi máu 20%, cắt 40% hồi chiêu), và chữ
                         # hiển thị đều bằng tiếng Anh
+node tools/t_superman.js # Superman: màn xuất hiện 1.5s bốn pha (bóng người trên cao, tiếp đất
+                        # không gây dmg), Man of Steel (100 raw -> 80, burn ăn đủ, trần 60%,
+                        # đòn dưới 25 không làm ngã, choáng −15%, lực đẩy −35%),
+                        # combo 34/34/50 cách nhau 0.55s, Heat Vision (4×22 + Burning = 108,
+                        # khoá hướng sau 0.3s, đứt trong 0.4s đầu), Freeze Breath (Frozen 2.2s,
+                        # Chilled 4s, vỡ băng ở 100 dmg, không thổi khi đang bay),
+                        # Meteor Strike (chuẩn bị 1.2s, 145+30=175, 195 khi địch Frozen,
+                        # trượt thì nằm 1.3s và Man of Steel còn 10%), trần khống chế cứng
+                        # 3.5s, Kryptonian Flight, và chữ hiển thị đều bằng tiếng Anh
 ```
 
-> **`t_reg.js` giờ chạy 28 trận** (7 nhân vật), theo đợt 5 trang một lượt. Máy test yếu thì mỗi trận trôi
+> **`t_reg.js` giờ chạy 36 trận** (8 nhân vật), theo đợt 5 trang một lượt. Máy test yếu thì mỗi trận trôi
 > chậm hẳn và nhiều trận báo "còn đánh" thay vì "kết thúc" — đó là chuyện bình thường,
-> mục cần xem là dòng cuối `DAT 21/21 tran sach loi`. Muốn soi kỹ một cặp thì chạy riêng.
+> mục cần xem là dòng cuối `DAT 36/36 tran sach loi`. Muốn soi kỹ một cặp thì chạy riêng.
 
 Tất cả trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng
 hoặc tới `step()`.**
@@ -1110,7 +1326,8 @@ Vài điều đã học khi viết test:
 
 Nút test bấm tay có sẵn trong game: `#testEagle`, `#testForest`, `#testTwin`, `#testGoku`,
 `#testGohan`, `#testSuz2` (ép Ayanokouji đỡ đòn → form 2), `#testSuzAya` (nạp đủ 150 điểm
-lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
+lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testSupFly`, `#testSupResolve`,
+`#testSupFreeze`, `#testSupMeteor`.
 
 ## 9. Lỗi đã sửa — đừng làm lại
 
@@ -1136,13 +1353,16 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
 | Model bị thu nhỏ phình lại quá nhanh | nhịp bước tính bằng `dt/growT` — đó là phần của cả dải 0→1, trong khi quãng đi thật chỉ là `1 − shrunkSize` = 0.45 dải | nhân thêm đúng quãng đó: `span*dt/growT`; đo lại ra đúng 0.4 giây người chơi |
 | Hệ số nhân cộng dồn khi gọi lẻ `drStatus()` | `gnStatus()` GÁN còn `drStatus()` NHÂN CHỒNG, nên gọi `drStatus()` một mình là nhân dồn qua từng nhịp | gộp thành một cửa duy nhất `statusTick(f,dt)`; test cũng phải gọi qua đó |
 | `t_bubble.js` đổ oan ở nhánh "đảo thứ tự" | mốc `trang > .5` nằm đúng chỗ phép đo dao động 49~51% tuỳ lần bốc vị trí — đổ chừng hai trên ba lần, và đổ y hệt trên `origin/main` | hạ mốc xuống `.45`; bằng chứng thật rằng bong bóng nằm trên vẫn là dòng "viền vàng 0%" ngay dưới, còn lúc bị đè thì nền trắng tụt hẳn dưới 40% |
+| Meteor Strike hất lùi 0px khi lao trúng giữa người | hướng đẩy tính bằng `prime.x-f.x`, mà lao trúng thì hai chỗ đứng trùng nhau nên ra vector 0 | rơi vào trường hợp đó thì lấy luôn hướng lao (`f.ax/f.ay`) làm hướng đẩy |
+| Khuôn mặt Superman chìm nghỉm trong tóc | vạt tóc `fillRect` phủ xuống tận hàng mắt | kéo vạt tóc lên cao hơn và hạ hàng mắt xuống một nhịp |
+| Cú xoay người đấm tay trái nhìn như chưa đánh | tay xa chỉ dài 17 nên nắm đấm dừng ngay giữa ngực | riêng dáng `punch2` nới tay dẫn lên 26 và vẽ **đè lên thân** |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---
 
 ## 10. Quy trình git
 
-- Nhánh làm việc: `claude/combat-spacing-ui-redesign-wnldeq`. **Không đẩy sang nhánh khác.**
+- Nhánh làm việc: `claude/superman-character-creation-nyk4ok`. **Không đẩy sang nhánh khác.**
 - `git push -u origin <nhánh>`; lỗi mạng thì thử lại 4 lần, giãn 2s/4s/8s/16s.
 - Người dùng thường merge rất nhanh rồi hỏi luôn "pr?" / "merge đâu" — làm xong một việc thì
   **mở PR ngay**. Nếu PR trước đã merge thì mở PR mới, đừng chồng lên nhánh đã merge.
@@ -1170,5 +1390,9 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3).
   đòn tay 35→**25**, flash `gs(14)`→`gs(17)`, aura `gs(12)`→`gs(18)` và không cộng dồn với
   thế đứng. **Flash vẫn 100 dmg** — người dùng chưa nêu số mới cho chỗ đó nên tôi không tự
   đặt; muốn hạ tiếp thì sửa `GN.flashDmg`.
+- Mười ba ô tiếng của Superman cũng mới chỉ có tiếng tự tạo trong `synth()` — nhân vật này
+  **không có ô giọng nào** vì bản mô tả không nêu câu thoại nào cho anh. Quãng xuất hiện cố ý
+  để đúng **1.5 giây thật ở thanh tốc độ gốc** để người dùng canh tiếng; đổi thanh tốc độ thì
+  con số đó đổi theo, đây không phải lỗi.
 - Ô tiếng của Horikita/Ayanokouji mới chỉ có tiếng tự tạo trong `synth()`; hai ô đọc nối tiếp
   (`suz_decide`, `suz_wrong`) đang chờ người dùng thu file TTS theo `SUZ_DECISIONS` / `SUZ_WRONG`.

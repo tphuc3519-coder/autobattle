@@ -56,6 +56,15 @@ window.__ginyuBeam=ginyuBeam; window.__ginyuFlash=ginyuFlash; window.__ginyuStri
 window.__gnChangeOdds=gnChangeOdds; window.__gnChangeFire=gnChangeFire;
 window.__gnCanChange=gnCanChange; window.__gnCrowd=gnCrowd; window.__gnDmg=gnDmg;
 window.__gnStatus=gnStatus; window.__gnBeamHit=gnBeamHit; window.__gnFlashHit=gnFlashHit; window.__GN_PROJ=GN_PROJ_BODY; window.__knock=knock;
+window.__SUP=SUP; window.__supermanEnter=supermanEnter; window.__supResolve=supResolve;
+window.__supFlyOn=supFlyOn; window.__supFlyOff=supFlyOff; window.__supCombo=supCombo;
+window.__supermanHeat=supermanHeat; window.__supermanFreeze=supermanFreeze;
+window.__supermanMeteor=supermanMeteor; window.__supMsLand=supMsLand; window.__supMsTarget=supMsTarget;
+window.__supHvOdds=supHvOdds; window.__supMsOdds=supMsOdds; window.__supResist=supResist;
+window.__supKbTake=supKbTake; window.__supCC=supCC; window.__supFreezeOn=supFreezeOn;
+window.__supChill=supChill; window.__supIceBreak=supIceBreak; window.__supBurn=supBurn;
+window.__supInterrupt=supInterrupt; window.__supermanTick=supermanTick; window.__supVector=supVector;
+window.__supEyeY=f=>supEyeY(f); window.__bindTick=bindTick; window.__supStatus=supStatus;
 `;
 
 /* Trả về đường dẫn file probe. Ghi ra thư mục tạm để không bẩn repo. */

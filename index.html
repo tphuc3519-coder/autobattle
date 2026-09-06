@@ -161,6 +161,10 @@
     <button id="testDoraShrink" title="Ép Small Light thu nhỏ đối thủ ngay">🧪 Test Small Light</button>
     <button id="testDoraDoor" title="Ép Doraemon chui Emergency Door ngay">🧪 Test Emergency Door</button>
     <button id="testDoraTime" title="Ép Doraemon dùng Time Machine ngay">🧪 Test Time Machine</button>
+    <button id="testSupFly" title="Ép Superman cất cánh Kryptonian Flight">🧪 Test Flight</button>
+    <button id="testSupResolve" title="Ép Superman vào Last Son's Resolve">🧪 Test Resolve</button>
+    <button id="testSupFreeze" title="Ép Superman thổi Freeze Breath ngay">🧪 Test Freeze Breath</button>
+    <button id="testSupMeteor" title="Ép Superman tung Meteor Strike ngay">🧪 Test Meteor Strike</button>
   </div>
 
   <div class="stage"><canvas id="arena" width="620" height="620"></canvas></div>
@@ -266,9 +270,10 @@ let G=null, running=false, speedMul=BASE_SPEED, mode='auto', autoSkill=true;
 const keys={};
 
 /* ---------- sprite slots ---------- */
-const SPR={kono:{},chichi:{},tsubasa:{},shika:{},suzune:{},ginyu:{},dora:{},ayanokouji:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
-const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',suzune:'#7FC8FF',ginyu:'#A05CFF',dora:'#2B9BE8'};
-const HP={kono:1000,chichi:1000,tsubasa:1000,shika:1000,suzune:1000,ginyu:1000,dora:1000};
+const SPR={kono:{},chichi:{},tsubasa:{},shika:{},suzune:{},ginyu:{},dora:{},superman:{},ayanokouji:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
+const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',suzune:'#7FC8FF',ginyu:'#A05CFF',dora:'#2B9BE8',superman:'#2E5BD8'};
+/* Superman đứng riêng ở 800 máu — cả bộ chiêu của anh cân theo đúng thanh máu đó. */
+const HP={kono:1000,chichi:1000,tsubasa:1000,shika:1000,suzune:1000,ginyu:1000,dora:1000,superman:800};
 const CAST={mul:1.8};
 const cm=v=>v*CAST.mul;
 const SETS=[
@@ -279,6 +284,7 @@ const SETS=[
   {key:'suzune', name:'Horikita Suzune', poses:[['idle','Thủ thế (form 2)'],['scared','Thủ thế sợ hãi (form 1)'],['stand3','Thủ thế (form 3)'],['block','Thủ chéo hai tay (chịu đòn)'],['punch','Đấm (form 1/2)'],['kick','Đá (form 1/2)'],['think','Đứng suy nghĩ (form 2)'],['punch3','Đấm (form 3)'],['kick3','Đá (form 3)'],['think3','Đứng suy nghĩ (form 3)'],['right2','Quyết định đúng (form 2)'],['wrong2','Quyết định sai (form 2)'],['right3','Quyết định đúng (form 3)'],['wrong3','Quyết định sai (form 3)'],['hurt','Trúng đòn'],['injured2','Tơi tả <20% máu (form 1/2)'],['injured3','Tơi tả <20% máu (form 3)'],['thinkHurt2','Tơi tả khi đứng suy nghĩ (form 2)'],['thinkHurt3','Tơi tả khi đứng suy nghĩ (form 3)']]},
   {key:'ginyu', name:'Captain Ginyu', poses:[['idle','Thủ thế'],['fly','Bay vào sân (đầu trận)'],['dance1','Ginyu Force · dáng 1'],['dance2','Ginyu Force · dáng 2'],['dance3','Ginyu Force · dáng 3'],['punch','Đấm'],['kick','Đá'],['beam','Ginyu Beam'],['flash','Ginyu Flash'],['change','CHANGE!!!'],['panic','Hoảng hốt (bắn trượt Change)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
   {key:'dora', name:'Doraemon', poses:[['idle','Thủ thế'],['punch','Đấm (bàn tay tròn)'],['kick','Đá'],['slam','Lao bụng / húc đầu (đòn 3)'],['aircannon','Air Cannon'],['smalllight','Small Light'],['copter','Take-copter (bay)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Ngồi ăn dorayaki (thắng)'],['down','Ngã ngồi, choáng váng (thua)']]},
+  {key:'superman', name:'Superman', poses:[['idle','Thủ thế'],['fly','Bay (Kryptonian Flight)'],['land','Tiếp đất bằng một chân'],['punch','Đấm tay phải (đòn 1)'],['punch2','Xoay người đấm tay trái (đòn 2)'],['upper','Uppercut (đòn 3)'],['heat','Heat Vision'],['freeze','Freeze Breath'],['meteor','Meteor Strike (lao xuống)'],['down','Ngã sau khi Meteor Strike trượt'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Ăn mừng (chống hông, bay lên)'],['ko','Gục xuống']]},
   {key:'ayanokouji', name:'Ayanokouji', poses:[['idle','Đứng'],['guard','Đỡ đòn thay Horikita'],['strike','Đòn đột kích'],['leave','Rời sàn đấu']]},
   {key:'nara', name:'Con nai nhà Nara', poses:[['idle','Đứng cạnh Shikamaru trong lãnh địa']]},
   {key:'garden', name:'Phong cảnh lãnh địa', poses:[['idle','Ảnh nền khu rừng nhà Nara']]},
@@ -518,6 +524,67 @@ const DORA={
    bám theo đúng con số này — tiếng không được sống lâu hơn hình. */
 const DORA_HI_LIFE=1.8;
 const DORA_HI='Hello! Leave it to me!';
+
+/* ---------- Superman ----------
+   Khai theo lối của Shikamaru / Horikita / Ginyu / Doraemon: mốc thời gian viết bằng
+   giây NGƯỜI CHƠI rồi bọc gs(). Fighter kiểu "Bruiser – Vanguard – Crowd Control":
+   đấm nặng, đuổi được bằng cách bay, lì đòn, và mang theo cả một bộ khống chế — đổi
+   lại chiêu nào cũng có quãng chuẩn bị nhìn thấy rõ để đối phương kịp né hoặc ngắt.
+   MỌI chữ hiện ra trong game của nhân vật này là tiếng Anh, kể cả tên trạng thái.
+   Cân theo thanh máu 800: đòn mạnh nhất chỉ 175 (195 khi địch đang Frozen), không
+   chiêu nào chạm mốc 200 trong một lần dùng, và không có chí mạng ngẫu nhiên. */
+const SUP={
+  /* Màn xuất hiện — đúng 1.5 giây người chơi, bốn pha: bóng người trên cao · hạ độ
+     cao · tiếp đất bằng một chân · đứng thẳng nắm hai tay. */
+  entT:gs(1.5), entPh:[gs(.4),gs(1),gs(1.3),gs(1.5)], entH:250,
+  /* Nội tại — Man of Steel */
+  steelRes:.20,              // giảm 20% sát thương từ đòn vật lý và đạn năng lượng
+  steelDown:.10,             // ngã sau khi Meteor Strike trượt: tụt còn 10%
+  steelCap:.60,              // TRẦN tổng giảm sát thương, kể cả khi được buff thêm
+  steelKb:.35,               // giảm 35% khoảng cách bị đẩy lùi
+  steelStun:.15,             // giảm 15% thời gian choáng do va chạm vật lý
+  steelStand:25,             // đòn dưới bấy nhiêu dmg không làm anh ngã người ra
+  /* Kryptonian Flight — hành vi di chuyển, KHÔNG phải chiêu gây sát thương */
+  flyFar:.50,                // địch xa hơn 50% chiều dài sàn
+  flyWait:gs(2),             // và suốt bấy nhiêu giây vẫn không tiếp cận được
+  flyT:gs(3), flyCd:gs(8),   // bay tối đa 3 giây, hồi 8 giây TÍNH TỪ LÚC TIẾP ĐẤT
+  flyMove:1.75, flyKb:.50, flyAccCut:.15, flyHover:22,
+  /* Nội tại máu thấp — Last Son's Resolve, một lần mỗi trận */
+  lsrHp:.25, lsrT:gs(8),
+  lsrMove:1.30, lsrCast:1.25, lsrRes:.10, lsrKb:.25, lsrCdCut:gs(2),
+  fatT:gs(4), fatMove:.80, fatCast:.85,      // Solar Fatigue ngay sau đó
+  /* 1 — Basic Attack: combo ba đòn 34 / 34 / 50 = 118 */
+  hit:[34,34,50], hitGap:gs(.55), hitCd:gs(.8),
+  jabKb:70,                  // đòn một đẩy lùi một quãng rất ngắn
+  upKb:.12,                  // đòn ba đẩy lùi 12% chiều dài sàn
+  upStun:gs(.55), hitBreak:.10,
+  /* 2 — Heat Vision: gồng 0.65s rồi chiếu 1.2s, bốn nhịp 22 dmg */
+  hvCd:gs(8.5), hvAim:gs(.65), hvT:gs(1.2), hvN:4, hvDmg:22,
+  hvBurnT:gs(4), hvBurnDps:5*RT,             // Burning: 5 dmg mỗi giây người chơi
+  hvSlow:.75, hvSlowT:gs(.45),               // đang bị chiếu thì mất 25% tốc chạy
+  hvTrack:gs(.3),            // chỉnh hướng trong 0.3 giây đầu, sau đó KHOÁ
+  hvBreak:gs(.4), hvBreakCut:.50,
+  hvRange:520, hvWide:.12,
+  hvAcc:[[0,.90],[300,.70],[620,.55]],
+  /* 3 — Freeze Breath: hít vào 0.9s rồi thổi một luồng hơi hình NÓN */
+  fbCd:gs(11.5), fbAim:gs(.9), fbT:gs(.55),
+  fbRange:210, fbCone:.42, fbCore:.16, fbMax:3,
+  fbDmg:45, fbFreeze:gs(2.2), fbChill:gs(4), fbChillMove:.50, fbChillCast:.75,
+  fbEdgeDmg:25, fbEdgeFreeze:gs(1), fbEdgeChill:gs(2.5),
+  fbShatter:100,             // ăn đủ bấy nhiêu dmg lúc đang Frozen thì băng vỡ ngay
+  fbBreak:gs(.5), fbBreakCut:.60,
+  /* 4 — Meteor Strike: bay lên 0.65s, treo 0.55s khoá hướng, rồi lao thẳng xuống */
+  msCd:gs(17), msRise:gs(.65), msHold:gs(.55), msSpd:820, msH:170,
+  msRange:430, msSafe:280,   // dưới 25% máu thì không tung từ khoảng cách xa nhất
+  msDmg:145, msDown:gs(1.5), msKb:.20, msHitR:36,
+  msQuakeDmg:30, msQuakeR:104, msQuakeSlow:.65, msQuakeT:gs(2),
+  msShatter:20,              // địch đang Frozen: vỡ băng, cộng đúng chừng này một lần
+  msMissT:gs(1.3), msCancelCut:.70,
+  msAcc:[[0,.80],[300,.60],[620,.50]],
+  msLog:gs(6),               // ba người trở lên: nhắm ai đánh anh đau nhất 6 giây qua
+  /* Trần khống chế cứng LIÊN TỤC do riêng Superman gây ra */
+  ccCap:gs(3.5), ccSlow:.60, ccFree:gs(1)
+};
 const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
@@ -713,6 +780,63 @@ const CHARS={
       const w=Math.max(0,Math.min(f.cds.s2,f.cds.s3)), full=Math.min(DORA.acCd,DORA.slCd);
       return {pct:clamp(1-w/full,0,1), fill:'#7FD0FF',
               txt:w<=0?'Gadget ready':`Gadget: ${(w*RT).toFixed(1)}s`};
+    }
+  }
+  ,superman:{
+    name:'Superman', short:'Superman', tag:'Kryptonian · Bruiser', emoji:'🦸', color:'#2E5BD8', alt:'#7FA0FF',
+    role:'melee', speed:108, dodge:.5, male:true,
+    skills:[
+      `<b>Entrance</b> He does not start on the ground — a silhouette appears high over the arena, cape snapping in the wind, then he drops in, lands on one knee in a small ring of dust and stands up with both fists clenched. The whole thing takes ${rts(SUP.entT)}s and the foe can only wait · no blast, no damage on the landing`,
+      `<b>Passive · Man of Steel</b> −${Math.round(SUP.steelRes*100)}% damage from direct physical blows, weapons and energy projectiles · −${Math.round(SUP.steelKb*100)}% knockback · −${Math.round(SUP.steelStun*100)}% stun from impacts · anything under ${SUP.steelStand} damage does not stagger him · burn, poison, true damage and %-HP damage still land in full, and body swap, time manipulation, shadow binding or mind control all work on him as usual · total damage reduction is capped at ${Math.round(SUP.steelCap*100)}%, buffs included`,
+      `<b>Passive · Kryptonian Flight</b> foe more than ${Math.round(SUP.flyFar*100)}% of the arena away and out of reach for ${rts(SUP.flyWait)}s ⇒ he takes off for up to ${rts(SUP.flyT)}s: +${Math.round((SUP.flyMove-1)*100)}% move, +${Math.round(SUP.flyKb*100)}% knockback resist, low obstacles cannot hold him · no Basic Attack until he closes in, Heat Vision at −${Math.round(SUP.flyAccCut*100)}% accuracy, no Freeze Breath, and he must land before Meteor Strike · lands the moment he is in range, then ${rts(SUP.flyCd)}s cooldown · this is movement, not an attack`,
+      `<b>Passive · Last Son's Resolve</b> the first time he drops under ${Math.round(SUP.lsrHp*100)}% HP (${Math.round(800*SUP.lsrHp)} HP) a pale gold sun-flare wraps him for ${rts(SUP.lsrT)}s: +${Math.round((SUP.lsrMove-1)*100)}% move, +${Math.round((SUP.lsrCast-1)*100)}% cast, +${Math.round(SUP.lsrRes*100)}% damage reduction (Man of Steel reads ${Math.round((SUP.steelRes+SUP.lsrRes)*100)}% while it lasts), +${Math.round(SUP.lsrKb*100)}% knockback resist and ${rts(SUP.lsrCdCut)}s straight off Heat Vision and Freeze Breath · no damage bonus · <b>once per match</b>, then <b>Solar Fatigue</b> for ${rts(SUP.fatT)}s: −${Math.round((1-SUP.fatMove)*100)}% move, −${Math.round((1-SUP.fatCast)*100)}% cast`,
+      `<b>1 · Basic Attack</b> a three-blow combo ${SUP.hit[0]} / ${SUP.hit[1]} / ${SUP.hit[2]} = ${SUP.hit[0]+SUP.hit[1]+SUP.hit[2]} damage, ${rts(SUP.hitGap)}s apart, ${rts(SUP.hitCd)}s to reset afterwards — right straight, spinning left, then an uppercut that knocks the foe back ${Math.round(SUP.upKb*100)}% of the arena and stuns ${rts(SUP.upStun)}s · every blow has a ${Math.round(SUP.hitBreak*100)}% chance to cut a skill that is still winding up, and no blow but the third stuns · knocked out of reach, he runs or flies back in — he never teleports`,
+      `<b>2 · Heat Vision</b> every ${rts(SUP.hvCd)}s — ${rts(SUP.hvAim)}s of his eyes glowing red, then two beams straight from the eyes for ${rts(SUP.hvT)}s: ${SUP.hvN} ticks of ${SUP.hvDmg} = ${SUP.hvN*SUP.hvDmg} damage, −${Math.round((1-SUP.hvSlow)*100)}% move while it burns them, no stun, no knockback · all ${SUP.hvN} ticks land ⇒ <b>Burning</b> ${SUP.hvBurnDps/RT} damage/s for ${rts(SUP.hvBurnT)}s (${SUP.hvN*SUP.hvDmg+SUP.hvBurnDps/RT*SUP.hvBurnT*RT} total, burn never stacks) · he may steer for ${rts(SUP.hvTrack)}s and then the aim is locked, so stepping aside works · accuracy ${Math.round(SUP.hvAcc[0][1]*100)}% close, ${Math.round(SUP.hvAcc[1][1]*100)}% mid, ${Math.round(SUP.hvAcc[2][1]*100)}% far, −${Math.round(SUP.flyAccCut*100)}% while flying · a hit inside the first ${rts(SUP.hvBreak)}s of the wind-up cancels it for half the cooldown; once the beams are out only a stun or a knockdown stops them · with three or more fighters it damages one body, and anyone standing in the way eats it instead`,
+      `<b>3 · Freeze Breath</b> every ${rts(SUP.fbCd)}s — ${rts(SUP.fbAim)}s of drawing breath, then a white-blue cone of frost: ${SUP.fbDmg} damage and <b>Frozen</b> for ${rts(SUP.fbFreeze)}s on the fighter dead centre, then <b>Chilled</b> ${rts(SUP.fbChill)}s (−${Math.round((1-SUP.fbChillMove)*100)}% move, −${Math.round((1-SUP.fbChillCast)*100)}% cast) · Frozen cannot move or act but still takes damage, and ${SUP.fbShatter} damage cracks the ice early — the stun ends there and turns into Chilled for whatever was left · anyone at the edge of the cone only takes ${SUP.fbEdgeDmg}, Frozen ${rts(SUP.fbEdgeFreeze)}s, Chilled ${rts(SUP.fbEdgeChill)}s, up to ${SUP.fbMax} fighters at once · a foe already Frozen is not re-frozen, only damaged and re-Chilled · a hit inside the first ${rts(SUP.fbBreak)}s cancels it for ${Math.round(SUP.fbBreakCut*100)}% of the cooldown · never usable in flight`,
+      `<b>4 · Meteor Strike</b> every ${rts(SUP.msCd)}s — he drifts back, rises for ${rts(SUP.msRise)}s and hangs there ${rts(SUP.msHold)}s to lock his line, then drops fist-first in a <b>straight line</b>: no steering, no homing, and he can miss outright · a clean hit is ${SUP.msDmg} damage, knockdown ${rts(SUP.msDown)}s and ${Math.round(SUP.msKb*100)}% of the arena in knockback, plus a small shockwave for ${SUP.msQuakeDmg} and −${Math.round((1-SUP.msQuakeSlow)*100)}% move for ${rts(SUP.msQuakeT)}s — ${SUP.msDmg+SUP.msQuakeDmg} damage in all · against a <b>Frozen</b> body the fist shatters the ice for ${SUP.msShatter} <b>Shatter Damage</b> once, and no more: ${SUP.msDmg+SUP.msQuakeDmg+SUP.msShatter} is the ceiling · accuracy ${Math.round(SUP.msAcc[0][1]*100)}% close, ${Math.round(SUP.msAcc[1][1]*100)}% mid, ${Math.round(SUP.msAcc[2][1]*100)}% far · <b>Super Armor</b> on the way down — light hits cannot break it, though he still takes the damage; a stun during the ${rts(SUP.msRise+SUP.msHold)}s wind-up cancels it for ${Math.round(SUP.msCancelCut*100)}% of the cooldown · a miss leaves him face down for ${rts(SUP.msMissT)}s with Man of Steel down to ${Math.round(SUP.steelDown*100)}%`,
+      `<b>Crowd control limit</b> unbroken hard crowd control from Superman alone never runs past ${rts(SUP.ccCap)}s — Frozen, stun and knockdown all count. Whatever is over the line turns into −${Math.round((1-SUP.ccSlow)*100)}% move for exactly as long: freeze for ${rts(SUP.fbFreeze)}s and Meteor Strike right after only knocks down for ${rts(SUP.ccCap-SUP.fbFreeze)}s, not the full ${rts(SUP.msDown)}s`],
+    init(f){
+      f.cds={s1:0,s2:SUP.hvCd*.5,s3:SUP.fbCd*.5,s4:SUP.msCd*.6};
+      f.supEntry=null; f.supHide=false; f.supAir=0; f.supCone=null; f.supLog=[];
+      f.supFly=0; f.supFlyCd=0; f.supStuck=0;
+      f.lsr=0; f.lsrDone=false; f.fatigue=0;
+      f.supCombo=null; f.supHv=null; f.supFb=null; f.supMs=null; f.supMsDown=0;
+      supermanEnter(f);
+    },
+    /* Thứ tự sáu bước của AI, viết đúng theo thứ tự người dùng chốt: bay tới nếu địch
+       quá xa (nội tại, chạy ngoài đây) · địch chạy nhanh thì Freeze Breath · địch đang
+       Frozen thì Meteor Strike · địch ít máu ở tầm trung thì Heat Vision · hết chiêu
+       thì áp sát đánh tay · dưới 25% máu thì không bổ Meteor Strike từ tầm xa nhất. */
+    think(f,e,d,auto){
+      if(f.supEntry||f.supHv||f.supFb||f.supMs||f.supMsDown>0||f.supCombo)return;
+      const flying=f.supFly>0, low=f.hp<=f.maxHp*SUP.lsrHp;
+      const fast=Math.hypot(e.vx||0,e.vy||0)>(e.speed||100)*.55;
+      const msOk=!flying&&f.cds.s4<=0&&d<(low?SUP.msSafe:SUP.msRange);
+      const fbOk=!flying&&f.cds.s3<=0&&d<SUP.fbRange*.9;
+      const hvOk=f.cds.s2<=0&&d<SUP.hvRange;
+      const meteor=()=>{ f.cds.s4=SUP.msCd; supermanMeteor(f,e); };
+      const freeze=()=>{ f.cds.s3=SUP.fbCd; supermanFreeze(f,e); };
+      const heat=()=>{ f.cds.s2=SUP.hvCd; supermanHeat(f,e); };
+      if(e.frozen>0&&msOk&&(auto||keys['u'])){ meteor(); return; }
+      if(fast&&fbOk&&(auto||keys['l'])){ freeze(); return; }
+      if(hvOk&&(auto?(e.hp<=e.maxHp*.4&&d>120)||d>200:keys['k'])){ heat(); return; }
+      if(msOk&&(auto||keys['u'])){ meteor(); return; }
+      if(fbOk&&(auto||keys['l'])){ freeze(); return; }
+      if(hvOk&&(auto||keys['k'])){ heat(); return; }
+      if(!flying&&f.cds.s1<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])) supCombo(f,e);
+    },
+    /* Thanh phụ nói đúng một chuyện: trạng thái đang mang, không thì Meteor Strike còn
+       bao lâu nữa. Không dán chữ giải thích lên sàn — cùng luật với mấy nhân vật kia. */
+    gauge:f=>{
+      if(f.supFly>0) return {pct:clamp(f.supFly/SUP.flyT,0,1), fill:'#7FA0FF',
+                             txt:`Kryptonian Flight ${(f.supFly*RT).toFixed(1)}s`};
+      if(f.lsr>0) return {pct:clamp(f.lsr/SUP.lsrT,0,1), fill:'#FFE9A8',
+                          txt:`Last Son's Resolve ${(f.lsr*RT).toFixed(1)}s`};
+      if(f.fatigue>0) return {pct:clamp(f.fatigue/SUP.fatT,0,1), fill:'#8FA6C8',
+                              txt:`Solar Fatigue ${(f.fatigue*RT).toFixed(1)}s`};
+      const w=Math.max(0,f.cds.s4||0);
+      return {pct:clamp(1-w/SUP.msCd,0,1), fill:'#E8443C',
+              txt:w<=0?'Meteor Strike ready':`Meteor Strike: ${(w*RT).toFixed(1)}s`};
     }
   }
 };
@@ -923,7 +1047,7 @@ async function loadSaved(){
 const SFX_GROUPS={
   crit:'Chung', throw:'Konohamaru', punch:'ChiChi', kick:'Ozora Tsubasa',
   shika_lazy:'Shikamaru', suz_think:'Horikita Suzune', aya_appear:'Ayanokouji',
-  ginyu_fly:'Captain Ginyu', dora_door:'Doraemon'
+  ginyu_fly:'Captain Ginyu', dora_door:'Doraemon', sup_enter:'Superman'
 };
 const SFX_EVENTS=[
   ['crit','Chí mạng'],['stun','Choáng'],['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt'],
@@ -977,7 +1101,21 @@ const SFX_EVENTS=[
   ['dora_escape','Chui qua Emergency Door'],
   ['dora_down','Doraemon bị hạ gục'],
   ['dora_time','Time Machine khởi động'],
-  ['dora_win','Ngồi ăn dorayaki ăn mừng']
+  ['dora_win','Ngồi ăn dorayaki ăn mừng'],
+
+  ['sup_enter','Superman bay xuống sân (đầu trận)'],
+  ['sup_land','Tiếp đất bằng một chân'],
+  ['sup_flight','Kryptonian Flight cất cánh'],
+  ['sup_resolve',"Last Son's Resolve bùng lên"],
+  ['sup_fatigue','Solar Fatigue'],
+  ['sup_heat','Heat Vision bắn ra'],
+  ['sup_freeze','Freeze Breath thổi ra'],
+  ['sup_frozen','Đối thủ bị đóng băng'],
+  ['sup_shatter','Lớp băng vỡ'],
+  ['sup_meteor','Meteor Strike lao xuống'],
+  ['sup_impact','Meteor Strike chạm đất'],
+  ['sup_win','Superman ăn mừng'],
+  ['sup_down','Superman bị hạ gục']
 ];
 const SFXBUF={};
 let AC=null, volume=.6, muted=false, lastSfx={};
@@ -1225,6 +1363,30 @@ function synth(name,c,g){
                       tone(c,g,{type:'sine',f0:210,f1:35,dur:1.6,vol:.16});
                       noise(c,g,{dur:1.6,f0:2600,f1:200,vol:.14,q:1.4,type:'lowpass'}); break;
     case 'dora_win':  [523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(c,g,{type:'triangle',f0:f,f1:f,dur:i===3?.7:.15,vol:.16,delay:i*.13})); break;
+    case 'sup_enter': tone(c,g,{type:'sine',f0:70,f1:300,dur:1.4,vol:.22});
+                      noise(c,g,{dur:1.4,f0:200,f1:1400,vol:.13,q:.8,type:'lowpass'}); break;
+    case 'sup_land':  tone(c,g,{type:'sine',f0:110,f1:38,dur:.5,vol:.32});
+                      noise(c,g,{dur:.45,f0:900,f1:120,vol:.24,q:.7,type:'lowpass'}); break;
+    case 'sup_flight':tone(c,g,{type:'sine',f0:180,f1:640,dur:.7,vol:.2});
+                      noise(c,g,{dur:.7,f0:400,f1:2200,vol:.12,q:.9}); break;
+    case 'sup_resolve':[0,.12,.24].forEach((d,i)=>tone(c,g,{type:'triangle',f0:392+i*131,f1:523+i*160,dur:.5,vol:.15,delay:d}));
+                      noise(c,g,{dur:.9,f0:600,f1:2800,vol:.1}); break;
+    case 'sup_fatigue':[0,.14,.28].forEach((d,i)=>tone(c,g,{type:'sine',f0:420-i*90,f1:320-i*80,dur:.3,vol:.13,delay:d})); break;
+    case 'sup_heat':  tone(c,g,{type:'sawtooth',f0:1100,f1:480,dur:.9,vol:.2});
+                      noise(c,g,{dur:.9,f0:3000,f1:900,vol:.16,q:1.6}); break;
+    case 'sup_freeze':noise(c,g,{dur:.8,f0:5200,f1:1400,vol:.24,q:.6});
+                      tone(c,g,{type:'sine',f0:900,f1:340,dur:.8,vol:.1}); break;
+    case 'sup_frozen':[0,.08,.16].forEach((d,i)=>tone(c,g,{type:'sine',f0:1400-i*260,f1:1200-i*260,dur:.2,vol:.14,delay:d}));
+                      noise(c,g,{dur:.4,f0:4200,f1:1800,vol:.1}); break;
+    case 'sup_shatter':noise(c,g,{dur:.35,f0:6000,f1:1200,vol:.24,q:1.2});
+                      [0,.06,.13].forEach((d,i)=>tone(c,g,{type:'triangle',f0:1800-i*400,f1:900-i*300,dur:.14,vol:.12,delay:d})); break;
+    case 'sup_meteor':tone(c,g,{type:'sawtooth',f0:220,f1:820,dur:.8,vol:.22});
+                      noise(c,g,{dur:.8,f0:300,f1:2600,vol:.15,q:.9}); break;
+    case 'sup_impact':tone(c,g,{type:'sine',f0:140,f1:30,dur:.8,vol:.34});
+                      noise(c,g,{dur:.7,f0:1600,f1:90,vol:.3,q:.6,type:'lowpass'}); break;
+    case 'sup_win':   [523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(c,g,{type:'triangle',f0:f,f1:f,dur:i===3?.8:.16,vol:.16,delay:i*.14})); break;
+    case 'sup_down':  tone(c,g,{type:'sine',f0:300,f1:70,dur:.9,vol:.22});
+                      noise(c,g,{dur:.6,f0:800,f1:120,vol:.16,type:'lowpass'}); break;
     default:        noise(c,g,{dur:.1,f0:1200,vol:.2});
   }
 }
@@ -1252,7 +1414,10 @@ const SFX_MAXLEN={
   // hai ô giọng của Ginyu: cắt đúng bằng bong bóng đang treo câu đó
   ginyu_force:GN_FORCE_LIFE*RT, ginyu_change:GN_CHANGE_LIFE*RT,
   dora_hi:DORA_HI_LIFE*RT,                      // câu chào cắt đúng lúc bong bóng tắt
-  dora_door:DORA.doorT*RT, dora_time:DORA.tmT*RT
+  dora_door:DORA.doorT*RT, dora_time:DORA.tmT*RT,
+  // tiếng bay vào sân cắt đúng bằng màn xuất hiện: 1.5 giây, không dài hơn hình
+  sup_enter:SUP.entT*RT, sup_heat:(SUP.hvAim+SUP.hvT)*RT, sup_freeze:SUP.fbT*RT,
+  sup_meteor:(SUP.msRise+SUP.msHold)*RT
 };
 /* File dài thì đọc nối tiếp từng đoạn, hết file thì quay lại đầu. Mặc định mỗi đoạn
    2.2 giây; hai ô dưới đây lấy độ dài đoạn theo đúng thứ giới hạn chúng.
@@ -1670,6 +1835,13 @@ function mk(o){
     copter:0, copCd:0, drNoHit:0, edCd:0, edT:0, edMoved:false, edSpeed:0, edFrom:null, edTo:null,
     fk:0,
     drEntry:null, drAim:null, drCombo:null, drHide:false, tm:null, tmDone:false,
+    /* Superman: Frozen / Chilled / làm chậm của vùng chấn động và trần khống chế cứng
+       là thứ anh dán lên NGƯỜI KHÁC, nên khai chung ở đây với giá trị trung tính. */
+    frozen:0, frozenDmg:0, chill:0, chillAfter:0, hvSlowT:0, supSlow:0, supQuake:0,
+    supCcAcc:0, supCcT:0, supCcFree:0,
+    supEntry:null, supHide:false, supAir:0, supCone:null, supLog:null,
+    supFly:0, supFlyCd:0, supStuck:0, lsr:0, lsrDone:false, fatigue:0,
+    supCombo:null, supHv:null, supFb:null, supMs:null, supMsDown:0,
     hist:[], histT:0, startX:0, startY:0,
     bind:null, bindGuard:false, bindPending:false, lazyTalk:0, wakeT:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
@@ -1750,6 +1922,9 @@ function stunFx(f,dur,kind){
   if(f.ccRes>0) dur*=(1-f.ccRes);                // Horikita form 3: kháng hiệu ứng, choáng ngắn lại
   if(f.gnCcRes>0) dur*=(1-f.gnCcRes);            // Ginyu đang ở thế thăm dò: kháng hiệu ứng
   if(f.drCcRes>0) dur*=(1-f.drCcRes);            // Doraemon đang mang Future Knowledge
+  /* Man of Steel: choáng do va chạm vật lý ngắn lại 15%. Đây chỉ là rút ngắn, không
+     bao giờ là miễn nhiễm — băng của Freeze Breath (kind 'ice') thì không dính luật này. */
+  if(f.key==='superman'&&!f.swapAs&&kind!=='ice') dur*=(1-SUP.steelStun);
   if(f.ccTake&&f.ccTake!==1) dur*=f.ccTake;      // Ginyu đang hưng phấn: dính khống chế lâu hơn
   if(f.key==='shika'&&f.bind&&f.bind.guard){     // lần bù: đứng vững, không cắt được
     G.floats.push({x:f.x,y:f.y-104,txt:'UNBREAKABLE',color:'#CFC6FF',
@@ -1819,18 +1994,36 @@ function hurt(t,amt,src,crit,kind,tint,raw){
   if(t.vuln>0) amt*=1.5;                    // dính Twin Shot: nhận thêm 50% sát thương
   if(t.eagle) amt*=.3;                      // Wings of the Eagle: miễn 70% sát thương
   else if(t.prewing) amt*=PREWING_RES;      // Pre-Wings: miễn 35% sát thương
-  if(t.dmgRes>0) amt*=(1-t.dmgRes);         // Horikita form 3: miễn thương cộng dồn theo mốc điểm lớp
+  /* Man of Steel: da thép chắn đòn vật lý và đạn năng lượng, nhưng KHÔNG chắn được
+     sát thương duy trì (burn / poison / true damage) lẫn sát thương của lãnh địa —
+     hai loại đó đi đường kind 'dot' và 'domain'. supResist() đã gộp cả buff giảm
+     sát thương khác vào rồi mới chặn ở trần 60%, nên đừng nhân t.dmgRes thêm lần nữa. */
+  if(t.key==='superman'&&!t.swapAs){
+    if(kind!=='dot'&&kind!=='domain') amt*=supResist(t);
+  }
+  else if(t.dmgRes>0) amt*=(1-t.dmgRes);    // Horikita form 3: miễn thương cộng dồn theo mốc điểm lớp
   // Ginyu: hưng phấn thì ăn thêm 50% sát thương (xuyên qua phòng thủ), thăm dò thì chỉ ăn 40%
   if(t.dmgTake!==undefined&&t.dmgTake!==1) amt*=t.dmgTake;
   if(t.dash&&t.dash.guard) amt*=CHICHI_DASH_RES;   // đang lao tới: nhận ít sát thương hơn
   // Small Light chọn mục tiêu theo tổng sát thương đã gây ra, nên phải cộng dồn ở đây
   if(src&&!src.summon) src.dmgDealt=(src.dmgDealt||0)+amt;
   t.hp=Math.max(0,t.hp-amt);
-  t.flash=crit?.2:.12; t.recoil=crit?1.4:1;
+  /* Man of Steel: đòn dưới 25 dmg không làm anh ngã người ra — vẫn mất máu, vẫn chớp
+     sáng, nhưng không đổi sang dáng trúng đòn và gần như không giật lùi. */
+  const light=t.key==='superman'&&!t.swapAs&&amt<SUP.steelStand;
+  t.flash=crit?.2:.12; t.recoil=light?.3:(crit?1.4:1);
   t.flashCol=tint||null;                    // đỏ: nổ / thiêu đốt · hồng: Sexy no Jutsu
   if(tint) t.flash=Math.max(t.flash,kind==='dot'?.34:.28);
   if(src){ const dx=t.x-src.x, dy=t.y-src.y, m=Math.hypot(dx,dy)||1; t.rdx=dx/m; t.rdy=dy/m; }
-  setPose(t,'hurt',.22);
+  if(!light) setPose(t,'hurt',.22);
+  /* Frozen: đứng trong băng vẫn ăn đòn như thường, và đủ 100 dmg thì lớp băng vỡ ngay.
+     Sát thương duy trì không tính vào đây — nó chảy qua lớp băng chứ không đập vỡ nó. */
+  if(t.frozen>0&&kind!=='dot'){ t.frozenDmg+=amt; if(t.frozenDmg>=SUP.fbShatter) supIceBreak(t); }
+  /* Meteor Strike nhắm ai đánh anh đau nhất trong 6 giây gần nhất: ghi sổ ở đây. */
+  if(t.key==='superman'&&!t.summon&&src&&src.team!==t.team&&!src.summon){
+    if(!t.supLog) t.supLog=[];
+    t.supLog.push({t:G.t,src,amt});
+  }
   const dc=(src&&src.color)||'#FFE100';
   const sc=(src&&src.summon)?1:.72;
   if(kind==='dot'){
@@ -1848,6 +2041,7 @@ function hurt(t,amt,src,crit,kind,tint,raw){
   }
   counters(src,t);
   drOnHurt(t,amt);                          // đứt Air Cannon, lệch Small Light, hoặc hoảng
+  supOnHurt(t);                             // đứt Heat Vision / Freeze Breath nếu còn đang gồng
   /* Chiêu 4 — Time Machine: Second Chance. Máu về 0 nhưng Doraemon chưa ngã hẳn. */
   if(t.hp<=0&&!t.summon&&drCanTime(t)){ doraTime(t); return true; }
   /* Chiêu 4 — CHANGE!!! Máu về 0 nhưng Captain Ginyu chưa chết: anh đứng nguyên chỗ
@@ -1874,7 +2068,12 @@ function finish(w){
   G.mates.length=0; G.flashback=null;
   // đồng minh (Ayanokouji) rời sàn cùng lúc trận kết thúc, không đứng trơ ra đó
   for(let i=G.fighters.length-1;i>=0;i--) if(G.fighters[i].ally) G.fighters.splice(i,1);
-  for(const f of G.fighters){ f.hidden=false; f.unhideT=0; f.tauntBy=null; f.ayaG=null; }
+  for(const f of G.fighters){
+    f.hidden=false; f.unhideT=0; f.tauntBy=null; f.ayaG=null;
+    // dọn mấy thứ Superman đang gồng dở: supermanTick() không chạy nữa sau khi trận
+    // kết thúc, để lại là luồng hơi lạnh hay tia nhiệt treo cứng trên sàn
+    f.supCone=null; f.supHv=null; f.supFb=null; f.supMs=null; f.supCombo=null;
+  }
   const loser = (win===G.k)?G.c:G.k;
   if(loser){
     loser.pose='hurt'; loser.poseT=0; loser.flash=0; loser.recoil=0; loser.lunge=0;
@@ -1887,7 +2086,13 @@ function finish(w){
         color:['#F5C518','#D8E4EE','#FF9AD5','#7FD0FF'][i%4]});
       sfx('dora_down');
     }
-    G.loserFx={f:loser,t:0,puff:0};
+    /* Superman thua thì không biến mất, không phát nổ, không máu me: anh lùi lại,
+       chống một đầu gối xuống, cố đứng dậy mà không nổi rồi mới ngã hẳn. */
+    if(loser.key==='superman'&&!loser.swapAs){
+      loser.pose='ko'; loser.supAir=0; loser.supFly=0; loser.supMs=null;
+      sfx('sup_down');
+    }
+    G.loserFx={f:loser,t:0,puff:0,sup:loser.key==='superman'&&!loser.swapAs};
     ring(loser.x,loser.y-10,140,loser.color,.5);
   }
   G.proj.length=0; G.waves.length=0;
@@ -2074,6 +2279,15 @@ function bindTick(k,dt){
     G.floats.push({x:e.x,y:e.y-92,txt:'TAKE-COPTER · OUT OF REACH',color:'#FFD34D',
       life:1.3,ml:1.3,banner:true,sc:.6});
     say('Dải bóng trườn tới nhưng Doraemon đang bay — bóng không bám được vào đâu.','s');
+    return;
+  }
+  /* Kryptonian Flight cũng vậy: dải bóng là chướng ngại vật thấp, không cản được
+     người đang bay. */
+  if(e.supFly>0){
+    k.bind=null; k.lock=0; k.pose='idle';
+    G.floats.push({x:e.x,y:e.y-92,txt:'KRYPTONIAN FLIGHT · OUT OF REACH',color:'#7FA0FF',
+      life:1.3,ml:1.3,banner:true,sc:.6});
+    say('Dải bóng trườn tới nhưng Superman đang bay — bóng chẳng bám được vào đâu.','s');
     return;
   }
   const d=dist(k,e)||1;
@@ -2303,7 +2517,7 @@ const canReflect=p=>PHYSICAL.has(p.type)&&!p.noReflect;
 function knock(f,vx,vy,power){
   if(!f||f.summon||f.eagle||(f.dash&&f.dash.guard))return;   // lúc này không bị hất văng
   const m=Math.hypot(vx,vy)||1;
-  const p=power*(f.kbTake||1);              // đang bị Shrunk thì chịu thêm 40% lực đẩy
+  const p=power*(f.kbTake||1)*supKbTake(f);  // đang bị Shrunk thì chịu thêm 40% lực đẩy
   f.kbx=vx/m*p; f.kby=vy/m*p;
 }
 function addGoal(f){
@@ -3535,6 +3749,12 @@ function ginyuPossess(g,t){
   t.cds={s1:0,s2:GN.beamCd,s3:GN.flashCd};
   t.gnState=null; t.gnStateT=0; t.gnAura=Infinity; t.gnFlash=null; t.gnPanic=false;
   t.bind=null; t.domain=null; t.decT=0; t.lock=0;
+  /* Thân xác Superman bị cướp: mấy chiêu đang gồng dở của anh phải dọn sạch, vì
+     supermanTick() không chạy nữa khi swapAs đã bật — để lại là chúng treo mãi. */
+  for(const o of [g,t]){
+    o.supHv=null; o.supFb=null; o.supMs=null; o.supCombo=null; o.supEntry=null;
+    o.supFly=0; o.supMsDown=0; o.supAir=0; o.supHide=false; o.supCone=null; o.lsr=0; o.fatigue=0;
+  }
   G.freeze=1.8; G.freezeAt=t;
   G.flashScreen=1;
   sfx('ginyu_swap');
@@ -3580,6 +3800,9 @@ function gnBorrowBasic(f,e,d){
     case 'tsubasa': if(d<520){ f.cds.s1=cm(1.35); basicShot(f,e); } break;
     case 'chichi':  if(d<reach){ f.cds.s1=cm(.25); melee(f,e); } break;
     case 'suzune':  if(d<f.r+e.r+SUZ.atkRange){ f.cds.s1=suzTune(f).atkCd; suzStrike(f,e); } break;
+    /* Thân xác Superman: mượn đúng cú đấm đầu combo. Đừng gọi supCombo() — combo ba
+       đòn chạy trong supermanTick(), mà hàm đó tắt hẳn khi swapAs đã bật. */
+    case 'superman': if(d<reach){ f.cds.s1=SUP.hitCd; supBlow(f,e,0); } break;
     default:        if(d<reach){ f.cds.s1=cm(GN.atkCd); ginyuStrike(f,e); } break;
   }
 }
@@ -3601,10 +3824,10 @@ const drCanTime=f=>!!f&&f.key==='dora'&&!f.summon&&!f.swapAs&&!f.tmDone&&!f.tm;
 /* Dựng lại phần hệ số nhân của Doraemon, chạy NGAY SAU gnStatus() nên nhân chồng lên
    thứ gnStatus() vừa đặt chứ không gán đè. Chạy cho mọi nhân vật: Disoriented và Shrunk
    là thứ Doraemon dán lên người khác. */
-/* Dựng lại toàn bộ hệ số nhân của một người. gnStatus() GÁN, drStatus() NHÂN CHỒNG lên
-   — nên hai hàm đó phải đi liền nhau và đúng thứ tự này. Gọi drStatus() lẻ một mình là
-   hệ số cộng dồn qua từng nhịp; vì vậy chỉ có đúng một cửa vào là hàm này. */
-function statusTick(f,dt){ gnStatus(f,dt); drStatus(f,dt); }
+/* Dựng lại toàn bộ hệ số nhân của một người. gnStatus() GÁN, drStatus() và supStatus()
+   NHÂN CHỒNG lên — nên ba hàm đó phải đi liền nhau và đúng thứ tự này. Gọi lẻ một mình
+   là hệ số cộng dồn qua từng nhịp; vì vậy chỉ có đúng một cửa vào là hàm này. */
+function statusTick(f,dt){ gnStatus(f,dt); drStatus(f,dt); supStatus(f,dt); }
 function drStatus(f,dt){
   for(const k of ['dis','shrunk','copter','fk','edSpeed']) if(f[k]>0) f[k]=Math.max(0,f[k]-dt);
   if(f.copCd>0) f.copCd=Math.max(0,f.copCd-dt);
@@ -3937,6 +4160,9 @@ function drInterrupt(e){
   if(e.bind||(e.dash&&e.dash.kind==='stab')){ shikaInterrupt(e); cut=true; }
   if(e.gnFlash){ e.gnFlash=null; e.lock=0; e.pose='idle'; cut=true; }
   if(e.drAim){ e.drAim=null; e.lock=0; e.pose='idle'; cut=true; }
+  if(e.supHv){ e.supHv=null; e.lock=0; e.pose='idle'; cut=true; }
+  if(e.supFb){ e.supFb=null; e.lock=0; e.pose='idle'; cut=true; }
+  if(e.supMs&&e.supMs.ph!=='dive'){ supMsCancel(e); cut=true; }
   if(cut) G.floats.push({x:e.x,y:e.y-92,txt:'INTERRUPTED',color:'#D6F2FF',
     life:1.1,ml:1.1,banner:true,sc:.6});
   return cut;
@@ -4116,6 +4342,680 @@ function doraTick(f,dt){
   drComboTick(f,dt);
 }
 
+/* ================= Superman ================= */
+/* Fighter kiểu "Bruiser – Vanguard – Crowd Control": đấm nặng, đuổi được bằng cách bay,
+   lì đòn và mang cả một bộ khống chế. Bốn mảng, đừng gộp lại:
+     1. màn xuất hiện — bóng người trên cao rồi bay xuống, đúng 1.5 giây người chơi;
+     2. ba nội tại tự chạy — Man of Steel, Kryptonian Flight, Last Son's Resolve;
+     3. bốn chiêu — combo tay, Heat Vision, Freeze Breath, Meteor Strike;
+     4. trần khống chế cứng 3.5 giây, phần thừa đổi thành làm chậm.
+   MỌI chữ hiện ra trong game của nhân vật này là tiếng Anh, kể cả tên trạng thái.
+   KHÔNG có teleport ở bất cứ đâu: muốn đi nhanh thì phải bay hoặc lao qua quãng đó. */
+
+/* Man of Steel — hệ số sát thương phải chịu. Gộp cả buff giảm sát thương khác vào rồi
+   mới chặn ở trần steelCap, nên tổng giảm không bao giờ vượt 60%. */
+function supResist(f){
+  if(!f||f.key!=='superman'||f.swapAs)return 1;
+  let r=SUP.steelRes;
+  if(f.supMsDown>0) r=SUP.steelDown;              // đang nằm sau cú Meteor Strike hụt
+  else if(f.lsr>0) r=SUP.steelRes+SUP.lsrRes;     // Last Son's Resolve: 20% + 10%
+  if(f.dmgRes>0) r+=f.dmgRes;                     // buff của người khác cộng vào đây
+  return 1-Math.min(r,SUP.steelCap);
+}
+/* Kháng lực đẩy: nền 35%, đang bay thêm 50%, đang gồng Resolve thêm 25% — nhân dồn
+   chứ không cộng, để không bao giờ chạm mốc miễn nhiễm hoàn toàn. */
+function supKbTake(f){
+  if(!f||f.key!=='superman'||f.swapAs)return 1;
+  let k=1-SUP.steelKb;
+  if(f.supFly>0) k*=(1-SUP.flyKb);
+  if(f.lsr>0) k*=(1-SUP.lsrKb);
+  return k;
+}
+/* Dựng lại phần hệ số nhân của Superman, chạy NGAY SAU drStatus() nên nhân chồng lên.
+   Chạy cho MỌI nhân vật: Frozen / Chilled / làm chậm là thứ anh dán lên người khác. */
+function supStatus(f,dt){
+  if(f.hvSlowT>0) f.hvSlowT=Math.max(0,f.hvSlowT-dt);
+  if(f.supSlow>0) f.supSlow=Math.max(0,f.supSlow-dt);
+  if(f.supQuake>0) f.supQuake=Math.max(0,f.supQuake-dt);
+  if(f.chill>0) f.chill=Math.max(0,f.chill-dt);
+  if(f.frozen>0){
+    f.frozen=Math.max(0,f.frozen-dt);
+    f.lock=Math.max(f.lock,.2);                   // Frozen: không đi được, không ra chiêu
+    f.moving=false;
+    if(f.frozen<=0){ f.frozenDmg=0; supChill(f,f.chillAfter||SUP.fbChill); }
+  }
+  /* Trần khống chế cứng LIÊN TỤC: còn đang dính CC của Superman thì bộ đếm giữ nguyên;
+     thở được đủ ccFree giây mới coi là một chuỗi mới và cho về 0. */
+  if(f.supCcT>0){ f.supCcT=Math.max(0,f.supCcT-dt); f.supCcFree=0; }
+  else { f.supCcFree=(f.supCcFree||0)+dt; if(f.supCcFree>=SUP.ccFree) f.supCcAcc=0; }
+  let slow=1, ct=1;
+  if(f.chill>0){ slow*=SUP.fbChillMove; ct*=SUP.fbChillCast; }
+  if(f.hvSlowT>0) slow*=SUP.hvSlow;
+  if(f.supQuake>0) slow*=SUP.msQuakeSlow;
+  if(f.supSlow>0) slow*=SUP.ccSlow;
+  f.moveMul*=slow; f.castMul*=ct;
+
+  if(f.key!=='superman'||f.swapAs)return;
+  if(f.lsr>0){ f.lsr=Math.max(0,f.lsr-dt); if(f.lsr<=0) supFatigue(f); }
+  if(f.fatigue>0) f.fatigue=Math.max(0,f.fatigue-dt);
+  if(f.supMsDown>0) f.supMsDown=Math.max(0,f.supMsDown-dt);
+  if(f.supFlyCd>0) f.supFlyCd=Math.max(0,f.supFlyCd-dt);
+  let mv=1, c2=1;
+  if(f.supFly>0) mv*=SUP.flyMove;
+  if(f.lsr>0){ mv*=SUP.lsrMove; c2*=SUP.lsrCast; }
+  if(f.fatigue>0){ mv*=SUP.fatMove; c2*=SUP.fatCast; }
+  f.moveMul*=mv; f.castMul*=c2;
+  if(f.supLog&&f.supLog.length) while(f.supLog.length&&G.t-f.supLog[0].t>SUP.msLog) f.supLog.shift();
+}
+
+/* ---- trần khống chế cứng ---- */
+/* Frozen + stun + knockdown do RIÊNG Superman gây ra, cộng liên tục, không quá ccCap.
+   Phần thừa không biến mất mà đổi thành làm chậm 40% đúng bấy nhiêu giây. */
+function supCC(f,e,dur,kind){
+  if(!e)return {hard:0,rest:0,landed:false};
+  const left=Math.max(0,SUP.ccCap-(e.supCcAcc||0));
+  const hard=Math.min(dur,left), rest=dur-hard;
+  let landed=false;
+  if(hard>0){
+    landed = kind==='freeze' ? supFreezeOn(e,hard,f)
+                             : stunFx(e,hard,kind==='down'?'spin':'spark');
+    if(landed){
+      e.supCcAcc=(e.supCcAcc||0)+hard;
+      e.supCcT=Math.max(e.supCcT||0,hard);
+      e.supCcFree=0;
+    }
+  }
+  if(rest>0){
+    e.supSlow=Math.max(e.supSlow||0,rest);
+    G.floats.push({x:e.x,y:e.y-118,
+      txt:`CC LIMIT · SLOWED −${Math.round((1-SUP.ccSlow)*100)}% MOVE ${rts(rest)}s`,
+      color:'#BFD4FF',life:1.5,ml:1.5,banner:true,gold:true,tilt:rnd(-.05,.05)});
+    say(`Đối thủ đã dính đủ ${rts(SUP.ccCap)} giây khống chế cứng — phần còn lại đổi thành làm chậm ${rts(rest)} giây.`,'m');
+  }
+  return {hard,rest,landed};
+}
+/* Frozen. Đã đang Frozen thì KHÔNG đóng băng lại — chỉ ăn dmg và làm mới Chilled. */
+function supFreezeOn(t,dur,src){
+  if(!t||t.frozen>0)return false;
+  if(!stunFx(t,dur,'ice'))return false;            // miễn khống chế thì băng không bám
+  t.frozen=Math.max(0,Math.min(dur,t.stun));
+  t.frozenDmg=0;
+  sfx('sup_frozen');
+  ring(t.x,t.y,104,'#BFE9FF',.45);
+  G.floats.push({x:t.x,y:t.y-118,txt:`FROZEN ${rts(t.frozen)}s`,color:'#BFE9FF',
+    life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  return true;
+}
+function supChill(t,dur){
+  if(!t||!(dur>0))return;
+  t.chill=Math.max(t.chill||0,Math.min(dur,SUP.fbChill));
+  G.floats.push({x:t.x,y:t.y-104,
+    txt:`CHILLED −${Math.round((1-SUP.fbChillMove)*100)}% MOVE / −${Math.round((1-SUP.fbChillCast)*100)}% CAST ${rts(t.chill)}s`,
+    color:'#D6F2FF',life:1.5,ml:1.5,banner:true,sc:.62});
+}
+/* Ăn đủ 100 dmg lúc đang Frozen: băng vỡ ngay, choáng kết thúc và đổi thành Chilled
+   đúng bằng quãng băng còn lại. */
+function supIceBreak(t){
+  const left=t.frozen;
+  t.frozen=0; t.frozenDmg=0;
+  t.stun=Math.max(0,t.stun-left);
+  t.supCcT=Math.max(0,(t.supCcT||0)-left);
+  sfx('sup_shatter');
+  ring(t.x,t.y,112,'#EAF7FF',.4);
+  for(let i=0;i<8;i++) G.fx.push({type:'dust',x:t.x+rnd(-18,18),y:t.y+rnd(-30,10),r:4,life:.4,ml:.4});
+  G.floats.push({x:t.x,y:t.y-104,txt:'ICE SHATTERED',color:'#EAF7FF',
+    life:1.3,ml:1.3,banner:true,sc:.62});
+  supChill(t,left>0?left:SUP.fbEdgeChill);
+  say('Lớp băng nứt toác rồi vỡ vụn — hết đóng băng, chỉ còn lại cái lạnh bám theo.','m');
+}
+
+/* ---- màn xuất hiện: bóng người trên cao rồi bay xuống ---- */
+function supermanEnter(f){
+  /* Bấm Bắt đầu mới bắt đầu đếm — step() chỉ chạy khi trận đang chạy, nên 1.5 giây
+     trong trận này đúng bằng 1.5 giây thật ở thanh tốc độ gốc. */
+  f.startX=f.x; f.startY=f.y;
+  f.supEntry={t:0,said:false,landed:false,rose:false};
+  f.supHide=true; f.supAir=SUP.entH;
+  f.pose='fly'; f.poseT=0;
+}
+function supEntryTick(f,dt){
+  const E=f.supEntry, P=SUP.entPh;
+  // suốt màn xuất hiện đối phương chỉ được đứng chờ, chưa được đánh
+  for(const o of G.fighters) if(o.team!==f.team&&!(o.summon&&!o.ally)) o.lock=Math.max(o.lock,.3);
+  f.lock=Math.max(f.lock,.3);
+  if(!E.said){ E.said=true; sfx('sup_enter');
+    say('Trên cao hiện ra một bóng người, áo choàng bay phần phật trong gió.','m'); }
+  E.t+=dt;
+  const t=E.t;
+  if(t<P[0]){                       // pha 1: mới chỉ là một bóng người trên cao
+    f.supHide=true; f.supAir=SUP.entH; f.pose='fly'; f.poseT=0;
+  }else if(t<P[1]){                 // pha 2: hạ độ cao, bay xuống sân
+    f.supHide=false;
+    const q=clamp((t-P[0])/(P[1]-P[0]),0,1);
+    f.supAir=SUP.entH*(1-q*q);
+    f.pose='fly'; f.poseT=0;
+    f.ghostT-=dt;
+    if(f.ghostT<=0){ f.ghostT=.07;
+      G.fx.push({type:'ghost',x:f.x,y:f.y-f.supAir,face:f.face,key:f.key,pose:'fly',h:f.spriteH,life:.3,ml:.3}); }
+  }else if(t<P[2]){                 // pha 3: tiếp đất bằng một chân, một vòng bụi nhỏ
+    f.supAir=0; f.pose='land'; f.poseT=0;
+    if(!E.landed){
+      E.landed=true; sfx('sup_land');
+      /* Không có vụ nổ nào: vòng bụi chỉ để thấy anh nặng và mạnh, không gây sát
+         thương và không choáng ai. */
+      ring(f.x,f.y,88,'#D8E4EE',.4);
+      for(let i=0;i<9;i++) G.fx.push({type:'dust',x:f.x+rnd(-24,24),y:f.y+18,r:5,life:.5,ml:.5});
+      say('Superman tiếp đất bằng một chân — chỉ một vòng bụi nhỏ, không nổ, không ai dính đòn.','m');
+    }
+  }else{                            // pha 4: đứng thẳng, nắm hai tay, nhìn về phía địch
+    f.supAir=0; f.pose='idle'; f.poseT=0;
+    if(!E.rose){
+      E.rose=true;
+      const e=foeOf(f);
+      if(e&&Math.abs(e.x-f.x)>4) f.face=e.x>=f.x?1:-1;
+    }
+  }
+  if(t>=P[3]){
+    f.supEntry=null; f.supHide=false; f.supAir=0; f.pose='idle'; f.poseT=0;
+    say('Superman đứng thẳng, siết hai nắm tay — trận đấu bắt đầu.','m');
+  }
+}
+
+/* ---- nội tại: Last Son's Resolve, một lần mỗi trận ---- */
+function supResolve(f){
+  f.lsrDone=true; f.lsr=SUP.lsrT;
+  // cắt thẳng 2 giây người chơi khỏi phần hồi chiêu còn lại của hai chiêu tầm xa
+  f.cds.s2=Math.max(0,f.cds.s2-SUP.lsrCdCut);
+  f.cds.s3=Math.max(0,f.cds.s3-SUP.lsrCdCut);
+  sfx('sup_resolve');
+  ring(f.x,f.y,138,'#FFE9A8',.55);
+  G.flashScreen=Math.max(G.flashScreen,.08);
+  G.floats.push({x:f.x,y:f.y-126,txt:"LAST SON'S RESOLVE",color:'#FFE9A8',
+    life:1.8,ml:1.8,banner:true,gold:true,focus:true,tilt:rnd(-.05,.05)});
+  G.floats.push({x:f.x,y:f.y-104,
+    txt:`+${Math.round((SUP.lsrMove-1)*100)}% MOVE · +${Math.round((SUP.lsrCast-1)*100)}% CAST · ${Math.round((SUP.steelRes+SUP.lsrRes)*100)}% DMG RESIST`,
+    color:'#FFF3C4',life:1.8,ml:1.8,banner:true,sc:.62});
+  say('Superman đứng vững lại, siết hai tay — một luồng khí vàng trắng như nắng mặt trời bọc lấy anh.','g');
+}
+function supFatigue(f){
+  f.fatigue=SUP.fatT;
+  sfx('sup_fatigue');
+  G.floats.push({x:f.x,y:f.y-112,
+    txt:`SOLAR FATIGUE −${Math.round((1-SUP.fatMove)*100)}% MOVE / −${Math.round((1-SUP.fatCast)*100)}% CAST ${rts(SUP.fatT)}s`,
+    color:'#8FA6C8',life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  say(`Luồng nắng tắt — Superman rơi vào Solar Fatigue ${rts(SUP.fatT)} giây, và Man of Steel về lại mức ${Math.round(SUP.steelRes*100)}%.`,'m');
+}
+
+/* ---- nội tại: Kryptonian Flight ---- */
+/* Đây là hành vi DI CHUYỂN chứ không phải chiêu: không gây một điểm sát thương nào, và
+   chỉ dùng để đuổi theo — hướng bay luôn là hướng địch, không có chuyện bay ra xa câu giờ. */
+function supFlyTick(f,dt,e,d){
+  if(f.supFly>0){
+    f.supFly=Math.max(0,f.supFly-dt);
+    f.supAir=SUP.flyHover*(1+Math.sin(G.t*7)*.14);
+    if(f.pose==='idle'||f.pose==='hurt') { f.pose='fly'; f.poseT=0; }
+    if(chance(dt*7)) G.fx.push({type:'dust',x:f.x+rnd(-14,14),y:f.y+18,r:3,life:.3,ml:.3});
+    // vào đủ tầm vung tay là hạ cánh ngay, không lượn thêm
+    if(e&&e.alive&&d<f.r+e.r+meleeReach(f)+26){ supFlyOff(f,'đã áp sát được'); return; }
+    if(f.supFly<=0) supFlyOff(f,'hết giờ');
+    return;
+  }
+  f.supAir=0;
+  if(f.supFlyCd>0||!e||!e.alive||f.supHv||f.supFb||f.supMs||f.supCombo)return;
+  /* Điều kiện: địch ở xa hơn 50% chiều dài sàn VÀ suốt flyWait giây vẫn không tiếp
+     cận được. Nhích vào trong tầm đó một nhịp là bộ đếm về 0. */
+  if(d>W*SUP.flyFar) f.supStuck=(f.supStuck||0)+dt; else f.supStuck=0;
+  if(f.supStuck>=SUP.flyWait) supFlyOn(f);
+}
+function supFlyOn(f){
+  f.supFly=SUP.flyT; f.supStuck=0;
+  f.supCombo=null;
+  setPose(f,'fly',gs(.3));
+  sfx('sup_flight');
+  ring(f.x,f.y,92,'#7FA0FF',.42);
+  for(let i=0;i<7;i++) G.fx.push({type:'dust',x:f.x+rnd(-20,20),y:f.y+16,r:5,life:.45,ml:.45});
+  G.floats.push({x:f.x,y:f.y-118,
+    txt:`KRYPTONIAN FLIGHT +${Math.round((SUP.flyMove-1)*100)}% MOVE ${rts(SUP.flyT)}s`,
+    color:'#7FA0FF',life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  say('Địch giữ khoảng cách quá lâu — Superman rời mặt đất và bay thẳng tới.','m');
+}
+function supFlyOff(f,why){
+  if(!(f.supFly>0))return;
+  f.supFly=0; f.supAir=0; f.supStuck=0;
+  f.supFlyCd=SUP.flyCd;                    // hồi chiêu chỉ bắt đầu đếm TỪ LÚC TIẾP ĐẤT
+  f.pose='idle'; f.poseT=0;
+  for(let i=0;i<5;i++) G.fx.push({type:'dust',x:f.x+rnd(-18,18),y:f.y+18,r:4,life:.4,ml:.4});
+  say(`Superman hạ xuống — ${why}.`,'m');
+}
+/* Bay là để ĐUỔI: nhắm thẳng vào địch, chỉ né đạn qua loa chứ không lượn ra xa. */
+function supFlyVec(f,e){
+  const d=dist(f,e)||1, ux=(e.x-f.x)/d, uy=(e.y-f.y)/d;
+  const dv=dodgeVec(f);
+  return {x:ux+dv.x*.5+f.jx*.12, y:uy+dv.y*.5+f.jy*.12};
+}
+
+/* ---- chiêu 1: Basic Attack, combo ba đòn ---- */
+function supCombo(f,e){ f.supCombo={i:0,t:0,e}; }
+function supComboTick(f,dt){
+  const C=f.supCombo; if(!C)return;
+  const tg=aimTarget(f);
+  const e=(tg&&tg.alive)?tg:C.e;
+  if(!e||!e.alive||G.over||f.stun>0||f.supFly>0){ f.supCombo=null; return; }
+  C.e=e; C.t-=dt;
+  if(C.t>0)return;
+  /* Địch bị hất ra khỏi tầm thì combo bỏ dở — anh phải CHẠY hoặc BAY lại chỗ họ,
+     tuyệt đối không có chuyện dịch chuyển tức thời theo sau cú đẩy. */
+  if(dist(f,e)>f.r+e.r+meleeReach(f)+16){ f.supCombo=null; f.cds.s1=SUP.hitCd*.5; return; }
+  supBlow(f,e,C.i);
+  C.i++; C.t=SUP.hitGap;
+  if(C.i>=3){ f.supCombo=null; f.cds.s1=SUP.hitCd; }
+}
+function supBlow(f,e,i){
+  const last=i===2;
+  setPose(f,last?'upper':(i===0?'punch':'punch2'),gs(.4));
+  aim(f,e,last?1.15:.9);
+  sfx('punch');
+  const landed=hurt(e,SUP.hit[i],f);
+  G.fx.push({type:'punch',x:(f.x+e.x)/2,y:(f.y+e.y)/2,life:.16,ml:.16});
+  if(!landed)return;
+  if(i===0) knock(e,e.x-f.x,e.y-f.y,SUP.jabKb);           // đẩy lùi một quãng rất ngắn
+  if(last){
+    knock(e,e.x-f.x,e.y-f.y,W*SUP.upKb*6);
+    ring(e.x,e.y,88,f.color,.35);
+    G.flashScreen=Math.max(G.flashScreen,.05);
+    const r=supCC(f,e,SUP.upStun,'stun');
+    if(r.landed){
+      sfx('stun');
+      G.floats.push({x:e.x,y:e.y-104,txt:`STUNNED ${rts(r.hard)}s`,color:'#7FA0FF',
+        life:1.2,ml:1.2,banner:true,sc:.6});
+    }
+    say(`Uppercut — ${SUP.hit[2]} dmg, hất địch lùi ${Math.round(SUP.upKb*100)}% chiều dài sàn và choáng ${rts(SUP.upStun)} giây.`,'m');
+  }
+  // 10% mỗi đòn cắt được một chiêu đang chuẩn bị — và CHỈ thế, không kèm choáng
+  if(chance(SUP.hitBreak)) supInterrupt(e);
+}
+/* Cắt một chiêu đang trong giai đoạn CHUẨN BỊ. Không gây choáng, không gây sát thương. */
+function supInterrupt(e){
+  if(!e)return false;
+  let cut=false;
+  if(e.bind||(e.dash&&e.dash.kind==='stab')){ shikaInterrupt(e); cut=true; }
+  if(e.gnFlash&&e.gnFlash.ph==='charge'){ e.gnFlash=null; e.lock=0; e.pose='idle'; cut=true; }
+  if(e.drAim){ e.drAim=null; e.lock=0; e.pose='idle'; cut=true; }
+  if(e.supHv&&e.supHv.ph==='aim'){ e.supHv=null; e.lock=0; e.pose='idle'; cut=true; }
+  if(e.supFb&&e.supFb.ph==='aim'){ e.supFb=null; e.lock=0; e.pose='idle'; cut=true; }
+  if(e.supMs&&e.supMs.ph!=='dive'){ supMsCancel(e); cut=true; }
+  if(cut) G.floats.push({x:e.x,y:e.y-92,txt:'INTERRUPTED',color:'#BFD4FF',
+    life:1.1,ml:1.1,banner:true,sc:.6});
+  return cut;
+}
+/* Bị đánh giữa lúc đang gồng: Heat Vision đứt trong 0.4 giây đầu (chờ nửa hồi chiêu),
+   Freeze Breath đứt trong 0.5 giây đầu (chờ 60%). Tia đã bắn ra rồi thì chỉ choáng /
+   knockdown mới cắt được — chỗ đó xử trong supHvTick. */
+function supOnHurt(t){
+  if(!t||t.key!=='superman'||t.summon||t.swapAs)return;
+  const A=t.supHv;
+  if(A&&A.ph==='aim'&&A.age<=SUP.hvBreak){
+    t.supHv=null; t.lock=0; setPose(t,'hurt',.25);
+    t.cds.s2=SUP.hvCd*SUP.hvBreakCut;
+    G.floats.push({x:t.x,y:t.y-104,txt:`HEAT VISION BROKEN · CD ${Math.round(SUP.hvBreakCut*100)}%`,
+      color:'#FFB39A',life:1.4,ml:1.4,banner:true,sc:.62});
+    say('Superman ăn đòn ngay lúc hai mắt vừa đỏ lên — Heat Vision đứt, bù lại chỉ chờ nửa hồi chiêu.','m');
+    return;
+  }
+  const B=t.supFb;
+  if(B&&B.ph==='aim'&&B.age<=SUP.fbBreak){
+    t.supFb=null; t.lock=0; setPose(t,'hurt',.25);
+    t.cds.s3=SUP.fbCd*SUP.fbBreakCut;
+    G.floats.push({x:t.x,y:t.y-104,txt:`FREEZE BREATH BROKEN · CD ${Math.round(SUP.fbBreakCut*100)}%`,
+      color:'#D6F2FF',life:1.4,ml:1.4,banner:true,sc:.62});
+    say('Superman bị đánh giữa lúc hít vào — Freeze Breath đứt, chỉ phải chờ 60% hồi chiêu.','m');
+  }
+}
+
+/* ---- chiêu 2: Heat Vision ---- */
+/* Độ chính xác tra bảng SUP.hvAcc theo khoảng cách rồi nội suy tuyến tính; đang bay
+   thì trừ thêm 15%. Tách hẳn ra hàm cho test đo được. */
+function supHvOdds(d,f){
+  const T=SUP.hvAcc;
+  let p=T[T.length-1][1];
+  if(d<=T[0][0]) p=T[0][1];
+  else for(let i=1;i<T.length;i++){
+    if(d<=T[i][0]){ const q=(d-T[i-1][0])/(T[i][0]-T[i-1][0]); p=T[i-1][1]+(T[i][1]-T[i-1][1])*q; break; }
+  }
+  if(f&&f.supFly>0) p-=SUP.flyAccCut;
+  return clamp(p,.05,.98);
+}
+function supermanHeat(f,e){
+  f.supCombo=null;
+  f.supHv={ph:'aim',t:SUP.hvAim,age:0,e,ang:Math.atan2(bodyCY(e)-supEyeY(f),e.x-f.x),
+           n:0,land:0,who:null,ok:false,off:0};
+  f.lock=Math.max(f.lock,SUP.hvAim+SUP.hvT+gs(.2));
+  setPose(f,'heat',SUP.hvAim+SUP.hvT);
+  sfx('sup_heat');
+  G.floats.push({x:f.x,y:f.y-106,txt:'HEAT VISION',color:f.color,life:1.4,ml:1.4,
+    banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
+  say('Superman đứng yên, hai mắt bắt đầu đỏ rực.','m');
+}
+/* Chiều cao hai con mắt trên hình — tia nhiệt phải phóng ra từ ĐÚNG chỗ này, không
+   phải từ trán hay từ miệng. */
+const supEyeY=f=>f.y+20-f.spriteH*.84-(f.supAir||0);
+function supHvTick(f,dt){
+  const A=f.supHv; if(!A)return;
+  const tg=aimTarget(f);
+  const e=(tg&&tg.alive)?tg:A.e;
+  if(!e||!e.alive||G.over||!f.alive){ f.supHv=null; f.lock=0; return; }
+  A.e=e; A.age+=dt; A.t-=dt;
+  f.pose='heat'; f.poseT=0;
+  f.lock=Math.max(f.lock,.2);
+  if(A.ph==='aim'){
+    aim(f,e,.25);
+    A.ang=Math.atan2(bodyCY(e)-supEyeY(f),e.x-f.x);
+    if(A.t<=0){
+      /* Bốc trúng / trượt NGAY LÚC bắn: trượt thì tia lệch hẳn sang một bên và ở
+         nguyên đó, chứ không phải "trúng rồi mới trượt". */
+      const d=dist(f,e), p=supHvOdds(d,f);
+      A.ok=chance(p);
+      A.off=A.ok?0:(chance(.5)?1:-1)*rnd(.20,.42);
+      A.ph='fire'; A.t=SUP.hvT; A.age=0; A.n=0;
+      sfx('sup_heat');
+      G.flashScreen=Math.max(G.flashScreen,.06);
+      say(`Hai tia nhiệt phóng ra từ mắt — tỉ lệ trúng ở khoảng cách này ${Math.round(p*100)}%.`,'m');
+    }
+    return;
+  }
+  /* Choáng hoặc knockdown vẫn cắt được tia; đòn đánh nhẹ thì không. */
+  if(f.stun>0){
+    f.supHv=null; f.lock=0; f.pose='idle';
+    G.floats.push({x:f.x,y:f.y-96,txt:'HEAT VISION CUT',color:'#FFB39A',
+      life:1.1,ml:1.1,banner:true,sc:.6});
+    return;
+  }
+  /* Chỉ được chỉnh hướng trong hvTrack giây đầu, sau đó KHOÁ CỨNG: địch né sang bên
+     là tia chiếu hụt, anh không được xoay theo. */
+  if(A.age<=SUP.hvTrack){
+    aim(f,e,.2);
+    A.ang=Math.atan2(bodyCY(e)-supEyeY(f),e.x-f.x)+A.off;
+  }
+  const want=Math.floor((SUP.hvT-A.t)/(SUP.hvT/SUP.hvN));
+  while(A.n<want&&A.n<SUP.hvN){ A.n++; supHvHit(f,A); }
+  if(A.t<=0){ f.supHv=null; f.lock=0; f.pose='idle'; f.poseT=0; }
+}
+/* Một nhịp sát thương của tia nhiệt. Ai đứng chắn giữa đường thì ăn trước — tia KHÔNG
+   xuyên qua người, và chỉ đúng một người ăn đòn mỗi nhịp. */
+function supHvHit(f,A){
+  const sy=supEyeY(f);
+  let best=null, bestD=1e9;
+  for(const o of G.fighters){
+    if(o.team===f.team||!o.alive||o.leaving>0||o.supHide||o.drHide)continue;
+    const dx=o.x-f.x, dy=bodyCY(o)-sy, dd=Math.hypot(dx,dy)||1;
+    if(dd>SUP.hvRange)continue;
+    const da=Math.atan2(Math.sin(Math.atan2(dy,dx)-A.ang),Math.cos(Math.atan2(dy,dx)-A.ang));
+    if(Math.abs(da)>SUP.hvWide+(o.r+16)/Math.max(70,dd))continue;
+    if(dd<bestD){ bestD=dd; best=o; }
+  }
+  if(!best){ A.land=0; A.who=null; return; }
+  const landed=hurt(best,SUP.hvDmg,f,false,'big');
+  if(!landed){ A.land=0; A.who=null; return; }
+  sfx('hit');
+  G.fx.push({type:'dust',x:best.x+rnd(-10,10),y:bodyCY(best),r:4,life:.3,ml:.3});
+  best.hvSlowT=Math.max(best.hvSlowT||0,SUP.hvSlowT);   // −25% tốc chạy lúc đang bị chiếu
+  if(A.who!==best){ A.who=best; A.land=0; }
+  A.land++;
+  // trúng đủ bốn nhịp lên cùng một người mới bốc cháy
+  if(A.land>=SUP.hvN) supBurn(best,f);
+}
+/* Burning KHÔNG cộng dồn: lần Heat Vision sau chỉ làm mới đồng hồ về 4 giây. */
+function supBurn(t,src){
+  if(!t||t.summon&&!t.ally)return;
+  for(let i=t.dots.length-1;i>=0;i--) if(t.dots[i]&&t.dots[i].sup) t.dots.splice(i,1);
+  t.dots.push({dps:SUP.hvBurnDps,left:SUP.hvBurnT,acc:0,src,tint:'red',sup:true});
+  sfx('burn');
+  G.floats.push({x:t.x,y:t.y-118,
+    txt:`BURNING ${SUP.hvBurnDps/RT} DMG/s ${rts(SUP.hvBurnT)}s`,
+    color:'#FF8A4A',life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  say(`Trúng đủ ${SUP.hvN} nhịp tia nhiệt — quần áo bén lửa, cháy ${SUP.hvBurnDps/RT} dmg mỗi giây trong ${rts(SUP.hvBurnT)} giây.`,'m');
+}
+
+/* ---- chiêu 3: Freeze Breath ---- */
+function supermanFreeze(f,e){
+  f.supCombo=null;
+  f.supFb={ph:'aim',t:SUP.fbAim,age:0,e,ang:Math.atan2(bodyCY(e)-(f.y-30),e.x-f.x)};
+  f.lock=Math.max(f.lock,SUP.fbAim+SUP.fbT+gs(.2));
+  setPose(f,'freeze',SUP.fbAim+SUP.fbT);
+  G.floats.push({x:f.x,y:f.y-106,txt:'FREEZE BREATH',color:f.color,life:1.4,ml:1.4,
+    banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
+  say('Superman hít một hơi thật sâu, ngực căng lên.','m');
+}
+function supFbTick(f,dt){
+  const B=f.supFb; if(!B)return;
+  const tg=aimTarget(f);
+  const e=(tg&&tg.alive)?tg:B.e;
+  if(!e||!e.alive||G.over||!f.alive){ f.supFb=null; f.lock=0; return; }
+  B.e=e; B.age+=dt; B.t-=dt;
+  f.pose='freeze'; f.poseT=0;
+  f.lock=Math.max(f.lock,.2);
+  if(B.ph==='aim'){
+    aim(f,e,.25);
+    B.ang=Math.atan2(bodyCY(e)-(f.y-30),e.x-f.x);
+    if(f.stun>0){ f.supFb=null; f.lock=0; f.pose='idle'; return; }
+    if(B.t<=0){ B.ph='blow'; B.t=SUP.fbT; supFbFire(f,B); }
+    return;
+  }
+  if(B.t<=0){ f.supFb=null; f.lock=0; f.pose='idle'; f.poseT=0; }
+}
+/* Luồng hơi hình NÓN, không phải tia laser mảnh. Trúng tối đa ba người; chỉ người nằm
+   sát trục nón mới ăn đủ hiệu ứng, mấy người ở rìa chỉ ăn phần giảm. */
+function supFbFire(f,B){
+  const ang=B.ang, sx=f.x, sy=f.y-30;
+  f.ax=Math.cos(ang); f.ay=Math.sin(ang);
+  if(Math.abs(Math.cos(ang))>.12) f.face=Math.cos(ang)>=0?1:-1;
+  f.supCone={x:sx,y:sy,ang,t:SUP.fbT,ml:SUP.fbT};
+  sfx('sup_freeze');
+  ring(sx+Math.cos(ang)*26,sy+Math.sin(ang)*26,48,'#D6F2FF',.3);
+  const list=[];
+  for(const o of G.fighters){
+    if(o.team===f.team||!o.alive||o.leaving>0||(o.summon&&!o.ally)||o.supHide||o.drHide)continue;
+    const dx=o.x-sx, dy=bodyCY(o)-sy, dd=Math.hypot(dx,dy)||1;
+    if(dd>SUP.fbRange+o.r)continue;
+    const da=Math.abs(Math.atan2(Math.sin(Math.atan2(dy,dx)-ang),Math.cos(Math.atan2(dy,dx)-ang)));
+    if(da>SUP.fbCone)continue;
+    list.push({o,da});
+  }
+  list.sort((a,b)=>a.da-b.da);
+  const take=list.slice(0,SUP.fbMax);
+  if(!take.length){ say('Luồng hơi lạnh thổi vào khoảng không — không ai đứng trong vùng nón.','m'); return; }
+  take.forEach((it,i)=>{
+    const core=(i===0&&it.da<=SUP.fbCore);
+    const o=it.o;
+    const dmg=core?SUP.fbDmg:SUP.fbEdgeDmg;
+    const froz=o.frozen>0;
+    const landed=hurt(o,dmg,f,false,'big');
+    if(!landed)return;
+    ring(o.x,o.y,86,'#D6F2FF',.35);
+    if(froz){
+      // đã Frozen rồi thì không đóng băng lại, chỉ làm mới Chilled
+      supChill(o,core?SUP.fbChill:SUP.fbEdgeChill);
+      return;
+    }
+    o.chillAfter=core?SUP.fbChill:SUP.fbEdgeChill;
+    supCC(f,o,core?SUP.fbFreeze:SUP.fbEdgeFreeze,'freeze');
+  });
+  const main=take[0];
+  say(main.da<=SUP.fbCore
+    ? `Luồng hơi trắng xanh trùm trúng giữa — ${SUP.fbDmg} dmg và đóng băng ${rts(SUP.fbFreeze)} giây.`
+    : `Luồng hơi chỉ quét qua rìa — ${SUP.fbEdgeDmg} dmg và đóng băng ${rts(SUP.fbEdgeFreeze)} giây.`,'m');
+}
+
+/* ---- chiêu 4: Meteor Strike ---- */
+function supMsOdds(d,f){
+  const T=SUP.msAcc;
+  let p=T[T.length-1][1];
+  if(d<=T[0][0]) p=T[0][1];
+  else for(let i=1;i<T.length;i++){
+    if(d<=T[i][0]){ const q=(d-T[i-1][0])/(T[i][0]-T[i-1][0]); p=T[i-1][1]+(T[i][1]-T[i-1][1])*q; break; }
+  }
+  return clamp(p,.05,.98);
+}
+/* Ba người trở lên: nhắm người đã gây cho anh nhiều sát thương nhất trong 6 giây gần
+   nhất; chưa ai đánh anh thì cứ nhắm người anh đang nhắm sẵn. */
+function supMsTarget(f){
+  const foes=G.fighters.filter(o=>o&&o.alive&&o.hp>0&&o.team!==f.team&&!(o.summon&&!o.ally)&&!(o.leaving>0));
+  if(!foes.length)return null;
+  if(foes.length===1)return foes[0];
+  const sum=new Map();
+  for(const h of (f.supLog||[])){
+    if(G.t-h.t>SUP.msLog)continue;
+    if(foes.indexOf(h.src)<0)continue;
+    sum.set(h.src,(sum.get(h.src)||0)+h.amt);
+  }
+  let best=null, bestV=-1;
+  for(const o of foes){ const v=sum.get(o)||0; if(v>bestV){ bestV=v; best=o; } }
+  return bestV>0?best:(aimTarget(f)||foes[0]);
+}
+function supermanMeteor(f,e){
+  const tg=supMsTarget(f)||e;
+  f.supCombo=null;
+  if(f.supFly>0) supFlyOff(f,'hạ xuống để lấy đà cho Meteor Strike');
+  f.supMs={ph:'rise',t:SUP.msRise,e:tg,tx:0,ty:0,ok:false,d0:1};
+  f.lock=Math.max(f.lock,SUP.msRise+SUP.msHold+gs(.4));
+  setPose(f,'meteor',SUP.msRise+SUP.msHold);
+  sfx('sup_meteor');
+  G.floats.push({x:f.x,y:f.y-110,txt:'METEOR STRIKE',color:f.color,life:1.6,ml:1.6,
+    banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.06,.06)});
+  say(`Superman lùi nhẹ rồi vọt lên cao — ${rts(SUP.msRise+SUP.msHold)} giây chuẩn bị, đủ để đối phương kịp né.`,'m');
+}
+/* Bị choáng trong 1.2 giây chuẩn bị: huỷ chiêu, chờ 70% hồi chiêu. */
+function supMsCancel(f){
+  if(!f.supMs)return;
+  f.supMs=null; f.supAir=0; f.lock=0; f.pose='idle'; f.poseT=0;
+  f.cds.s4=SUP.msCd*SUP.msCancelCut;
+  G.floats.push({x:f.x,y:f.y-104,txt:`METEOR STRIKE CANCELLED · CD ${Math.round(SUP.msCancelCut*100)}%`,
+    color:'#FFB39A',life:1.4,ml:1.4,banner:true,sc:.62});
+  say('Superman bị cắt ngang lúc còn đang lấy đà — Meteor Strike huỷ, phải chờ 70% hồi chiêu.','m');
+}
+function supMsTick(f,dt){
+  const M=f.supMs; if(!M)return;
+  const tg=(M.e&&M.e.alive&&!(M.e.leaving>0))?M.e:(aimTarget(f)||foeOf(f));
+  if(!tg||!tg.alive||G.over||!f.alive){ f.supMs=null; f.supAir=0; f.lock=0; return; }
+  if(M.ph!=='dive') M.e=tg;
+  M.t-=dt;
+  f.pose='meteor'; f.poseT=0;
+  f.lock=Math.max(f.lock,.3);
+  if(M.ph==='rise'){
+    if(f.stun>0){ supMsCancel(f); return; }
+    const p=clamp(1-M.t/SUP.msRise,0,1);
+    f.supAir=SUP.msH*p;
+    // lùi nhẹ ra sau trong lúc bốc lên
+    const d=dist(f,tg)||1;
+    f.x=clamp(f.x-(tg.x-f.x)/d*26*dt,PAD,W-PAD);
+    f.y=clamp(f.y-(tg.y-f.y)/d*26*dt,PAD+50,H-PAD-10);
+    if(M.t<=0){ M.ph='hold'; M.t=SUP.msHold; }
+    return;
+  }
+  if(M.ph==='hold'){
+    if(f.stun>0){ supMsCancel(f); return; }
+    f.supAir=SUP.msH;
+    aim(f,tg,.2);
+    if(M.t<=0){
+      /* Chốt hướng ở đây và KHOÁ HẲN: bốc trượt thì điểm rơi lệch sang bên, bốc trúng
+         thì rơi đúng chỗ địch đang đứng — nhưng địch vẫn kịp bước ra khỏi đường lao. */
+      const d=dist(f,tg), p=supMsOdds(d,f);
+      M.ok=chance(p);
+      const a=Math.atan2(tg.y-f.y,tg.x-f.x);
+      const off=M.ok?0:(chance(.5)?1:-1)*rnd(48,88);
+      M.tx=clamp(tg.x-Math.sin(a)*off,PAD,W-PAD);
+      M.ty=clamp(tg.y+Math.cos(a)*off,PAD+50,H-PAD-10);
+      M.d0=Math.max(1,Math.hypot(M.tx-f.x,M.ty-f.y));
+      M.ph='dive'; M.t=gs(2.5);
+      sfx('sup_meteor');
+      say(`Hướng lao đã khoá — tỉ lệ trúng ở khoảng cách này ${Math.round(p*100)}%.`,'m');
+    }
+    return;
+  }
+  /* Lao xuống: đường thẳng, không bẻ hướng, không bám theo ai. Super Armor nên đòn
+     đánh nhẹ không cắt được — nhưng máu vẫn mất bình thường, và choáng dính vào người
+     anh vẫn còn nguyên đó để ăn NGAY SAU khi tiếp đất. */
+  const dx=M.tx-f.x, dy=M.ty-f.y, dd=Math.hypot(dx,dy)||1;
+  const st=SUP.msSpd*dt;
+  f.face=dx>=0?1:-1;
+  f.ax=dx/dd; f.ay=dy/dd;
+  f.supAir=SUP.msH*clamp(dd/M.d0,0,1);
+  f.ghostT-=dt;
+  if(f.ghostT<=0){ f.ghostT=.05;
+    G.fx.push({type:'ghost',x:f.x,y:f.y-f.supAir,face:f.face,key:f.key,pose:'meteor',h:f.spriteH,life:.3,ml:.3}); }
+  if(dd<=st||M.t<=0){ f.x=M.tx; f.y=M.ty; f.supAir=0; supMsLand(f); return; }
+  f.x=clamp(f.x+dx/dd*st,PAD,W-PAD);
+  f.y=clamp(f.y+dy/dd*st,PAD+50,H-PAD-10);
+}
+function supMsLand(f){
+  const M=f.supMs;
+  f.supMs=null; f.supAir=0; f.lock=0;
+  sfx('sup_impact');
+  ring(f.x,f.y,150,'#FFD9A0',.55);
+  G.flashScreen=Math.max(G.flashScreen,.12);
+  for(let i=0;i<12;i++) G.fx.push({type:'dust',x:f.x+rnd(-26,26),y:f.y+rnd(-6,18),r:6,life:.5,ml:.5});
+  const prime=M?M.e:null;
+  let direct=false;
+  if(prime&&prime.alive&&!(prime.leaving>0)&&dist(f,prime)<=SUP.msHitR+prime.r){
+    direct=true;
+    const froz=prime.frozen>0;
+    const landed=hurt(prime,SUP.msDmg,f,'METEOR STRIKE!','big');
+    if(landed){
+      /* Đang Frozen thì chính cú đấm 145 dmg đã đủ 100 để đập vỡ băng ngay trong
+         hurt(); phần cộng thêm ở đây là Shatter Damage, đúng MỘT lần, không nhân lên
+         dù trên người có bao nhiêu lớp hiệu ứng băng. */
+      if(froz){
+        hurt(prime,SUP.msShatter,f,false,'big');
+        G.floats.push({x:prime.x,y:prime.y-118,txt:`SHATTER DAMAGE +${SUP.msShatter}`,
+          color:'#EAF7FF',life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
+      }
+      /* Hướng hất lùi. Lao trúng giữa người thì hai toạ độ gần như trùng nhau, lúc đó
+         hiệu hai vị trí ra vector 0 và knock() đẩy đi 0px — nên rơi vào trường hợp đó
+         thì lấy luôn hướng lao làm hướng đẩy. */
+      let kx=prime.x-f.x, ky=prime.y-f.y;
+      if(Math.hypot(kx,ky)<1){ kx=f.ax||1; ky=f.ay||0; }
+      knock(prime,kx,ky,W*SUP.msKb*6);
+      const r=supCC(f,prime,SUP.msDown,'down');
+      if(r.landed){
+        sfx('stun');
+        G.floats.push({x:prime.x,y:prime.y-104,txt:`KNOCKED DOWN ${rts(r.hard)}s`,color:'#FFD9A0',
+          life:1.3,ml:1.3,banner:true,sc:.6});
+      }
+      say(`Meteor Strike nện trúng — ${SUP.msDmg} dmg${froz?` + ${SUP.msShatter} Shatter Damage`:''}, quật ngã và hất lùi ${Math.round(SUP.msKb*100)}% chiều dài sàn.`,'g');
+    }
+  }
+  /* Vùng chấn động quanh điểm va chạm: 30 dmg và làm chậm, KHÔNG quật ngã thêm ai.
+     Mục tiêu chính ăn cả cú đấm lẫn chấn động, ai đứng gần chỉ ăn chấn động. */
+  for(const o of G.fighters){
+    if(o===f||o.team===f.team||!o.alive||o.leaving>0||(o.summon&&!o.ally))continue;
+    if(dist(f,o)>SUP.msQuakeR+o.r)continue;
+    if(hurt(o,SUP.msQuakeDmg,f,false,'big')){
+      o.supQuake=Math.max(o.supQuake||0,SUP.msQuakeT);
+      G.floats.push({x:o.x,y:o.y-112,
+        txt:`SHOCKWAVE −${Math.round((1-SUP.msQuakeSlow)*100)}% MOVE ${rts(SUP.msQuakeT)}s`,
+        color:'#FFD9A0',life:1.5,ml:1.5,banner:true,sc:.62});
+    }
+  }
+  if(!direct){
+    f.supMsDown=SUP.msMissT;
+    setPose(f,'down',SUP.msMissT);
+    say(`Meteor Strike đập xuống nền đất trống — Superman mất ${rts(SUP.msMissT)} giây mới đứng dậy nổi, và Man of Steel tụt còn ${Math.round(SUP.steelDown*100)}%.`,'m');
+  }
+}
+
+function supermanTick(f,dt){
+  if(f.supCone){ f.supCone.t-=dt; if(f.supCone.t<=0) f.supCone=null; }
+  if(f.supEntry){ supEntryTick(f,dt); return; }
+  if(f.supMs){ supMsTick(f,dt); return; }
+  if(f.supMsDown>0){ f.lock=Math.max(f.lock,.2); f.pose='down'; f.poseT=0; return; }
+  const e=aimTarget(f)||foeOf(f);
+  const d=e?dist(f,e):999;
+  supFlyTick(f,dt,e,d);
+  supHvTick(f,dt);
+  supFbTick(f,dt);
+  supComboTick(f,dt);
+}
+
 /* ---------- AI ---------- */
 /* Cận chiến thì đứng cách nhau một quãng chứ đừng dán vào người ta. Tầm tay của cả
    ChiChi lẫn Horikita là r+r+16 = 68, nên điểm lượn phải nằm DƯỚI mốc đó mới ra đòn
@@ -4172,6 +5072,8 @@ function aiVec(f,e){
   }
   // Doraemon giữ quãng trung bình để rút bảo bối; hoảng thì lùi, hết bảo bối mới xáp vào
   if(f.key==='dora'&&!f.summon) return doraVec(f,e);
+  // Superman đang bay: bay là để ĐUỔI, nên nhắm thẳng vào địch chứ không lượn vòng
+  if(f.key==='superman'&&!f.summon&&f.supFly>0) return supFlyVec(f,e);
   if(f.role==='ranged'){
     const want=f.want||215;
     if(d<want-45){ x-=ux*1.15; y-=uy*1.15; }
@@ -4274,11 +5176,15 @@ function step(dt){
        thân xác địch đang có hồn Ginyu — chiêu 3 của anh cần được đếm nhịp ở cả hai chỗ. */
     if(!f.summon&&f.alive&&(f.key==='ginyu'||f.swapAs)) ginyuTick(f,dt);
     if(f.key==='dora'&&!f.summon&&f.alive&&!f.swapAs) doraTick(f,dt);
+    if(f.key==='superman'&&!f.summon&&f.alive&&!f.swapAs) supermanTick(f,dt);
     // người khiêu khích rời sàn thì đối thủ nhắm lại vào mục tiêu thật
     if(f.tauntBy&&(!f.tauntBy.alive||f.tauntBy.hp<=0||f.tauntBy.leaving>0||G.fighters.indexOf(f.tauntBy)<0)) f.tauntBy=null;
     if(f.outCut>0&&!(foeOf(f)&&foeOf(f).domain)) f.outCut=0;
     f.domainA=clamp(f.domainA+dt*(f.domain?3:-2.5),0,1);
     if(!f.summon && f.hp<=f.maxHp*.20) f.injured=true;   // đã tơi tả là giữ luôn
+    // Superman: dưới 25% máu thì trên bộ đồ có bụi và vết xước, còn chữ "S" và áo
+    // choàng thì giữ nguyên — kể cả lúc đứng ăn mừng.
+    if(f.key==='superman'&&!f.summon&&f.hp<=f.maxHp*SUP.lsrHp) f.supWorn=true;
     if(!f.summon){
       f.wt-=dt;
       if(f.wt<=0){ f.wx=rnd(PAD+30,W-PAD-30); f.wy=rnd(PAD+80,H-PAD-40); f.wt=rnd(1.6,3.4); }
@@ -4313,7 +5219,13 @@ function step(dt){
       G.cam.x+=(tx-G.cam.x)*Math.min(1,dt*3);
       G.cam.y+=(ty-G.cam.y)*Math.min(1,dt*3);
       // Doraemon thắng thì ngồi xuống ăn dorayaki chứ không đứng thủ thế
-      if(w.alive) setPose(w,w.key==='dora'&&!w.swapAs?'win':'idle',0);
+      if(w.alive) setPose(w,(w.key==='dora'||w.key==='superman')&&!w.swapAs?'win':'idle',0);
+      /* Superman thắng: nhìn quanh sàn một lượt rồi TỪ TỪ bay lên khỏi mặt đất, chống
+         hai tay vào hông, áo choàng tung sau lưng. Không phá gì của sàn đấu cả. */
+      if(w.alive&&w.key==='superman'&&!w.swapAs){
+        if(!w.supWonSaid){ w.supWonSaid=true; sfx('sup_win'); }
+        if(G.endT>1.1) w.supAir=Math.min(32,(w.supAir||0)+dt*18);
+      }
     }
     if(!G.announced && G.endT>=2){
       G.announced=true;
@@ -4460,6 +5372,11 @@ function step(dt){
     }
     if(f.key==='suzune' && f.form<2 && !f.ayaShieldDone && f.hp<=f.maxHp*SUZ.guardHp){
       ayaShield(f);
+    }
+    /* Last Son's Resolve: chỉ nổ ĐÚNG MỘT LẦN mỗi trận — được người khác hồi máu lên
+       trên mốc rồi tụt xuống lại cũng không gọi lần hai (cờ lsrDone giữ luôn). */
+    if(f.key==='superman' && !f.lsrDone && f.hp<=f.maxHp*SUP.lsrHp){
+      supResolve(f);
     }
     if(f.key==='shika' && !f.domainDone && f.hp<=f.maxHp*SHIKA.domainHp){
       naraDomain(f,foeOf(f));
@@ -5020,6 +5937,8 @@ function vector(f){
     ctx.restore();
   }else if(f.key==='dora'){
     doraVector(f);
+  }else if(f.key==='superman'){
+    supVector(f);
   }else if(f.key==='ayanokouji'){
     const guard=(f.pose==='guard'), strike=(f.pose==='strike');
     const kk=strike?Math.sin(clamp(f.poseT||0,0,1)*Math.PI):0;
@@ -5207,6 +6126,14 @@ function sprite(f){
     else if(pk==='copter') arr=set.idle;
     else if(pk==='win') arr=set.idle;
     else if(pk==='down') arr=set.injured||set.hurt||set.idle;
+    // Superman: thiếu ảnh dáng nào thì lùi về ô gần nghĩa nhất
+    else if(pk==='land') arr=set.hurt||set.idle;
+    else if(pk==='punch2') arr=set.punch||set.atk1||set.idle;
+    else if(pk==='upper') arr=set.punch||set.atk1||set.idle;
+    else if(pk==='heat') arr=set.idle;
+    else if(pk==='freeze') arr=set.heat||set.idle;
+    else if(pk==='meteor') arr=set.fly||set.idle;
+    else if(pk==='ko') arr=set.down||set.injured||set.hurt||set.idle;
     // Ginyu: thiếu ảnh dáng nào thì lùi về ô gần nghĩa nhất, đừng lùi thẳng về ô đứng
     else if(pk==='dance1'||pk==='dance2'||pk==='dance3') arr=set.idle;
     else if(pk==='fly') arr=set.idle;
@@ -5232,6 +6159,7 @@ function sprite(f){
 function drawFighter(f){
   if(f.hidden)return;                          // đang thay bằng mô hình sút đôi
   if(f.drHide)return;                          // Doraemon còn trong lòng Anywhere Door
+  if(f.supHide)return;                         // Superman còn là bóng người trên cao
   const img=sprite(f);
   const mv=f.moveAmt!==undefined?clamp(f.moveAmt,0,1):(f.moving?1:0);
   const hop = Math.abs(Math.sin(G.t*7.5))*7*mv + Math.sin(G.t*2.4)*2.5*(1-mv);
@@ -5256,11 +6184,15 @@ function drawFighter(f){
      hai con số này CỐ Ý lệch nhau, xem ghi chú trong CLAUDE.md. */
   const sz=f.szMul===undefined?1:f.szMul;
   sx*=sz; sy*=sz;
-  // Take-copter: bay là là, đủ thấy chân rời đất chứ không bay lên trời
-  const fly=f.copter>0?DORA.copHover*(1+Math.sin(G.t*9)*.12):0;
+  // Take-copter: bay là là, đủ thấy chân rời đất chứ không bay lên trời.
+  // Superman thì bay thật: supAir là độ cao đang treo (bay vào sân, Kryptonian Flight,
+  // quãng vọt lên của Meteor Strike, và lúc ăn mừng).
+  const fly=(f.copter>0?DORA.copHover*(1+Math.sin(G.t*9)*.12):0)+(f.supAir||0);
+  const shA=fly?clamp(1-fly/300,.22,.75):1;    // càng lên cao bóng dưới chân càng mờ và nhỏ
+  const shR=fly?clamp(1-fly/520,.5,1):1;
 
-  ctx.save(); ctx.globalAlpha=.25*clamp(1-hop/26,.3,1)*(fly?.6:1); ctx.fillStyle='#000';
-  ctx.beginPath(); ctx.ellipse(f.x+ox,f.y+22,(20-hop*.35)*sz,6*sz,0,0,7); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.globalAlpha=.25*clamp(1-hop/26,.3,1)*shA; ctx.fillStyle='#000';
+  ctx.beginPath(); ctx.ellipse(f.x+ox,f.y+22,(20-hop*.35)*sz*shR,6*sz*shR,0,0,7); ctx.fill(); ctx.restore();
 
   // Vòng khiêu khích dưới chân Ayanokouji: dấu hiệu duy nhất cho biết địch đang bị hút
   // vào anh. Chỉ là hình, không chữ.
@@ -5378,6 +6310,29 @@ function drawFighter(f){
     ctx.restore();
   }
 
+  /* Last Son's Resolve: một luồng khí vàng trắng NHẸ như năng lượng mặt trời, đủ để
+     thấy anh đang gồng chứ không phủ kín người. */
+  if(f.lsr>0){
+    const cx=f.x+ox, foot=f.y+20-hop-fly, gy=foot-f.spriteH*.5;
+    const br=.85+Math.sin(G.t*3.2)*.15;
+    ctx.save();
+    ctx.globalAlpha=.34*br;
+    const gr=80+Math.sin(G.t*3.2)*5;
+    ctx.drawImage(glowSprite(),cx-gr,gy-gr,gr*2,gr*2);
+    ctx.globalAlpha=.3*br;
+    ctx.strokeStyle='#FFE9A8'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.ellipse(cx,gy,36,f.spriteH*.46,0,0,7); ctx.stroke();
+    for(let i=0;i<7;i++){                       // hạt nắng bốc lên dọc thân
+      const q=(G.t*.6+i*.143)%1;
+      ctx.globalAlpha=(1-q)*.7;
+      ctx.fillStyle=i%2?'#FFF3C4':'#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(cx+Math.sin(i*2.1+G.t*1.4)*26, foot-q*(f.spriteH+16), 2.2-q, 0, 7);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   gnAuraDraw(f,f.x+ox,f.y+20-hop);
 
   ctx.save();
@@ -5416,6 +6371,27 @@ function drawFighter(f){
     }
   }
   ctx.restore();
+
+  /* Frozen: khối băng trong mờ bọc kín người. Vẽ đè lên thân chứ không thay thân —
+     người chơi vẫn phải thấy ai đang đứng trong đó. */
+  if(f.frozen>0){
+    const cy=bodyCY(f)-hop*.6-fly, rx=(f.r+9)*sz, ry=(bodyRY(f)+10)*sz;
+    ctx.save();
+    ctx.globalAlpha=.42;
+    ctx.fillStyle='#BFE9FF';
+    ctx.beginPath(); ctx.ellipse(f.x+ox,cy,rx,ry,0,0,7); ctx.fill();
+    ctx.globalAlpha=.85; ctx.strokeStyle='#EAF7FF'; ctx.lineWidth=2.2;
+    ctx.beginPath(); ctx.ellipse(f.x+ox,cy,rx,ry,0,0,7); ctx.stroke();
+    ctx.globalAlpha=.6; ctx.strokeStyle='#FFFFFF'; ctx.lineWidth=1.4;
+    for(let i=0;i<4;i++){                       // mấy mặt cắt của khối băng
+      const a=i*.9+.4;
+      ctx.beginPath();
+      ctx.moveTo(f.x+ox+Math.cos(a)*rx*.9, cy+Math.sin(a)*ry*.9);
+      ctx.lineTo(f.x+ox-Math.cos(a+.7)*rx*.8, cy-Math.sin(a+.7)*ry*.8);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
 
   if(bodyTint){
     const tn=bodyTint;
@@ -5501,7 +6477,8 @@ const STUN_STYLE={
   spark:{n:3, spd:6,   rx:19, ry:5.5, ring:'#FFC542', ringA:.22},
   spin: {n:4, spd:7.4, rx:23, ry:7,   ring:'#8FD0FF', ringA:.42},
   shock:{n:4, spd:5.4, rx:21, ry:6.5, ring:'#9EE7FF', ringA:.34},
-  heart:{n:4, spd:2.8, rx:23, ry:7.5, ring:'#FF9AD5', ringA:.3}
+  heart:{n:4, spd:2.8, rx:23, ry:7.5, ring:'#FF9AD5', ringA:.3},
+  ice:  {n:4, spd:1.8, rx:22, ry:6.8, ring:'#BFE9FF', ringA:.38}
 };
 const hash1=n=>{ const v=Math.sin(n*127.1)*43758.5453; return v-Math.floor(v); };
 function starPath(x,y,r,pts){
@@ -5587,6 +6564,14 @@ function drawStun(f,hy){
       ctx.fillStyle=i%2?'#EAFBFF':'#9EE7FF';
       boltPath(x,y,5.6); ctx.fill();
       ctx.shadowBlur=0;
+    }else if(k==='ice'){
+      ctx.fillStyle=front?'#EAF7FF':'#9CC9E8';
+      ctx.strokeStyle='#4F86B8'; ctx.lineWidth=1;
+      ctx.save(); ctx.translate(x,y); ctx.rotate(G.t*1.6+i);
+      ctx.beginPath();
+      ctx.moveTo(0,-5); ctx.lineTo(3.4,0); ctx.lineTo(0,5); ctx.lineTo(-3.4,0);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore();
     }else{
       ctx.fillStyle='#FFC542'; ctx.strokeStyle='#7A5400'; ctx.lineWidth=1;
       ctx.beginPath(); ctx.arc(x,y,3.6,0,7); ctx.fill(); ctx.stroke();
@@ -5658,6 +6643,7 @@ function fireText(txt,cx,y,size,seed){
 function drawBars(f){
   if(f.summon&&!f.ally)return;
   if(f.drHide)return;                          // Doraemon còn trong lòng Anywhere Door
+  if(f.supHide)return;                         // Superman còn là bóng người trên cao
   if(f.ally){
     // đồng minh dùng thanh nhỏ hơn hẳn, để ba người đứng sát nhau vẫn đọc được ai là ai
     const w=84,h=16,x=clamp(f.x-w/2,12,W-w-12),y=f.y+28;
@@ -5721,6 +6707,16 @@ function drawBars(f){
   if(f.shrunk>0) lines.push({t:`SHRUNK −${Math.round((1-DORA.shrunkMove)*100)}% MOVE / −${Math.round((1-DORA.shrunkDmg)*100)}% DMG / +${Math.round((DORA.shrunkKb-1)*100)}% KNOCKBACK (${(f.shrunk*RT).toFixed(1)}s)`, c:'#FFF3B0', s:9});
   if(f.copter>0) lines.push({t:`TAKE-COPTER +${Math.round((DORA.copMove-1)*100)}% MOVE · SLOWS −${Math.round(DORA.copSlowRes*100)}% (${(f.copter*RT).toFixed(1)}s)`, c:'#FFD34D', s:9});
   if(f.fk>0) lines.push({t:`FUTURE KNOWLEDGE −${Math.round((1-DORA.fkTake)*100)}% DMG TAKEN · +${Math.round((DORA.fkCast-1)*100)}% CAST (${(f.fk*RT).toFixed(1)}s)`, c:'#FFE100', s:9});
+  if(f.frozen>0) lines.push({t:`FROZEN · CANNOT MOVE OR ACT (${(f.frozen*RT).toFixed(1)}s)`, c:'#BFE9FF', s:9});
+  if(f.chill>0) lines.push({t:`CHILLED −${Math.round((1-SUP.fbChillMove)*100)}% MOVE / −${Math.round((1-SUP.fbChillCast)*100)}% CAST (${(f.chill*RT).toFixed(1)}s)`, c:'#D6F2FF', s:9});
+  if(f.supQuake>0) lines.push({t:`SHOCKWAVE −${Math.round((1-SUP.msQuakeSlow)*100)}% MOVE (${(f.supQuake*RT).toFixed(1)}s)`, c:'#FFD9A0', s:9});
+  if(f.supSlow>0) lines.push({t:`CC LIMIT · SLOWED −${Math.round((1-SUP.ccSlow)*100)}% MOVE (${(f.supSlow*RT).toFixed(1)}s)`, c:'#BFD4FF', s:9});
+  if(f.dots.some(d=>d&&d.sup)) lines.push({t:`BURNING ${SUP.hvBurnDps/RT} DMG/s`, c:'#FF8A4A', s:9});
+  if(f.lsr>0) lines.push({t:`LAST SON'S RESOLVE +${Math.round((SUP.lsrMove-1)*100)}% MOVE · +${Math.round((SUP.lsrCast-1)*100)}% CAST · ${Math.round((SUP.steelRes+SUP.lsrRes)*100)}% DMG RESIST (${(f.lsr*RT).toFixed(1)}s)`, c:'#FFE9A8', s:9});
+  if(f.fatigue>0) lines.push({t:`SOLAR FATIGUE −${Math.round((1-SUP.fatMove)*100)}% MOVE / −${Math.round((1-SUP.fatCast)*100)}% CAST (${(f.fatigue*RT).toFixed(1)}s)`, c:'#8FA6C8', s:9});
+  if(f.supFly>0) lines.push({t:`KRYPTONIAN FLIGHT +${Math.round((SUP.flyMove-1)*100)}% MOVE (${(f.supFly*RT).toFixed(1)}s)`, c:'#7FA0FF', s:9});
+  if(f.supMs&&f.supMs.ph==='dive') lines.push({t:'SUPER ARMOR · CANNOT BE INTERRUPTED', c:'#FFD9A0', s:9});
+  if(f.supMsDown>0) lines.push({t:`DOWN · MAN OF STEEL ${Math.round(SUP.steelDown*100)}% (${(f.supMsDown*RT).toFixed(1)}s)`, c:'#FFB39A', s:9});
   if(f.invuln>0) lines.push({t:`IMMUNE (${(f.invuln*RT).toFixed(1)}s)`, c:'#FF9AD5', s:11});
   ctx.lineWidth=3; ctx.strokeStyle='#000';
   lines.forEach(L=>{
@@ -6205,6 +7201,241 @@ function doraVector(f){
     ctx.fillStyle='#E8E2F0'; ctx.fillRect(-12,y-6,8,2.6);
   }
   ctx.restore();
+}
+/* Superman vẽ tay. Giữ đúng hình tượng quen thuộc: bộ đồ xanh, biểu tượng chữ "S" đỏ
+   trên nền vàng giữa ngực, áo choàng đỏ, giày đỏ, tóc đen với lọn xoăn trước trán.
+   Áo choàng vẽ ĐẦU TIÊN nên luôn nằm phía sau, và chỉ trải về phía sau lưng — lúc
+   đánh nhau nó bay phần phật nhưng không bao giờ che mất thân người. Tay chân là đoạn
+   chi xoay quanh gốc vai / hông (góc 0 là chỉ thẳng xuống, âm là hất ra trước), nên
+   đổi dáng chỉ việc đổi mấy con số góc ở đầu hàm. Gọi từ vector(). */
+function supVector(f){
+  const y=-18;
+  const blue='#2B5BD7', deep='#1B3E9E', capeC='#D42A2A', capeIn='#8E1414',
+        skin='#F5CFA8', hair='#141024', boot='#D42A2A', belt='#E8B400';
+  const P=f.pose||'idle';
+  const t=G.t*10, sw=f.moving?Math.sin(t)*3:0;
+  const chi=(x0,y0,ang,len,w,col)=>{
+    ctx.save(); ctx.translate(x0,y0); ctx.rotate(ang); ctx.fillStyle=col;
+    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(-w/2,0,w,len,w*.45); ctx.fill(); }
+    else ctx.fillRect(-w/2,0,w,len);
+    ctx.restore();
+    return {x:x0-Math.sin(ang)*len, y:y0+Math.cos(ang)*len};
+  };
+  // nắm đấm: một khối tròn, tay áo xanh nên nắm đấm để màu da
+  const fist=(p,r)=>{ ctx.fillStyle=skin; ctx.beginPath(); ctx.arc(p.x,p.y,r||4.2,0,7); ctx.fill(); };
+
+  let aL=-.32, aR=.32, lL=.09+sw*.02, lR=-.09-sw*.02, tilt=0, drop=0, hips=false;
+  if(P==='fly'){ aL=-2.75; aR=-2.98; lL=-.2; lR=-.34; tilt=-.6; }
+  else if(P==='land'){ aL=.95; aR=-.55; lL=1.05; lR=-.85; tilt=.22; drop=6; }
+  else if(P==='punch'){ aL=.55; aR=-1.62; lL=.2; lR=-.28; tilt=-.12; }
+  else if(P==='punch2'){ aL=-1.78; aR=.6; lL=-.24; lR=.2; tilt=.12; }
+  else if(P==='upper'){ aL=.78; aR=-2.45; lL=.26; lR=-.3; tilt=-.24; }
+  else if(P==='heat'){ aL=.3; aR=-.3; lL=.16; lR=-.16; }
+  else if(P==='freeze'){ aL=.52; aR=-.52; lL=.18; lR=-.18; tilt=.05; }
+  else if(P==='meteor'){ aL=2.5; aR=-3.02; lL=-.2; lR=-.34; tilt=-1.05; }
+  else if(P==='down'){ aL=1.5; aR=-1.5; lL=1.25; lR=-1.15; tilt=.62; drop=9; }
+  else if(P==='ko'){ aL=1.15; aR=-1.05; lL=1.25; lR=-.6; tilt=.3; drop=7; }
+  else if(P==='win'){ hips=true; lL=.05; lR=-.05; }
+  else if(P==='hurt'||P==='injured'){ aL=.62; aR=-.62; tilt=.16; }
+
+  ctx.save();
+  ctx.translate(0,drop); ctx.rotate(tilt);
+
+  /* Áo choàng — bay theo hướng bay và hướng gió. Lúc bay hoặc lao xuống thì trải dài
+     ra sau; đứng đánh nhau thì chỉ phất nhẹ. Gục xuống thì rũ theo người. */
+  const wind=Math.sin(G.t*4.1)*.6+Math.sin(G.t*2.7)*.4;
+  const run=clamp(Math.hypot(f.vx||0,f.vy||0)/(f.speed||100),0,1.5);
+  const air=(P==='fly'||P==='meteor')?1.7:(P==='ko'||P==='down'?.12:.34+run*.85);
+  const bx=-14-air*22, by=y-6+wind*5*air+(P==='ko'||P==='down'?16:0);
+  ctx.fillStyle=capeC;
+  ctx.beginPath();
+  ctx.moveTo(-7,y-30);
+  ctx.quadraticCurveTo(bx*.55,y-26+wind*6*air,bx,by);
+  ctx.quadraticCurveTo(bx*.72,y+16+wind*7*air,-4,y+16);
+  ctx.quadraticCurveTo(-2,y-6,7,y-30);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle=capeIn;                                   // mặt trong sẫm hơn: nếp gấp
+  ctx.beginPath();
+  ctx.moveTo(-6,y-28);
+  ctx.quadraticCurveTo(bx*.42,y-4+wind*4*air,-4,y+14);
+  ctx.quadraticCurveTo(-3,y-8,-6,y-28);
+  ctx.closePath(); ctx.fill();
+
+  // hai chân + giày đỏ
+  const legL=chi(-6,y+10,lL,17,9,blue), legR=chi(6,y+10,lR,17,9,blue);
+  ctx.fillStyle=boot;
+  for(const p of [legL,legR]){ ctx.beginPath(); ctx.ellipse(p.x,p.y+1,6,4.4,0,0,7); ctx.fill(); }
+
+  /* Tay sau vẽ trước thân, tay trước vẽ sau — cho ra chiều sâu. Riêng đòn hai là cú
+     xoay người đấm bằng tay kia, nên chính tay đó mới là tay dẫn và phải vẽ ĐÈ lên
+     thân, không thì cú đấm chìm nghỉm sau lưng áo. */
+  const lead=(P==='punch2');
+  /* Cú xoay người bằng tay xa: cả thân xoay theo nên tay với được xa hơn hẳn. Không nới
+     ra thì nắm đấm dừng ngay giữa ngực và nhìn như chưa đánh gì. */
+  const leadL=lead?26:17;
+  if(hips){                                               // chống hai tay vào hông
+    const eL=chi(-11,y-6,1.5,11,7,blue); chi(eL.x,eL.y,-.9,10,6.4,blue);
+  }else{
+    const h=lead?chi(11,y-6,aR,17,7.6,blue):chi(-11,y-6,aL,17,7.6,blue); fist(h);
+  }
+
+  torso(0,y-8,23,25,blue);
+  ctx.fillStyle=belt; ctx.fillRect(-12,y+11,24,4);        // thắt lưng vàng
+
+  /* Biểu tượng chữ "S": khiên vàng viền đỏ, chữ S đỏ vẽ bằng NÉT chứ không dùng font
+     (font headless hay thiếu ký tự, mà cái này thì không được phép hụt). */
+  const sy=y-3;
+  ctx.fillStyle='#E8262B';
+  ctx.beginPath();
+  ctx.moveTo(0,sy-9); ctx.lineTo(8,sy-5.2); ctx.lineTo(6.2,sy+3.6); ctx.lineTo(0,sy+9);
+  ctx.lineTo(-6.2,sy+3.6); ctx.lineTo(-8,sy-5.2); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#F5C518';
+  ctx.beginPath();
+  ctx.moveTo(0,sy-6.4); ctx.lineTo(5.7,sy-3.6); ctx.lineTo(4.4,sy+2.5); ctx.lineTo(0,sy+6.4);
+  ctx.lineTo(-4.4,sy+2.5); ctx.lineTo(-5.7,sy-3.6); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#E8262B'; ctx.lineWidth=1.7; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.beginPath();
+  ctx.moveTo(2.7,sy-3.6);
+  ctx.quadraticCurveTo(-3.6,sy-5.4,-2.3,sy-1);
+  ctx.quadraticCurveTo(-1,sy+1.3,2.5,sy+.5);
+  ctx.quadraticCurveTo(4.2,sy+3.3,-2.6,sy+3.6);
+  ctx.stroke();
+
+  if(hips){ const eR=chi(11,y-6,-1.5,11,7,blue); chi(eR.x,eR.y,.9,10,6.4,blue); }
+  else { const h2=lead?chi(-11,y-6,aL,leadL,7.6,blue):chi(11,y-6,aR,17,7.6,blue); fist(h2); }
+
+  // đầu, tóc đen, lọn xoăn trước trán. Vạt tóc phải dừng CAO HƠN hàng mắt, không thì
+  // cả khuôn mặt chìm trong tóc và nhìn chỉ ra một khối đen.
+  head(0,y-21,12);
+  ctx.fillStyle=hair;
+  ctx.beginPath(); ctx.arc(0,y-24,12.6,Math.PI,2*Math.PI); ctx.fill();
+  ctx.fillRect(-12.6,y-26.5,25.2,3.6);
+  ctx.beginPath(); ctx.arc(3.8,y-31,3.6,0,7); ctx.fill();            // lọn xoăn trước trán
+  ctx.beginPath(); ctx.arc(7,y-28,2.3,0,7); ctx.fill();
+  // mắt — lúc Heat Vision thì đỏ rực
+  const heat=(P==='heat');
+  if(P==='down'||P==='ko'){
+    ctx.strokeStyle='#1B1428'; ctx.lineWidth=1.6; ctx.lineCap='round';
+    for(const ex of [-3,4.6]){
+      ctx.beginPath(); ctx.moveTo(ex-2.4,y-19.4); ctx.lineTo(ex+2.4,y-19.4); ctx.stroke();
+    }
+  }else if(heat){
+    ctx.fillStyle='#FF3B1F';
+    ctx.beginPath(); ctx.arc(-2.6,y-19.4,2.3,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(5.2,y-19.4,2.3,0,7); ctx.fill();
+  }else{
+    ctx.fillStyle='#1B1428'; ctx.fillRect(-4.4,y-20.8,4,3); ctx.fillRect(3.4,y-20.8,4,3);
+  }
+  // miệng: lúc Freeze Breath thì tròn vo, đang thổi hơi ra
+  ctx.strokeStyle='#8E5A46'; ctx.lineWidth=1.3; ctx.lineCap='round';
+  if(P==='freeze'){ ctx.fillStyle='#7A3B2E'; ctx.beginPath(); ctx.ellipse(1.5,y-13.5,3.4,3,0,0,7); ctx.fill(); }
+  else { ctx.beginPath(); ctx.moveTo(-1.5,y-13.8); ctx.lineTo(4.5,y-13.8); ctx.stroke(); }
+
+  /* Thắng lúc còn dưới 25% máu thì trên đồ có vài vết bụi và vết xước — nhưng biểu
+     tượng chữ "S" và áo choàng thì tuyệt đối giữ nguyên, không rách, không mất. */
+  if(f.injured||f.supWorn){
+    ctx.strokeStyle='#8E1023'; ctx.lineWidth=2.2; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-10,y+4); ctx.lineTo(-4,y+10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(6,y-24); ctx.lineTo(10,y-20); ctx.stroke();
+    ctx.fillStyle='rgba(60,60,72,.55)';                     // vệt bụi bám trên đồ
+    ctx.fillRect(-11,y+1,7,2.6); ctx.fillRect(4,y+6,8,2.4);
+  }
+  ctx.restore();
+}
+/* Pha 1 của màn xuất hiện: mới chỉ là một BÓNG NGƯỜI trên cao, chưa nhìn rõ mặt, áo
+   choàng bay trong gió. Vẽ riêng ở đây chứ không đi qua drawFighter — lúc này f.supHide
+   đang bật nên drawFighter bỏ qua anh. */
+function drawSupEntry(){
+  for(const f of G.fighters){
+    if(!f.supEntry||!f.supHide)continue;
+    const cx=f.x, cy=f.y-(f.supAir||0), sw=Math.sin(G.t*3.4);
+    ctx.save();
+    ctx.globalAlpha=.30+Math.sin(G.t*4)*.06;
+    ctx.drawImage(glowSprite(),cx-62,cy-84,124,124);
+    ctx.globalAlpha=.92; ctx.fillStyle='#0E1430';
+    ctx.beginPath();                                        // áo choàng bay trong gió
+    ctx.moveTo(-6+cx,cy-46);
+    ctx.quadraticCurveTo(cx-38+sw*12,cy-30,cx-32+sw*16,cy+10);
+    ctx.quadraticCurveTo(cx-10,cy-4,cx+6,cy-46);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx,cy-34,11,17,0,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy-55,8,0,7); ctx.fill();
+    ctx.fillRect(cx-9,cy-19,7,21); ctx.fillRect(cx+2,cy-19,7,21);
+    ctx.restore();
+  }
+}
+/* Heat Vision — hai tia đỏ phóng ra từ ĐÚNG hai con mắt. Chúng chụm dần vào nhau khi
+   bay xa nhưng gốc phát vẫn tách làm hai, nhìn là biết ngay tia ra từ mắt. Vẽ SAU khi
+   vẽ nhân vật, cùng chỗ với drawGinyuFlash(). */
+function drawSupHeat(){
+  for(const f of G.fighters){
+    const A=f.supHv; if(!A||!f.alive)continue;
+    const fs=f.face<0?-1:1;
+    const ey=supEyeY(f), ex=f.x+fs*2;
+    if(A.ph==='aim'){
+      const p=clamp(1-A.t/SUP.hvAim,0,1);
+      ctx.save();
+      ctx.globalAlpha=.20+p*.45;
+      ctx.drawImage(glowSprite(),ex-24,ey-24,48,48);
+      ctx.globalAlpha=.95; ctx.fillStyle='#FF3B1F';
+      for(const o of [-3.2,3.2]){ ctx.beginPath(); ctx.arc(ex+o*fs,ey,1.5+p*1.7,0,7); ctx.fill(); }
+      ctx.restore();
+      continue;
+    }
+    const L=SUP.hvRange, al=.7+clamp(A.t/SUP.hvT,0,1)*.3;
+    ctx.save();
+    ctx.translate(ex,ey); ctx.rotate(A.ang);
+    for(const sgn of [-1,1]){
+      const y0=sgn*3.4, y1=sgn*1.1;                         // hai tia chụm dần vào nhau
+      ctx.globalAlpha=.34*al; ctx.fillStyle='#8E1414';
+      ctx.beginPath(); ctx.moveTo(0,y0-3.4); ctx.lineTo(L,y1-3); ctx.lineTo(L,y1+3); ctx.lineTo(0,y0+3.4); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha=.88*al; ctx.fillStyle='#FF3B1F';
+      ctx.beginPath(); ctx.moveTo(0,y0-2.1); ctx.lineTo(L,y1-1.8); ctx.lineTo(L,y1+1.8); ctx.lineTo(0,y0+2.1); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha=.96*al; ctx.fillStyle='#FFE9C4';
+      ctx.beginPath(); ctx.moveTo(0,y0-.9); ctx.lineTo(L,y1-.8); ctx.lineTo(L,y1+.8); ctx.lineTo(0,y0+.9); ctx.closePath(); ctx.fill();
+    }
+    ctx.globalAlpha=.4*al; ctx.strokeStyle='#FFC9A0'; ctx.lineWidth=1.6; ctx.lineCap='round';
+    for(let i=0;i<3;i++){
+      const yy=Math.sin(G.t*24+i*1.9)*4;
+      ctx.beginPath(); ctx.moveTo(14,yy); ctx.lineTo(L-10,yy*.3); ctx.stroke();
+    }
+    ctx.restore();
+    ctx.save();
+    ctx.globalAlpha=.55*al;
+    ctx.drawImage(glowSprite(),ex-26,ey-26,52,52);
+    ctx.restore();
+  }
+}
+/* Freeze Breath — luồng hơi trắng xanh hình NÓN kèm tinh thể băng nhỏ. Không bao giờ
+   được vẽ thành một tia laser mảnh. */
+function drawSupFreeze(){
+  for(const f of G.fighters){
+    const C=f.supCone; if(!C)continue;
+    const a=clamp(C.t/C.ml,0,1), grow=1-a;
+    const L=SUP.fbRange*clamp(.4+grow*.9,0,1);
+    ctx.save();
+    ctx.translate(C.x,C.y); ctx.rotate(C.ang);
+    ctx.globalAlpha=.26*a; ctx.fillStyle='#CDEBFF';
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,L,-SUP.fbCone,SUP.fbCone); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=.45*a; ctx.fillStyle='#EAF7FF';
+    for(let i=0;i<10;i++){                                  // cuộn hơi lạnh cuồn cuộn
+      const q=((i*.11)+grow*1.1)%1, off=Math.sin(i*2.3+G.t*8)*SUP.fbCone*.8;
+      ctx.beginPath(); ctx.arc(Math.cos(off)*q*L,Math.sin(off)*q*L,4+q*13,0,7); ctx.fill();
+    }
+    ctx.globalAlpha=.8*a; ctx.strokeStyle='#7FD0FF'; ctx.lineWidth=1.4; ctx.lineCap='round';
+    for(let i=0;i<8;i++){                                   // tinh thể băng nhỏ
+      const q=((i*.137)+grow*1.25)%1, off=Math.sin(i*4.1+G.t*4)*SUP.fbCone;
+      const px=Math.cos(off)*q*L, py=Math.sin(off)*q*L, sz=2.4+(i%3)*1.3;
+      for(let k=0;k<3;k++){
+        const aa=k*1.047+G.t*2+i;
+        ctx.beginPath();
+        ctx.moveTo(px-Math.cos(aa)*sz,py-Math.sin(aa)*sz);
+        ctx.lineTo(px+Math.cos(aa)*sz,py+Math.sin(aa)*sz);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
 }
 /* Anywhere Door — cánh cửa hồng. Dùng chung cho màn ra mắt, Emergency Door và màn ăn
    mừng. open = 0 (đóng kín) tới 1 (mở toang), a = độ đậm. */
@@ -6744,6 +7975,7 @@ function draw(){
   drawGarden();
   if(G.timeWarp) drawTimeWarp();
   drawDoraDoors();
+  drawSupEntry();
   for(const e of G.fx){
     ctx.save(); const a=clamp(e.life/(e.ml||.4),0,1);
     if(e.type==='ring'){ ctx.globalAlpha=a*.85; ctx.strokeStyle=e.color; ctx.lineWidth=4;
@@ -6844,7 +8076,10 @@ function draw(){
   }
   for(const p of G.proj) drawProj(p);
   if(G.loserFx){
-    const L=G.loserFx, f=L.f, pr=clamp(L.t/1.25,0,1);
+    /* Superman gục: chống một gối xuống trước, gượng dậy hai nhịp không nổi, rồi mới
+       đổ hẳn — nên quãng nghiêng người bắt đầu muộn hơn mấy người kia. */
+    const L=G.loserFx, f=L.f, pr=L.sup?clamp((L.t-.62)/.85,0,1):clamp(L.t/1.25,0,1);
+    const tryUp=(L.sup&&L.t<.62)?Math.abs(Math.sin(L.t*9))*3.5:0;
     const img=sprite(f);
     ctx.save();
     ctx.globalAlpha=.28*(1-pr); ctx.fillStyle='#000';
@@ -6852,7 +8087,7 @@ function draw(){
     ctx.restore();
     ctx.save();
     ctx.globalAlpha=1-pr*pr;
-    ctx.translate(f.x+(f.face<0?-1:1)*pr*14, f.y+20+pr*12);
+    ctx.translate(f.x+(f.face<0?-1:1)*pr*14, f.y+20+pr*12-tryUp);
     ctx.rotate((f.face<0?-1:1)*pr*1.25);
     ctx.scale((f.face<0?-1:1)*(1-pr*.1), 1-pr*.1);
     if(img){ const h=f.spriteH, w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
@@ -6870,6 +8105,8 @@ function draw(){
   drawForestGrip();
   drawBindShadow();
   drawGinyuFlash();
+  drawSupHeat();
+  drawSupFreeze();
   for(const f of order) drawDoraGhosts(f);
   if(!G.flashback) for(const f of order) drawBars(f);   // hồi tưởng thì giấu thanh máu cho sạch hình
 
@@ -7102,11 +8339,12 @@ function winnerBanner(){
   ctx.textAlign='center';
   // Doraemon có dòng ăn mừng riêng theo đúng yêu cầu, thay cho cặp WINNER + tên
   const dora=w.key==='dora'&&!w.swapAs;
+  const sup=w.key==='superman'&&!w.swapAs;
   ctx.font='900 15px "Space Mono",monospace';
   ctx.lineWidth=6; ctx.strokeStyle='#000'; ctx.strokeText('WINNER',0,-42);
   ctx.fillStyle='#fff'; ctx.fillText('WINNER',0,-42);
-  const big=dora?'DORAEMON WINS!':w.name.toUpperCase();
-  ctx.font=`900 ${dora?38:46}px "Be Vietnam Pro",sans-serif`;
+  const big=dora?'DORAEMON WINS!':(sup?'SUPERMAN WINS!':w.name.toUpperCase());
+  ctx.font=`900 ${dora||sup?38:46}px "Be Vietnam Pro",sans-serif`;
   ctx.lineWidth=10; ctx.strokeStyle='#000'; ctx.strokeText(big,0,4);
   ctx.lineWidth=4; ctx.strokeStyle='#fff'; ctx.strokeText(big,0,4);
   ctx.fillStyle=w.color; ctx.fillText(big,0,4);
@@ -7909,6 +9147,48 @@ function testDoraTime(){
   f.hp=0; doraTime(f);
   say('[Thử nghiệm] Ép Doraemon dùng Time Machine: Second Chance.','m');
 }
+function findSuperman(){
+  const f=findFighter('superman');
+  if(!f){ say('Cần có Superman trong trận mới thử được.','m'); return null; }
+  if(G.over){ newGame(); return findFighter('superman'); }
+  ac(); if(MUSIC.on) startMusic();
+  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(f.supEntry){ f.supEntry=null; f.supHide=false; f.supAir=0; f.pose='idle'; f.lock=0; }
+  return f;
+}
+function testSupFly(){
+  const f=findSuperman(); if(!f)return;
+  if(f.supFly>0){ say('Superman đang bay rồi.','m'); return; }
+  f.supFlyCd=0; supFlyOn(f);
+  say('[Thử nghiệm] Ép Superman cất cánh Kryptonian Flight.','m');
+}
+function testSupResolve(){
+  const f=findSuperman(); if(!f)return;
+  if(f.lsrDone){ say("Last Son's Resolve chỉ dùng được một lần mỗi trận, và đã dùng rồi.",'m'); return; }
+  f.hp=Math.min(f.hp,Math.round(f.maxHp*SUP.lsrHp));
+  supResolve(f);
+  say("[Thử nghiệm] Ép Superman vào Last Son's Resolve.",'m');
+}
+function testSupFreeze(){
+  const f=findSuperman(); if(!f)return;
+  const e=aimTarget(f)||foeOf(f);
+  if(!e){ say('Không có mục tiêu nào để thổi băng.','m'); return; }
+  f.cds.s3=SUP.fbCd; f.supHv=null; f.supMs=null; f.lock=0;
+  supermanFreeze(f,e);
+  say('[Thử nghiệm] Ép Superman thổi Freeze Breath.','m');
+}
+function testSupMeteor(){
+  const f=findSuperman(); if(!f)return;
+  const e=aimTarget(f)||foeOf(f);
+  if(!e){ say('Không có mục tiêu nào để bổ Meteor Strike.','m'); return; }
+  f.cds.s4=SUP.msCd; f.supHv=null; f.supFb=null; f.lock=0;
+  supermanMeteor(f,e);
+  say('[Thử nghiệm] Ép Superman tung Meteor Strike.','m');
+}
+el('testSupFly').addEventListener('click',testSupFly);
+el('testSupResolve').addEventListener('click',testSupResolve);
+el('testSupFreeze').addEventListener('click',testSupFreeze);
+el('testSupMeteor').addEventListener('click',testSupMeteor);
 el('testDoraShrink').addEventListener('click',testDoraShrink);
 el('testDoraDoor').addEventListener('click',testDoraDoor);
 el('testDoraTime').addEventListener('click',testDoraTime);
