@@ -567,8 +567,9 @@ const DORA={
   growT:gs(.4), shrinkT:gs(.18),
   /* Chiêu 4 — Time Machine: Second Chance */
   tmT:gs(2.2), tmPh:[gs(.5),gs(1),gs(1.7),gs(2.2)],
-  tmBackLo:1, tmBackHi:3,    // quay ngược 1~3 giây người chơi, có cả số lẻ
-  tmHistT:gs(4),             // giữ bấy nhiêu giây người chơi lịch sử vị trí + máu
+  tmBackLo:3.5, tmBackHi:10, // quay ngược 3.5~10 giây người chơi, có cả số lẻ
+  tmHistT:gs(11),            // giữ bấy nhiêu giây người chơi lịch sử vị trí + máu — phải
+                             // DÀI HƠN tmBackHi, không thì quãng xa nhất không có dữ liệu
   tmHealCap:.20,             // hồi lại không quá 20% máu tối đa
   tmCdCut:.40,               // hồi chiêu đang chạy được cắt 40% phần còn lại
   fkT:gs(5), fkTake:.70, fkMove:1.35, fkCast:1.45, fkAcc:.25, fkCcRes:.35
@@ -823,7 +824,7 @@ const CHARS={
       `<b>1 · Basic Attack</b> three round-handed blows ${DORA.hit[0]} / ${DORA.hit[1]} / ${DORA.hit[2]} dmg, ${rts(DORA.hitGap)}s apart — the third is a belly charge that knocks back hard and stuns ${rts(DORA.slamStun)}s · each blow ${Math.round(DORA.disOdds*100)}% to leave <b>Disoriented</b> for ${rts(DORA.disT)}s (−${Math.round((1-DORA.disMove)*100)}% move, −${Math.round((1-DORA.disCast)*100)}% cast)`,
       `<b>2 · Air Cannon</b> every ${rts(DORA.acCd)}s — ${rts(DORA.acAim)}s to aim, then a ring of compressed air for ${DORA.acDmg} dmg, ${Math.round(DORA.acKbDist*100)}% of the arena in knockback, ${rts(DORA.acStun)}s stun, and it cuts any channelled skill short · accuracy runs ${Math.round(DORA.acAcc[1][1]*100)}–${Math.round(DORA.acAcc[0][1]*100)}% up close down to ${Math.round(DORA.acAcc[5][1]*100)}–${Math.round(DORA.acAcc[4][1]*100)}% across the arena · pierces <b>two</b> bodies, the second takes ${Math.round(DORA.acPierce2*100)}% · a hit inside the first ${rts(DORA.acBreak)}s cancels it for half the cooldown`,
       `<b>3 · Small Light</b> every ${rts(DORA.slCd)}s — ${rts(DORA.slAim)}s to aim, then the lamp floods a wide <b>cone</b> of pale yellow light reaching ${DORA.slRange}px, wider than any frost breath, and it lands at once on up to ${DORA.slMax} fighters · dead centre: ${DORA.slDmg} dmg and <b>Shrunk</b> at ${Math.round(DORA.shrunkSize*100)}% size for ${rts(DORA.shrunkT)}s — −${Math.round((1-DORA.shrunkMove)*100)}% move, −${Math.round((1-DORA.shrunkCast)*100)}% cast, −${Math.round((1-DORA.shrunkDmg)*100)}% damage dealt, −${Math.round((1-DORA.shrunkReach)*100)}% melee reach, +${Math.round((DORA.shrunkKb-1)*100)}% knockback taken · at the rim of the cone only ${DORA.slEdgeDmg} dmg and ${rts(DORA.slEdgeT)}s of Shrunk · light does not fly, so there is nothing to sidestep — the only way out is to stand outside the cone · it never stacks, a second flash only refreshes the timer`,
-      `<b>4 · Time Machine: Second Chance</b> at 0 HP he does not fall — the Time Machine rolls in and winds him back ${DORA.tmBackLo}–${DORA.tmBackHi}s: his old spot, his old HP (never more than ${Math.round(DORA.tmHealCap*100)}% of max healed), every debuff gone, ${Math.round(DORA.tmCdCut*100)}% off what is left of his cooldowns · <b>once per match</b>, and only he is rewound`,
+      `<b>4 · Time Machine: Second Chance</b> at 0 HP he does not fall — the Time Machine rolls in and winds him back a random ${DORA.tmBackLo}–${DORA.tmBackHi}s — the exact number is spelled out on the clock face: his old spot, his old HP (never more than ${Math.round(DORA.tmHealCap*100)}% of max healed), every debuff gone, ${Math.round(DORA.tmCdCut*100)}% off what is left of his cooldowns · <b>once per match</b>, and only he is rewound`,
       `<b>4 · Future Knowledge</b> ${rts(DORA.fkT)}s after the rewind — −${Math.round((1-DORA.fkTake)*100)}% damage taken, +${Math.round((DORA.fkMove-1)*100)}% move, +${Math.round((DORA.fkCast-1)*100)}% cast, +${Math.round(DORA.fkAcc*100)}% accuracy on both Air Cannon and Small Light, ${Math.round(DORA.fkCcRes*100)}% resist to slows and stuns`],
     init(f){
       f.cds={s1:0,s2:DORA.acCd,s3:gs(3)};
@@ -4517,7 +4518,10 @@ function doraTime(f){
   G.flashScreen=Math.max(G.flashScreen,.5);
   sfx('dora_time');
   setTheme('time');
-  G.callBanner={txt:'TIME MACHINE: SECOND CHANCE',color:'#FFE100',life:CALL_BANNER_LIFE,ml:CALL_BANNER_LIFE};
+  /* Con số quay ngược bốc ngẫu nhiên nên phải HIỆN RA cho người xem thấy: vừa ghim vào
+     băng-rôn giữa màn, vừa vẽ to ngay giữa mặt đồng hồ trong phân cảnh (drawTimeWarp). */
+  G.callBanner={txt:`TIME MACHINE: REWIND ${f.tm.back.toFixed(1)}s`,color:'#FFE100',
+    life:CALL_BANNER_LIFE,ml:CALL_BANNER_LIFE};
   say('Doraemon ngã xuống — nhưng cỗ Time Machine hiện ra, kim đồng hồ quay ngược.','m');
   later(DORA.tmPh[3],()=>drTimeBack(f),true);
 }
@@ -4526,7 +4530,7 @@ function drTimeBack(f){
   G.timeWarp=null;
   setTheme('main');
   if(G.over)return;
-  const backM=gs(T?T.back:2);
+  const backM=gs(T?T.back:DORA.tmBackLo);
   /* Chưa đủ tmHistT giây dữ liệu thì về thẳng chỗ xuất phát với 20% máu tối đa. */
   const enough=f.hist.length>1&&(G.t-f.hist[0].t)>=DORA.tmHistT-gs(.3);
   let px,py,ph;
@@ -4558,9 +4562,11 @@ function drTimeBack(f){
   f.pose='idle'; f.poseT=0;
   ring(f.x,f.y,150,'#FFE100',.55);
   G.flashScreen=Math.max(G.flashScreen,.4);
+  G.floats.push({x:f.x,y:f.y-150,txt:`REWOUND ${(T?T.back:DORA.tmBackLo).toFixed(1)}s`,
+    color:'#7FD0FF',life:1.8,ml:1.8,banner:true,gold:true,tilt:rnd(-.05,.05)});
   G.floats.push({x:f.x,y:f.y-118,txt:`FUTURE KNOWLEDGE ${rts(DORA.fkT)}s`,color:'#FFE100',
     life:1.8,ml:1.8,banner:true,gold:true,focus:true,tilt:rnd(-.05,.05)});
-  say(`Doraemon quay ngược ${(T?T.back:2).toFixed(1)} giây — về đúng chỗ cũ với ${Math.round(f.hp)} máu, sạch debuff.`,'m');
+  say(`Doraemon quay ngược ${(T?T.back:DORA.tmBackLo).toFixed(1)} giây — về đúng chỗ cũ với ${Math.round(f.hp)} máu, sạch debuff.`,'m');
   say('Biết trước chuyện sắp xảy ra: chịu đòn tốt hơn, chạy nhanh hơn, ngắm chuẩn hơn.','m');
 }
 
@@ -7968,6 +7974,19 @@ function drawTimeWarp(){
       const ha=-Math.PI/2+G.t*spd;
       ctx.beginPath(); ctx.moveTo(f.x,f.y-30);
       ctx.lineTo(f.x+Math.cos(ha)*len,f.y-30+Math.sin(ha)*len); ctx.stroke();
+    }
+    /* Quay ngược bao nhiêu giây thì bốc ngẫu nhiên, nên in thẳng con số dưới mặt đồng hồ.
+       Chữ tiếng Anh, đúng luật riêng của Doraemon. */
+    if(f.tm){
+      ctx.globalAlpha=a;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.font='900 30px "Be Vietnam Pro",sans-serif';
+      ctx.lineWidth=5; ctx.strokeStyle='#2A1C00';
+      const txt=`− ${f.tm.back.toFixed(1)}s`;
+      ctx.strokeText(txt,f.x,f.y-30+34); ctx.fillStyle='#FFE100'; ctx.fillText(txt,f.x,f.y-30+34);
+      ctx.font='900 13px "Be Vietnam Pro",sans-serif';
+      ctx.lineWidth=4;
+      ctx.strokeText('REWIND',f.x,f.y-30+58); ctx.fillText('REWIND',f.x,f.y-30+58);
     }
     ctx.restore();
   }

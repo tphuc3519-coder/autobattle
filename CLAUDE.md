@@ -909,9 +909,18 @@ gọi `doraTime()`. **Một lần mỗi trận**; dùng rồi mà mất máu ti�
   sang thang nguyên cung không có chủ âm, hết phân cảnh thì trả về `'main'`.
 - **Đạn của chính anh bị xoá sạch** lúc mở phân cảnh, nếu không quay xong là có hai loạt
   cùng bay.
-- Quay về: vị trí và máu của **1~3 giây người chơi trước** (bốc ngẫu nhiên, có cả số lẻ) đọc
-  từ `f.hist` — lấy mẫu mỗi 0.12 giây, giữ 4 giây. **Máu hồi lại không quá 20% máu tối đa**.
-  Chưa đủ 4 giây dữ liệu thì về **chỗ xuất phát với 20% máu tối đa**.
+- Quay về: vị trí và máu của **3.5~10 giây người chơi trước** (`tmBackLo` / `tmBackHi`, bốc
+  ngẫu nhiên, có cả số lẻ) đọc từ `f.hist` — lấy mẫu mỗi 0.12 giây, giữ **11 giây**
+  (`tmHistT`). **Máu hồi lại không quá 20% máu tối đa**. Chưa đủ dữ liệu thì về **chỗ xuất
+  phát với 20% máu tối đa**.
+  - **`tmHistT` phải DÀI HƠN `tmBackHi`**, không thì quãng tua xa nhất không có dữ liệu và
+    lần nào cũng rơi vào nhánh "về chỗ xuất phát". Đổi `tmBackHi` thì nhớ nới `tmHistT` theo.
+  - **Con số vừa bốc phải HIỆN RA màn hình** *(người dùng: "quay ngược lại từ khoảng 3.5-10s
+    trc lúc chết (random và hiện trên màn hình luôn)")* — ba chỗ: băng-rôn giữa màn ghi
+    `TIME MACHINE: REWIND 7.4s`, `drawTimeWarp()` in **`− 7.4s` + `REWIND`** ngay dưới mặt
+    đồng hồ đang chạy ngược, và lúc trở lại sân có thêm băng-rôn `REWOUND 7.4s`. Chữ tiếng
+    Anh, đúng luật riêng của Doraemon.
+  *(Đường đi của con số: 1~3 giây → **3.5~10 giây**.)*
 - Xoá sạch debuff **trên anh**, cắt **40% phần còn lại** của mọi hồi chiêu, và **không**
   đụng tới máu / vị trí / trạng thái của bất kỳ ai khác.
 - Rồi **Future Knowledge 5 giây**: −30% dmg nhận, +35% tốc chạy, +45% tốc ra chiêu, +25% độ
@@ -1617,7 +1626,8 @@ node tools/t_dora.js    # Doraemon: Anywhere Door đúng 1.5s bốn pha và đ�
                         # hitbox 85%, không cộng dồn, phình lại đúng 0.4s), Emergency
                         # Door (miễn thương, chỉ xoá slow, đáp trong sàn), Take-copter
                         # (+150% tốc chạy, hai cửa vào chốt ở 40% sàn / 2 giây),
-                        # Time Machine (2.2s, trần hồi máu 20%, cắt 40% hồi chiêu), và chữ
+                        # Time Machine (2.2s, tua ngược 3.5~10s và in con số ra màn hình,
+                        # trần hồi máu 20%, cắt 40% hồi chiêu), và chữ
                         # hiển thị đều bằng tiếng Anh
 node tools/t_superman.js # Superman: màn xuất hiện 1.5s bốn pha (bóng người trên cao, tiếp đất
                         # không gây dmg), Man of Steel (100 raw -> 80, burn ăn đủ, trần 60%,
