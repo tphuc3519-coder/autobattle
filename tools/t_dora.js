@@ -6,7 +6,8 @@
      3. ba chiêu: combo 15/15/20 cách nhau 0.6s, Air Cannon (đẩy 22% sàn, choáng 2.5s, xuyên
         hai người, đứt trong 0.35s đầu thì nửa hồi chiêu), Small Light (vùng nón rộng hơn Freeze Breath, giữa nón / rìa nón, thu nhỏ không cộng dồn),
         và phát Air Cannon nã kèm lúc đang bay Take-copter;
-     4. Time Machine: Second Chance — quay ngược 1~3 giây, trần hồi máu 20%, cắt 40% hồi chiêu;
+     4. Time Machine: Second Chance — quay ngược 3.5~10 giây (bốc ngẫu nhiên, con số hiện
+        thẳng lên màn hình), trần hồi máu 20%, cắt 40% hồi chiêu;
      5. chữ hiển thị đều bằng tiếng Anh.
    Chạy: node tools/t_dora.js */
 const { openGame } = require('./probe');
@@ -531,6 +532,38 @@ async function waitGame(page, body, limit) {
     ok('hồi chiêu đang chạy bị cắt 40% phần còn lại',
       [cdcut.s2, cdcut.s3, cdcut.cop, cdcut.ed].every(v => Math.abs(v - cdcut.want) < .001),
       `Air Cannon ${cdcut.s2} · Small Light ${cdcut.s3} · Take-copter ${cdcut.cop} · cửa thoát hiểm ${cdcut.ed} (chuẩn ${cdcut.want})`);
+    /* Quãng tua bốc ngẫu nhiên trong 3.5~10 giây người chơi, và con số đó phải HIỆN RA:
+       băng-rôn giữa màn ghim nó, phân cảnh in nó dưới mặt đồng hồ. */
+    const rew = await page.evaluate(() => {
+      const G = window.__G(), D = window.__DORA;
+      const f = G.fighters.find(x => x.key === 'dora');
+      const lan = [];
+      for (let i = 0; i < 400; i++) {
+        f.tm = null; f.tmDone = false; f.hp = 1;
+        G.callBanner = null; G.freeze = 0; G.timeWarp = null; G.timers.length = 0;
+        window.__doraTime(f);
+        lan.push({ back: f.tm.back, banner: G.callBanner && G.callBanner.txt });
+      }
+      f.tm = null; f.tmDone = true; G.freeze = 0; G.timeWarp = null; G.timers.length = 0;
+      window.__setTheme && window.__setTheme('main');
+      const backs = lan.map(x => x.back);
+      return {
+        lo: +Math.min(...backs).toFixed(2), hi: +Math.max(...backs).toFixed(2),
+        wantLo: D.tmBackLo, wantHi: D.tmBackHi, histT: +(D.tmHistT * window.__RT).toFixed(1),
+        // băng-rôn phải in đúng con số vừa bốc
+        khop: lan.every(x => x.banner && x.banner.includes(x.back.toFixed(1) + 's')),
+        mau: lan[0].banner, soKhac: new Set(backs.map(b => b.toFixed(1))).size
+      };
+    });
+    ok('quãng tua bốc ngẫu nhiên trong 3.5~10 giây người chơi',
+      rew.lo >= rew.wantLo - .01 && rew.hi <= rew.wantHi + .01 &&
+      rew.lo < rew.wantLo + 1 && rew.hi > rew.wantHi - 1 && rew.soKhac > 20,
+      `${rew.lo}s ~ ${rew.hi}s qua 400 lần bốc, ${rew.soKhac} giá trị khác nhau`);
+    ok('lịch sử giữ đủ dài cho quãng tua xa nhất',
+      rew.histT >= rew.wantHi, `giữ ${rew.histT}s người chơi cho quãng xa nhất ${rew.wantHi}s`);
+    ok('con số vừa bốc hiện thẳng lên băng-rôn giữa màn',
+      rew.khop === true, rew.mau);
+
     ok('nhận Future Knowledge 5 giây người chơi',
       Math.abs(tm.fk - tm.fkWant) < .1, `${(tm.fk * tm.RT).toFixed(2)}s người chơi`);
     ok('chỉ mình anh được tua lại, đối thủ giữ nguyên máu và vị trí',

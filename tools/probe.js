@@ -42,7 +42,7 @@ window.__SETS=SETS; window.__getCtx=()=>ctx; window.__sprite=sprite;
 window.__resetLines=()=>{ lastDecision=-1; lastWrong=-1; };
 window.__DECISIONS=SUZ_DECISIONS; window.__WRONGS=SUZ_WRONG;
 window.__DORA=DORA; window.__doraEnter=doraEnter; window.__doraEscape=doraEscape;
-window.__doraTime=doraTime; window.__drTimeBack=drTimeBack; window.__drShrink=drShrink;
+window.__setTheme=setTheme; window.__doraTime=doraTime; window.__drTimeBack=drTimeBack; window.__drShrink=drShrink;
 window.__doraAirCannon=doraAirCannon; window.__doraSmallLight=doraSmallLight;
 window.__doraCombo=doraCombo; window.__drAcOdds=drAcOdds; window.__drSlTarget=drSlTarget;
 window.__drSlFire=drSlFire; window.__drConeTargets=drConeTargets;
