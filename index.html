@@ -531,8 +531,14 @@ const DORA_HI='Hello! Leave it to me!';
    đấm nặng, đuổi được bằng cách bay, lì đòn, và mang theo cả một bộ khống chế — đổi
    lại chiêu nào cũng có quãng chuẩn bị nhìn thấy rõ để đối phương kịp né hoặc ngắt.
    MỌI chữ hiện ra trong game của nhân vật này là tiếng Anh, kể cả tên trạng thái.
-   Cân theo thanh máu 800: đòn mạnh nhất chỉ 175 (195 khi địch đang Frozen), không
-   chiêu nào chạm mốc 200 trong một lần dùng, và không có chí mạng ngẫu nhiên. */
+   Cân theo thanh máu 800: đòn mạnh nhất chỉ 123 (137 khi địch đang Frozen), không
+   chiêu nào chạm mốc 200 trong một lần dùng, và không có chí mạng ngẫu nhiên.
+
+   ĐỢT HẠ SÁT THƯƠNG (người dùng chốt): TOÀN BỘ sát thương của anh hạ xuống còn ~70%
+   so với bản đầu — 34/34/50 -> 24/24/35, tia nhiệt 22 -> 15, cháy 5 -> 3.5 dmg mỗi
+   giây người chơi, hơi lạnh 45 -> 32 (rìa nón 25 -> 18), Meteor Strike 145 -> 102,
+   chấn động 30 -> 21, Shatter Damage 20 -> 14. Mấy con số KHÔNG phải sát thương
+   (lực đẩy, thời gian khống chế, mốc 100 dmg làm vỡ băng) giữ nguyên. */
 const SUP={
   /* Màn xuất hiện — đúng 1.5 giây người chơi, bốn pha: bóng người trên cao · hạ độ
      cao · tiếp đất bằng một chân · đứng thẳng nắm hai tay. */
@@ -554,13 +560,13 @@ const SUP={
   lsrMove:1.30, lsrCast:1.25, lsrRes:.10, lsrKb:.25, lsrCdCut:gs(2),
   fatT:gs(4), fatMove:.80, fatCast:.85,      // Solar Fatigue ngay sau đó
   /* 1 — Basic Attack: combo ba đòn 34 / 34 / 50 = 118 */
-  hit:[34,34,50], hitGap:gs(.55), hitCd:gs(.8),
+  hit:[24,24,35], hitGap:gs(.55), hitCd:gs(.8),   // combo trọn vẹn 83 dmg
   jabKb:70,                  // đòn một đẩy lùi một quãng rất ngắn
   upKb:.12,                  // đòn ba đẩy lùi 12% chiều dài sàn
   upStun:gs(.55), hitBreak:.10,
   /* 2 — Heat Vision: gồng 0.65s rồi chiếu 1.2s, bốn nhịp 22 dmg */
-  hvCd:gs(8.5), hvAim:gs(.65), hvT:gs(1.2), hvN:4, hvDmg:22,
-  hvBurnT:gs(4), hvBurnDps:5*RT,             // Burning: 5 dmg mỗi giây người chơi
+  hvCd:gs(8.5), hvAim:gs(.65), hvT:gs(1.2), hvN:4, hvDmg:15,
+  hvBurnT:gs(4), hvBurnDps:3.5*RT,           // Burning: 3.5 dmg mỗi giây người chơi
   hvSlow:.75, hvSlowT:gs(.45),               // đang bị chiếu thì mất 25% tốc chạy
   hvTrack:gs(.3),            // chỉnh hướng trong 0.3 giây đầu, sau đó KHOÁ
   hvBreak:gs(.4), hvBreakCut:.50,
@@ -569,16 +575,17 @@ const SUP={
   /* 3 — Freeze Breath: hít vào 0.9s rồi thổi một luồng hơi hình NÓN */
   fbCd:gs(11.5), fbAim:gs(.9), fbT:gs(.55),
   fbRange:210, fbCone:.42, fbCore:.16, fbMax:3,
-  fbDmg:45, fbFreeze:gs(2.2), fbChill:gs(4), fbChillMove:.50, fbChillCast:.75,
-  fbEdgeDmg:25, fbEdgeFreeze:gs(1), fbEdgeChill:gs(2.5),
+  fbDmg:32, fbFreeze:gs(2.2), fbChill:gs(4), fbChillMove:.50, fbChillCast:.75,
+  fbEdgeDmg:18, fbEdgeFreeze:gs(1), fbEdgeChill:gs(2.5),
   fbShatter:100,             // ăn đủ bấy nhiêu dmg lúc đang Frozen thì băng vỡ ngay
+                             // (mốc sát thương NHẬN VÀO, không phải sát thương anh gây ra — giữ nguyên)
   fbBreak:gs(.5), fbBreakCut:.60,
   /* 4 — Meteor Strike: bay lên 0.65s, treo 0.55s khoá hướng, rồi lao thẳng xuống */
   msCd:gs(17), msRise:gs(.65), msHold:gs(.55), msSpd:820, msH:170,
   msRange:430, msSafe:280,   // dưới 25% máu thì không tung từ khoảng cách xa nhất
-  msDmg:145, msDown:gs(1.5), msKb:.20, msHitR:36,
-  msQuakeDmg:30, msQuakeR:104, msQuakeSlow:.65, msQuakeT:gs(2),
-  msShatter:20,              // địch đang Frozen: vỡ băng, cộng đúng chừng này một lần
+  msDmg:102, msDown:gs(1.5), msKb:.20, msHitR:36,
+  msQuakeDmg:21, msQuakeR:104, msQuakeSlow:.65, msQuakeT:gs(2),
+  msShatter:14,              // địch đang Frozen: vỡ băng, cộng đúng chừng này một lần
   msMissT:gs(1.3), msCancelCut:.70,
   msAcc:[[0,.80],[300,.60],[620,.50]],
   msLog:gs(6),               // ba người trở lên: nhắm ai đánh anh đau nhất 6 giây qua
@@ -4965,6 +4972,10 @@ function supMsLand(f){
          hurt(); phần cộng thêm ở đây là Shatter Damage, đúng MỘT lần, không nhân lên
          dù trên người có bao nhiêu lớp hiệu ứng băng. */
       if(froz){
+        /* Đừng dựa vào mốc 100 để băng vỡ: sau đợt hạ sát thương thì cú đấm chỉ còn
+           102, mà địch có lớp giảm sát thương nào là tụt xuống dưới mốc ngay. Bản mô
+           tả nói thẳng "cú đấm làm lớp băng vỡ", nên đập vỡ hẳn ở đây. */
+        if(prime.frozen>0) supIceBreak(prime);
         hurt(prime,SUP.msShatter,f,false,'big');
         G.floats.push({x:prime.x,y:prime.y-118,txt:`SHATTER DAMAGE +${SUP.msShatter}`,
           color:'#EAF7FF',life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
