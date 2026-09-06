@@ -82,7 +82,46 @@ Bảy người đầu **1000 máu**, riêng **Superman 800 máu** (`HP`). Bảng
 màn chọn nhân vật — nhớ cập nhật khi đổi số).
 
 ### Konohamaru (`kono`)
-- Chiêu 1: Shuriken / Explosive Kunai.
+- Chiêu 1: **Shuriken 25 dmg** (cũ 20) hoặc **Explosive Kunai** — **30%** số lượt ném ra kunai
+  (cũ 15%, `KUNAI_ODDS`). Hằng số khai ngay dưới `EXHAUST_MUL`, viết thẳng bằng **giây trong
+  trận** theo đúng lối nhân vật cũ (`gs()` khai mãi dưới khối Shikamaru — viết `gs()` ở đó là
+  dính TDZ).
+- **Kunai nổ là một cú AoE thật**, ăn theo mức độ đứng gần tâm — `kunaiShare(d)` nội suy tuyến
+  tính, `d` đo từ tâm nổ tới **mép model** (`dist − r`), cùng lối `supQuakeShare()` của Superman:
+
+  | Quãng cách tới tâm nổ | Ăn bao nhiêu |
+  |---|---|
+  | trong lõi `KUNAI_CORE = 34` | **100%** — đủ 45 dmg |
+  | từ lõi ra tới `KUNAI_R = 82` | **nhạt dần 100% → 40%** (`KUNAI_MIN`) |
+  | quá `KUNAI_R` | **không dính một điểm nào** |
+
+  Băng-rôn đổi chữ theo: trong lõi là `BOOM!`, ngoài rìa là `BOOM · EDGE`, và `explode()` vẽ
+  thêm một vòng trắng đúng bằng lõi cho nhìn ra chỗ ăn đủ dmg.
+- Ai dính vụ nổ cũng **bén lửa 5 dmg mỗi giây người chơi trong 3 giây** (`KUNAI_BURN_DPS`
+  = `5*RT` vì `dots[].dps` tính theo giây trong trận, `KUNAI_BURN_T`). **Không cộng dồn** —
+  quả thứ hai chỉ làm mới đồng hồ (`kunaiBurn()` xoá dot cũ có cờ `kunai` rồi mới đẩy dot mới),
+  đúng lối Burning của Superman.
+- **Nổ vào tường cũng lan ra**: nhánh trong vòng duyệt đạn vốn đã gọi `explode()` khi kunai
+  chạm mép sàn, nên ai đứng cạnh tường vẫn ăn đủ phần của mình. Đo được: đứng sát mép, kunai
+  nổ vào tường, mất đúng 45 dmg và bén lửa.
+
+  > **Chỗ tự quyết:** phần nhạt dần chỉ ăn vào **cú nổ**, còn **lửa thì giữ nguyên** dù đứng
+  > giữa hay đứng rìa — bản mô tả chỉ nói "đứng xa trúng đòn dính ít dmg hơn". Tỉ lệ ra kunai
+  > cũng không nêu số mới, tôi nhân đôi 15% → **30%**. Muốn khác thì sửa `KUNAI_MIN` /
+  > `KUNAI_ODDS`.
+
+- **Mini Rasengan — cửa thoát khi bị vây cận chiến.** Bị người khác đứng dí sát (trong
+  `r + MELEE_REACH + KONO_MINI_PAD`) suốt **2.5 giây người chơi** (`KONO_MINI_T`) mà **không
+  gây nổi một điểm sát thương nào** thì cậu xoáy một quả nhỏ: **40 dmg** (`KONO_MINI_DMG`) và
+  **hất lùi 18% chiều dài sàn** (`KONO_MINI_KB`), hồi chiêu **12 giây người chơi**
+  (`KONO_MINI_CD`). Dáng dùng lại **đúng dáng Rasengan** (`setPose(f,'ulti',…)`).
+  - **Đếm trong `konoTick()` chứ không đếm trong `think()`**: lúc bị quây cậu hay dính choáng,
+    mà `think()` không chạy khi đang choáng — đếm ở đó thì cửa thoát không bao giờ mở.
+  - **Đẩy MỌI người đang đứng sát**, không riêng một người: cậu đang gỡ vòng vây chứ không
+    chọn mục tiêu. *(Chỗ này tôi tự chốt từ chữ "thoát khỏi vòng quây".)*
+  - `counters()` đặt `src.miniPress=0` mỗi lần cậu gây được sát thương, đúng cái cửa mà
+    `drNoHit` của Doraemon dùng.
+  - Kiểm bằng `node tools/t_kono.js`.
 - Chiêu 2: **Kage Bunshin** 60 dmg, phân thân đuổi theo, gây **Kiệt sức** — giảm
   **25%** tốc chạy và tốc ra chiêu (`EXHAUST_MUL = .75`, `EXHAUST_T = 4`).
   Hiệu ứng nhìn: **bọt khí kiểu trúng độc** bay lên, ánh xanh lá **rất nhạt**.
@@ -1542,6 +1581,9 @@ Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 node tools/t_reg.js     # 36 cặp đấu, chạy theo đợt, bắt lỗi trang, xem cơ chế lớn có nổ không
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
+node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ nổ là AoE nhạt dần
+                        # 100%->40% rồi tắt hẳn + bén lửa 5 dmg/s trong 3s (nổ vào tường cũng
+                        # lan ra), và Mini Rasengan gỡ vây 40 dmg + hất 18% sàn, hồi chiêu 12s
 node tools/t_chichi.js  # viện binh của ChiChi: Kamehameha 400 dmg + choáng 2s rồi ghì chân 4s
                         # (hết choáng mới tới), Masenko 100 dmg mỗi đợt + chồng lớp −10%/−7%
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
