@@ -3,7 +3,8 @@
      2. hai nội tại: Take-copter (bay đuổi, dải bóng không bám được) và Emergency Door
         (miễn thương lúc chui cửa, chỉ xoá hiệu ứng làm chậm, đáp trong sàn và tránh xa địch);
      3. ba chiêu: combo 15/15/20 cách nhau 0.6s, Air Cannon (đẩy 22% sàn, choáng 3s, xuyên
-        hai người, đứt trong 0.35s đầu thì nửa hồi chiêu), Small Light (thu nhỏ, không cộng dồn);
+        hai người, đứt trong 0.35s đầu thì nửa hồi chiêu), Small Light (thu nhỏ, không cộng dồn),
+        và phát Air Cannon nã kèm lúc đang bay Take-copter;
      4. Time Machine: Second Chance — quay ngược 1~3 giây, trần hồi máu 20%, cắt 40% hồi chiêu;
      5. chữ hiển thị đều bằng tiếng Anh.
    Chạy: node tools/t_dora.js */
@@ -160,8 +161,8 @@ async function waitGame(page, body, limit) {
       }, 10);
       setTimeout(() => { clearInterval(id); res({ dmg: Math.round(dmg), far: Math.round(far), timeout: 1 }); }, 30000);
     }));
-    ok('Air Cannon gây 100 dmg và choáng 3 giây người chơi',
-      ac.dmg === 100 && Math.abs(ac.stun - ac.acStun) < .06,
+    ok('Air Cannon gây 85 dmg và choáng 3 giây người chơi',
+      ac.dmg === 85 && Math.abs(ac.stun - ac.acStun) < .06,
       `${ac.dmg} dmg · choáng ${(ac.stun * ac.RT).toFixed(2)}s người chơi`);
     ok('Air Cannon thổi địch lùi khoảng 22% chiều dài sàn',
       Math.abs(ac.far - ac.want) / ac.want < .18, `bay ${ac.far}px (chuẩn ~${ac.want}px)`);
@@ -330,6 +331,57 @@ async function waitGame(page, body, limit) {
       Math.abs((1 - cop.chamBay / cop.mul) / (1 - cop.cham) - (1 - cop.res)) < .02,
       `chậm ${Math.round((1 - cop.cham) * 100)}% dưới đất, còn ${Math.round((1 - cop.chamBay / cop.mul) * 100)}% khi bay`);
 
+    /* Bay tới đâu nã một phát Air Cannon tới đó — ĐÚNG MỘT phát mỗi lượt bay, sát thương
+       còn 70% và độ chính xác trừ thẳng 20 điểm. Chạy tay từng bước cho khỏi phụ thuộc
+       tải máy: hẹn giờ + statusTick + doraTick. */
+    const bayNa = await page.evaluate(() => {
+      const G = window.__G(), D = window.__DORA, RT = window.__RT, dt = 1 / 120;
+      const f = G.fighters.find(x => x.key === 'dora'), e = G.fighters.find(x => x !== f);
+      f.drAim = null; f.drCombo = null; f.tm = null; f.edT = 0; f.lock = 0; f.stun = 0;
+      f.copter = 0; f.copCd = 0; f.cds = { s1: 99, s2: 99, s3: 99 };
+      f.x = 80; f.y = 300; e.x = 560; e.y = 300;
+      e.maxHp = 99999; e.hp = e.maxHp; e.evade = 0;
+      G.proj.length = 0; G.timers.length = 0;
+      f.drNoHit = D.copIdle + 1;                       // đủ điều kiện cất cánh
+      let ban = null, aimAt = -1, fireAt = -1, soPhat = 0, cdSau = -1;
+      for (let i = 0; i < 1200; i++) {
+        const t = i * dt;
+        for (let k = G.timers.length - 1; k >= 0; k--) {
+          const tm = G.timers[k]; tm.t -= dt;
+          if (tm.t <= 0) { G.timers.splice(k, 1); try { tm.fn(); } catch (err) { } }
+        }
+        G.t += dt;
+        window.__statusTick(f, dt);
+        e.x = 560; e.y = 300;                          // ghim địch đứng xa cho anh cứ bay
+        window.__doraTick(f, dt);
+        if (f.drAim && aimAt < 0) aimAt = t;
+        const p = G.proj.find(x => x.type === 'aircan');
+        if (p && !ban) { ban = { dmg: p.dmg, khiBay: f.copter > 0 }; fireAt = t; }
+        if (p) { soPhat = Math.max(soPhat, 1); G.proj.length = 0; }
+        if (f.copter <= 0 && cdSau < 0 && aimAt >= 0) cdSau = f.cds.s2;
+      }
+      // độ chính xác: cùng một khoảng cách, dưới đất so với lúc đang bay
+      const acc = [0, 290, 430].map(d => {
+        f.copter = 99; const bay = window.__drAcOdds(d, f);
+        f.copter = 0; const dat = window.__drAcOdds(d, f);
+        return { d, dat: +dat.toFixed(2), bay: +bay.toFixed(2) };
+      });
+      f.copter = 0; f.drAim = null; f.lock = 0; G.proj.length = 0;
+      return { ban, aimAt: aimAt * RT, fireAt: fireAt * RT, soPhat, cdSau,
+               acc, acDmg: D.acDmg, cut: D.copAcDmg, accCut: D.copAcAcc, at: D.copAcAt * RT };
+    });
+    ok('đang bay thì nã đúng MỘT phát Air Cannon',
+      bayNa.soPhat === 1 && bayNa.ban && bayNa.ban.khiBay === true,
+      `${bayNa.soPhat} phát, bắn lúc đang bay: ${bayNa.ban && bayNa.ban.khiBay}`);
+    ok('phát bắn lúc bay chỉ còn 70% sát thương',
+      bayNa.ban && Math.abs(bayNa.ban.dmg - bayNa.acDmg * bayNa.cut) <= 1,
+      `${bayNa.ban && bayNa.ban.dmg} dmg trên mốc thường ${bayNa.acDmg}`);
+    ok('phát bắn lúc bay trừ thẳng 20 điểm độ chính xác',
+      bayNa.acc.every(a => Math.abs(a.dat - a.bay - bayNa.accCut) < .01),
+      bayNa.acc.map(a => `${a.d}px ${a.dat}->${a.bay}`).join(' · '));
+    ok('nã lúc bay KHÔNG đụng tới hồi chiêu của Air Cannon dưới đất',
+      bayNa.cdSau === 99, `hồi chiêu s2 sau lượt bay: ${bayNa.cdSau}`);
+
     ok('trận 2 không lỗi trang', errors.length === 0, errors.join(' | '));
     await browser.close();
   }
@@ -393,9 +445,23 @@ async function waitGame(page, body, limit) {
     ok('xoá sạch debuff đang mang trên người anh',
       tm.dis === 0 && tm.daze === 0 && tm.stun === 0 && tm.dots === 0,
       `slow ${tm.dis}/${tm.daze} · choáng ${tm.stun} · dot ${tm.dots}`);
+    /* Đo phần cắt hồi chiêu cho DỨT KHOÁT: gọi thẳng drTimeBack() rồi đọc ngay. Đọc qua
+       vòng poll như mấy mục trên thì trận đã chạy tiếp và hồi chiêu trôi thêm một quãng,
+       mà quãng trôi đó cố định trong khi hồi chiêu thì đổi theo cân bằng — hạ acCd xuống
+       là cùng một quãng trôi hoá thành sai số lớn hơn và mục này đổ oan. */
+    const cdcut = await page.evaluate(() => {
+      const G = window.__G(), D = window.__DORA;
+      const f = G.fighters.find(x => x.key === 'dora');
+      f.tm = { t: 0, back: 2 }; f.hist.length = 0; f.histT = 0;
+      f.cds.s2 = D.acCd; f.cds.s3 = D.slCd; f.copCd = D.copCd; f.edCd = D.edCd;
+      window.__drTimeBack(f);
+      return { s2: +(f.cds.s2 / D.acCd).toFixed(3), s3: +(f.cds.s3 / D.slCd).toFixed(3),
+               cop: +(f.copCd / D.copCd).toFixed(3), ed: +(f.edCd / D.edCd).toFixed(3),
+               want: +(1 - D.tmCdCut).toFixed(3) };
+    });
     ok('hồi chiêu đang chạy bị cắt 40% phần còn lại',
-      Math.abs(tm.cdCut.s2 - tm.want) < .02 && Math.abs(tm.cdCut.s3 - tm.want) < .02,
-      `còn ${tm.cdCut.s2} và ${tm.cdCut.s3} (chuẩn ${tm.want})`);
+      [cdcut.s2, cdcut.s3, cdcut.cop, cdcut.ed].every(v => Math.abs(v - cdcut.want) < .001),
+      `Air Cannon ${cdcut.s2} · Small Light ${cdcut.s3} · Take-copter ${cdcut.cop} · cửa thoát hiểm ${cdcut.ed} (chuẩn ${cdcut.want})`);
     ok('nhận Future Knowledge 5 giây người chơi',
       Math.abs(tm.fk - tm.fkWant) < .1, `${(tm.fk * tm.RT).toFixed(2)}s người chơi`);
     ok('chỉ mình anh được tua lại, đối thủ giữ nguyên máu và vị trí',

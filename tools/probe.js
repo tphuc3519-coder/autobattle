@@ -46,7 +46,7 @@ window.__doraTime=doraTime; window.__drTimeBack=drTimeBack; window.__drShrink=dr
 window.__doraAirCannon=doraAirCannon; window.__doraSmallLight=doraSmallLight;
 window.__doraCombo=doraCombo; window.__drAcOdds=drAcOdds; window.__drSlTarget=drSlTarget;
 window.__drSafeSpot=drSafeSpot; window.__drCanTime=drCanTime; window.__drStatus=drStatus; window.__statusTick=statusTick;
-window.__drTryEscape=drTryEscape; window.__drInterrupt=drInterrupt; window.__drAcHit=drAcHit;
+window.__doraTick=doraTick; window.__drCopterOn=drCopterOn; window.__drTryEscape=drTryEscape; window.__drInterrupt=drInterrupt; window.__drAcHit=drAcHit;
 window.__drSlHit=drSlHit; window.__drDisorient=drDisorient;
 window.__meleeReach=meleeReach; window.__MUSIC=MUSIC; window.__doraVector=doraVector;
 window.__GN=GN; window.__ginyuAura=ginyuAura; window.__ginyuState=ginyuState;
@@ -55,7 +55,7 @@ window.__ginyuChangeMiss=ginyuChangeMiss; window.__gnChangeTarget=gnChangeTarget
 window.__ginyuBeam=ginyuBeam; window.__ginyuFlash=ginyuFlash; window.__ginyuStrike=ginyuStrike;
 window.__gnChangeOdds=gnChangeOdds; window.__gnChangeFire=gnChangeFire;
 window.__gnCanChange=gnCanChange; window.__gnCrowd=gnCrowd; window.__gnDmg=gnDmg;
-window.__gnStatus=gnStatus; window.__gnBeamHit=gnBeamHit; window.__gnFlashHit=gnFlashHit; window.__GN_PROJ=GN_PROJ_BODY; window.__knock=knock;
+window.__ginyuTick=ginyuTick; window.__gnAuraDraw=gnAuraDraw; window.__GN_AURA=GN_AURA; window.__gnStatus=gnStatus; window.__gnBeamHit=gnBeamHit; window.__gnFlashHit=gnFlashHit; window.__GN_PROJ=GN_PROJ_BODY; window.__knock=knock;
 window.__SUP=SUP; window.__supermanEnter=supermanEnter; window.__supResolve=supResolve;
 window.__supFlyOn=supFlyOn; window.__supFlyOff=supFlyOff; window.__supCombo=supCombo;
 window.__supermanHeat=supermanHeat; window.__supermanFreeze=supermanFreeze;

@@ -427,7 +427,38 @@ nhịp** — họ đứng nhìn chứ chưa được đánh. Hết ba dáng thì
   lớp phòng thủ**, +40% thời gian dính khống chế, +50% tốc ra chiêu, +60% tốc chạy. Bao
   quanh anh là **luồng khí tím** kiểu Dragon Ball (`gnAuraDraw`).
 - **Thăm dò** (`GN.def`, `gs(10)`): −60% dmg nhận, +40% kháng hiệu ứng, đổi lại −40% dmg
-  gây ra và −40% tốc ra chiêu. Vỏ khí xanh mỏng hơn hẳn.
+  gây ra và −40% tốc ra chiêu. Vỏ khí **mỏng và tối hơn hẳn** — vẫn tím, chỉ khác độ dày.
+
+> **Luồng khí — `gnAuraDraw()` và bảng màu `GN_AURA`.** Người dùng gửi ảnh mẫu (Goku bọc
+> trong luồng khí Super Saiyan Blue) và chốt: *"chỉnh luồng khí của Ginyu thành như này
+> nhưng là màu tím hết"*. Vì vậy:
+>
+> - **Toàn bộ tông tím, không lẫn một mảng xanh nào** — kể cả **thế thăm dò** (trước đây là
+>   vỏ khí xanh `#7FE0FF`) lẫn lúc **hoảng loạn** (trước đây đỏ `#FF6B6B`). Ba thế đứng phân
+>   biệt nhau bằng **độ dày và độ sáng**, không bằng màu. Mỗi thế có bốn nấc trong `GN_AURA`:
+>   `out` mép ngoài sẫm · `mid` thân khí · `hot` lõi sáng · `core` tia điện.
+> - **Cả cụm vẽ bằng phép CỘNG SÁNG** (`globalCompositeOperation='lighter'`). Chồng alpha
+>   thường lên nền sàn tối thì ra một khối tím đục như vũng bùn — đo mắt thấy ngay; cộng sáng
+>   thì mấy lớp đè nhau tự sáng dồn về lõi, đúng chất luồng khí phát sáng. Nhớ bọc trong
+>   `save/restore`, composite là trạng thái của canvas.
+> - **Vỏ khí là ba lớp lồng nhau** dựng bằng cùng một hàm nhiễu nhưng **lệch pha**, nên chúng
+>   đan vào nhau như lửa thật chứ không nằm đồng tâm như ba cái vòng.
+> - **Mép phải là RĂNG CƯA**: đỉnh **lẻ** vọt hẳn ra ngoài, đỉnh **chẵn** thụt sát vào thân
+>   (`tip = i%2 ? 1 : .12`). Không có nhịp so le này thì mép chỉ gợn sóng và cả cụm đọc ra
+>   một cái bọc tròn, không ra lưỡi lửa — đây là chỗ sửa đi sửa lại hai lần mới ra.
+> - Gai **dài hơn hẳn ở nửa trên** (`.35 + up*1.05`) vì lửa thì bốc lên, và có thêm một lượt
+>   **lưỡi lửa** mọc từ mép vỏ chếch ra ngoài rồi cong ngược lên.
+> - **Tia điện** chớp giật quanh người, vị trí bốc lại theo từng **nhịp** (`Math.floor(G.t*12)`)
+>   chứ không trôi mượt — nó đứng yên một chớp rồi nhảy hẳn sang chỗ khác, đúng kiểu điện
+>   trong phim. Cùng mẹo với `bodySparks()`.
+> - **Lõi phải nhạt** (alpha `.16`): để đậm thì khí nuốt mất thân người, mà `gnAuraDraw()`
+>   vẽ TRƯỚC thân nên chỉ có cách hạ alpha chứ không cắt được.
+>
+> `t_ginyu.js` chấm bằng cách vẽ từng thế ra canvas phụ trên nền đen rồi lấy **màu trung bình**
+> của đám điểm ảnh sáng lên: tím thì **lục thấp nhất, lam cao nhất, đỏ nằm giữa**. Đo được
+> hưng phấn `R 85 · G 45 · B 128`, thăm dò `36 · 20 · 50`, hoảng loạn `45 · 25 · 59`. Kèm hai
+> mục nữa: vỏ khí phải **liếm lên trên đỉnh đầu và toác rộng hơn thân**, và thế thăm dò phải
+> **mỏng hơn hưng phấn ít nhất 30%** điểm ảnh.
 - **Ba người có thanh máu trở lên trên sàn thì anh LUÔN chọn thế thăm dò**, dù ai dính hiệu
   ứng gì và dù đã dùng hết lần thăm dò — `gnCrowd() >= 3` (đếm bằng đúng cờ `summon && !ally`
   mà `drawBars()` dùng, nên Goku / Gohan / phân thân không tính, còn Ayanokouji thì có).
@@ -447,8 +478,10 @@ lỗi cũ quay lại.
 > `GN.auraCd = gs(20)`, cơ chế không phải đụng tới.)*
 
 **Bốn chiêu:**
-- **1 · Basic** — đấm hoặc đá, `GN.hitDmg = 25`, hồi chiêu `cm(GN.atkCd)` = `cm(.22)`, tức
+- **1 · Basic** — đấm hoặc đá, `GN.hitDmg = 22`, hồi chiêu `cm(GN.atkCd)` = `cm(.22)`, tức
   nhanh hơn ChiChi (`cm(.25)`) một nhịp. 25% kèm choáng `gs(.75)`.
+  *(Đường đi của con số: 35 → 25 → **22**, người dùng hạ dần. Lần cuối: "nerf Ginyu 1 tí
+  dmg đánh tay đi — 1 chút thôi", nên chỉ bớt 3.)*
 - **2 · Ginyu's Beam** — mỗi `gs(10)` bắn **6 luồng khí tím**, mỗi luồng **18 dmg**, **15%
   choáng `gs(1.5)`** (`beamStunOdds` — không còn choáng chắc chắn như bản đầu) và **hất lùi 340** (Twin Shot của Tsubasa mới 260 — người dùng muốn đẩy xa hơn).
   Bay `560` và ra dồn dập (`beamGap .11`) — **bắn từa lưa chứ không ngắm**: độ lệch
@@ -456,6 +489,28 @@ lỗi cũ quay lại.
   sát mặt** rồi toác tới 0.95 rad khi đứng xa. Đo được: trung bình 0.19 rad ở 60px và
   0.45 rad ở 430px. **Trúng đủ 3 luồng** thì dính *Worn Out*: −60% tốc chạy, −40% tốc ra
   chiêu, −25% dmg trong `gs(7)`. Đếm bằng `t.gnBeamHits`, đặt lại 0 ở đầu mỗi loạt.
+
+> **Dáng ra chiêu phải SỐNG HẾT chiêu rồi mới thôi** — người dùng bác bản cũ: *"dáng lúc
+> Ginyu beam hay flash là dáng đó phải tồn tại đến khi Ginyu xong dáng chứ, sao hết nhanh
+> vậy?"*. Đo được bản cũ: dáng `beam` tắt ở giây **2.15** (người chơi) trong khi luồng cuối
+> mãi giây **2.70** mới bắn ra — anh đứng thẳng người lại trong lúc hai luồng vẫn đang phun.
+> Nguyên nhân: `setPose(f,'beam',cm(.6))` cắm cứng một con số **ngắn hơn cả loạt bắn**.
+>
+> - Giờ độ dài dáng tính thẳng từ nhịp bắn: `cm(.2) + (beamN−1)·cm(beamGap) + cm(beamTail)`.
+>   Đổi `beamN` hay `beamGap` thì dáng tự dài theo, không phải nhớ sửa hai chỗ.
+> - **Mỗi luồng tự đặt lại dáng** (`setPose(f,'beam', span−at)` trong từng `later`): ăn đòn
+>   giữa loạt thì `hurt()` đè sang dáng chịu đòn một nhịp, xong phải trở về dáng bắn chứ
+>   không được nằm luôn ở đó.
+> - `GN.beamTail` / `GN.flashTail` là **nhịp giữ dáng SAU khi chiêu đã xong**, để anh có chỗ
+>   thu tay về chứ không bật về thế đứng ngay trong cùng một khung hình. Đo lại: dáng beam
+>   giữ tới giây 3.42 (thừa 0.72s sau luồng cuối), dáng flash tới 2.87 (thừa 0.52s sau khi
+>   luồng sáng tắt).
+> - `change` và `panic` **không dính lỗi này**: hai dáng đó tự đặt lại mỗi nhịp trong
+>   `gnChangeTick()` với `poseT=0`, nên chúng sống đúng bằng trạng thái. Đừng đổi chúng sang
+>   kiểu đếm ngược.
+>
+> `t_ginyu.js` chấm bằng cách chạy tay từng bước (hẹn giờ + `ginyuTick` + đồng hồ dáng) rồi
+> so mốc dáng tắt với mốc luồng cuối / lúc luồng sáng tắt — đòi dư ít nhất 0.2 giây.
 - **3 · Ginyu's Flash** — hồi chiêu `gs(17)`, đứng trụ gồng `gs(1.75)` (`gnFlash.ph='charge'`, `f.lock`), rồi
   nối **một luồng sáng tím LIỀN MẠCH** từ anh sang địch: to như Kamehameha nhưng vẽ theo lối
   dải bóng của Shikamaru (`drawGinyuFlash()`, gọi **sau** khi vẽ nhân vật, cạnh
@@ -496,7 +551,11 @@ cái người dùng muốn: **thân xác A mà chữ B trên thanh máu**, và n
 | object cũ của đối thủ | của họ | `Captain Ginyu` | `'ginyu'` | beam + flash của Ginyu (dmg ×`.35`, hiệu ứng ×`.30`) và **đòn tay mượn** của thân xác đó |
 
 - Máu: **cả hai thân xác cùng về 20% máu tối đa của chính nó** (`GN.changeHp`) — ngang
-  nhau, bất kể trước đó ai đang bao nhiêu máu.
+  nhau, bất kể trước đó ai đang bao nhiêu máu. **Phải `Math.floor`, không được `Math.round`**:
+  mốc bật cờ tơi tả trong `step()` là `f.hp <= f.maxHp*.20`, mà làm tròn LÊN thì với máu
+  tối đa lẻ con số rơi cao hơn mốc đúng một chút và **model tơi tả không hiện** — ví dụ 999
+  máu, `round` ra 200 > 199.8 còn `floor` ra 199 thì đúng dưới mốc. Ô máu người chơi chỉnh
+  được từ 100 tới 9999 nên số lẻ là chuyện thường; `t_ginyu.js` thử cả 1000 lẫn 999.
   *(Bản đầu để lệch: 15% cho thân xác Ginyu, còn thân xác cướp được thì CỘNG THÊM 20% vào
   lượng máu đang có — nên cướp đúng lúc địch còn nhiều máu là ăn đứt. Người dùng bác: "cân
   bằng Ginyu là khi change thì cả 2 thân xác có lượng máu ngang nhau (20%) chứ đừng lệch
@@ -539,6 +598,27 @@ nhịp** và **dựng lại từ đầu** (đừng cộng trừ dần — hiệu
 > chiêu mượn của thân xác khác là hàm có sẵn, không với tay vào trong được, nên vẫn đi
 > đường `dmgOut`. Thêm chiêu mới cho Ginyu thì nhớ cặp `gnDmg()` + `raw=true`, đừng quên
 > một trong hai.
+
+> **Model tơi tả phải NHÌN RA ĐƯỢC ở cỡ trong trận.** Người dùng bác: *"lúc Ginyu cả 2 về
+> trạng thái 20% máu, thì tất nhiên phải là model tơi tả cho cả 2 chứ, sao tôi k thấy tơi
+> tả"*. Soi ra thì **cờ `injured` vẫn bật đúng** cho cả hai thân xác — `ginyuPossess()` đưa
+> cả hai về đúng 20% máu tối đa, chạm đúng mốc `f.hp<=f.maxHp*.20` trong `step()` — và dấu
+> vết **vẫn được vẽ**. Hỏng ở chỗ nó quá mờ: bản cũ chỉ có **hai vệt xước con con cộng một
+> mảnh rách, đo ra 113 điểm ảnh**, đứng ở cỡ trong trận thì chẳng thấy gì.
+>
+> *(Lúc viết test cho chỗ này thì lòi thêm một lỗi thật nữa: `ginyuPossess()` dùng
+> `Math.round` nên với máu tối đa lẻ, máu sau khi hoán đổi rơi cao hơn mốc 20% đúng một
+> chút và cờ tơi tả KHÔNG bật. Đã đổi sang `Math.floor` — xem mục CHANGE!!! ở trên.)*
+>
+> Cách sửa là đánh vào mấy mảng **lớn và dễ nhận** chứ đừng thêm nét mảnh: **giáp ngực sứt
+> một góc lộ đồ bên trong**, **scouter nứt và mất một mảnh kính** (đó là mảng xanh lá sáng
+> nhất trên người anh, vỡ là thấy ngay), **đệm vai gãy**, **dải cam dưới giáp rách**, cộng
+> bầm tím trên đùi và má. Đo lại: **464 điểm ảnh**. `t_ginyu.js` đòi tối thiểu **300**.
+>
+> *Mấy nhân vật kia vẫn ở mức cũ và cũng mờ tương tự* — đo được: kono 190 · chichi 113 ·
+> tsubasa 113 · shika 89 · dora 100 · superman 114. Chưa đụng vào vì người dùng mới chỉ nêu
+> Ginyu; muốn làm đậm cả bảng thì nhớ **Horikita là ngoại lệ** — `t_suzune.js` ghim cứng số
+> điểm ảnh của cô (form 1/2 được 113, form 3 được 209), sửa art của cô là test đổ.
 
 **Ô dán ảnh riêng**: `fly` · `dance1/2/3` · `beam` · `flash` · `change` · `panic`, cộng
 `idle/punch/kick/hurt/injured`. Thiếu ảnh thì lùi về ô gần nghĩa nhất (`flash` → `beam` →
@@ -592,6 +672,19 @@ người chơi) không đánh trúng ai (`f.drNoHit`, `counters()` đặt lại 
 sát thương) thì chong chóng lên đầu: **+70% tốc chạy**, hiệu ứng làm chậm **chỉ còn 60% hiệu
 lực**, **+20% né đạn** (`dodgeVec` nhân thêm), tối đa **4 giây**, **hết sớm ngay khi vào đủ
 tầm vung tay**. Hồi chiêu 15 giây. Bay là là (`DORA.copHover`), không bao giờ rời sàn.
+- **Bay tới đâu nã một phát Air Cannon tới đó** — bay được `copAcAt` (0.6 giây người chơi)
+  thì rút ống ra bắn, **ĐÚNG MỘT phát mỗi lượt bay** (cờ `f.copAcDone`, đặt lại trong
+  `drCopterOn()`). Vừa bay vừa ôm cái ống thì phải trả giá: **chỉ còn 70% sát thương**
+  (`copAcDmg` — ra 59 trên mốc 85) và **trừ thẳng 20 điểm độ chính xác** (`copAcAcc`: gần
+  90%→70%, xa 50%→30%).
+- Phát này **không xét và không đặt lại `f.cds.s2`**: nó là phát bắn kèm của quãng bay, còn
+  cú bắn dưới đất vẫn đi theo hồi chiêu riêng. *(Tôi chốt vậy vì Take-copter đã bị chặn rất
+  chặt sẵn — hồi 15 giây, lại còn đòi địch ở xa VÀ 2.5 giây không đánh trúng ai — nên phát
+  kèm này không thành nguồn sát thương đều đặn. Muốn nó ăn vào hồi chiêu chung thì thêm
+  `f.cds.s2=DORA.acCd` vào nhánh đó.)*
+- Hai chỗ vẽ phải đi cùng nhau: `drCopterTick()` **chỉ đè dáng `copter` khi không ngắm**, còn
+  `doraVector()` vẽ chong chóng theo **`f.copter`** chứ không theo dáng — thiếu một trong hai
+  thì lúc ngắm giữa trời anh treo lơ lửng mà mất chong chóng.
 - **Dải bóng của Shikamaru không bám được vào người đang bay**: `bindTick()` có nhánh riêng
   cắt dải bóng khi `e.copter>0`. Đây là "chướng ngại vật thấp" mà người dùng nêu.
 
@@ -607,7 +700,8 @@ không trúng và **không gây một điểm sát thương nào**.
   hết điểm nằm trong model người khác, chấm theo `khoảng cách tới địch gần nhất − 140 × số
   địch đứng trong 190px`. Nhờ phần trừ đó, **có ba người trở lên thì anh thoát khỏi chỗ đông
   địch nhất và không bao giờ nhảy sang chỗ còn đông hơn**. Điểm luôn clamp vào trong sàn.
-- Hồi chiêu 8 giây.
+- Hồi chiêu **6 giây** (`DORA.edCd`). *(Trước là 8; người dùng bảo "giảm thời gian cooldown
+  cửa thần kì của Doraemon".)*
 
 **Chiêu 1 — Basic Attack.** Combo **ba đòn**, mỗi đòn cách nhau **0.6 giây người chơi**:
 đấm 15 → đá 15 → **lao bụng / húc đầu 20**, đòn ba **đẩy lùi mạnh hơn đòn thường của Ginyu
@@ -617,10 +711,10 @@ ChiChi (`cm(.25)`): cả combo mất 1.2 giây rồi mới `cm(.5)` hồi chiêu
 - Địch lùi ra khỏi tầm giữa chừng thì combo bỏ dở và chỉ chờ **nửa** hồi chiêu.
 - **`drReach()` xoá `f.drCombo`**: rút bảo bối là bỏ dở combo tay, đừng để chạy cả hai.
 
-**Chiêu 2 — Air Cannon.** Mỗi 10 giây: thò tay vào túi, lắp ống vào tay, **đứng yên ngắm
+**Chiêu 2 — Air Cannon.** Mỗi **8 giây**: thò tay vào túi, lắp ống vào tay, **đứng yên ngắm
 0.7 giây**, rồi bắn **một VÒNG khí nén trắng xanh** có gió xoáy (`drawProj` nhánh `aircan`)
 — **không phải tia năng lượng liên tục kiểu Kamehameha**.
-- **100 dmg · đẩy lùi 22% chiều dài sàn · choáng 3 giây · cắt ngang mọi chiêu đang gồng**
+- **85 dmg · đẩy lùi 22% chiều dài sàn · choáng 3 giây · cắt ngang mọi chiêu đang gồng**
   (`drInterrupt()`: dải bóng và cú đâm của Shikamaru, Ginyu Flash, và chính bảo bối của
   Doraemon). **Quãng đứng suy nghĩ của Horikita thì KHÔNG đụng vào** — máy quyết định của cô
   là một chuỗi trạng thái, cắt giữa chừng là hỏng cả mạch chứ không phải chỉ mất một chiêu.
@@ -635,7 +729,7 @@ ChiChi (`cm(.25)`): cả combo mất 1.2 giây rồi mới `cm(.5)` hồi chiêu
 - Địch đang **Shrunk** thì Air Cannon **không** cộng thêm sát thương, chỉ **đẩy xa thêm 40%**
   — phần +40% đó nằm ở `f.kbTake` của Shrunk chứ không khai riêng, **đừng cộng hai lần**.
 
-**Chiêu 3 — Small Light.** Mỗi 18 giây: cầm hai tay, **ngắm 1 giây**, bắn một tia vàng nhạt
+**Chiêu 3 — Small Light.** Mỗi **16 giây**: cầm hai tay, **ngắm 1 giây**, bắn một tia vàng nhạt
 **bay nhanh nhưng KHÔNG bẻ cong đuổi theo**. Trúng thì **35 dmg** + **Shrunk 7 giây**:
 
 | | |
@@ -733,6 +827,17 @@ hết cả hai mới tới combo tay**; Take-copter và Emergency Door là nội
 **Ô dán tiếng**: nhóm riêng `Doraemon`, mười ô, một ô 🎙 giọng (`dora_hi`) cắt đúng bằng
 bong bóng thoại. **Đấm đá mượn thẳng `sfx('punch')` của ChiChi**, đúng lối đã chốt cho
 Horikita và Ginyu — đừng dựng ô mới.
+
+> **Đường đi của mấy con số cân bằng** (người dùng chỉnh dần, ghi lại cho khỏi cãi nhau):
+> Air Cannon **100 → 85 dmg** và hồi chiêu **10 → 8 giây** ("giảm dmg 15% nhưng xả đạn thường
+> xuyên hơn") · Small Light hồi chiêu **18 → 16 giây** ("xả đạn thường xuyên hơn tí") · cửa
+> thoát hiểm hồi chiêu **8 → 6 giây**.
+
+> **`t_dora.js` đo phần cắt hồi chiêu của Time Machine bằng cách gọi thẳng `drTimeBack()`**,
+> không đọc qua vòng poll nữa. Đọc qua poll thì trận đã chạy tiếp và hồi chiêu trôi thêm một
+> quãng — quãng trôi đó cố định trong khi hồi chiêu thì đổi theo cân bằng, nên vừa hạ `acCd`
+> xuống 8 giây là mục đó đổ oan (đo ra 0.58 trên mốc 0.60). Phép đo nào bám theo hằng số cân
+> bằng thì nên gọi thẳng hàm, đừng đo theo dòng thời gian.
 
 Nút thử tay: `#testDoraShrink`, `#testDoraDoor`, `#testDoraTime`.
 Kiểm bằng `node tools/t_dora.js`.
@@ -1171,13 +1276,26 @@ quá". `drawFloat()` vì vậy nhân thêm một hệ số qua `floatScale(f)`:
 | Loại | Hệ số | Ví dụ |
 |---|---|---|
 | có cờ `focus:true` | **1** (giữ nguyên cỡ to) | `RASENGAN!`, `PRE-WINGS OF THE EAGLE` |
-| băng-rôn cỡ đầy đủ (`big`, hoặc không có `sc`) | `NAME_FULL = .74` | `FLYING KICK!`, `SHADOW STAB!`, `CRITICAL HIT!`, `EXHAUSTED …` |
-| dòng phụ vốn đã nhỏ sẵn (`sc` < 1, không `big`) | `NAME_SMALL = .85` | `DODGE`, `BLOCKED`, `GOAL 3/5` |
+| băng-rôn cỡ đầy đủ (`big`, hoặc không có `sc`) | `NAME_FULL = .62` | `FLYING KICK!`, `SHADOW STAB!`, `CRITICAL HIT!`, `EXHAUSTED …` |
+| dòng phụ vốn đã nhỏ sẵn (`sc` < 1, không `big`) | `NAME_SMALL = .74` | `DODGE`, `BLOCKED`, `GOAL 3/5` |
+
+> **Đã hạ hai lần.** Lần đầu `.74 / .85`, người dùng xem rồi bảo *"giảm cỡ chữ hiệu ứng
+> thêm nữa"* nên hạ tiếp xuống **`.62 / .74`** (nhỏ thêm chừng 15%). Muốn hạ nữa thì sửa
+> đúng hai hằng này, đừng đụng vào cỡ gốc 27/21 px — cỡ gốc còn dùng cho phép đo khối chữ.
 
 - Hệ số ăn vào **cả bề dày viền** (`lineWidth`), không thì chữ nhỏ mà viền vẫn dày, nhìn
   bết lại thành một cục.
-- **Số sát thương và bong bóng thoại không đụng tới** — người dùng chỉ chê tên chiêu / tên
-  hiệu ứng; chữ nói mà nhỏ đi thì đọc không kịp.
+- **Số sát thương không đụng tới** (34 px cho `big`, 22 px cho dòng thường) — chỗ đó người
+  dùng chưa bao giờ chê.
+- **Bong bóng thoại có hạ, nhưng chỉ một nấc nhẹ** (người dùng: *"cỡ chữ bubble chat cũng
+  giảm 1 tí luôn"*): `CHAT_BIG` 23→**21** px, `CHAT_SM` 16→**14** px. Chữ nói mà nhỏ quá thì
+  đọc không kịp, nên đừng hạ sâu như tên chiêu.
+
+> **Cỡ bong bóng gom vào `CHAT_BIG` / `CHAT_SM`.** Mấy con số này (cỡ chữ, chiều cao dòng,
+> chiều cao khung, đệm ngang) dùng ở **HAI chỗ** trong `drawFloat()`: lượt **đo khối chữ** để
+> kéo bong bóng vào trong sàn, và lượt **vẽ thật**. Trước đây chúng chép tay ở cả hai nơi —
+> sửa một chỗ quên chỗ kia là khung lệch hẳn khỏi chữ. Giờ đọc qua `chatBox(f)` và
+> `chatFontOf(f)`, muốn đổi cỡ thì sửa đúng một chỗ.
 - **Băng-rôn giữa màn** (`G.callBanner`: NARA CLAN FOREST, TWIN SHOT!!, WINGS OF THE EAGLE,
   GOKU!!, AYANOKOUJI…) đi đường riêng `drawCallBanner()`, **không** qua `floatScale()` —
   đó vốn là mấy cú focus nên phải to.
@@ -1412,6 +1530,9 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Model bị thu nhỏ phình lại quá nhanh | nhịp bước tính bằng `dt/growT` — đó là phần của cả dải 0→1, trong khi quãng đi thật chỉ là `1 − shrunkSize` = 0.45 dải | nhân thêm đúng quãng đó: `span*dt/growT`; đo lại ra đúng 0.4 giây người chơi |
 | Hệ số nhân cộng dồn khi gọi lẻ `drStatus()` | `gnStatus()` GÁN còn `drStatus()` NHÂN CHỒNG, nên gọi `drStatus()` một mình là nhân dồn qua từng nhịp | gộp thành một cửa duy nhất `statusTick(f,dt)`; test cũng phải gọi qua đó |
 | `t_bubble.js` đổ oan ở nhánh "đảo thứ tự" | mốc `trang > .5` nằm đúng chỗ phép đo dao động 49~51% tuỳ lần bốc vị trí — đổ chừng hai trên ba lần, và đổ y hệt trên `origin/main` | hạ mốc xuống `.45`; bằng chứng thật rằng bong bóng nằm trên vẫn là dòng "viền vàng 0%" ngay dưới, còn lúc bị đè thì nền trắng tụt hẳn dưới 40% |
+| Model tơi tả của Ginyu nhìn không ra | dấu vết chỉ là hai vệt xước mảnh, đo ra 113 điểm ảnh | đánh vào mảng lớn: giáp sứt, scouter vỡ, đệm vai gãy, bầm tím — lên 464 điểm ảnh, test đòi tối thiểu 300 |
+| CHANGE xong mà không hiện model tơi tả khi máu tối đa là số lẻ | `ginyuPossess()` dùng `Math.round(maxHp*.20)`, làm tròn LÊN thì vượt mốc `hp <= maxHp*.20` | đổi sang `Math.floor`; test thử cả máu chẵn 1000 lẫn máu lẻ 999 |
+| `t_ginyu.js` đo choáng Ginyu Flash ra 1.68 trên mốc 1.75 | đọc `e.stun` qua vòng poll 15ms, máy bận thì lượt đọc rơi trễ cả chục khung | gọi thẳng `gnFlashHit()` rồi đọc ngay, bỏ hẳn phép đo theo thời gian ở chỗ đó |
 | Meteor Strike hất lùi 0px khi lao trúng giữa người | hướng đẩy tính bằng `prime.x-f.x`, mà lao trúng thì hai chỗ đứng trùng nhau nên ra vector 0 | rơi vào trường hợp đó thì lấy luôn hướng lao (`f.ax/f.ay`) làm hướng đẩy |
 | Khuôn mặt Superman chìm nghỉm trong tóc | vạt tóc `fillRect` phủ xuống tận hàng mắt | kéo vạt tóc lên cao hơn và hạ hàng mắt xuống một nhịp |
 | Cú xoay người đấm tay trái nhìn như chưa đánh | tay xa chỉ dài 17 nên nắm đấm dừng ngay giữa ngực | riêng dáng `punch2` nới tay dẫn lên 26 và vẽ **đè lên thân** |

@@ -275,9 +275,28 @@ async function waitGame(page, fnBody, limit) {
     ok('Ginyu Flash gồng đủ 1.75 giây người chơi rồi mới bắn',
       flash.fired > 0 && Math.abs(flash.fired - flash.GN.charge) < .15,
       `bắn ở giây ${flash.fired} trong trận (chuẩn ${flash.GN.charge})`);
+    /* Choáng đo THẲNG bằng cách gọi gnFlashHit() chứ không đọc qua vòng poll: máy bận thì
+       lượt đọc rơi trễ cả chục khung, đo ra 1.68 trên mốc 1.75 và đổ oan — đã dính hai lần
+       nên thôi bỏ hẳn phép đo theo thời gian ở chỗ này. */
+    const fstun = await page.evaluate(() => {
+      const G = window.__G();
+      const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f !== g);
+      g.gnState = null; g.gnStateT = 0; g.gnSelfCut = 1; g.gnCcCut = 1;
+      window.__gnStatus(g, 0);
+      /* Dọn sạch mọi thứ chặn choáng. ChiChi cứ 5 giây lại lao một cú Flying Kick, mà
+         lúc đang lao thì stunFx() trả về CC IMMUNE — rơi trúng nhịp đó là đo ra 0. */
+      e.stun = 0; e.evade = 0; e.dmgRes = 0; e.ccRes = 0; e.prewing = false; e.eagle = false;
+      e.dash = null; e.invuln = 0; e.vuln = 0; e.gnCcRes = 0; e.drCcRes = 0; e.ccTake = 1;
+      e.hp = e.maxHp; e.gnSlowAfter = 0;
+      window.__gnStatus(e, 0);
+      window.__gnFlashHit(g, e);
+      const r = { stun: +e.stun.toFixed(3), pend: +(e.gnSlowAfter || 0).toFixed(3) };
+      e.stun = 0; e.gnSlowAfter = 0; e.hp = e.maxHp;
+      return r;
+    });
     ok('Ginyu Flash gây 100 dmg và choáng 3.5 giây người chơi',
-      flash.dmg === flash.GN.dmg && Math.abs(flash.stun - flash.GN.stun) < .05,
-      `${flash.dmg} dmg · choáng ${flash.stun}s trong trận`);
+      flash.dmg === flash.GN.dmg && Math.abs(fstun.stun - flash.GN.stun) < .01,
+      `${flash.dmg} dmg · choáng ${fstun.stun}s trong trận (chuẩn ${flash.GN.stun})`);
     ok('quãng ghì chân chỉ bắt đầu SAU khi hết choáng',
       flash.pend > 0 && Math.abs(flash.slow - flash.GN.slowT) < .2,
       `xếp hàng ${flash.pend}s, chạy ${flash.slow}s sau khi hết choáng`);
@@ -532,6 +551,145 @@ async function waitGame(page, fnBody, limit) {
     ok('có ô dán ảnh riêng cho ba dáng Ginyu Force và dáng bay',
       slots && ['fly', 'dance1', 'dance2', 'dance3', 'change', 'panic'].every(k => slots.includes(k)),
       slots ? slots.join(',') : 'không có');
+    /* Luồng khí: TOÀN BỘ tông tím, không lẫn một mảng xanh nào — kể cả thế thăm dò và
+       lúc hoảng loạn. Vẽ từng thế ra canvas phụ trên nền đen rồi lấy màu trung bình của
+       đám điểm ảnh có sáng lên: tím thì lục thấp nhất, lam cao nhất, đỏ nằm giữa. */
+    const aura = await page.evaluate(() => {
+      const G = window.__G(), g = G.fighters.find(f => f.key === 'ginyu');
+      const doc = {};
+      for (const st of ['atk', 'def', 'panic']) {
+        g.gnState = st === 'panic' ? null : st;
+        g.gnPanic = (st === 'panic');
+        g.gnEntry = null;
+        const c = document.createElement('canvas'); c.width = 200; c.height = 280;
+        const cx = c.getContext('2d');
+        cx.fillStyle = '#000'; cx.fillRect(0, 0, 200, 280);
+        const old = window.__getCtx(); window.__setCtx(cx);
+        window.__gnAuraDraw(g, 100, 240);
+        window.__setCtx(old);
+        const d = cx.getImageData(0, 0, 200, 280).data;
+        let R = 0, Gg = 0, B = 0, n = 0, top = 280, wide = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i] + d[i + 1] + d[i + 2] < 24) continue;
+          R += d[i]; Gg += d[i + 1]; B += d[i + 2]; n++;
+          const px = (i / 4) % 200, py = Math.floor((i / 4) / 200);
+          if (py < top) top = py;
+          wide = Math.max(wide, Math.abs(px - 100));
+        }
+        doc[st] = { R: R / n, G: Gg / n, B: B / n, n, top, wide };
+      }
+      g.gnState = null; g.gnPanic = false;
+      return doc;
+    });
+    const tim = a => a.R > a.G * 1.3 && a.B > a.G * 1.5 && a.R > a.B * .45 && a.R < a.B * 1.1;
+    for (const [st, ten] of [['atk', 'hưng phấn'], ['def', 'thăm dò'], ['panic', 'hoảng loạn']]) {
+      const a = aura[st];
+      ok(`luồng khí thế ${ten} là màu TÍM, không lẫn mảng xanh nào`, tim(a),
+        `R ${a.R.toFixed(0)} · G ${a.G.toFixed(0)} · B ${a.B.toFixed(0)}`);
+    }
+    /* Vỏ khí phải trùm KÍN người: liếm hẳn lên trên đỉnh đầu (model cao 120, chân ở 240
+       nên đỉnh đầu là 120) và toác rộng hơn thân người (nửa thân ~20px). */
+    ok('vỏ khí trùm kín người — liếm lên trên đỉnh đầu và toác rộng hơn thân',
+      aura.atk.top < 118 && aura.atk.wide > 45,
+      `mép trên ${aura.atk.top} (đỉnh đầu 120) · rộng ±${aura.atk.wide}px`);
+    ok('thế thăm dò là vỏ khí mỏng hơn hẳn, phân biệt bằng độ dày chứ không bằng màu',
+      aura.def.n < aura.atk.n * .7,
+      `thăm dò ${aura.def.n} điểm ảnh so với hưng phấn ${aura.atk.n}`);
+
+    /* Dáng ra chiêu phải SỐNG HẾT chiêu rồi mới thôi. Chạy tay từng bước (hẹn giờ +
+       ginyuTick + đồng hồ dáng) để đo chính xác mốc dáng tắt so với mốc luồng cuối. */
+    const pose = await page.evaluate(() => {
+      const G = window.__G(), GN = window.__GN, RT = window.__RT, dt = 1 / 120;
+      const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f !== g);
+      const run = (ten, ban) => {
+        g.gnState = null; g.gnStateT = 0; g.gnFlash = null; g.gnEntry = null;
+        g.gnPanic = false; g.lock = 0; g.stun = 0; g.pose = 'idle'; g.poseT = 0;
+        g.cds = { s1: 99, s2: 0, s3: 0 };
+        e.x = g.x + 200; e.y = g.y; e.maxHp = 99999; e.hp = e.maxHp; e.evade = 0;
+        G.proj.length = 0; G.timers.length = 0;
+        ban();
+        let poseEnd = -1, lastShot = -1, xong = -1, seen = 0;
+        for (let i = 0; i < 900; i++) {
+          const t = i * dt;
+          for (let k = G.timers.length - 1; k >= 0; k--) {
+            const tm = G.timers[k]; tm.t -= dt;
+            if (tm.t <= 0) { G.timers.splice(k, 1); try { tm.fn(); } catch (err) { } }
+          }
+          G.t += dt;
+          if (g.poseT > 0) { g.poseT -= dt; if (g.poseT <= 0) g.pose = 'idle'; }
+          window.__ginyuTick(g, dt);
+          const n = G.proj.filter(p => p.type === 'gbeam').length;
+          if (n > seen) { seen = n; lastShot = t; }
+          if (poseEnd < 0 && g.pose !== ten) poseEnd = t;
+          if (ten === 'flash' && !g.gnFlash && xong < 0 && t > .05) xong = t;
+        }
+        G.proj.length = 0; G.timers.length = 0;
+        return { poseEnd: poseEnd * RT, lastShot: lastShot * RT, xong: xong * RT };
+      };
+      const beam = run('beam', () => window.__ginyuBeam(g, e));
+      const flash = run('flash', () => window.__ginyuFlash(g, e));
+      g.pose = 'idle'; g.poseT = 0; g.lock = 0;
+      return { beam, flash, n: GN.beamN };
+    });
+    ok(`dáng Ginyu Beam sống hết cả ${pose.n} luồng rồi mới thôi`,
+      pose.beam.poseEnd > pose.beam.lastShot + .2,
+      `luồng cuối ở giây ${pose.beam.lastShot.toFixed(2)}, dáng giữ tới ${pose.beam.poseEnd.toFixed(2)} (thừa ${(pose.beam.poseEnd - pose.beam.lastShot).toFixed(2)}s)`);
+    ok('dáng Ginyu Flash sống hết luồng sáng rồi còn giữ thêm một nhịp',
+      pose.flash.poseEnd > pose.flash.xong + .2,
+      `luồng sáng tắt ở giây ${pose.flash.xong.toFixed(2)}, dáng giữ tới ${pose.flash.poseEnd.toFixed(2)} (thừa ${(pose.flash.poseEnd - pose.flash.xong).toFixed(2)}s)`);
+
+    /* Hoán đổi thân xác xong thì CẢ HAI thân xác cùng về 20% máu — đúng cái mốc bật cờ
+       tơi tả — nên cả hai phải mang model tơi tả, và dấu vết phải NHÌN RA ĐƯỢC chứ không
+       phải vài nét mờ. Chấm bằng cách đếm điểm ảnh lệch giữa lành lặn và tơi tả. */
+    const toi = await page.evaluate(() => {
+      const G = window.__G(), GN = window.__GN;
+      const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f !== g);
+      /* Thử với hai cỡ máu tối đa: một số chẵn và một số LẺ. Số lẻ là chỗ Math.round()
+         từng đẩy máu lên cao hơn mốc 20% đúng một chút và model tơi tả không hiện —
+         mà ô máu thì người chơi chỉnh được từ 100 tới 9999 nên số lẻ là chuyện thường. */
+      const thu = max => {
+        g.gnEntry = null; g.gnChange = null; g.gnChangeDone = false;
+        g.swapAs = null; e.swapAs = null; g.gnSoul = null; e.gnSoul = null;
+        g.maxHp = max; e.maxHp = max; g.hp = max; e.hp = max;
+        g.injured = false; e.injured = false;
+        window.__ginyuPossess(g, e);
+        // cờ tơi tả do step() bật theo ngưỡng máu; ở đây soi thẳng mốc cho khỏi phải chờ
+        return [g, e].map(f => ({
+          key: f.key, hp: Math.round(f.hp), max: f.maxHp,
+          duoiMoc: f.hp <= f.maxHp * .20
+        }));
+      };
+      const moc = thu(1000).concat(thu(999));
+      // đếm điểm ảnh của dấu vết tơi tả, soi cả bốn kênh RGBA
+      const dem = key => {
+        const ve = inj => {
+          const c = document.createElement('canvas'); c.width = 140; c.height = 180;
+          const cx = c.getContext('2d');
+          const old = window.__getCtx(); window.__setCtx(cx);
+          cx.save(); cx.translate(70, 150);
+          window.__vector({ key, pose: 'idle', moving: false, injured: inj, face: 1,
+                            spriteH: 120, vx: 0, vy: 0, speed: 100, form: 2 });
+          cx.restore(); window.__setCtx(old);
+          return cx.getImageData(0, 0, 140, 180).data;
+        };
+        const a = ve(false), b = ve(true);
+        let n = 0;
+        for (let i = 0; i < a.length; i += 4)
+          if (a[i] !== b[i] || a[i+1] !== b[i+1] || a[i+2] !== b[i+2] || a[i+3] !== b[i+3]) n++;
+        return n;
+      };
+      return { moc, px: dem('ginyu'), pxFoe: dem(e.key), foeKey: e.key, changeHp: GN.changeHp };
+    });
+    ok('CHANGE xong thì cả hai thân xác cùng nằm dưới mốc tơi tả 20% máu, kể cả khi máu tối đa là số lẻ',
+      toi.moc.every(m => m.duoiMoc),
+      toi.moc.map(m => `${m.key} ${m.hp}/${m.max}${m.duoiMoc ? '' : ' HONG'}`).join(' · '));
+    /* Bản cũ chỉ có hai vệt xước con con, đo ra 113 điểm ảnh — đứng ở cỡ trong trận thì
+       chẳng thấy gì. Đòi hẳn 300 để không ai lỡ tay rút gọn lại. */
+    ok('dấu vết tơi tả của Ginyu đủ đậm để nhìn ra ở cỡ trong trận',
+      toi.px >= 300, `${toi.px} điểm ảnh lệch (bản cũ chỉ 113)`);
+    ok('thân xác bị cướp cũng mang dấu vết tơi tả của chính nó',
+      toi.pxFoe > 60, `${toi.foeKey}: ${toi.pxFoe} điểm ảnh lệch`);
+
     ok('bảng tiếng/ảnh không lỗi trang', errors.length === 0, errors.join(' | '));
     await browser.close();
   }

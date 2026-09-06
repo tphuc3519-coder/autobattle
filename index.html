@@ -441,14 +441,17 @@ const GN={
   atk:{t:gs(8),  dmg:1.50, take:1.50, cc:1.40, cast:1.50, move:1.60},
   def:{t:gs(10), take:.40,  ccRes:.40, dmg:.60,  cast:.60},
   /* Chiêu 1 — đấm/đá, nhanh hơn ChiChi (cm(.25)) một nhịp và nặng đòn hơn hẳn */
-  atkCd:.22, hitDmg:25, hitStun:gs(.75), hitStunOdds:.25,
+  atkCd:.22, hitDmg:22, hitStun:gs(.75), hitStunOdds:.25,
   /* Chiêu 2 — Ginyu Beam: sáu luồng khí tím bắn từa lưa. Bay rất nhanh, ra dồn dập, và
      lệch sẵn một góc ngay cả lúc sát mặt (beamSpreadNear) rồi toác hẳn ra khi đứng xa. */
   beamCd:gs(10), beamN:6, beamDmg:18, beamSpd:560, beamGap:.11,
+  /* Giữ dáng thêm bấy nhiêu sau luồng CUỐI. Dáng bắn phải sống hết loạt rồi mới thôi:
+     để dáng ngắn hơn loạt thì anh về thế đứng trong khi khí vẫn đang phun ra. */
+  beamTail:.2,
   beamStun:gs(1.5), beamStunOdds:.15, beamKb:340, beamSpread:.95, beamSpreadNear:.22, beamFar:460,
   tiredHits:3, tiredT:gs(7), tiredMove:.40, tiredCast:.60, tiredDmg:.75,
   /* Chiêu 3 — Ginyu Flash: gồng 1.75 giây rồi nối một luồng sáng tím liền mạch */
-  flashCd:gs(17), flashCharge:gs(1.75), flashHold:gs(.6),
+  flashCd:gs(17), flashCharge:gs(1.75), flashHold:gs(.6), flashTail:gs(.5),
   flashDmg:100, flashStun:gs(3.5), flashSlowT:gs(5), flashMove:.20, flashCast:.75,
   /* Chiêu 4 — CHANGE!!! Tia sáng phóng ra từ MIỆNG, càng gần càng dễ trúng nhưng
      gần nhất cũng không bao giờ chắc ăn, xa nhất chỉ còn 18%. */
@@ -491,15 +494,21 @@ const DORA={
   copSlowRes:.40,            // hiệu ứng làm chậm chỉ còn 60% hiệu lực
   copDodge:.20,              // né đạn tốt hơn 20%
   copHover:9,                // bay là là, không bao giờ rời sàn
+  /* Bay tới đâu nã một phát Air Cannon tới đó — ĐÚNG MỘT phát mỗi lượt bay, và không
+     đụng tới hồi chiêu của Air Cannon dưới đất. Đổi lại vừa bay vừa ôm cái ống thì
+     ngắm tệ hẳn và cú bắn nhẹ hơn. */
+  copAcAt:gs(.6),            // bay được bấy nhiêu giây thì nã
+  copAcDmg:.70,              // đang bay: chỉ còn 70% sát thương của cú bắn thường
+  copAcAcc:.20,              // và trừ thẳng 20% độ chính xác
   /* Nội tại 2 — Emergency Door */
-  edOdds:.60, edCd:gs(8), edDist:.30, edT:gs(.45),
+  edOdds:.60, edCd:gs(6), edDist:.30, edT:gs(.45),
   edSpeed:1.40, edSpeedT:gs(2),
   /* Chiêu 1 — Basic Attack: combo ba đòn, đòn ba đẩy lùi và choáng */
   hit:[15,15,20], hitGap:gs(.6), hitCd:cm(.5),
   slamStun:gs(.6), slamKb:340,
   disOdds:.25, disT:gs(1.5), disMove:.80, disCast:.85,
   /* Chiêu 2 — Air Cannon */
-  acCd:gs(10), acAim:gs(.7), acDmg:100, acStun:gs(3), acSpd:520,
+  acCd:gs(8), acAim:gs(.7), acDmg:85, acStun:gs(3), acSpd:520,
   acKbDist:.22,              // đẩy lùi bằng 22% chiều dài sàn
   acBreak:gs(.35),           // bị đánh trong bấy nhiêu giây đầu thì đứt chiêu
   acBreakCut:.50,            // đứt thì chỉ phải chờ nửa hồi chiêu
@@ -507,7 +516,7 @@ const DORA={
   /* Độ chính xác theo khoảng cách: [quãng, tỉ lệ] — nội suy tuyến tính giữa hai mốc */
   acAcc:[[0,.90],[140,.75],[290,.60],[430,.50],[520,.40],[700,.30]],
   /* Chiêu 3 — Small Light */
-  slCd:gs(18), slAim:gs(1), slDmg:35, slSpd:560,
+  slCd:gs(16), slAim:gs(1), slDmg:35, slSpd:560,
   shrunkT:gs(7), shrunkSize:.55,
   shrunkHit:.85,             // vòng ăn đòn chỉ được nhỏ đi tối đa 15%
   shrunkMove:.45, shrunkCast:.60, shrunkDmg:.65, shrunkReach:.80, shrunkKb:1.40,
@@ -765,7 +774,7 @@ const CHARS={
     role:'ranged', want:205, speed:96, dodge:.85, male:true,
     skills:[
       `<b>Entrance</b> He is not on the arena when the bell rings — a pink <b>Anywhere Door</b> fades in, opens, he steps out, looks around and raises a hand, then the door shuts. The whole thing takes ${rts(DORA.doorT)}s and the foe can only wait`,
-      `<b>Passive · Take-copter</b> foe more than ${Math.round(DORA.copFar*100)}% of the arena away and nothing landed for ${rts(DORA.copIdle)}s ⇒ the propeller goes on his head for ${rts(DORA.copT)}s: +${Math.round((DORA.copMove-1)*100)}% move, low obstacles (Shadow Strangle included) cannot hold him, slows lose ${Math.round(DORA.copSlowRes*100)}% of their bite, +${Math.round(DORA.copDodge*100)}% projectile dodge · ends early once he is close enough to swing · every ${rts(DORA.copCd)}s`,
+      `<b>Passive · Take-copter</b> foe more than ${Math.round(DORA.copFar*100)}% of the arena away and nothing landed for ${rts(DORA.copIdle)}s ⇒ the propeller goes on his head for ${rts(DORA.copT)}s: +${Math.round((DORA.copMove-1)*100)}% move, low obstacles (Shadow Strangle included) cannot hold him, slows lose ${Math.round(DORA.copSlowRes*100)}% of their bite, +${Math.round(DORA.copDodge*100)}% projectile dodge · ends early once he is close enough to swing · every ${rts(DORA.copCd)}s · he also lets off <b>one Air Cannon</b> mid-flight, and flying costs him for it: ${Math.round(DORA.copAcDmg*100)}% damage and ${Math.round(DORA.copAcAcc*100)} points off his accuracy`,
       `<b>Passive · Emergency Door</b> ${Math.round(DORA.edOdds*100)}% of the time an incoming hit makes him dive through a pink door instead: untouchable in transit, every slow washed off (stun, burn and the rest stay), out again ${Math.round(DORA.edDist*100)}% of the arena away on the far side of the foe, +${Math.round((DORA.edSpeed-1)*100)}% move for ${rts(DORA.edSpeedT)}s · deals no damage · every ${rts(DORA.edCd)}s`,
       `<b>1 · Basic Attack</b> three round-handed blows ${DORA.hit[0]} / ${DORA.hit[1]} / ${DORA.hit[2]} dmg, ${rts(DORA.hitGap)}s apart — the third is a belly charge that knocks back hard and stuns ${rts(DORA.slamStun)}s · each blow ${Math.round(DORA.disOdds*100)}% to leave <b>Disoriented</b> for ${rts(DORA.disT)}s (−${Math.round((1-DORA.disMove)*100)}% move, −${Math.round((1-DORA.disCast)*100)}% cast)`,
       `<b>2 · Air Cannon</b> every ${rts(DORA.acCd)}s — ${rts(DORA.acAim)}s to aim, then a ring of compressed air for ${DORA.acDmg} dmg, ${Math.round(DORA.acKbDist*100)}% of the arena in knockback, ${rts(DORA.acStun)}s stun, and it cuts any channelled skill short · accuracy runs ${Math.round(DORA.acAcc[1][1]*100)}–${Math.round(DORA.acAcc[0][1]*100)}% up close down to ${Math.round(DORA.acAcc[5][1]*100)}–${Math.round(DORA.acAcc[4][1]*100)}% across the arena · pierces <b>two</b> bodies, the second takes ${Math.round(DORA.acPierce2*100)}% · a hit inside the first ${rts(DORA.acBreak)}s cancels it for half the cooldown`,
@@ -1852,7 +1861,7 @@ function mk(o){
     gnChangeDone:false, gnProbeDone:false, gnPanic:false, gnPanicMul:1, swapAs:null, gnSoul:null,
     /* Doraemon: Disoriented và Shrunk là thứ anh dán lên NGƯỜI KHÁC, nên khai chung ở đây */
     dis:0, shrunk:0, szMul:1, hitMul:1, reachMul:1, kbTake:1, drCcRes:0, dmgDealt:0,
-    copter:0, copCd:0, drNoHit:0, edCd:0, edT:0, edMoved:false, edSpeed:0, edFrom:null, edTo:null,
+    copter:0, copCd:0, copAcDone:false, drNoHit:0, edCd:0, edT:0, edMoved:false, edSpeed:0, edFrom:null, edTo:null,
     fk:0,
     drEntry:null, drAim:null, drCombo:null, drHide:false, tm:null, tmDone:false,
     /* Superman: Frozen / Chilled / làm chậm của vùng chấn động và trần khống chế cứng
@@ -3590,15 +3599,25 @@ function ginyuStrike(f,e){
 
 /* ---- chiêu 2: Ginyu's Beam — sáu luồng khí tím ---- */
 function ginyuBeam(f,e){
-  setPose(f,'beam',cm(.6)); aim(f,e,1.1);
+  /* Dáng bắn phải sống HẾT LOẠT rồi mới thôi. Loạt kéo dài từ luồng đầu (cm(.2)) tới
+     luồng cuối (cộng thêm beamN-1 nhịp beamGap), rồi giữ thêm beamTail cho có nhịp thu
+     tay về. Trước đây cắm cứng cm(.6) — ngắn hơn loạt hẳn nửa giây người chơi, nên anh
+     đứng thẳng người lại trong khi hai luồng cuối vẫn đang phun ra. */
+  const span=cm(.2)+(GN.beamN-1)*cm(GN.beamGap)+cm(GN.beamTail);
+  setPose(f,'beam',span); aim(f,e,1.1);
   e.gnBeamHits=0;
   G.floats.push({x:f.x,y:f.y-106,txt:'GINYU BEAM!',color:f.color,life:1.5,ml:1.5,
     banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.06,.06)});
   say(`Ginyu gồng khí — ${GN.beamN} luồng khí tím bắn tứ tung, mỗi luồng ${GN.beamDmg} dmg, hất địch văng xa và ${Math.round(GN.beamStunOdds*100)}% choáng ${rts(GN.beamStun)} giây.`,'m');
-  for(let i=0;i<GN.beamN;i++) later(cm(.2)+i*cm(GN.beamGap),()=>{
+  for(let i=0;i<GN.beamN;i++){
+    const at=cm(.2)+i*cm(GN.beamGap);
+    later(at,()=>{
     if(!f.alive||G.over||G.freeze>0)return;
     const tg=aimTarget(f)||e;
     if(!tg||!tg.alive)return;
+    /* Đặt lại dáng ở từng luồng: ăn đòn giữa loạt thì hurt() đè sang dáng chịu đòn một
+       nhịp, xong phải trở về dáng bắn chứ không được nằm luôn ở đó. */
+    setPose(f,'beam',span-at);
     const d=dist(f,tg);
     // sát mặt đã lệch sẵn một góc, càng xa càng toác — bắn từa lưa chứ không ngắm
     const sp=GN.beamSpreadNear+(GN.beamSpread-GN.beamSpreadNear)*clamp(d/GN.beamFar,0,1);
@@ -3611,7 +3630,8 @@ function ginyuBeam(f,e){
     sfx('ginyu_beam');
     ring(f.x+Math.cos(a)*24,f.y-26+Math.sin(a)*24,42,'#C9A0FF',.24);
     G.flashScreen=Math.max(G.flashScreen,.04);
-  });
+    });
+  }
 }
 function gnBeamHit(p,t){
   const o=p.owner;
@@ -3660,7 +3680,10 @@ function gnFlashTick(f,dt){
     if(chance(dt*22)) G.fx.push({type:'dust',x:f.x+rnd(-24,24),y:f.y+rnd(-6,18),r:4,life:.4,ml:.4});
     if(F.t<=0){ F.ph='fire'; F.t=GN.flashHold; gnFlashHit(f,e); }
   }else if(F.t<=0){
-    f.gnFlash=null; f.lock=0; f.pose='idle';
+    // luồng sáng tắt rồi vẫn giữ dáng thêm một nhịp cho có chỗ thu tay về, đừng bật
+    // về thế đứng ngay trong cùng một khung hình
+    f.gnFlash=null; f.lock=0;
+    setPose(f,'flash',GN.flashTail);
   }
 }
 function gnFlashHit(f,e){
@@ -3750,9 +3773,13 @@ function ginyuPossess(g,t){
   const gname=g.name, tname=t.name;
   g.swapAs='foe';   g.gnSoul=t.key;  g.name=tname;
   t.swapAs='ginyu'; t.gnSoul='ginyu'; t.name=gname;
-  // cả hai thân xác cùng về 20% máu tối đa của chính nó, không bên nào lệch hơn bên nào
-  g.hp=Math.max(1,Math.round(g.maxHp*GN.changeHp));
-  t.hp=Math.max(1,Math.round(t.maxHp*GN.changeHp));
+  /* Cả hai thân xác cùng về 20% máu tối đa của chính nó, không bên nào lệch hơn bên nào.
+     Phải LÀM TRÒN XUỐNG chứ không được Math.round: mốc bật cờ tơi tả trong step() là
+     f.hp <= f.maxHp*.20, mà làm tròn lên thì với máu tối đa lẻ (người chơi chỉnh được ô
+     máu từ 100 tới 9999) con số rơi cao hơn mốc đúng một chút và model tơi tả KHÔNG hiện.
+     Ví dụ 999 máu: round ra 200 > 199.8, còn floor ra 199 thì đúng dưới mốc. */
+  g.hp=Math.max(1,Math.floor(g.maxHp*GN.changeHp));
+  t.hp=Math.max(1,Math.floor(t.maxHp*GN.changeHp));
   /* Đối thủ kẹt trong thân xác Ginyu: chỉ còn đúng đấm đá của Ginyu, dmg còn một nửa. */
   g.gnSelfCut=GN.swapHost; g.gnCcCut=1; g.missOdds=0; g.aimOff=0;
   g.cds={s1:cm(GN.atkCd)};
@@ -3930,7 +3957,16 @@ function drCopterTick(f,dt,e,d){
     // bay là là trong sàn, tới đủ tầm vung tay là hạ cánh ngay
     if(e&&e.alive&&d<f.r+e.r+meleeReach(f)+22){ drCopterOff(f,'đã áp sát được'); return; }
     if(f.copter<=0){ drCopterOff(f,'hết giờ'); return; }
-    f.pose='copter'; f.poseT=0;
+    /* Đang ngắm thì để nguyên dáng cầm ống, đừng đè dáng bay lên. Chong chóng vẫn quay
+       vì doraVector() vẽ nó theo f.copter chứ không theo dáng. */
+    if(!f.drAim){ f.pose='copter'; f.poseT=0; }
+    /* Bay được copAcAt giây thì nã đúng MỘT phát Air Cannon. Không xét f.cds.s2 và cũng
+       không đặt lại nó: đây là phát bắn kèm của quãng bay, còn cú bắn dưới đất vẫn đi
+       theo hồi chiêu riêng của nó. */
+    if(!f.copAcDone&&!f.drAim&&!f.tm&&e&&e.alive&&f.copter<=DORA.copT-DORA.copAcAt){
+      f.copAcDone=true;
+      doraAirCannon(f,e);
+    }
     if(chance(dt*8)) G.fx.push({type:'dust',x:f.x+rnd(-14,14),y:f.y+18,r:3,life:.3,ml:.3});
     return;
   }
@@ -3940,7 +3976,7 @@ function drCopterTick(f,dt,e,d){
   if(d>W*DORA.copFar&&f.drNoHit>=DORA.copIdle) drCopterOn(f);
 }
 function drCopterOn(f){
-  f.copter=DORA.copT; f.copCd=DORA.copCd; f.drNoHit=0;
+  f.copter=DORA.copT; f.copCd=DORA.copCd; f.drNoHit=0; f.copAcDone=false;
   setPose(f,'copter',gs(.3));
   sfx('dora_copter');
   ring(f.x,f.y,92,'#FFD34D',.42);
@@ -4121,13 +4157,15 @@ function drAcOdds(d,f){
     if(d<=T[i][0]){ const q=(d-T[i-1][0])/(T[i][0]-T[i-1][0]); p=T[i-1][1]+(T[i][1]-T[i-1][1])*q; break; }
   }
   if(f&&f.fk>0) p+=DORA.fkAcc;              // Future Knowledge: ngắm chuẩn hơn hẳn
+  if(f&&f.copter>0) p-=DORA.copAcAcc;       // vừa bay vừa ôm ống thì ngắm tệ hẳn
   return clamp(p,.05,.98);
 }
 function doraAirCannon(f,e){
   drReach(f,'ac',e,DORA.acAim);
   G.floats.push({x:f.x,y:f.y-106,txt:'AIR CANNON',color:f.color,life:1.4,ml:1.4,
     banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
-  say('Doraemon lắp Air Cannon vào tay và ngắm.','m');
+  say(f.copter>0?'Doraemon vừa bay vừa lắp Air Cannon vào tay và ngắm.'
+                :'Doraemon lắp Air Cannon vào tay và ngắm.','m');
 }
 function drAcFire(f,e,A){
   const d=dist(f,e);
@@ -4140,12 +4178,15 @@ function drAcFire(f,e,A){
   f.ax=Math.cos(a); f.ay=Math.sin(a); f.lunge=Math.max(f.lunge,.7);
   setPose(f,'aircannon',gs(.45));
   G.proj.push({type:'aircan',team:f.team,owner:f,x:f.x+Math.cos(a)*30,y:sy+Math.sin(a)*30,
-    vx:Math.cos(a)*DORA.acSpd,vy:Math.sin(a)*DORA.acSpd,r:22,dmg:DORA.acDmg,
+    vx:Math.cos(a)*DORA.acSpd,vy:Math.sin(a)*DORA.acSpd,r:22,
+    dmg:Math.round(DORA.acDmg*(f.copter>0?DORA.copAcDmg:1)),
     life:2.6,ang:a,hitList:[],wob:rnd(0,9)});
   sfx('dora_aircannon');
   ring(f.x+Math.cos(a)*26,sy+Math.sin(a)*26,54,'#D6F2FF',.3);
   G.flashScreen=Math.max(G.flashScreen,.05);
-  say(`Air Cannon bắn ra — tỉ lệ trúng ở khoảng cách này ${Math.round(p*100)}%.`,'m');
+  say(f.copter>0
+    ? `Vừa bay vừa nã Air Cannon — chỉ ${Math.round(DORA.copAcDmg*100)}% sát thương và tỉ lệ trúng tụt còn ${Math.round(p*100)}%.`
+    : `Air Cannon bắn ra — tỉ lệ trúng ở khoảng cách này ${Math.round(p*100)}%.`,'m');
 }
 /* Trả về true nếu luồng khí đã ăn đủ số người và phải tan. Người thứ hai trên đường
    bay chỉ chịu 60% sát thương lẫn 60% thời gian choáng. */
@@ -5972,10 +6013,41 @@ function vector(f){
     ctx.strokeStyle='#5CE07A'; ctx.lineWidth=1.4;
     ctx.beginPath(); ctx.moveTo(6,y-22); ctx.lineTo(-1,y-22); ctx.stroke();
     if(f.injured){
+      /* Tơi tả phải NHÌN RA ĐƯỢC ở cỡ trong trận. Bản cũ chỉ có hai vệt xước con con
+         cộng một mảnh rách — đo ra 113 điểm ảnh, đứng xa thì chẳng thấy gì, người dùng
+         bác đúng chỗ đó. Giờ đánh vào mấy mảng LỚN và dễ nhận: giáp ngực sứt một góc,
+         scouter nứt (mảng xanh lá sáng nhất trên người anh), đệm vai gãy, da bầm tím. */
+      const nut='#2E1B44';                                  // chỗ giáp vỡ, lộ đồ bên trong
+      // giáp ngực sứt hẳn một mảng góc dưới bên trái
+      ctx.fillStyle=nut;
+      ctx.beginPath();
+      ctx.moveTo(-13,y-16); ctx.lineTo(-5,y-15); ctx.lineTo(-8,y-22); ctx.lineTo(-13,y-21);
+      ctx.closePath(); ctx.fill();
+      // vết nứt chạy trên mặt giáp
+      ctx.strokeStyle='#8E94A8'; ctx.lineWidth=1.2; ctx.lineCap='round'; ctx.lineJoin='round';
+      ctx.beginPath(); ctx.moveTo(-8,y-25); ctx.lineTo(-3,y-21); ctx.lineTo(-5,y-16); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(10,y-24); ctx.lineTo(6,y-19); ctx.lineTo(8,y-15); ctx.stroke();
+      // đệm vai bên phải gãy mất một góc
+      ctx.fillStyle=nut; ctx.fillRect(13,y-10,4,5);
+      // dải cam dưới giáp rách một khúc
+      ctx.fillStyle=nut; ctx.fillRect(-2,y+4,7,3);
+      // scouter nứt: mất một mảnh kính, còn lại hai vết rạn
+      ctx.fillStyle='#1B1428'; ctx.fillRect(12,y-24,3,5);
+      ctx.strokeStyle='#124A24'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(7,y-24); ctx.lineTo(9.5,y-20); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(10,y-24); ctx.lineTo(8.5,y-19.5); ctx.stroke();
+      // da bầm tím sẫm: một mảng trên đùi, một mảng trên má
+      ctx.fillStyle='rgba(48,10,64,.5)';
+      ctx.beginPath(); ctx.ellipse(7,y+4,4.5,5.5,-.2,0,7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-7,y-24,3.6,3,.3,0,7); ctx.fill();
+      // vết xước
       ctx.strokeStyle='#8E1023'; ctx.lineWidth=2.4; ctx.lineCap='round';
       ctx.beginPath(); ctx.moveTo(-9,y+1); ctx.lineTo(-2,y+8); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(4,y-24); ctx.lineTo(10,y-19); ctx.stroke();
-      ctx.fillStyle='#2B2B3C';
+      ctx.beginPath(); ctx.moveTo(-10,y-31); ctx.lineTo(-4,y-28); ctx.stroke();   // trên mặt
+      ctx.beginPath(); ctx.moveTo(5,y+13); ctx.lineTo(10,y+19); ctx.stroke();     // trên chân
+      // ống quần rách một góc
+      ctx.fillStyle=nut;
       ctx.beginPath(); ctx.moveTo(-13,y+8); ctx.lineTo(-8,y+2); ctx.lineTo(-4,y+8); ctx.closePath(); ctx.fill();
     }
     ctx.restore();
@@ -7006,47 +7078,112 @@ function drawBindShadow(){
 /* Luồng khí đặc trưng kiểu Dragon Ball bao quanh Captain Ginyu. Ba trạng thái ba màu:
    hưng phấn thì tím rực và cao ngọn, thăm dò thì một lớp vỏ xanh mỏng ôm sát người,
    hoảng loạn thì đỏ và giật liên hồi. Màn chào sân cũng mượn luôn ngọn lửa tím này. */
+/* Bảng màu của luồng khí — TOÀN BỘ tông tím, không lẫn một mảng xanh nào. Ba thế đứng
+   chỉ khác nhau ở độ đậm và độ dày, không khác màu: người dùng chốt "màu tím hết".
+   Mỗi thế bốn nấc: mép ngoài sẫm · thân khí · lõi sáng · tia điện. */
+const GN_AURA={
+  atk:  {out:'#5B1FA8', mid:'#8E3FEF', hot:'#B87CFF', core:'#E6D0FF'},
+  def:  {out:'#43167E', mid:'#7433C4', hot:'#A06BE0', core:'#DCC2F8'},
+  panic:{out:'#3A1268', mid:'#6A28AE', hot:'#9560CC', core:'#D2B4EE'}
+};
+/* Luồng khí của Ginyu — vỏ khí bốc lên TRÙM KÍN người kiểu Dragon Ball: mép ngoài toác
+   thành lưỡi lửa nhọn hoắt, trong lòng có lõi sáng, quanh người có tia điện chớp giật.
+   Gọi TRƯỚC khi vẽ thân người trong drawFighter() nên cả cụm nằm phía sau, người vẫn
+   đọc ra rõ chứ không bị khí nuốt mất. */
 function gnAuraDraw(f,cx,foot){
   const dance=f.gnEntry&&f.gnEntry.ph==='dance';
-  let col=null, str=0;
-  if(f.gnPanic){ col='#FF6B6B'; str=.7+Math.sin(G.t*18)*.25; }
-  else if(f.gnState==='atk'){ col='#A05CFF'; str=1; }
-  else if(dance){ col='#A05CFF'; str=clamp(1-f.gnEntry.t/f.gnEntry.max,0,1); }
-  else if(f.gnState==='def'){ col='#7FE0FF'; str=.42; }
-  if(!col||str<=.02)return;
-  const gy=foot-f.spriteH*.52, top=foot-f.spriteH*1.05;
+  let P=null, str=0, thin=false;
+  if(f.gnPanic){ P=GN_AURA.panic; str=.66+Math.sin(G.t*18)*.24; thin=true; }
+  else if(f.gnState==='atk'){ P=GN_AURA.atk; str=1; }
+  else if(dance){ P=GN_AURA.atk; str=clamp(1-f.gnEntry.t/f.gnEntry.max,0,1); }
+  else if(f.gnState==='def'){ P=GN_AURA.def; str=.45; thin=true; }
+  if(!P||str<=.02)return;
+
+  const H=f.spriteH, cy=foot-H*.5;
+  const rx=(thin?31:41)*(.86+str*.2), ry=H*(thin?.56:.63)*(.9+str*.14);
+  const spike=(thin?.17:.30)*(.7+str*.45);
+
+  /* CẢ CỤM vẽ bằng phép CỘNG SÁNG. Chồng alpha thường lên nền sàn tối thì ra một khối
+     tím đục như vũng bùn; cộng sáng thì mấy lớp đè nhau tự sáng dồn về lõi, đúng chất
+     luồng khí phát sáng. Nhớ bọc trong save/restore — composite là trạng thái canvas. */
   ctx.save();
-  ctx.globalAlpha=.22*str;
-  const gr=(78+Math.sin(G.t*5)*6)*(.8+str*.3);
-  ctx.drawImage(glowSprite(),cx-gr,gy-gr,gr*2,gr*2);
-  ctx.restore();
-  // ngọn khí: mấy lưỡi lửa dựng đứng, mép ngoài nhạt, lõi sáng
-  ctx.save();
-  ctx.globalAlpha=.5*str;
-  ctx.strokeStyle=col; ctx.lineWidth=4; ctx.lineCap='round'; ctx.lineJoin='round';
-  for(let i=0;i<7;i++){
-    const px=cx+((i-3)/3)*30+Math.sin(G.t*7+i*1.4)*4;
-    const h=(f.spriteH*.34)*(.55+((i*7)%5)/6)*(.7+str*.5);
+  ctx.globalCompositeOperation='lighter';
+
+  // quầng mờ phía sau, cho cả cụm có chỗ bám
+  ctx.globalAlpha=.26*str;
+  const gr=H*.6+Math.sin(G.t*5)*6;
+  ctx.drawImage(glowSprite(),cx-gr,cy-gr,gr*2,gr*2);
+
+  /* Ba lớp vỏ khí lồng nhau: ngoài to và sẫm, trong nhỏ và sáng. Mép mỗi lớp dựng bằng
+     cùng một hàm nhiễu nhưng LỆCH PHA, nên chúng đan vào nhau như lửa thật chứ không
+     nằm đồng tâm như ba cái vòng. Gai dài hơn hẳn ở nửa trên — lửa thì bốc lên. */
+  const shell=(kx,ky,sp,ph,color,alpha)=>{
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle=color;
     ctx.beginPath();
-    ctx.moveTo(px,foot-6);
-    ctx.quadraticCurveTo(px+Math.sin(G.t*9+i)*10, top+h*.6, px+Math.sin(G.t*6+i*2)*5, top-h*.2);
+    const N=64;
+    for(let i=0;i<=N;i++){
+      const a=-Math.PI/2+i/N*Math.PI*2;
+      const up=(1-Math.sin(a))/2;                    // 1 ở đỉnh đầu, 0 dưới chân
+      /* Răng cưa: đỉnh LẺ vọt hẳn ra ngoài, đỉnh CHẴN thụt sát vào thân. Không có nhịp
+         so le này thì mép chỉ gợn sóng và cả cụm đọc ra một cái bọc tròn, không ra
+         lưỡi lửa. */
+      const tip=(i%2)?1:.12;
+      const n=Math.sin(i*2.7+G.t*7+ph)*.5+Math.sin(i*5.3-G.t*11+ph)*.32+Math.sin(i*1.3+G.t*4)*.18;
+      const r=1+sp*(.35+up*1.05)*tip*(n*.5+.75);
+      const x=cx+Math.cos(a)*kx*r, y=cy+Math.sin(a)*ky*r;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.closePath(); ctx.fill();
+  };
+  shell(rx*1.12, ry*1.08, spike*1.5, 0,   P.out,  .34*str);
+  shell(rx*0.94, ry*0.96, spike*1.1, 2.1, P.mid,  .30*str);
+  shell(rx*0.56, ry*0.72, spike*0.7, 4.3, P.hot,  .16*str);   // lõi phải nhạt, không thì khí nuốt mất thân người
+
+  // lưỡi lửa mọc từ mép vỏ khí, chếch ra ngoài rồi bốc ngược lên
+  ctx.globalAlpha=.6*str;
+  ctx.strokeStyle=P.hot; ctx.lineWidth=thin?2:3; ctx.lineCap='round'; ctx.lineJoin='round';
+  const NT=thin?6:10;
+  for(let i=0;i<NT;i++){
+    const a=-Math.PI/2+(i/NT)*Math.PI*2+Math.sin(G.t*3+i)*.12;
+    const up=(1-Math.sin(a))/2;
+    const L=(thin?15:27)*(.35+up)*(.6+str*.6)*(.7+((i*7)%5)/6);
+    const bx=cx+Math.cos(a)*rx*1.02, by=cy+Math.sin(a)*ry*1.02;
+    let dx=Math.cos(a), dy=Math.sin(a)-1.15;         // ra ngoài, cộng thêm lực bốc lên
+    const m=Math.hypot(dx,dy)||1; dx/=m; dy/=m;
+    ctx.beginPath();
+    ctx.moveTo(bx,by);
+    ctx.quadraticCurveTo(bx+dx*L*.5+Math.sin(G.t*9+i)*4, by+dy*L*.55,
+                         bx+dx*L+Math.sin(G.t*7+i*2)*5, by+dy*L);
     ctx.stroke();
   }
-  ctx.globalAlpha=.85*str;
-  ctx.strokeStyle='#F0E2FF'; ctx.lineWidth=1.6;
-  for(let i=0;i<4;i++){
-    const px=cx+((i-1.5)/1.5)*20+Math.sin(G.t*8+i*1.9)*3;
-    const h=(f.spriteH*.26)*(.6+((i*5)%4)/5);
-    ctx.beginPath();
-    ctx.moveTo(px,foot-8);
-    ctx.quadraticCurveTo(px+Math.sin(G.t*11+i)*7, top+h*.7, px, top+h*.1);
+
+  /* Tia điện chớp giật quanh người. Vị trí bốc lại theo từng NHỊP chứ không trôi mượt,
+     nên nó đứng yên một chớp rồi nhảy hẳn sang chỗ khác — đúng kiểu điện trong phim,
+     và cũng là mẹo đã dùng cho bodySparks(). */
+  const beat=Math.floor(G.t*12), NB=thin?2:4;
+  for(let i=0;i<NB;i++){
+    const s=beat*13.7+i*57.3;
+    if(hash1(s*1.7)<.3) continue;                    // không phải nhịp nào cũng có
+    const a=hash1(s)*Math.PI*2, rr=.7+hash1(s*2.3)*.55;
+    let x=cx+Math.cos(a)*rx*rr, y=cy+Math.sin(a)*ry*rr;
+    const dir=hash1(s*3.1)>.5?1:-1, seg=17+hash1(s*4.7)*16;
+    ctx.globalAlpha=(.7+hash1(s*5.3)*.3)*str;
+    ctx.strokeStyle=i%2?P.core:P.hot;
+    ctx.lineWidth=i%2?1.8:3;
+    ctx.beginPath(); ctx.moveTo(x,y);
+    for(let k=0;k<4;k++){
+      x+=dir*seg*.5*(.5+hash1(s+k*3.3)*.9);
+      y+=(hash1(s*6.1+k)-.5)*seg*1.5;
+      ctx.lineTo(x,y);
+    }
     ctx.stroke();
   }
-  ctx.restore();
+  ctx.restore();                                     // hết phép cộng sáng
+
   // sỏi đá bốc lên quanh chân
   ctx.save();
-  ctx.globalAlpha=.6*str;
-  ctx.fillStyle=col;
+  ctx.fillStyle=P.hot;
   for(let i=0;i<6;i++){
     const tt=(G.t*.8+i*.167)%1;
     ctx.globalAlpha=(1-tt)*.6*str;
@@ -7056,6 +7193,7 @@ function gnAuraDraw(f,cx,foot){
   }
   ctx.restore();
 }
+
 /* Ginyu's Flash: lúc gồng là quả cầu khí phình dần trong lòng bàn tay, lúc bắn là một
    luồng sáng LIỀN MẠCH nối thẳng từ anh vào người địch — không đứt quãng như Kamehameha,
    mà bám theo địch y như dải bóng của Shikamaru, chỉ khác là to và tím. Gọi SAU khi vẽ
@@ -7113,7 +7251,7 @@ function doraVector(f){
   const blue='#2B9BE8', deep='#1B6FB0', white='#F4FAFF', red='#E03A3A', bell='#F5C518';
   const P=f.pose||'idle';
   const t=G.t*10, sw=f.moving?Math.sin(t)*3:0;
-  const fly=P==='copter';
+  const fly=(P==='copter')||(f.copter>0);   // đang ngắm giữa trời thì chong chóng vẫn quay
   /* Bàn tay tròn không ngón: một hình tròn trắng, viền sẫm. Đây là chi tiết người dùng
      nhấn mạnh — đừng bao giờ vẽ thành nắm đấm có ngón. */
   const paw=(x,yy,r)=>{
@@ -7905,7 +8043,13 @@ function versusBox(){
    băng-rôn cỡ đầy đủ còn 74%, mấy dòng phụ vốn đã nhỏ sẵn (có sc, không big) chỉ bớt
    nhẹ 15% cho khỏi mờ tịt. Chiêu "focus" — ultimate, biến thân, phân cảnh — gắn cờ
    focus:true và giữ nguyên cỡ chữ to. Số sát thương và bong bóng thoại không đụng tới. */
-const NAME_FULL=.74, NAME_SMALL=.85;
+const NAME_FULL=.62, NAME_SMALL=.74;
+/* Cỡ bong bóng thoại. Khai gom vào đây vì mấy con số này dùng ở HAI chỗ trong
+   drawFloat(): lượt đo khối chữ để kéo vào trong sàn, và lượt vẽ thật. Để rời ra thì
+   sửa một chỗ quên chỗ kia là khung lệch hẳn khỏi chữ. */
+const CHAT_BIG={f:21,lh:24,bh:36,pad:27}, CHAT_SM={f:14,lh:17,bh:27,pad:20};
+const chatBox=f=>f.big?CHAT_BIG:CHAT_SM;
+const chatFontOf=f=>`${f.big?900:800} ${chatBox(f).f}px "Be Vietnam Pro",sans-serif`;
 function floatScale(f){
   if(f.focus) return f.sc||1;
   return (f.sc||1)*((f.sc&&f.sc<1&&!f.big)?NAME_SMALL:NAME_FULL);
@@ -7924,8 +8068,9 @@ function drawFloat(f){
   const lns=String(f.txt).split('\n');
   let bw=0, bh;
   if(f.banner&&f.bubble&&!f.gold){
-    ctx.font=(f.big?'900 23px':'800 16px')+' "Be Vietnam Pro",sans-serif';
-    bh=(f.big?40:30)+(lns.length-1)*(f.big?26:19);
+    const C=chatBox(f);
+    ctx.font=chatFontOf(f);
+    bh=C.bh+(lns.length-1)*C.lh;
   }else if(f.banner){
     const px=(f.big?27:21)*floatScale(f);
     ctx.font=`900 ${Math.round(px)}px "Be Vietnam Pro",sans-serif`;
@@ -7940,7 +8085,7 @@ function drawFloat(f){
     bh=px+10;
   }
   for(const L of lns) bw=Math.max(bw,ctx.measureText(L).width);
-  bw=(bw+((f.banner&&f.bubble&&!f.gold)?(f.big?30:22):16))*s;
+  bw=(bw+((f.banner&&f.bubble&&!f.gold)?chatBox(f).pad:16))*s;
   bh*=s;
   /* Kéo vào KHUNG ĐANG NHÌN THẤY chứ không phải cả sàn: lúc phân cảnh camera zoom vào
      thì cửa sổ nhìn chỉ còn W/z × H/z quanh tâm camera, một chỗ nằm trong sàn vẫn có
@@ -7953,11 +8098,12 @@ function drawFloat(f){
   ctx.translate(fx,fy); ctx.scale(s,s);
   if(f.banner&&f.bubble&&!f.gold){
     ctx.rotate((f.tilt||0)+Math.sin(age*16)*.03);
-    ctx.font=(f.big?'900 23px':'800 16px')+' "Be Vietnam Pro",sans-serif';
+    const C=chatBox(f);
+    ctx.font=chatFontOf(f);
     // câu dài đã bẻ sẵn bằng \n thì khung cao theo số dòng, không để chữ tràn ra khỏi sàn
-    const ls=String(f.txt).split('\n'), lh=(f.big?26:19);
+    const ls=String(f.txt).split('\n'), lh=C.lh;
     let tw=0; for(const L of ls) tw=Math.max(tw,ctx.measureText(L).width);
-    const bw=tw+(f.big?30:22), bh=(f.big?40:30)+(ls.length-1)*lh;
+    const bw=tw+C.pad, bh=C.bh+(ls.length-1)*lh;
     const box=()=>{ ctx.beginPath();
       if(ctx.roundRect)ctx.roundRect(-bw/2,-bh/2-5,bw,bh,10); else ctx.rect(-bw/2,-bh/2-5,bw,bh); };
     const tail=()=>{ ctx.beginPath(); ctx.moveTo(-7,bh/2-5); ctx.lineTo(2,bh/2+7); ctx.lineTo(7,bh/2-5); ctx.closePath(); };
@@ -7972,7 +8118,7 @@ function drawFloat(f){
       box(); ctx.fill(); ctx.stroke(); tail(); ctx.fill(); ctx.stroke();
     }
     ctx.fillStyle=f.color;
-    const y0=(f.big?7:5)-(ls.length-1)*lh/2;
+    const y0=(f.big?6:4)-(ls.length-1)*lh/2;
     ls.forEach((L,i)=>ctx.fillText(L,0,y0+i*lh));
   }else if(f.banner){
     ctx.rotate((f.tilt||0)+Math.sin(age*22)*.04);
