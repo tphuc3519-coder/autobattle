@@ -705,9 +705,28 @@ tầm vung tay**. Hồi chiêu 15 giây. Bay là là (`DORA.copHover`), không b
 - **Dải bóng của Shikamaru không bám được vào người đang bay**: `bindTick()` có nhánh riêng
   cắt dải bóng khi `e.copter>0`. Đây là "chướng ngại vật thấp" mà người dùng nêu.
 
-**Nội tại 2 — Emergency Door.** Sắp ăn **một đòn bất kỳ** thì **60%** anh chui qua cửa thay
-vì chịu trận — `drTryEscape()` gọi từ `hurt()` **trước cả nhánh né**, nên đòn đó coi như
-không trúng và **không gây một điểm sát thương nào**.
+**Nội tại 2 — Emergency Door.** Sắp ăn **một đòn bất kỳ** thì anh chui qua cửa thay vì chịu
+trận — `drTryEscape()` gọi từ `hurt()` **trước cả nhánh né**, nên đòn đó coi như không trúng
+và **không gây một điểm sát thương nào**. Tỉ lệ chia làm hai mức:
+
+| Loại đòn | Tỉ lệ né | Ghi chú |
+|---|---|---|
+| đòn thường và chiêu lớn | **60%** (`edOdds`) | đo được 58.8% / 59.7% |
+| **ultimate** | **30%** (`edOddsUlt`) | Twin Shot · Kamehameha · Masenko · Rasengan · tia CHANGE |
+| sát thương duy trì (`dot`) và lãnh địa (`domain`) | **0%** | không né được lần nào |
+
+> **Cách nhận ra ultimate: tham số `kind` mang giá trị `'ult'`.** Đúng bốn chỗ đi qua `hurt()`
+> được đánh dấu — Rasengan trong `step()`, Twin Shot trong `ballHit()`, Kamehameha và Masenko
+> trong vòng duyệt đạn — cộng tia CHANGE gọi `drTryEscape(f,'ult')` thẳng ở nhánh va chạm.
+> **Phân thân của Konohamaru vẫn chỉ là `'big'`**, không phải ultimate.
+>
+> `'ult'` với `tryEvade()` của Shikamaru thì **ăn y hệt `'big'`**: né được nhưng KHÔNG cộng dồn
+> tỉ lệ. Thêm loại mới mà quên chỗ đó là mấy cú ultimate bỗng nhiên đẩy tỉ lệ né của anh lên.
+>
+> **`dot` và `domain` không né được** — đó là phần dư của một đòn đã trúng rồi, không phải một
+> cú đánh đang bay tới, cùng luật với `tryEvade()`. *(Chỗ này tôi tự chốt: bản trước cho né cả
+> `dot`, nên mỗi nhịp cháy 2 dmg cũng nuốt mất một lần mở cửa — đo ra 63.5% số nhịp cháy làm
+> anh chui cửa. Muốn cho né lại thì bỏ dòng chặn đầu `drTryEscape()`.)*
 - Suốt `edT` anh **không thể bị tấn công** (`hurt()` return false khi `t.edT>0`) và không
   hiện trên sàn.
 - Ra khỏi cửa: **xoá hiệu ứng làm chậm** (`dis`, `gnSlow`, `gnDaze`, `gnTired`, `exhaust`),
@@ -737,7 +756,7 @@ ChiChi (`cm(.25)`): cả combo mất 1.2 giây rồi mới `cm(.5)` hồi chiêu
 **Chiêu 2 — Air Cannon.** Mỗi **8 giây**: thò tay vào túi, lắp ống vào tay, **đứng yên ngắm
 0.7 giây**, rồi bắn **một VÒNG khí nén trắng xanh** có gió xoáy (`drawProj` nhánh `aircan`)
 — **không phải tia năng lượng liên tục kiểu Kamehameha**.
-- **85 dmg · đẩy lùi 22% chiều dài sàn · choáng 3 giây · cắt ngang mọi chiêu đang gồng**
+- **85 dmg · đẩy lùi 22% chiều dài sàn · choáng 1.75 giây · cắt ngang mọi chiêu đang gồng**
   (`drInterrupt()`: dải bóng và cú đâm của Shikamaru, Ginyu Flash, và chính bảo bối của
   Doraemon). **Quãng đứng suy nghĩ của Horikita thì KHÔNG đụng vào** — máy quyết định của cô
   là một chuỗi trạng thái, cắt giữa chừng là hỏng cả mạch chứ không phải chỉ mất một chiêu.
@@ -852,9 +871,10 @@ bong bóng thoại. **Đấm đá mượn thẳng `sfx('punch')` của ChiChi**,
 Horikita và Ginyu — đừng dựng ô mới.
 
 > **Đường đi của mấy con số cân bằng** (người dùng chỉnh dần, ghi lại cho khỏi cãi nhau):
-> Air Cannon **100 → 85 dmg** và hồi chiêu **10 → 8 giây** ("giảm dmg 15% nhưng xả đạn thường
-> xuyên hơn") · Small Light hồi chiêu **18 → 16 giây** ("xả đạn thường xuyên hơn tí") · cửa
-> thoát hiểm hồi chiêu **8 → 6 giây**.
+> Air Cannon **100 → 85 dmg**, hồi chiêu **10 → 8 giây** ("giảm dmg 15% nhưng xả đạn thường
+> xuyên hơn") và choáng **3 → 1.75 giây** · Small Light hồi chiêu **18 → 16 giây** ("xả đạn
+> thường xuyên hơn tí") · cửa thoát hiểm hồi chiêu **8 → 6 giây**, và tỉ lệ né tách làm hai
+> mức 60% / 30%.
 
 > **`t_dora.js` đo phần cắt hồi chiêu của Time Machine bằng cách gọi thẳng `drTimeBack()`**,
 > không đọc qua vòng poll nữa. Đọc qua poll thì trận đã chạy tiếp và hồi chiêu trôi thêm một

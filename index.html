@@ -501,14 +501,17 @@ const DORA={
   copAcDmg:.70,              // đang bay: chỉ còn 70% sát thương của cú bắn thường
   copAcAcc:.20,              // và trừ thẳng 20% độ chính xác
   /* Nội tại 2 — Emergency Door */
-  edOdds:.60, edCd:gs(6), edDist:.30, edT:gs(.45),
+  edOdds:.60,                // né đòn thường
+  edOddsUlt:.30,             // né ultimate thì khó hơn hẳn: Twin Shot / Kamehameha /
+                             // Masenko / Rasengan / tia CHANGE
+  edCd:gs(6), edDist:.30, edT:gs(.45),
   edSpeed:1.40, edSpeedT:gs(2),
   /* Chiêu 1 — Basic Attack: combo ba đòn, đòn ba đẩy lùi và choáng */
   hit:[15,15,20], hitGap:gs(.6), hitCd:cm(.5),
   slamStun:gs(.6), slamKb:340,
   disOdds:.25, disT:gs(1.5), disMove:.80, disCast:.85,
   /* Chiêu 2 — Air Cannon */
-  acCd:gs(8), acAim:gs(.7), acDmg:85, acStun:gs(3), acSpd:520,
+  acCd:gs(8), acAim:gs(.7), acDmg:85, acStun:gs(1.75), acSpd:520,
   acKbDist:.22,              // đẩy lùi bằng 22% chiều dài sàn
   acBreak:gs(.35),           // bị đánh trong bấy nhiêu giây đầu thì đứt chiêu
   acBreakCut:.50,            // đứt thì chỉ phải chờ nửa hồi chiêu
@@ -775,7 +778,7 @@ const CHARS={
     skills:[
       `<b>Entrance</b> He is not on the arena when the bell rings — a pink <b>Anywhere Door</b> fades in, opens, he steps out, looks around and raises a hand, then the door shuts. The whole thing takes ${rts(DORA.doorT)}s and the foe can only wait`,
       `<b>Passive · Take-copter</b> foe more than ${Math.round(DORA.copFar*100)}% of the arena away and nothing landed for ${rts(DORA.copIdle)}s ⇒ the propeller goes on his head for ${rts(DORA.copT)}s: +${Math.round((DORA.copMove-1)*100)}% move, low obstacles (Shadow Strangle included) cannot hold him, slows lose ${Math.round(DORA.copSlowRes*100)}% of their bite, +${Math.round(DORA.copDodge*100)}% projectile dodge · ends early once he is close enough to swing · every ${rts(DORA.copCd)}s · he also lets off <b>one Air Cannon</b> mid-flight, and flying costs him for it: ${Math.round(DORA.copAcDmg*100)}% damage and ${Math.round(DORA.copAcAcc*100)} points off his accuracy`,
-      `<b>Passive · Emergency Door</b> ${Math.round(DORA.edOdds*100)}% of the time an incoming hit makes him dive through a pink door instead: untouchable in transit, every slow washed off (stun, burn and the rest stay), out again ${Math.round(DORA.edDist*100)}% of the arena away on the far side of the foe, +${Math.round((DORA.edSpeed-1)*100)}% move for ${rts(DORA.edSpeedT)}s · deals no damage · every ${rts(DORA.edCd)}s`,
+      `<b>Passive · Emergency Door</b> ${Math.round(DORA.edOdds*100)}% of the time an incoming hit makes him dive through a pink door instead — <b>${Math.round(DORA.edOddsUlt*100)}% against an ultimate</b> (Twin Shot, Kamehameha, Masenko, Rasengan, CHANGE), and never against damage over time: untouchable in transit, every slow washed off (stun, burn and the rest stay), out again ${Math.round(DORA.edDist*100)}% of the arena away on the far side of the foe, +${Math.round((DORA.edSpeed-1)*100)}% move for ${rts(DORA.edSpeedT)}s · deals no damage · every ${rts(DORA.edCd)}s`,
       `<b>1 · Basic Attack</b> three round-handed blows ${DORA.hit[0]} / ${DORA.hit[1]} / ${DORA.hit[2]} dmg, ${rts(DORA.hitGap)}s apart — the third is a belly charge that knocks back hard and stuns ${rts(DORA.slamStun)}s · each blow ${Math.round(DORA.disOdds*100)}% to leave <b>Disoriented</b> for ${rts(DORA.disT)}s (−${Math.round((1-DORA.disMove)*100)}% move, −${Math.round((1-DORA.disCast)*100)}% cast)`,
       `<b>2 · Air Cannon</b> every ${rts(DORA.acCd)}s — ${rts(DORA.acAim)}s to aim, then a ring of compressed air for ${DORA.acDmg} dmg, ${Math.round(DORA.acKbDist*100)}% of the arena in knockback, ${rts(DORA.acStun)}s stun, and it cuts any channelled skill short · accuracy runs ${Math.round(DORA.acAcc[1][1]*100)}–${Math.round(DORA.acAcc[0][1]*100)}% up close down to ${Math.round(DORA.acAcc[5][1]*100)}–${Math.round(DORA.acAcc[4][1]*100)}% across the arena · pierces <b>two</b> bodies, the second takes ${Math.round(DORA.acPierce2*100)}% · a hit inside the first ${rts(DORA.acBreak)}s cancels it for half the cooldown`,
       `<b>3 · Small Light</b> every ${rts(DORA.slCd)}s — ${rts(DORA.slAim)}s to aim, then a pale yellow beam for ${DORA.slDmg} dmg that leaves the foe <b>Shrunk</b> at ${Math.round(DORA.shrunkSize*100)}% size for ${rts(DORA.shrunkT)}s: −${Math.round((1-DORA.shrunkMove)*100)}% move, −${Math.round((1-DORA.shrunkCast)*100)}% cast, −${Math.round((1-DORA.shrunkDmg)*100)}% damage dealt, −${Math.round((1-DORA.shrunkReach)*100)}% melee reach, +${Math.round((DORA.shrunkKb-1)*100)}% knockback taken · it never stacks, a second beam only refreshes the timer · the beam does not curve`,
@@ -1979,6 +1982,11 @@ function aim(f,e,power){
    phủ kín sàn nên không có chỗ mà lách.
    Cộng dồn thì hẹp hơn: né được không cộng, và chiêu lớn (kind='big') dù ăn phải cũng
    không cộng — chỉ đòn đánh thường ăn phải mới đẩy tỉ lệ lên. */
+/* kind='ult' là mấy cú ultimate người dùng liệt kê: Twin Shot, Kamehameha, Masenko,
+   Rasengan (và tia CHANGE, nhưng tia đó không đi qua hurt nên xử riêng). Về mặt né đòn
+   nó ăn y hệt 'big' — né được nhưng KHÔNG cộng dồn tỉ lệ; chỗ khác nhau duy nhất là cửa
+   thần kỳ của Doraemon né nó khó hơn hẳn. */
+const isUlt=kind=>kind==='ult';
 function tryEvade(t,kind){
   if(!(t.evade>0)||kind==='dot'||kind==='domain')return false;
   // Đang choáng thì đứng như trời trồng: không lách được cú nào. Vẫn cộng dồn tỉ lệ
@@ -1987,7 +1995,7 @@ function tryEvade(t,kind){
     G.floats.push({x:t.x,y:t.y-88,txt:'DODGE',color:'#CFC6FF',life:.9,ml:.9,banner:true,sc:.62});
     return true;
   }
-  if(kind!=='big') t.evade=Math.min(SHIKA.evadeMax,t.evade+SHIKA.evadeStep);  // chiêu lớn né được nhưng không cộng dồn
+  if(kind!=='big'&&!isUlt(kind)) t.evade=Math.min(SHIKA.evadeMax,t.evade+SHIKA.evadeStep);  // chiêu lớn né được nhưng không cộng dồn
   return false;
 }
 /* Trả về true nếu đòn thật sự trúng. Chỗ nào còn gắn thêm choáng hay sát thương duy trì
@@ -2009,7 +2017,7 @@ function hurt(t,amt,src,crit,kind,tint,raw){
   if(t.edT>0)return false;                  // đang đi trong lòng Emergency Door
   /* Emergency Door: sắp ăn một đòn bất kỳ thì 60% Doraemon chui qua cửa thay vì chịu trận.
      Đặt TRƯỚC nhánh né để cửa được ưu tiên hơn mọi thứ khác. */
-  if(drTryEscape(t))return false;
+  if(drTryEscape(t,kind))return false;
   if(t.invuln>0){
     pop(t.x,t.y,'IMMUNE',t.color||'#FFF3C4',false);
     ring(t.x,t.y,52,'#FF9AD5',.3);
@@ -2754,7 +2762,7 @@ function ballHit(p,f){
   if(p.type==='twin'){
     G.flashScreen=Math.max(G.flashScreen,.2);
     ring(f.x,f.y,170,'#FFF3C4',.6);
-    const twinHit=hurt(f,p.dmg,o,'TWIN SHOT!','big');
+    const twinHit=hurt(f,p.dmg,o,'TWIN SHOT!','ult');
     if(twinHit&&f.alive&&f.invuln<=0){
       const st=stunFx(f,2,'shock'); if(st) sfx('shock');  // choáng Twin Shot: điện giật
       f.vuln=Math.max(f.vuln,3);
@@ -4000,11 +4008,18 @@ function drCopterOff(f,why){
 /* ---- nội tại 2: Emergency Door ---- */
 /* Sắp ăn một đòn bất kỳ thì 60% anh chui qua cửa thay vì chịu trận. hurt() gọi cái này
    TRƯỚC khi trừ máu, nên đòn đó coi như không trúng. */
-function drTryEscape(t){
+/* Cửa thần kỳ né được MỌI chiêu — nhưng mấy cú ultimate (Twin Shot, Kamehameha, Masenko,
+   Rasengan, tia CHANGE) thì tỉ lệ tụt mạnh xuống edOddsUlt. Người dùng chốt riêng con số
+   này: đòn thường 60%, ultimate 30%. */
+function drTryEscape(t,kind){
   if(!t||t.key!=='dora'||t.summon||!t.alive)return false;
+  /* Sát thương duy trì và lãnh địa KHÔNG né được — đó là phần dư của một đòn đã trúng
+     rồi, không phải một cú đánh đang bay tới. Cùng luật với tryEvade() của Shikamaru.
+     Để né được thì mỗi nhịp cháy 2 dmg cũng nuốt mất một lần mở cửa. */
+  if(kind==='dot'||kind==='domain')return false;
   if(t.drEntry||t.tm||t.edT>0||t.edCd>0)return false;
-  if(!chance(DORA.edOdds))return false;
-  doraEscape(t);
+  if(!chance(isUlt(kind)?DORA.edOddsUlt:DORA.edOdds))return false;
+  doraEscape(t,isUlt(kind));
   return true;
 }
 /* Chỗ đáp phải nằm trong sàn, cách chỗ cũ khoảng edDist chiều dài sàn, và càng xa địch
@@ -4037,7 +4052,7 @@ function drSafeSpot(f){
   }
   return best||{x:clamp(f.x,PAD+16,W-PAD-16), y:clamp(f.y,PAD+66,H-PAD-26)};
 }
-function doraEscape(f){
+function doraEscape(f,ult){
   f.edCd=DORA.edCd; f.edT=DORA.edT; f.edMoved=false;
   f.drAim=null; f.drCombo=null; f.dash=null;
   drCopterOff(f,'chui qua cửa');
@@ -4048,7 +4063,8 @@ function doraEscape(f){
   ring(f.x,f.y,90,'#FF9AD5',.4);
   G.floats.push({x:f.x,y:f.y-112,txt:'EMERGENCY DOOR',color:'#FF9AD5',
     life:1.4,ml:1.4,banner:true,gold:true,tilt:rnd(-.05,.05)});
-  say('Doraemon mở Anywhere Door chui qua — đòn đánh trượt vào khoảng không.','m');
+  say(ult?`Doraemon mở Anywhere Door chui qua đúng lúc — né được cả một cú ultimate (chỉ ${Math.round(DORA.edOddsUlt*100)}% mới kịp).`
+         :'Doraemon mở Anywhere Door chui qua — đòn đánh trượt vào khoảng không.','m');
 }
 function drEscapeTick(f,dt){
   f.edT-=dt;
@@ -5407,7 +5423,7 @@ function step(dt){
         melee(f,e,'FLYING KICK!');
         say('ChiChi lao tới, cú đá chí mạng chắc chắn 25 dmg!','c');
       }else{
-        const rasHit=hurt(e,150,f,'RASENGAN!','big');
+        const rasHit=hurt(e,150,f,'RASENGAN!','ult');
         const st=rasHit&&stunFx(e,3,'spin');
         G.flashScreen=.18; ring(e.x,e.y,140,'#63B4FF',.55);
         say(st?`Rasengan trúng! 150 dmg + choáng ${rts(3)} giây.`:'Rasengan trúng! 150 dmg — nhưng đối thủ miễn nhiễm khống chế.','g');
@@ -5675,7 +5691,7 @@ function step(dt){
            này thì đo được 200/200 lần Doraemon bị nhập, không né nổi lần nào.
            Né được thì tia bay tiếp qua chỗ anh vừa đứng và MẤT LUÔN khả năng dò tìm,
            không thì nó vòng lại tóm anh ngay sau khi ra khỏi cửa và cú né thành vô nghĩa. */
-        if(drTryEscape(f)){
+        if(drTryEscape(f,'ult')){
           (p.skip||(p.skip=[])).push(f);
           p.homing=false; p.tgt=null; p.noHome=true;
           say('Doraemon chui qua Anywhere Door — tia CHANGE xuyên qua chỗ anh vừa đứng.','m');
@@ -5693,8 +5709,10 @@ function step(dt){
       if(hitsBody(p,f)){
         // phi tiêu và kunai là đòn đánh thường nên cộng dồn né; phân thân, Kamehameha
         // và Masenko là chiêu lớn: né được nhưng không cộng dồn
-        const big = p.type==='clone'||p.type==='kame'||p.type==='masenko';
-        const landed=hurt(f,p.dmg,p.owner,p.type==='kame'?'KAMEHAMEHA!':!!p.crit,big?'big':undefined);
+        /* Kamehameha và Masenko là ultimate; phân thân vẫn chỉ là chiêu lớn thường. */
+        const ult = p.type==='kame'||p.type==='masenko';
+        const kd = ult?'ult':(p.type==='clone'?'big':undefined);
+        const landed=hurt(f,p.dmg,p.owner,p.type==='kame'?'KAMEHAMEHA!':!!p.crit,kd);
         if(!landed){ dead=true; break; }
         if(p.bleed) bleedOn(f,p.owner);                  // shuriken của Shikamaru để lại vết cắt
         sfx('hit');
