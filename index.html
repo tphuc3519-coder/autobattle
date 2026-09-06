@@ -494,6 +494,12 @@ const DORA={
   copSlowRes:.40,            // hiệu ứng làm chậm chỉ còn 60% hiệu lực
   copDodge:.20,              // né đạn tốt hơn 20%
   copHover:9,                // bay là là, không bao giờ rời sàn
+  /* Bay tới đâu nã một phát Air Cannon tới đó — ĐÚNG MỘT phát mỗi lượt bay, và không
+     đụng tới hồi chiêu của Air Cannon dưới đất. Đổi lại vừa bay vừa ôm cái ống thì
+     ngắm tệ hẳn và cú bắn nhẹ hơn. */
+  copAcAt:gs(.6),            // bay được bấy nhiêu giây thì nã
+  copAcDmg:.70,              // đang bay: chỉ còn 70% sát thương của cú bắn thường
+  copAcAcc:.20,              // và trừ thẳng 20% độ chính xác
   /* Nội tại 2 — Emergency Door */
   edOdds:.60, edCd:gs(6), edDist:.30, edT:gs(.45),
   edSpeed:1.40, edSpeedT:gs(2),
@@ -502,7 +508,7 @@ const DORA={
   slamStun:gs(.6), slamKb:340,
   disOdds:.25, disT:gs(1.5), disMove:.80, disCast:.85,
   /* Chiêu 2 — Air Cannon */
-  acCd:gs(10), acAim:gs(.7), acDmg:100, acStun:gs(3), acSpd:520,
+  acCd:gs(8), acAim:gs(.7), acDmg:85, acStun:gs(3), acSpd:520,
   acKbDist:.22,              // đẩy lùi bằng 22% chiều dài sàn
   acBreak:gs(.35),           // bị đánh trong bấy nhiêu giây đầu thì đứt chiêu
   acBreakCut:.50,            // đứt thì chỉ phải chờ nửa hồi chiêu
@@ -510,7 +516,7 @@ const DORA={
   /* Độ chính xác theo khoảng cách: [quãng, tỉ lệ] — nội suy tuyến tính giữa hai mốc */
   acAcc:[[0,.90],[140,.75],[290,.60],[430,.50],[520,.40],[700,.30]],
   /* Chiêu 3 — Small Light */
-  slCd:gs(18), slAim:gs(1), slDmg:35, slSpd:560,
+  slCd:gs(16), slAim:gs(1), slDmg:35, slSpd:560,
   shrunkT:gs(7), shrunkSize:.55,
   shrunkHit:.85,             // vòng ăn đòn chỉ được nhỏ đi tối đa 15%
   shrunkMove:.45, shrunkCast:.60, shrunkDmg:.65, shrunkReach:.80, shrunkKb:1.40,
@@ -768,7 +774,7 @@ const CHARS={
     role:'ranged', want:205, speed:96, dodge:.85, male:true,
     skills:[
       `<b>Entrance</b> He is not on the arena when the bell rings — a pink <b>Anywhere Door</b> fades in, opens, he steps out, looks around and raises a hand, then the door shuts. The whole thing takes ${rts(DORA.doorT)}s and the foe can only wait`,
-      `<b>Passive · Take-copter</b> foe more than ${Math.round(DORA.copFar*100)}% of the arena away and nothing landed for ${rts(DORA.copIdle)}s ⇒ the propeller goes on his head for ${rts(DORA.copT)}s: +${Math.round((DORA.copMove-1)*100)}% move, low obstacles (Shadow Strangle included) cannot hold him, slows lose ${Math.round(DORA.copSlowRes*100)}% of their bite, +${Math.round(DORA.copDodge*100)}% projectile dodge · ends early once he is close enough to swing · every ${rts(DORA.copCd)}s`,
+      `<b>Passive · Take-copter</b> foe more than ${Math.round(DORA.copFar*100)}% of the arena away and nothing landed for ${rts(DORA.copIdle)}s ⇒ the propeller goes on his head for ${rts(DORA.copT)}s: +${Math.round((DORA.copMove-1)*100)}% move, low obstacles (Shadow Strangle included) cannot hold him, slows lose ${Math.round(DORA.copSlowRes*100)}% of their bite, +${Math.round(DORA.copDodge*100)}% projectile dodge · ends early once he is close enough to swing · every ${rts(DORA.copCd)}s · he also lets off <b>one Air Cannon</b> mid-flight, and flying costs him for it: ${Math.round(DORA.copAcDmg*100)}% damage and ${Math.round(DORA.copAcAcc*100)} points off his accuracy`,
       `<b>Passive · Emergency Door</b> ${Math.round(DORA.edOdds*100)}% of the time an incoming hit makes him dive through a pink door instead: untouchable in transit, every slow washed off (stun, burn and the rest stay), out again ${Math.round(DORA.edDist*100)}% of the arena away on the far side of the foe, +${Math.round((DORA.edSpeed-1)*100)}% move for ${rts(DORA.edSpeedT)}s · deals no damage · every ${rts(DORA.edCd)}s`,
       `<b>1 · Basic Attack</b> three round-handed blows ${DORA.hit[0]} / ${DORA.hit[1]} / ${DORA.hit[2]} dmg, ${rts(DORA.hitGap)}s apart — the third is a belly charge that knocks back hard and stuns ${rts(DORA.slamStun)}s · each blow ${Math.round(DORA.disOdds*100)}% to leave <b>Disoriented</b> for ${rts(DORA.disT)}s (−${Math.round((1-DORA.disMove)*100)}% move, −${Math.round((1-DORA.disCast)*100)}% cast)`,
       `<b>2 · Air Cannon</b> every ${rts(DORA.acCd)}s — ${rts(DORA.acAim)}s to aim, then a ring of compressed air for ${DORA.acDmg} dmg, ${Math.round(DORA.acKbDist*100)}% of the arena in knockback, ${rts(DORA.acStun)}s stun, and it cuts any channelled skill short · accuracy runs ${Math.round(DORA.acAcc[1][1]*100)}–${Math.round(DORA.acAcc[0][1]*100)}% up close down to ${Math.round(DORA.acAcc[5][1]*100)}–${Math.round(DORA.acAcc[4][1]*100)}% across the arena · pierces <b>two</b> bodies, the second takes ${Math.round(DORA.acPierce2*100)}% · a hit inside the first ${rts(DORA.acBreak)}s cancels it for half the cooldown`,
@@ -1855,7 +1861,7 @@ function mk(o){
     gnChangeDone:false, gnProbeDone:false, gnPanic:false, gnPanicMul:1, swapAs:null, gnSoul:null,
     /* Doraemon: Disoriented và Shrunk là thứ anh dán lên NGƯỜI KHÁC, nên khai chung ở đây */
     dis:0, shrunk:0, szMul:1, hitMul:1, reachMul:1, kbTake:1, drCcRes:0, dmgDealt:0,
-    copter:0, copCd:0, drNoHit:0, edCd:0, edT:0, edMoved:false, edSpeed:0, edFrom:null, edTo:null,
+    copter:0, copCd:0, copAcDone:false, drNoHit:0, edCd:0, edT:0, edMoved:false, edSpeed:0, edFrom:null, edTo:null,
     fk:0,
     drEntry:null, drAim:null, drCombo:null, drHide:false, tm:null, tmDone:false,
     /* Superman: Frozen / Chilled / làm chậm của vùng chấn động và trần khống chế cứng
@@ -3951,7 +3957,16 @@ function drCopterTick(f,dt,e,d){
     // bay là là trong sàn, tới đủ tầm vung tay là hạ cánh ngay
     if(e&&e.alive&&d<f.r+e.r+meleeReach(f)+22){ drCopterOff(f,'đã áp sát được'); return; }
     if(f.copter<=0){ drCopterOff(f,'hết giờ'); return; }
-    f.pose='copter'; f.poseT=0;
+    /* Đang ngắm thì để nguyên dáng cầm ống, đừng đè dáng bay lên. Chong chóng vẫn quay
+       vì doraVector() vẽ nó theo f.copter chứ không theo dáng. */
+    if(!f.drAim){ f.pose='copter'; f.poseT=0; }
+    /* Bay được copAcAt giây thì nã đúng MỘT phát Air Cannon. Không xét f.cds.s2 và cũng
+       không đặt lại nó: đây là phát bắn kèm của quãng bay, còn cú bắn dưới đất vẫn đi
+       theo hồi chiêu riêng của nó. */
+    if(!f.copAcDone&&!f.drAim&&!f.tm&&e&&e.alive&&f.copter<=DORA.copT-DORA.copAcAt){
+      f.copAcDone=true;
+      doraAirCannon(f,e);
+    }
     if(chance(dt*8)) G.fx.push({type:'dust',x:f.x+rnd(-14,14),y:f.y+18,r:3,life:.3,ml:.3});
     return;
   }
@@ -3961,7 +3976,7 @@ function drCopterTick(f,dt,e,d){
   if(d>W*DORA.copFar&&f.drNoHit>=DORA.copIdle) drCopterOn(f);
 }
 function drCopterOn(f){
-  f.copter=DORA.copT; f.copCd=DORA.copCd; f.drNoHit=0;
+  f.copter=DORA.copT; f.copCd=DORA.copCd; f.drNoHit=0; f.copAcDone=false;
   setPose(f,'copter',gs(.3));
   sfx('dora_copter');
   ring(f.x,f.y,92,'#FFD34D',.42);
@@ -4142,13 +4157,15 @@ function drAcOdds(d,f){
     if(d<=T[i][0]){ const q=(d-T[i-1][0])/(T[i][0]-T[i-1][0]); p=T[i-1][1]+(T[i][1]-T[i-1][1])*q; break; }
   }
   if(f&&f.fk>0) p+=DORA.fkAcc;              // Future Knowledge: ngắm chuẩn hơn hẳn
+  if(f&&f.copter>0) p-=DORA.copAcAcc;       // vừa bay vừa ôm ống thì ngắm tệ hẳn
   return clamp(p,.05,.98);
 }
 function doraAirCannon(f,e){
   drReach(f,'ac',e,DORA.acAim);
   G.floats.push({x:f.x,y:f.y-106,txt:'AIR CANNON',color:f.color,life:1.4,ml:1.4,
     banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
-  say('Doraemon lắp Air Cannon vào tay và ngắm.','m');
+  say(f.copter>0?'Doraemon vừa bay vừa lắp Air Cannon vào tay và ngắm.'
+                :'Doraemon lắp Air Cannon vào tay và ngắm.','m');
 }
 function drAcFire(f,e,A){
   const d=dist(f,e);
@@ -4161,12 +4178,15 @@ function drAcFire(f,e,A){
   f.ax=Math.cos(a); f.ay=Math.sin(a); f.lunge=Math.max(f.lunge,.7);
   setPose(f,'aircannon',gs(.45));
   G.proj.push({type:'aircan',team:f.team,owner:f,x:f.x+Math.cos(a)*30,y:sy+Math.sin(a)*30,
-    vx:Math.cos(a)*DORA.acSpd,vy:Math.sin(a)*DORA.acSpd,r:22,dmg:DORA.acDmg,
+    vx:Math.cos(a)*DORA.acSpd,vy:Math.sin(a)*DORA.acSpd,r:22,
+    dmg:Math.round(DORA.acDmg*(f.copter>0?DORA.copAcDmg:1)),
     life:2.6,ang:a,hitList:[],wob:rnd(0,9)});
   sfx('dora_aircannon');
   ring(f.x+Math.cos(a)*26,sy+Math.sin(a)*26,54,'#D6F2FF',.3);
   G.flashScreen=Math.max(G.flashScreen,.05);
-  say(`Air Cannon bắn ra — tỉ lệ trúng ở khoảng cách này ${Math.round(p*100)}%.`,'m');
+  say(f.copter>0
+    ? `Vừa bay vừa nã Air Cannon — chỉ ${Math.round(DORA.copAcDmg*100)}% sát thương và tỉ lệ trúng tụt còn ${Math.round(p*100)}%.`
+    : `Air Cannon bắn ra — tỉ lệ trúng ở khoảng cách này ${Math.round(p*100)}%.`,'m');
 }
 /* Trả về true nếu luồng khí đã ăn đủ số người và phải tan. Người thứ hai trên đường
    bay chỉ chịu 60% sát thương lẫn 60% thời gian choáng. */
@@ -7231,7 +7251,7 @@ function doraVector(f){
   const blue='#2B9BE8', deep='#1B6FB0', white='#F4FAFF', red='#E03A3A', bell='#F5C518';
   const P=f.pose||'idle';
   const t=G.t*10, sw=f.moving?Math.sin(t)*3:0;
-  const fly=P==='copter';
+  const fly=(P==='copter')||(f.copter>0);   // đang ngắm giữa trời thì chong chóng vẫn quay
   /* Bàn tay tròn không ngón: một hình tròn trắng, viền sẫm. Đây là chi tiết người dùng
      nhấn mạnh — đừng bao giờ vẽ thành nắm đấm có ngón. */
   const paw=(x,yy,r)=>{

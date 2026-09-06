@@ -672,6 +672,19 @@ người chơi) không đánh trúng ai (`f.drNoHit`, `counters()` đặt lại 
 sát thương) thì chong chóng lên đầu: **+70% tốc chạy**, hiệu ứng làm chậm **chỉ còn 60% hiệu
 lực**, **+20% né đạn** (`dodgeVec` nhân thêm), tối đa **4 giây**, **hết sớm ngay khi vào đủ
 tầm vung tay**. Hồi chiêu 15 giây. Bay là là (`DORA.copHover`), không bao giờ rời sàn.
+- **Bay tới đâu nã một phát Air Cannon tới đó** — bay được `copAcAt` (0.6 giây người chơi)
+  thì rút ống ra bắn, **ĐÚNG MỘT phát mỗi lượt bay** (cờ `f.copAcDone`, đặt lại trong
+  `drCopterOn()`). Vừa bay vừa ôm cái ống thì phải trả giá: **chỉ còn 70% sát thương**
+  (`copAcDmg` — ra 59 trên mốc 85) và **trừ thẳng 20 điểm độ chính xác** (`copAcAcc`: gần
+  90%→70%, xa 50%→30%).
+- Phát này **không xét và không đặt lại `f.cds.s2`**: nó là phát bắn kèm của quãng bay, còn
+  cú bắn dưới đất vẫn đi theo hồi chiêu riêng. *(Tôi chốt vậy vì Take-copter đã bị chặn rất
+  chặt sẵn — hồi 15 giây, lại còn đòi địch ở xa VÀ 2.5 giây không đánh trúng ai — nên phát
+  kèm này không thành nguồn sát thương đều đặn. Muốn nó ăn vào hồi chiêu chung thì thêm
+  `f.cds.s2=DORA.acCd` vào nhánh đó.)*
+- Hai chỗ vẽ phải đi cùng nhau: `drCopterTick()` **chỉ đè dáng `copter` khi không ngắm**, còn
+  `doraVector()` vẽ chong chóng theo **`f.copter`** chứ không theo dáng — thiếu một trong hai
+  thì lúc ngắm giữa trời anh treo lơ lửng mà mất chong chóng.
 - **Dải bóng của Shikamaru không bám được vào người đang bay**: `bindTick()` có nhánh riêng
   cắt dải bóng khi `e.copter>0`. Đây là "chướng ngại vật thấp" mà người dùng nêu.
 
@@ -698,10 +711,10 @@ ChiChi (`cm(.25)`): cả combo mất 1.2 giây rồi mới `cm(.5)` hồi chiêu
 - Địch lùi ra khỏi tầm giữa chừng thì combo bỏ dở và chỉ chờ **nửa** hồi chiêu.
 - **`drReach()` xoá `f.drCombo`**: rút bảo bối là bỏ dở combo tay, đừng để chạy cả hai.
 
-**Chiêu 2 — Air Cannon.** Mỗi 10 giây: thò tay vào túi, lắp ống vào tay, **đứng yên ngắm
+**Chiêu 2 — Air Cannon.** Mỗi **8 giây**: thò tay vào túi, lắp ống vào tay, **đứng yên ngắm
 0.7 giây**, rồi bắn **một VÒNG khí nén trắng xanh** có gió xoáy (`drawProj` nhánh `aircan`)
 — **không phải tia năng lượng liên tục kiểu Kamehameha**.
-- **100 dmg · đẩy lùi 22% chiều dài sàn · choáng 3 giây · cắt ngang mọi chiêu đang gồng**
+- **85 dmg · đẩy lùi 22% chiều dài sàn · choáng 3 giây · cắt ngang mọi chiêu đang gồng**
   (`drInterrupt()`: dải bóng và cú đâm của Shikamaru, Ginyu Flash, và chính bảo bối của
   Doraemon). **Quãng đứng suy nghĩ của Horikita thì KHÔNG đụng vào** — máy quyết định của cô
   là một chuỗi trạng thái, cắt giữa chừng là hỏng cả mạch chứ không phải chỉ mất một chiêu.
@@ -716,7 +729,7 @@ ChiChi (`cm(.25)`): cả combo mất 1.2 giây rồi mới `cm(.5)` hồi chiêu
 - Địch đang **Shrunk** thì Air Cannon **không** cộng thêm sát thương, chỉ **đẩy xa thêm 40%**
   — phần +40% đó nằm ở `f.kbTake` của Shrunk chứ không khai riêng, **đừng cộng hai lần**.
 
-**Chiêu 3 — Small Light.** Mỗi 18 giây: cầm hai tay, **ngắm 1 giây**, bắn một tia vàng nhạt
+**Chiêu 3 — Small Light.** Mỗi **16 giây**: cầm hai tay, **ngắm 1 giây**, bắn một tia vàng nhạt
 **bay nhanh nhưng KHÔNG bẻ cong đuổi theo**. Trúng thì **35 dmg** + **Shrunk 7 giây**:
 
 | | |
@@ -814,6 +827,17 @@ hết cả hai mới tới combo tay**; Take-copter và Emergency Door là nội
 **Ô dán tiếng**: nhóm riêng `Doraemon`, mười ô, một ô 🎙 giọng (`dora_hi`) cắt đúng bằng
 bong bóng thoại. **Đấm đá mượn thẳng `sfx('punch')` của ChiChi**, đúng lối đã chốt cho
 Horikita và Ginyu — đừng dựng ô mới.
+
+> **Đường đi của mấy con số cân bằng** (người dùng chỉnh dần, ghi lại cho khỏi cãi nhau):
+> Air Cannon **100 → 85 dmg** và hồi chiêu **10 → 8 giây** ("giảm dmg 15% nhưng xả đạn thường
+> xuyên hơn") · Small Light hồi chiêu **18 → 16 giây** ("xả đạn thường xuyên hơn tí") · cửa
+> thoát hiểm hồi chiêu **8 → 6 giây**.
+
+> **`t_dora.js` đo phần cắt hồi chiêu của Time Machine bằng cách gọi thẳng `drTimeBack()`**,
+> không đọc qua vòng poll nữa. Đọc qua poll thì trận đã chạy tiếp và hồi chiêu trôi thêm một
+> quãng — quãng trôi đó cố định trong khi hồi chiêu thì đổi theo cân bằng, nên vừa hạ `acCd`
+> xuống 8 giây là mục đó đổ oan (đo ra 0.58 trên mốc 0.60). Phép đo nào bám theo hằng số cân
+> bằng thì nên gọi thẳng hàm, đừng đo theo dòng thời gian.
 
 Nút thử tay: `#testDoraShrink`, `#testDoraDoor`, `#testDoraTime`.
 Kiểm bằng `node tools/t_dora.js`.
