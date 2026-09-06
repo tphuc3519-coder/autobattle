@@ -427,7 +427,38 @@ nhịp** — họ đứng nhìn chứ chưa được đánh. Hết ba dáng thì
   lớp phòng thủ**, +40% thời gian dính khống chế, +50% tốc ra chiêu, +60% tốc chạy. Bao
   quanh anh là **luồng khí tím** kiểu Dragon Ball (`gnAuraDraw`).
 - **Thăm dò** (`GN.def`, `gs(10)`): −60% dmg nhận, +40% kháng hiệu ứng, đổi lại −40% dmg
-  gây ra và −40% tốc ra chiêu. Vỏ khí xanh mỏng hơn hẳn.
+  gây ra và −40% tốc ra chiêu. Vỏ khí **mỏng và tối hơn hẳn** — vẫn tím, chỉ khác độ dày.
+
+> **Luồng khí — `gnAuraDraw()` và bảng màu `GN_AURA`.** Người dùng gửi ảnh mẫu (Goku bọc
+> trong luồng khí Super Saiyan Blue) và chốt: *"chỉnh luồng khí của Ginyu thành như này
+> nhưng là màu tím hết"*. Vì vậy:
+>
+> - **Toàn bộ tông tím, không lẫn một mảng xanh nào** — kể cả **thế thăm dò** (trước đây là
+>   vỏ khí xanh `#7FE0FF`) lẫn lúc **hoảng loạn** (trước đây đỏ `#FF6B6B`). Ba thế đứng phân
+>   biệt nhau bằng **độ dày và độ sáng**, không bằng màu. Mỗi thế có bốn nấc trong `GN_AURA`:
+>   `out` mép ngoài sẫm · `mid` thân khí · `hot` lõi sáng · `core` tia điện.
+> - **Cả cụm vẽ bằng phép CỘNG SÁNG** (`globalCompositeOperation='lighter'`). Chồng alpha
+>   thường lên nền sàn tối thì ra một khối tím đục như vũng bùn — đo mắt thấy ngay; cộng sáng
+>   thì mấy lớp đè nhau tự sáng dồn về lõi, đúng chất luồng khí phát sáng. Nhớ bọc trong
+>   `save/restore`, composite là trạng thái của canvas.
+> - **Vỏ khí là ba lớp lồng nhau** dựng bằng cùng một hàm nhiễu nhưng **lệch pha**, nên chúng
+>   đan vào nhau như lửa thật chứ không nằm đồng tâm như ba cái vòng.
+> - **Mép phải là RĂNG CƯA**: đỉnh **lẻ** vọt hẳn ra ngoài, đỉnh **chẵn** thụt sát vào thân
+>   (`tip = i%2 ? 1 : .12`). Không có nhịp so le này thì mép chỉ gợn sóng và cả cụm đọc ra
+>   một cái bọc tròn, không ra lưỡi lửa — đây là chỗ sửa đi sửa lại hai lần mới ra.
+> - Gai **dài hơn hẳn ở nửa trên** (`.35 + up*1.05`) vì lửa thì bốc lên, và có thêm một lượt
+>   **lưỡi lửa** mọc từ mép vỏ chếch ra ngoài rồi cong ngược lên.
+> - **Tia điện** chớp giật quanh người, vị trí bốc lại theo từng **nhịp** (`Math.floor(G.t*12)`)
+>   chứ không trôi mượt — nó đứng yên một chớp rồi nhảy hẳn sang chỗ khác, đúng kiểu điện
+>   trong phim. Cùng mẹo với `bodySparks()`.
+> - **Lõi phải nhạt** (alpha `.16`): để đậm thì khí nuốt mất thân người, mà `gnAuraDraw()`
+>   vẽ TRƯỚC thân nên chỉ có cách hạ alpha chứ không cắt được.
+>
+> `t_ginyu.js` chấm bằng cách vẽ từng thế ra canvas phụ trên nền đen rồi lấy **màu trung bình**
+> của đám điểm ảnh sáng lên: tím thì **lục thấp nhất, lam cao nhất, đỏ nằm giữa**. Đo được
+> hưng phấn `R 85 · G 45 · B 128`, thăm dò `36 · 20 · 50`, hoảng loạn `45 · 25 · 59`. Kèm hai
+> mục nữa: vỏ khí phải **liếm lên trên đỉnh đầu và toác rộng hơn thân**, và thế thăm dò phải
+> **mỏng hơn hưng phấn ít nhất 30%** điểm ảnh.
 - **Ba người có thanh máu trở lên trên sàn thì anh LUÔN chọn thế thăm dò**, dù ai dính hiệu
   ứng gì và dù đã dùng hết lần thăm dò — `gnCrowd() >= 3` (đếm bằng đúng cờ `summon && !ally`
   mà `drawBars()` dùng, nên Goku / Gohan / phân thân không tính, còn Ayanokouji thì có).

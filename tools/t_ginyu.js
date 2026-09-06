@@ -532,6 +532,51 @@ async function waitGame(page, fnBody, limit) {
     ok('có ô dán ảnh riêng cho ba dáng Ginyu Force và dáng bay',
       slots && ['fly', 'dance1', 'dance2', 'dance3', 'change', 'panic'].every(k => slots.includes(k)),
       slots ? slots.join(',') : 'không có');
+    /* Luồng khí: TOÀN BỘ tông tím, không lẫn một mảng xanh nào — kể cả thế thăm dò và
+       lúc hoảng loạn. Vẽ từng thế ra canvas phụ trên nền đen rồi lấy màu trung bình của
+       đám điểm ảnh có sáng lên: tím thì lục thấp nhất, lam cao nhất, đỏ nằm giữa. */
+    const aura = await page.evaluate(() => {
+      const G = window.__G(), g = G.fighters.find(f => f.key === 'ginyu');
+      const doc = {};
+      for (const st of ['atk', 'def', 'panic']) {
+        g.gnState = st === 'panic' ? null : st;
+        g.gnPanic = (st === 'panic');
+        g.gnEntry = null;
+        const c = document.createElement('canvas'); c.width = 200; c.height = 280;
+        const cx = c.getContext('2d');
+        cx.fillStyle = '#000'; cx.fillRect(0, 0, 200, 280);
+        const old = window.__getCtx(); window.__setCtx(cx);
+        window.__gnAuraDraw(g, 100, 240);
+        window.__setCtx(old);
+        const d = cx.getImageData(0, 0, 200, 280).data;
+        let R = 0, Gg = 0, B = 0, n = 0, top = 280, wide = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i] + d[i + 1] + d[i + 2] < 24) continue;
+          R += d[i]; Gg += d[i + 1]; B += d[i + 2]; n++;
+          const px = (i / 4) % 200, py = Math.floor((i / 4) / 200);
+          if (py < top) top = py;
+          wide = Math.max(wide, Math.abs(px - 100));
+        }
+        doc[st] = { R: R / n, G: Gg / n, B: B / n, n, top, wide };
+      }
+      g.gnState = null; g.gnPanic = false;
+      return doc;
+    });
+    const tim = a => a.R > a.G * 1.3 && a.B > a.G * 1.5 && a.R > a.B * .45 && a.R < a.B * 1.1;
+    for (const [st, ten] of [['atk', 'hưng phấn'], ['def', 'thăm dò'], ['panic', 'hoảng loạn']]) {
+      const a = aura[st];
+      ok(`luồng khí thế ${ten} là màu TÍM, không lẫn mảng xanh nào`, tim(a),
+        `R ${a.R.toFixed(0)} · G ${a.G.toFixed(0)} · B ${a.B.toFixed(0)}`);
+    }
+    /* Vỏ khí phải trùm KÍN người: liếm hẳn lên trên đỉnh đầu (model cao 120, chân ở 240
+       nên đỉnh đầu là 120) và toác rộng hơn thân người (nửa thân ~20px). */
+    ok('vỏ khí trùm kín người — liếm lên trên đỉnh đầu và toác rộng hơn thân',
+      aura.atk.top < 118 && aura.atk.wide > 45,
+      `mép trên ${aura.atk.top} (đỉnh đầu 120) · rộng ±${aura.atk.wide}px`);
+    ok('thế thăm dò là vỏ khí mỏng hơn hẳn, phân biệt bằng độ dày chứ không bằng màu',
+      aura.def.n < aura.atk.n * .7,
+      `thăm dò ${aura.def.n} điểm ảnh so với hưng phấn ${aura.atk.n}`);
+
     ok('bảng tiếng/ảnh không lỗi trang', errors.length === 0, errors.join(' | '));
     await browser.close();
   }

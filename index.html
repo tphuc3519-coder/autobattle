@@ -7006,47 +7006,112 @@ function drawBindShadow(){
 /* Luồng khí đặc trưng kiểu Dragon Ball bao quanh Captain Ginyu. Ba trạng thái ba màu:
    hưng phấn thì tím rực và cao ngọn, thăm dò thì một lớp vỏ xanh mỏng ôm sát người,
    hoảng loạn thì đỏ và giật liên hồi. Màn chào sân cũng mượn luôn ngọn lửa tím này. */
+/* Bảng màu của luồng khí — TOÀN BỘ tông tím, không lẫn một mảng xanh nào. Ba thế đứng
+   chỉ khác nhau ở độ đậm và độ dày, không khác màu: người dùng chốt "màu tím hết".
+   Mỗi thế bốn nấc: mép ngoài sẫm · thân khí · lõi sáng · tia điện. */
+const GN_AURA={
+  atk:  {out:'#5B1FA8', mid:'#8E3FEF', hot:'#B87CFF', core:'#E6D0FF'},
+  def:  {out:'#43167E', mid:'#7433C4', hot:'#A06BE0', core:'#DCC2F8'},
+  panic:{out:'#3A1268', mid:'#6A28AE', hot:'#9560CC', core:'#D2B4EE'}
+};
+/* Luồng khí của Ginyu — vỏ khí bốc lên TRÙM KÍN người kiểu Dragon Ball: mép ngoài toác
+   thành lưỡi lửa nhọn hoắt, trong lòng có lõi sáng, quanh người có tia điện chớp giật.
+   Gọi TRƯỚC khi vẽ thân người trong drawFighter() nên cả cụm nằm phía sau, người vẫn
+   đọc ra rõ chứ không bị khí nuốt mất. */
 function gnAuraDraw(f,cx,foot){
   const dance=f.gnEntry&&f.gnEntry.ph==='dance';
-  let col=null, str=0;
-  if(f.gnPanic){ col='#FF6B6B'; str=.7+Math.sin(G.t*18)*.25; }
-  else if(f.gnState==='atk'){ col='#A05CFF'; str=1; }
-  else if(dance){ col='#A05CFF'; str=clamp(1-f.gnEntry.t/f.gnEntry.max,0,1); }
-  else if(f.gnState==='def'){ col='#7FE0FF'; str=.42; }
-  if(!col||str<=.02)return;
-  const gy=foot-f.spriteH*.52, top=foot-f.spriteH*1.05;
+  let P=null, str=0, thin=false;
+  if(f.gnPanic){ P=GN_AURA.panic; str=.66+Math.sin(G.t*18)*.24; thin=true; }
+  else if(f.gnState==='atk'){ P=GN_AURA.atk; str=1; }
+  else if(dance){ P=GN_AURA.atk; str=clamp(1-f.gnEntry.t/f.gnEntry.max,0,1); }
+  else if(f.gnState==='def'){ P=GN_AURA.def; str=.45; thin=true; }
+  if(!P||str<=.02)return;
+
+  const H=f.spriteH, cy=foot-H*.5;
+  const rx=(thin?31:41)*(.86+str*.2), ry=H*(thin?.56:.63)*(.9+str*.14);
+  const spike=(thin?.17:.30)*(.7+str*.45);
+
+  /* CẢ CỤM vẽ bằng phép CỘNG SÁNG. Chồng alpha thường lên nền sàn tối thì ra một khối
+     tím đục như vũng bùn; cộng sáng thì mấy lớp đè nhau tự sáng dồn về lõi, đúng chất
+     luồng khí phát sáng. Nhớ bọc trong save/restore — composite là trạng thái canvas. */
   ctx.save();
-  ctx.globalAlpha=.22*str;
-  const gr=(78+Math.sin(G.t*5)*6)*(.8+str*.3);
-  ctx.drawImage(glowSprite(),cx-gr,gy-gr,gr*2,gr*2);
-  ctx.restore();
-  // ngọn khí: mấy lưỡi lửa dựng đứng, mép ngoài nhạt, lõi sáng
-  ctx.save();
-  ctx.globalAlpha=.5*str;
-  ctx.strokeStyle=col; ctx.lineWidth=4; ctx.lineCap='round'; ctx.lineJoin='round';
-  for(let i=0;i<7;i++){
-    const px=cx+((i-3)/3)*30+Math.sin(G.t*7+i*1.4)*4;
-    const h=(f.spriteH*.34)*(.55+((i*7)%5)/6)*(.7+str*.5);
+  ctx.globalCompositeOperation='lighter';
+
+  // quầng mờ phía sau, cho cả cụm có chỗ bám
+  ctx.globalAlpha=.26*str;
+  const gr=H*.6+Math.sin(G.t*5)*6;
+  ctx.drawImage(glowSprite(),cx-gr,cy-gr,gr*2,gr*2);
+
+  /* Ba lớp vỏ khí lồng nhau: ngoài to và sẫm, trong nhỏ và sáng. Mép mỗi lớp dựng bằng
+     cùng một hàm nhiễu nhưng LỆCH PHA, nên chúng đan vào nhau như lửa thật chứ không
+     nằm đồng tâm như ba cái vòng. Gai dài hơn hẳn ở nửa trên — lửa thì bốc lên. */
+  const shell=(kx,ky,sp,ph,color,alpha)=>{
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle=color;
     ctx.beginPath();
-    ctx.moveTo(px,foot-6);
-    ctx.quadraticCurveTo(px+Math.sin(G.t*9+i)*10, top+h*.6, px+Math.sin(G.t*6+i*2)*5, top-h*.2);
+    const N=64;
+    for(let i=0;i<=N;i++){
+      const a=-Math.PI/2+i/N*Math.PI*2;
+      const up=(1-Math.sin(a))/2;                    // 1 ở đỉnh đầu, 0 dưới chân
+      /* Răng cưa: đỉnh LẺ vọt hẳn ra ngoài, đỉnh CHẴN thụt sát vào thân. Không có nhịp
+         so le này thì mép chỉ gợn sóng và cả cụm đọc ra một cái bọc tròn, không ra
+         lưỡi lửa. */
+      const tip=(i%2)?1:.12;
+      const n=Math.sin(i*2.7+G.t*7+ph)*.5+Math.sin(i*5.3-G.t*11+ph)*.32+Math.sin(i*1.3+G.t*4)*.18;
+      const r=1+sp*(.35+up*1.05)*tip*(n*.5+.75);
+      const x=cx+Math.cos(a)*kx*r, y=cy+Math.sin(a)*ky*r;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.closePath(); ctx.fill();
+  };
+  shell(rx*1.12, ry*1.08, spike*1.5, 0,   P.out,  .34*str);
+  shell(rx*0.94, ry*0.96, spike*1.1, 2.1, P.mid,  .30*str);
+  shell(rx*0.56, ry*0.72, spike*0.7, 4.3, P.hot,  .16*str);   // lõi phải nhạt, không thì khí nuốt mất thân người
+
+  // lưỡi lửa mọc từ mép vỏ khí, chếch ra ngoài rồi bốc ngược lên
+  ctx.globalAlpha=.6*str;
+  ctx.strokeStyle=P.hot; ctx.lineWidth=thin?2:3; ctx.lineCap='round'; ctx.lineJoin='round';
+  const NT=thin?6:10;
+  for(let i=0;i<NT;i++){
+    const a=-Math.PI/2+(i/NT)*Math.PI*2+Math.sin(G.t*3+i)*.12;
+    const up=(1-Math.sin(a))/2;
+    const L=(thin?15:27)*(.35+up)*(.6+str*.6)*(.7+((i*7)%5)/6);
+    const bx=cx+Math.cos(a)*rx*1.02, by=cy+Math.sin(a)*ry*1.02;
+    let dx=Math.cos(a), dy=Math.sin(a)-1.15;         // ra ngoài, cộng thêm lực bốc lên
+    const m=Math.hypot(dx,dy)||1; dx/=m; dy/=m;
+    ctx.beginPath();
+    ctx.moveTo(bx,by);
+    ctx.quadraticCurveTo(bx+dx*L*.5+Math.sin(G.t*9+i)*4, by+dy*L*.55,
+                         bx+dx*L+Math.sin(G.t*7+i*2)*5, by+dy*L);
     ctx.stroke();
   }
-  ctx.globalAlpha=.85*str;
-  ctx.strokeStyle='#F0E2FF'; ctx.lineWidth=1.6;
-  for(let i=0;i<4;i++){
-    const px=cx+((i-1.5)/1.5)*20+Math.sin(G.t*8+i*1.9)*3;
-    const h=(f.spriteH*.26)*(.6+((i*5)%4)/5);
-    ctx.beginPath();
-    ctx.moveTo(px,foot-8);
-    ctx.quadraticCurveTo(px+Math.sin(G.t*11+i)*7, top+h*.7, px, top+h*.1);
+
+  /* Tia điện chớp giật quanh người. Vị trí bốc lại theo từng NHỊP chứ không trôi mượt,
+     nên nó đứng yên một chớp rồi nhảy hẳn sang chỗ khác — đúng kiểu điện trong phim,
+     và cũng là mẹo đã dùng cho bodySparks(). */
+  const beat=Math.floor(G.t*12), NB=thin?2:4;
+  for(let i=0;i<NB;i++){
+    const s=beat*13.7+i*57.3;
+    if(hash1(s*1.7)<.3) continue;                    // không phải nhịp nào cũng có
+    const a=hash1(s)*Math.PI*2, rr=.7+hash1(s*2.3)*.55;
+    let x=cx+Math.cos(a)*rx*rr, y=cy+Math.sin(a)*ry*rr;
+    const dir=hash1(s*3.1)>.5?1:-1, seg=17+hash1(s*4.7)*16;
+    ctx.globalAlpha=(.7+hash1(s*5.3)*.3)*str;
+    ctx.strokeStyle=i%2?P.core:P.hot;
+    ctx.lineWidth=i%2?1.8:3;
+    ctx.beginPath(); ctx.moveTo(x,y);
+    for(let k=0;k<4;k++){
+      x+=dir*seg*.5*(.5+hash1(s+k*3.3)*.9);
+      y+=(hash1(s*6.1+k)-.5)*seg*1.5;
+      ctx.lineTo(x,y);
+    }
     ctx.stroke();
   }
-  ctx.restore();
+  ctx.restore();                                     // hết phép cộng sáng
+
   // sỏi đá bốc lên quanh chân
   ctx.save();
-  ctx.globalAlpha=.6*str;
-  ctx.fillStyle=col;
+  ctx.fillStyle=P.hot;
   for(let i=0;i<6;i++){
     const tt=(G.t*.8+i*.167)%1;
     ctx.globalAlpha=(1-tt)*.6*str;
@@ -7056,6 +7121,7 @@ function gnAuraDraw(f,cx,foot){
   }
   ctx.restore();
 }
+
 /* Ginyu's Flash: lúc gồng là quả cầu khí phình dần trong lòng bàn tay, lúc bắn là một
    luồng sáng LIỀN MẠCH nối thẳng từ anh vào người địch — không đứt quãng như Kamehameha,
    mà bám theo địch y như dải bóng của Shikamaru, chỉ khác là to và tím. Gọi SAU khi vẽ
