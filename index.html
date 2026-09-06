@@ -531,16 +531,22 @@ const DORA_HI='Hello! Leave it to me!';
    đấm nặng, đuổi được bằng cách bay, lì đòn, và mang theo cả một bộ khống chế — đổi
    lại chiêu nào cũng có quãng chuẩn bị nhìn thấy rõ để đối phương kịp né hoặc ngắt.
    MỌI chữ hiện ra trong game của nhân vật này là tiếng Anh, kể cả tên trạng thái.
-   Cân theo thanh máu 800: đòn mạnh nhất chỉ 129 (144 khi địch đang Frozen), không
+   Cân theo thanh máu 800: đòn mạnh nhất chỉ 132 (147 khi địch đang Frozen), không
    chiêu nào chạm mốc 200 trong một lần dùng, và không có chí mạng ngẫu nhiên.
 
-   HAI ĐỢT CHỈNH SÁT THƯƠNG (người dùng chốt, đi liền nhau):
-     đợt 1 — hạ TOÀN BỘ xuống còn ~70% so với bản đầu;
-     đợt 2 — nhích tất cả lên thêm 5% nữa so với mức đó, tức ~74% bản đầu.
-   Bảng cuối: 34/34/50 -> 25/25/37 · tia nhiệt 22 -> 16 · cháy 5 -> 3.75 dmg mỗi giây
-   người chơi · hơi lạnh 45 -> 34 (rìa nón 25 -> 19) · Meteor Strike 145 -> 107 ·
-   chấn động 30 -> 22 · Shatter Damage 20 -> 15. Mấy con số KHÔNG phải sát thương
-   (lực đẩy, thời gian khống chế, mốc 100 dmg làm vỡ băng) giữ nguyên. */
+   SÁT THƯƠNG ĐÃ CHỈNH, chốt ở mức 75% BẢN ĐẦU (người dùng đi qua ba lượt: hạ xuống
+   70%, nhích thêm 5%, rồi chốt hẳn "lên 75%"). Luật áp cho MỌI con số là một dòng
+   duy nhất, không bốc tay từng chỗ:
+
+       số mới = Math.round(số bản đầu × 0.75)
+
+   Bảng cuối: 34/34/50 -> 26/26/38 (combo 90) · tia nhiệt 22 -> 17 (×4 = 68) · cháy
+   5 -> 3.75 dmg mỗi giây người chơi (tổng 15) · hơi lạnh 45 -> 34, rìa nón 25 -> 19 ·
+   Meteor Strike 145 -> 109 · chấn động 30 -> 23 · Shatter Damage 20 -> 15.
+   Mấy chỗ bản đầu là số lẻ .5 thì làm tròn LÊN, nên vài con số nhỉnh hơn 75% một
+   chút (cao nhất là tia nhiệt 77.3%) — đó là cái giá của việc giữ đúng một luật.
+   Mấy con số KHÔNG phải sát thương (lực đẩy, thời gian khống chế, hồi chiêu, độ
+   chính xác, mốc 100 dmg làm vỡ băng) giữ nguyên qua cả ba lượt. */
 const SUP={
   /* Màn xuất hiện — đúng 1.5 giây người chơi, bốn pha: bóng người trên cao · hạ độ
      cao · tiếp đất bằng một chân · đứng thẳng nắm hai tay. */
@@ -561,13 +567,13 @@ const SUP={
   lsrHp:.25, lsrT:gs(8),
   lsrMove:1.30, lsrCast:1.25, lsrRes:.10, lsrKb:.25, lsrCdCut:gs(2),
   fatT:gs(4), fatMove:.80, fatCast:.85,      // Solar Fatigue ngay sau đó
-  /* 1 — Basic Attack: combo ba đòn 25 / 25 / 37 = 87 */
-  hit:[25,25,37], hitGap:gs(.55), hitCd:gs(.8),   // combo trọn vẹn 87 dmg
+  /* 1 — Basic Attack: combo ba đòn 26 / 26 / 38 = 90 */
+  hit:[26,26,38], hitGap:gs(.55), hitCd:gs(.8),   // combo trọn vẹn 90 dmg
   jabKb:70,                  // đòn một đẩy lùi một quãng rất ngắn
   upKb:.12,                  // đòn ba đẩy lùi 12% chiều dài sàn
   upStun:gs(.55), hitBreak:.10,
-  /* 2 — Heat Vision: gồng 0.65s rồi chiếu 1.2s, bốn nhịp 16 dmg */
-  hvCd:gs(8.5), hvAim:gs(.65), hvT:gs(1.2), hvN:4, hvDmg:16,
+  /* 2 — Heat Vision: gồng 0.65s rồi chiếu 1.2s, bốn nhịp 17 dmg */
+  hvCd:gs(8.5), hvAim:gs(.65), hvT:gs(1.2), hvN:4, hvDmg:17,
   hvBurnT:gs(4), hvBurnDps:3.75*RT,          // Burning: 3.75 dmg mỗi giây người chơi (tổng 15)
   hvSlow:.75, hvSlowT:gs(.45),               // đang bị chiếu thì mất 25% tốc chạy
   hvTrack:gs(.3),            // chỉnh hướng trong 0.3 giây đầu, sau đó KHOÁ
@@ -585,12 +591,12 @@ const SUP={
   /* 4 — Meteor Strike: bay lên 0.65s, treo 0.55s khoá hướng, rồi lao thẳng xuống */
   msCd:gs(17), msRise:gs(.65), msHold:gs(.55), msSpd:820, msH:170,
   msRange:430, msSafe:280,   // dưới 25% máu thì không tung từ khoảng cách xa nhất
-  msDmg:107, msDown:gs(1.5), msKb:.20, msHitR:36,
+  msDmg:109, msDown:gs(1.5), msKb:.20, msHitR:36,
   /* Vùng chấn động là một cú AoE thật, chỉ có ý nghĩa khi trên sàn có từ ba người CÓ
      THANH MÁU trở lên (đấu thủ chính + đồng minh như Ayanokouji; viện binh thuần kiểu
      Goku / Gohan / phân thân không có thanh máu nên không tính). Trong bán kính lõi thì
      ăn đủ, ra tới mép ngoài thì nhẹ dần còn msQuakeMin, quá mép ngoài thì không dính gì. */
-  msQuakeDmg:22, msQuakeR:104, msQuakeFar:196, msQuakeMin:.35,
+  msQuakeDmg:23, msQuakeR:104, msQuakeFar:196, msQuakeMin:.35,
   msQuakeSlow:.65, msQuakeT:gs(2),
   msShatter:15,              // địch đang Frozen: vỡ băng, cộng đúng chừng này một lần
   msMissT:gs(1.3), msCancelCut:.70,

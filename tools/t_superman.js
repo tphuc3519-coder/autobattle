@@ -4,9 +4,9 @@
      2. nội tại: Man of Steel (giảm 20% dmg vật lý, burn ăn đủ, trần 60%, giảm lực đẩy
         và thời gian choáng, đòn dưới 25 dmg không làm ngã), Kryptonian Flight,
         Last Son's Resolve rồi Solar Fatigue;
-     3. bốn chiêu: combo 25/25/37 cách nhau 0.55s, Heat Vision 4×16 + Burning,
-        Freeze Breath (Frozen / Chilled / vỡ băng ở 100 dmg), Meteor Strike 107+22
-        (144 khi địch đang Frozen) với vùng chấn động là AoE nhạt dần theo khoảng
+     3. bốn chiêu: combo 26/26/38 cách nhau 0.55s, Heat Vision 4×17 + Burning,
+        Freeze Breath (Frozen / Chilled / vỡ băng ở 100 dmg), Meteor Strike 109+23
+        (147 khi địch đang Frozen) với vùng chấn động là AoE nhạt dần theo khoảng
         cách, đánh trượt thì nằm 1.3 giây;
      4. trần khống chế cứng 3.5 giây, phần thừa đổi thành làm chậm 40%;
      5. chữ hiển thị đều bằng tiếng Anh.
@@ -163,9 +163,9 @@ function ok(name, pass, note) {
                W: window.__WH().W, SUP: { hit: SUP.hit, gap: SUP.hitGap, cd: SUP.hitCd, stun: SUP.upStun, kb: SUP.upKb },
                RT: window.__RT };
     });
-    ok('combo đúng ba đòn 25 / 25 / 37 = 87 dmg',
-      combo.hits.length === 3 && combo.hits[0].dmg === 25 && combo.hits[1].dmg === 25 &&
-      combo.hits[2].dmg === 37,
+    ok('combo đúng ba đòn 26 / 26 / 38 = 90 dmg',
+      combo.hits.length === 3 && combo.hits[0].dmg === 26 && combo.hits[1].dmg === 26 &&
+      combo.hits[2].dmg === 38,
       combo.hits.map(h => h.dmg).join(' + ') + ' = ' + combo.hits.reduce((a, b) => a + b.dmg, 0));
     ok('hai đòn cách nhau đúng 0.55 giây người chơi',
       combo.hits.length === 3 &&
@@ -220,13 +220,13 @@ function ok(name, pass, note) {
     });
     ok('gồng 0.65 giây người chơi rồi mới bắn',
       Math.abs(heat.aimEnd * heat.RT - .65) < .05, `gồng ${(heat.aimEnd * heat.RT).toFixed(2)}s`);
-    ok('tia nhiệt gây đúng bốn nhịp 16 dmg = 64',
-      heat.ticks.length === 4 && heat.ticks.every(x => x === 16),
+    ok('tia nhiệt gây đúng bốn nhịp 17 dmg = 68',
+      heat.ticks.length === 4 && heat.ticks.every(x => x === 17),
       heat.ticks.join(' + ') + ' = ' + heat.ticks.reduce((a, b) => a + b, 0));
-    ok('trúng đủ bốn nhịp thì bốc cháy 3.75 dmg/giây trong 4 giây người chơi (tổng 79)',
+    ok('trúng đủ bốn nhịp thì bốc cháy 3.75 dmg/giây trong 4 giây người chơi (tổng 83)',
       heat.nBurn === 1 && Math.abs(heat.burnDps / heat.RT - 3.75) < .001 &&
       Math.abs(heat.burnT * heat.RT - 4) < .02 && Math.abs(heat.burnTotal - 15) < .5,
-      `${(heat.burnDps / heat.RT)} dmg/s × ${(heat.burnT * heat.RT).toFixed(2)}s = ${heat.burnTotal} · tổng ${64 + heat.burnTotal}`);
+      `${(heat.burnDps / heat.RT)} dmg/s × ${(heat.burnT * heat.RT).toFixed(2)}s = ${heat.burnTotal} · tổng ${68 + heat.burnTotal}`);
     ok('đang bị chiếu thì chậm chân, nhưng không choáng và không bị đẩy lùi',
       heat.slow && heat.kb === 0 && heat.stun === 0,
       `chậm ${heat.slow} · lực đẩy ${heat.kb} · choáng ${heat.stun}`);
@@ -445,16 +445,16 @@ function ok(name, pass, note) {
       Math.abs(meteor.prepEnd * meteor.RT - 1.2) < .06, `${(meteor.prepEnd * meteor.RT).toFixed(2)}s`);
     ok('có bay lên cao thật rồi mới bổ xuống, không phải dịch chuyển tức thời',
       meteor.rise > 120, `lên tới ${meteor.rise}px`);
-    ok('cú đấm trúng: 107 + 22 chấn động = 129 dmg',
-      meteor.dmg === 129, `${meteor.dmg} dmg`);
+    ok('cú đấm trúng: 109 + 23 chấn động = 132 dmg',
+      meteor.dmg === 132, `${meteor.dmg} dmg`);
     ok('quật ngã 1.5 giây người chơi và hất lùi 20% chiều dài sàn',
       Math.abs(meteor.down * meteor.RT - 1.5) < .05 &&
       Math.abs(meteor.kb / 6 / meteor.W - .20) < .015,
       `ngã ${(meteor.down * meteor.RT).toFixed(2)}s · đẩy ${(meteor.kb / 6).toFixed(0)}px = ${(meteor.kb / 6 / meteor.W * 100).toFixed(1)}%`);
     ok('vùng chấn động để lại làm chậm 2 giây người chơi',
       Math.abs(meteor.quake * meteor.RT - 2) < .05, `${(meteor.quake * meteor.RT).toFixed(2)}s`);
-    ok('địch đang Frozen: thêm đúng 15 Shatter Damage, tổng 144 và không hơn',
-      meteor.dmgFrozen === 144, `${meteor.dmgFrozen} dmg`);
+    ok('địch đang Frozen: thêm đúng 15 Shatter Damage, tổng 147 và không hơn',
+      meteor.dmgFrozen === 147, `${meteor.dmgFrozen} dmg`);
     ok('đánh trượt thì nằm 1.3 giây và Man of Steel tụt còn 10%',
       Math.abs(meteor.missDown * meteor.RT - 1.3) < .05 && Math.abs(meteor.missTake - .1) < .001,
       `nằm ${(meteor.missDown * meteor.RT).toFixed(2)}s · giảm dmg ${(meteor.missTake * 100).toFixed(0)}%`);
@@ -469,19 +469,26 @@ function ok(name, pass, note) {
     const cut = await page.evaluate(() => {
       const SUP = window.__SUP, RT = window.__RT;
       // [tên, số cũ, số mới]
+      /* Luật áp cho TỪNG con số một, không phải cho tổng: đòn một và đòn hai của combo
+         đều là 34 gốc nên mỗi cái tự làm tròn riêng. */
       return [
-        ['combo', 118, SUP.hit[0] + SUP.hit[1] + SUP.hit[2]],
-        ['heat vision (4 nhịp)', 88, SUP.hvN * SUP.hvDmg],
+        ['đấm 1', 34, SUP.hit[0]],
+        ['đấm 2', 34, SUP.hit[1]],
+        ['uppercut', 50, SUP.hit[2]],
+        ['heat vision mỗi nhịp', 22, SUP.hvDmg],
         ['burning mỗi giây', 5, SUP.hvBurnDps / RT],
         ['freeze breath giữa nón', 45, SUP.fbDmg],
         ['freeze breath rìa nón', 25, SUP.fbEdgeDmg],
         ['meteor strike', 145, SUP.msDmg],
         ['vùng chấn động', 30, SUP.msQuakeDmg],
         ['shatter damage', 20, SUP.msShatter]
-      ].map(([n, a, b]) => ({ n, a, b, r: +(b / a).toFixed(3) }));
+      ].map(([n, a, b]) => ({ n, a, b, r: +(b / a).toFixed(3), lech: +Math.abs(b - a * .75).toFixed(2) }));
     });
-    ok('TOÀN BỘ sát thương nằm ở cỡ 74% bản đầu (70% rồi nhích thêm 5%)',
-      cut.every(x => x.r >= .70 && x.r <= .77),
+    /* Luật là MỘT dòng, áp cho từng con số: số mới = làm tròn(số bản đầu × 0.75). Kiểm
+       bằng độ lệch so với mốc 75% chứ đừng kiểm một khoảng lỏng lẻo — lệch quá nửa đơn
+       vị là ai đó đã bốc tay đổi số. */
+    ok('TỪNG con số sát thương đúng bằng làm tròn(số bản đầu × 0.75)',
+      cut.every(x => x.lech <= .5),
       cut.map(x => `${x.n} ${x.a}->${x.b} (${Math.round(x.r * 100)}%)`).join(' · '));
 
     /* ---- vùng chấn động của Meteor Strike là AoE nhạt dần theo khoảng cách ---- */
