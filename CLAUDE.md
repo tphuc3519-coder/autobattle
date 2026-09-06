@@ -29,13 +29,13 @@ File dài ~7500 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên --
 | *(kế đó)* | `Store` — IndexedDB, khoá `spr_*` / `sfx_*`, nạp và xoá ảnh |
 | `âm thanh` | `SFX_EVENTS`, `synth()`, `SFX_FULL/MAXLEN/SEG/POS/ACTIVE`, `sfx()`, `playBuffer()` |
 | `nhạc nền` | nhạc nền tự sinh, `THEMES` / `setTheme()` — đổi sang theme du hành thời gian |
-| `state` | `mk()`, `mkChar()`, `foeOf()`, `newGame()`, `later()`, `pop()`, `setPose()` |
-| `damage` | `stunFx()`, `tryEvade()`, **`hurt()`**, `counters()`, `finish()` |
+| `state` | `mk()`, `mkChar()`, `foeOf()`, `buildRoster()`, `spawnSpots()`, `newGame()`, `later()`, `pop()`, `setPose()` |
+| `damage` | `stunFx()`, `tryEvade()`, **`hurt()`**, `counters()`, `koFx()`, `defeat()`, `finish()` |
 | `Konohamaru` / `ChiChi` / `Shikamaru` / `Ozora Tsubasa` / `Horikita Suzune` / `Captain Ginyu` / `Doraemon` / `Superman` | thân các chiêu thức |
 | `AI` | `MELEE_MIN/MAX/BAND/GAP`, `orbWant()`, `aiVec()`, `dodgeVec()`, `playerVec()` |
 | `step` | một hàm to — toàn bộ mô phỏng một bước 1/120 giây |
 | `draw` | `vector()`, `sprite()`, `drawFighter()`, `drawGarden()`, `drawForestGrip()`, `bombAt()`, `tendril()`, phân cảnh, băng-rôn |
-| `loop` / `ghi hình sàn đấu` / `màn chọn nhân vật` | vòng `requestAnimationFrame`, quay video (`recFrame()` dựng khung dọc 9:16), dựng thẻ `.cTile` |
+| `loop` / `ghi hình sàn đấu` / `màn chọn nhân vật` | vòng `requestAnimationFrame`, quay video (`recFrame()` dựng khung dọc 9:16), ba nút chế độ `.mTab`, dựng thẻ `.cTile` và dải đội hình `.cChip` |
 
 ---
 
@@ -1266,6 +1266,91 @@ Kiểm bằng `node tools/t_superman.js`.
 
 ---
 
+## 2c. Ba chế độ đấu — 1v1, hỗn chiến, đánh theo đội
+
+Chọn ở **đầu màn chọn nhân vật** (`.mTab`, ba nút `#mTabDuel` / `#mTabFfa` / `#mTabTeam`).
+Biến trạng thái là `PMODE` (`'duel' | 'ffa' | 'team'`) cộng `ROSTERS` (`{ffa, t0, t1}`),
+lưu lại chung khoá `cfg_picks` với hai ô A/B cũ. `G.mode` chụp lại `PMODE` lúc `newGame()`.
+
+| Chế độ | Bao nhiêu người | Chia phe thế nào | Thắng khi nào |
+|---|---|---|---|
+| `duel` | đúng 2 | phe 0 và phe 1 | đối thủ về 0 máu |
+| `ffa` | `FFA_MIN`–`FFA_MAX` = **3–6** | **mỗi người MỘT phe riêng** (`team` = số thứ tự) | chỉ còn **một người** đứng |
+| `team` | mỗi đội `TEAM_MIN`–`TEAM_MAX` = **1–3** | vẫn đúng hai phe 0 và 1 | chỉ còn **một đội** còn người |
+
+> **`duel` phải dựng ra ĐÚNG cùng một đội hình như bản cũ** — hai người, hai đầu sàn,
+> `G.k`/`G.c` như cũ. Mọi test hiện có đi qua đường này, và `openGame()` trong `probe.js`
+> bấm `#mTabDuel` trước khi chọn nhân vật để chắc chắn không dính đội hình lưu lại từ lần trước.
+
+**Hỗn chiến cho mỗi người một phe riêng** chứ không dựng thêm khái niệm mới: mọi vòng
+duyệt AoE trong game vốn đã lọc bằng `o.team===f.team`, nên chỉ cần đánh số phe khác nhau
+là ai cũng đánh được ai mà không phải sửa một chiêu nào. Đánh đội thì ngược lại — vẫn hai
+phe như cũ nên đồng đội tự động không đánh trúng nhau.
+
+**Ai là đối thủ — `foeOf()` viết lại.** Không còn cắm cứng `G.k`/`G.c` nữa:
+- `foeOk(f,o)` chỉ nhận **đấu thủ chính** (`!o.summon`) khác phe, còn sống, còn trong
+  `G.fighters`. Đồng minh (Ayanokouji) và viện binh **không bao giờ** là "đối thủ theo phe"
+  — họ chỉ bị nhắm vào qua khiêu khích, đúng ranh giới `foeOf` / `aimTarget` ở mục 2.
+- Đối thủ **bám dính** trong `f.foe` chứ không tính lại mỗi khung hình; `step()` bốc lại
+  người **gần nhất** sau mỗi **3~6 giây trong trận** (`f.foeT`). Không có chỗ bám dính này
+  thì hai người đứng ngang nhau làm AI giật qua giật lại.
+- Không còn ai sống thì trả về **người cuối cùng đã nhắm** — đúng như bản 1v1 cũ trả về xác
+  đối thủ, nên mấy chỗ đọc thuộc tính của đối thủ sau khi trận xong không nổ.
+- `defeat()` xoá `o.foe` của mọi người đang nhắm vào người vừa gục, để lượt sau bốc lại.
+
+**`hurt()` không gọi thẳng `finish()` nữa mà gọi `defeat(t,src)`.** Ba hàm tách bạch:
+
+| Hàm | Làm gì |
+|---|---|
+| `koFx(f)` | dáng ngã + hiệu ứng riêng của từng nhân vật (bảo bối rơi ra của Doraemon, dáng `ko` của Superman) rồi đẩy vào `G.kos` |
+| `defeat(t,src)` | hạ một người: dọn `dash`/`bind`/`domain`, xoá `foe`/`tauntBy` trỏ vào họ, tiễn viện binh của họ, rồi **đếm phe còn sống**. Còn từ hai phe thì trận chạy tiếp; còn một phe thì gọi `finish()` |
+| `finish(w)` | trận xong: băng-rôn, camera, dọn sàn |
+
+- **`G.loserFx` (một người) đổi thành `G.kos` (MẢNG)** — hỗn chiến thì mấy người ngã ở mấy
+  thời điểm khác nhau. Vòng đếm nhịp của nó dời **ra ngoài** khối `if(G.over)` trong `step()`,
+  không thì người ngã giữa trận đứng chết trong tư thế dở dang.
+- **Người cuối cùng ngã thì gọi `koFx` SAU `finish`**, vì `finish()` dọn sạch `G.fx`/`G.floats`.
+  *(Bản cũ gọi ngược nên mấy bảo bối rơi ra của Doraemon và vòng sáng bị xoá ngay trong cùng
+  một khung hình — lỗi thật, đã sửa luôn.)*
+
+**Trùng nhân vật.** Đội hình cho phép chọn cùng một người nhiều lần. `mkChar(key,team,x,y,dup)`
+nhận thêm số thứ tự bản sao: tên nối `DUP_SUFFIX` (`''`, `' II'`, `' III'`…), màu qua
+`dupColor()` — bản đầu giữ màu người dùng chọn, bản thứ hai dùng đúng `C.alt` (**y hệt lối
+"đấu gương" cũ**, nên 1v1 chọn trùng nhân vật vẫn ra đúng như trước), từ bản thứ ba trở đi
+xoay tông màu `alt` thêm 57° mỗi bản (`hueShift`). `f.dup` giữ lại trên fighter để
+`applyColors()` dựng lại màu mà không làm mất tông riêng của từng bản sao.
+
+**Chỗ đứng lúc vào trận — `spawnSpots()`.** 1v1 giữ nguyên hai đầu sàn; đánh đội thì hai
+hàng đối mặt nhau (đội 0 ở trên, đội 1 ở dưới); hỗn chiến thì đứng đều trên một vòng tròn
+quanh tâm sàn, bán kính `min(198, 118+n*24)`. Mọi điểm đều clamp vào trong sàn.
+
+**Chỗ khác phải đi theo:**
+- `step()` không còn `const k=G.k,c=G.c` với năm vòng `for(const f of [k,c])`. Giờ là một
+  mảng `MAIN=G.fighters.filter(f=>!f.summon)` chụp ở đầu nhịp — **chụp ra mảng riêng** vì
+  mấy vòng bên dưới có thể đẩy thêm viện binh vào `G.fighters` giữa chừng.
+- Vòng đi lại đọc `aimTarget(f)||foeOf(f)` thay cho `f===k?c:k`.
+- `versusBox()` dựng băng-rôn qua `vsSegments()`: 1v1 là `A  VS  B`, đánh đội gom tên đồng
+  đội bằng ` + `, hỗn chiến liệt kê hết bằng ` · `. Cả dải chữ **tự thu cỡ cho vừa bề ngang
+  sàn** — sáu cái tên dài mà giữ nguyên 19px là tràn hẳn ra ngoài khung. **Ai đã bị hạ thì
+  tên xám lại (`VS_OUT`), mờ đi và bị gạch ngang**, dải màu dưới đáy khung cũng nhạt theo:
+  nhìn băng-rôn là biết còn mấy người trên sàn, khỏi phải đếm thanh máu giữa một đám sáu người.
+- `winnerBanner()` ở chế độ đội ghi **`WINNING TEAM` + tên cả đội**, cũng tự thu cỡ chữ.
+- Hai ô máu / hai ô màu trên thanh công cụ đọc qua `slotKeys()`: 1v1 là A/B, hỗn chiến là
+  hai người đầu đội hình, đánh đội là người đầu của mỗi đội. Con số vẫn nằm trong
+  `HP[key]` / `COLORS[key]` tra theo **nhân vật**, nên chỉnh một người là mọi bản sao của
+  nhân vật đó cùng đổi — đúng như bản 1v1.
+- `G.k`/`G.c` **vẫn còn**: người đầu của phe đầu và người đầu của phe khác nó. Chế độ điều
+  khiển tay (`p1`/`p2`), camera phân cảnh (`G.freezeAt||G.c`) và hai ô chỉnh tay đều đọc qua
+  hai cái này.
+
+> **Mấy cơ chế "ba người trở lên" có sẵn tự bật.** Ginyu luôn chọn thế thăm dò khi
+> `gnCrowd()>=3`; lãnh địa Nara trói mọi đối thủ có thanh máu và **chia đều** sát thương;
+> `drSlTarget()` / `supMsTarget()` / `gnChangeTarget()` đã biết chọn người trong đám đông.
+> Chúng viết ra từ trước cho trường hợp có Ayanokouji trên sàn, giờ chạy thật ở hỗn chiến —
+> đừng viết lại.
+
+Kiểm bằng `node tools/t_modes.js`.
+
 ## 2b. Khoảng cách khi cận chiến — đừng dán vào nhau
 
 Người dùng bác bản cũ: hai người cận chiến đứng chồng hẳn lên nhau, nhìn chỉ thấy một
@@ -1596,6 +1681,13 @@ Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 
 ```bash
 node tools/t_reg.js     # 36 cặp đấu, chạy theo đợt, bắt lỗi trang, xem cơ chế lớn có nổ không
+node tools/t_modes.js   # ba chế độ đấu: 1v1 vẫn y như cũ (hai người, đúng hai đầu sàn),
+                        # hỗn chiến (mỗi người một phe, hạ một người thì trận còn chạy,
+                        # người cuối cùng thắng, băng-rôn gạch tên người đã bị hạ,
+                        # trùng nhân vật thì đổi tên và đổi màu),
+                        # đánh đội (đồng đội không là đối thủ của nhau, hạ hết đội kia thì
+                        # đội còn người thắng, chủ gục thì đồng minh rời sàn theo),
+                        # và một trận hỗn chiến 6 người chạy thật
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ nổ là AoE nhạt dần
@@ -1711,7 +1803,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 
 ## 10. Quy trình git
 
-- Nhánh làm việc: `claude/superman-character-creation-nyk4ok`. **Không đẩy sang nhánh khác.**
+- Nhánh làm việc: `claude/new-game-modes-t2o26k`. **Không đẩy sang nhánh khác.**
 - `git push -u origin <nhánh>`; lỗi mạng thì thử lại 4 lần, giãn 2s/4s/8s/16s.
 - Người dùng thường merge rất nhanh rồi hỏi luôn "pr?" / "merge đâu" — làm xong một việc thì
   **mở PR ngay**. Nếu PR trước đã merge thì mở PR mới, đừng chồng lên nhánh đã merge.

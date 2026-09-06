@@ -73,6 +73,17 @@ window.__supKbTake=supKbTake; window.__supCC=supCC; window.__supFreezeOn=supFree
 window.__supChill=supChill; window.__supIceBreak=supIceBreak; window.__supBurn=supBurn;
 window.__supInterrupt=supInterrupt; window.__supermanTick=supermanTick; window.__supVector=supVector;
 window.__supEyeY=f=>supEyeY(f); window.__bindTick=bindTick; window.__supStatus=supStatus;
+/* ba chế độ đấu */
+window.__PMODE=()=>PMODE; window.__ROSTERS=ROSTERS; window.__PICK=PICK;
+window.__buildRoster=buildRoster; window.__spawnSpots=spawnSpots; window.__newGame=newGame;
+window.__foeOf=foeOf; window.__nearestFoe=nearestFoe; window.__aliveMains=aliveMains;
+window.__aliveTeams=aliveTeams; window.__defeat=defeat; window.__finish=finish;
+window.__teamLabel=teamLabel; window.__vsSegments=vsSegments; window.__versusBox=versusBox;
+window.__dupColor=dupColor; window.__setMode=(m,r)=>{
+  PMODE=m;
+  if(r){ if(r.ffa)ROSTERS.ffa=r.ffa.slice(); if(r.t0)ROSTERS.t0=r.t0.slice(); if(r.t1)ROSTERS.t1=r.t1.slice(); }
+  newGame();
+};
 `;
 
 /* Trả về đường dẫn file probe. Ghi ra thư mục tạm để không bẩn repo. */
@@ -106,6 +117,7 @@ async function openGame(keyA, keyB, opt) {
   page.on('crash', () => errors.push('TRANG SUP (renderer crash)'));
   await page.goto('file://' + (o.file || build()), { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
+  await page.click('#mTabDuel');                      // 1v1: chế độ mặc định
   await page.click(`#listA .cTile[data-key="${keyA}"]`);
   await page.click(`#listB .cTile[data-key="${keyB}"]`);
   await page.click('#cselGo');
@@ -113,4 +125,34 @@ async function openGame(keyA, keyB, opt) {
   return { browser, page, errors };
 }
 
-module.exports = { build, openGame, playwright, SRC, ROOT };
+/* Mở một trận nhiều người qua ĐÚNG màn chọn nhân vật, không gọi tắt vào ruột game:
+   mode = 'ffa' (danh sách keys) hoặc 'team' ({t0:[...], t1:[...]}). */
+async function openMulti(mode, picks, opt) {
+  const o = opt || {};
+  const { chromium } = playwright();
+  const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
+  const page = await browser.newPage({ viewport: { width: 700, height: 980 } });
+  await page.route('**://fonts.*/**', r => r.abort());
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  page.on('crash', () => errors.push('TRANG SUP (renderer crash)'));
+  await page.goto('file://' + (o.file || build()), { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+  await page.click(mode === 'ffa' ? '#mTabFfa' : '#mTabTeam');
+  const groups = mode === 'ffa' ? [['#grpSlots0', '#grpList0', picks]]
+    : [['#grpSlots0', '#grpList0', picks.t0], ['#grpSlots1', '#grpList1', picks.t1]];
+  for (const [slots, list, keys] of groups) {
+    // dọn sạch đội hình mặc định rồi mới bấm thêm đúng những người cần
+    for (let i = 0; i < 12; i++) {
+      const n = await page.$$eval(slots + ' .cChip button', b => b.length);
+      if (!n) break;
+      await page.click(slots + ' .cChip button');
+    }
+    for (const k of keys) await page.click(`${list} .cTile[data-key="${k}"]`);
+  }
+  await page.click('#cselGo');
+  if (o.play !== false) await page.click('#play');
+  return { browser, page, errors };
+}
+
+module.exports = { build, openGame, openMulti, playwright, SRC, ROOT };

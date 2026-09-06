@@ -106,6 +106,23 @@
   .cselBar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:12px}
   .cselVs{font-family:"Space Mono",monospace;font-size:11.5px;color:var(--mute);margin-left:auto;text-align:right}
   .cselVs b{color:var(--paper)}
+  /* ba chế độ đấu: 1v1 · hỗn chiến · đồng đội */
+  .cselModes{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 10px}
+  .mTab{flex:1 1 120px;padding:9px 10px;background:#191436;border:1px solid #2E2758;border-radius:10px;
+    cursor:pointer;color:var(--paper);font-weight:800;font-size:12.5px;text-align:center;transition:.14s}
+  .mTab:hover{background:#241D4C;border-color:#4A3F8C}
+  .mTab.on{border-color:var(--gold);background:#2A2149;box-shadow:0 0 0 1px var(--gold) inset;color:var(--gold)}
+  .mTab i{display:block;font-style:normal;font-family:"Space Mono",monospace;font-size:9px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-top:2px}
+  .off{display:none !important}
+  /* danh sách đội hình đã chọn: mỗi người một thẻ nhỏ có nút ✕ để bỏ ra */
+  .cRoster{display:flex;flex-wrap:wrap;gap:5px;min-height:34px;margin-bottom:8px;
+    background:#0C0920;border:1px dashed #2E2758;border-radius:10px;padding:5px}
+  .cChip{display:flex;align-items:center;gap:5px;padding:4px 6px 4px 8px;background:#191436;
+    border:1px solid currentColor;border-radius:8px;font-size:11.5px;font-weight:800}
+  .cChip button{all:unset;cursor:pointer;color:var(--mute);font-size:12px;line-height:1;padding:0 2px}
+  .cChip button:hover{color:#FF6A8A}
+  .cRosterEmpty{font-family:"Space Mono",monospace;font-size:10px;color:var(--mute);padding:6px 4px}
 </style>
 </head>
 <body>
@@ -225,9 +242,14 @@
 <div class="csel off" id="charSelect">
   <div class="cselBox">
     <h2>CHỌN <span>NHÂN VẬT</span></h2>
+    <div class="cselModes">
+      <button class="mTab on" id="mTabDuel" data-mode="duel" type="button">⚔ Đấu tay đôi<i>1 vs 1</i></button>
+      <button class="mTab" id="mTabFfa" data-mode="ffa" type="button">🔥 Hỗn chiến<i>3–6 người · last man standing</i></button>
+      <button class="mTab" id="mTabTeam" data-mode="team" type="button">🛡 Đánh theo đội<i>tối đa 3 vs 3</i></button>
+    </div>
     <div class="cselSub" id="cselCount">Chọn một nhân vật cho mỗi bên</div>
     <div class="cselBody">
-      <div class="cselCols">
+      <div class="cselCols" id="duelPane">
         <div class="cselCol">
           <div class="cselHead">Bên trái <b id="pickNameA"></b></div>
           <div class="cTiles" id="listA"></div>
@@ -237,6 +259,18 @@
           <div class="cselHead">Bên phải <b id="pickNameB"></b></div>
           <div class="cTiles" id="listB"></div>
           <div class="cDetail" id="detailB"></div>
+        </div>
+      </div>
+      <div class="cselCols off" id="multiPane">
+        <div class="cselCol" id="grpBox0">
+          <div class="cselHead" id="grpHead0"></div>
+          <div class="cRoster" id="grpSlots0"></div>
+          <div class="cTiles" id="grpList0"></div>
+        </div>
+        <div class="cselCol" id="grpBox1">
+          <div class="cselHead" id="grpHead1"></div>
+          <div class="cRoster" id="grpSlots1"></div>
+          <div class="cTiles" id="grpList1"></div>
         </div>
       </div>
     </div>
@@ -304,6 +338,17 @@ const MELEE_REACH=24;
 
 /* ---------- bảng nhân vật chơi được ---------- */
 const PICK={a:'kono',b:'chichi'};
+/* ---------- ba chế độ đấu ----------
+   'duel'  1v1, đúng như từ trước tới nay: hai ô A/B, hai phe 0 và 1.
+   'ffa'   hỗn chiến từ 3 người trở lên, MỖI người một phe riêng (team = số thứ tự),
+           nên foeOf() coi tất cả những người còn lại là địch. Ai còn đứng cuối cùng thì thắng.
+   'team'  đánh theo đội: vẫn đúng hai phe 0 và 1 nhưng mỗi phe nhiều người. Đội nào
+           còn người là đội đó thắng.
+   Chế độ 'duel' phải dựng ra đúng cùng một đội hình như bản cũ — mọi test hiện có đi
+   qua đường này. */
+let PMODE='duel';
+const FFA_MIN=3, FFA_MAX=6, TEAM_MIN=1, TEAM_MAX=3;
+const ROSTERS={ffa:['kono','chichi','tsubasa'], t0:['kono','chichi'], t1:['tsubasa','shika']};
 const GOAL_MAX=5;                 // số goal cần để mở Victory Twin Shot
 const EAGLE_HP=.10;               // Wings of the Eagle bật khi máu tụt xuống dưới mức này
 const PREWING_HP=.20;             // Pre-Wings: chặng đệm trước khi đôi cánh hiện ra
@@ -984,7 +1029,16 @@ async function loadSaved(){
     let dirty=false;
     const rawPick=await Store.get('cfg_picks');
     if(rawPick){ const p=JSON.parse(rawPick);
-      if(CHARS[p.a])PICK.a=p.a; if(CHARS[p.b])PICK.b=p.b; dirty=true; }
+      if(CHARS[p.a])PICK.a=p.a; if(CHARS[p.b])PICK.b=p.b; dirty=true;
+      if(p.mode==='ffa'||p.mode==='team'||p.mode==='duel') PMODE=p.mode;
+      if(p.rosters){
+        const ok=a=>Array.isArray(a)&&a.length&&a.every(k=>!!CHARS[k]);
+        if(ok(p.rosters.ffa)) ROSTERS.ffa=p.rosters.ffa.slice(0,FFA_MAX);
+        if(ok(p.rosters.t0))  ROSTERS.t0=p.rosters.t0.slice(0,TEAM_MAX);
+        if(ok(p.rosters.t1))  ROSTERS.t1=p.rosters.t1.slice(0,TEAM_MAX);
+      }
+      if(PMODE==='ffa'&&ROSTERS.ffa.length<FFA_MIN) PMODE='duel';
+    }
     const raw=await Store.get('cfg_colors');
     if(raw){ const c=JSON.parse(raw); for(const k of CKEYS) if(c[k])COLORS[k]=c[k]; }
     const rawCast=await Store.get('cfg_cast');
@@ -992,7 +1046,11 @@ async function loadSaved(){
     const rawHp=await Store.get('cfg_hp');
     if(rawHp){ const h=JSON.parse(rawHp); for(const k of CKEYS) if(h[k])HP[k]=h[k]; dirty=true; }
     applyColors(); applyHp();
-    if(typeof cselRefresh==='function'){ TMP.a=PICK.a; TMP.b=PICK.b; cselRefresh(); }
+    if(typeof cselRefresh==='function'){
+      TMP.a=PICK.a; TMP.b=PICK.b; TMP.mode=PMODE;
+      TMP.ffa=ROSTERS.ffa.slice(); TMP.t0=ROSTERS.t0.slice(); TMP.t1=ROSTERS.t1.slice();
+      cselRefresh();
+    }
     if(dirty&&typeof newGame==='function'){ newGame(); running=false; document.getElementById('play').textContent='Bắt đầu'; }
   }catch(e){}
   let n=0;
@@ -1895,6 +1953,7 @@ function mk(o){
     ax:1, ay:0, lunge:0, invuln:0, dvx:0, dvy:0, moveAmt:0, leanS:0,
     wx:W/2, wy:H/2, wt:0, engage:true, engT:2,
     orbR:0, orbT:0, jx:0, jy:0, jt:0,   // quãng cách lượn + hướng nhiễu, đổi liên tục
+    foe:null, foeT:0,                   // đối thủ đang nhắm (hỗn chiến) và đồng hồ bốc lại
 
     goals:0, vuln:0, exhaust:0, prewing:false, prewingDone:false, prewingA:0,
     chakra:0, lazy:false, awake:false, evade:0, outCut:0, weak:false,
@@ -1924,25 +1983,87 @@ function mk(o){
     bind:null, bindGuard:false, bindPending:false, lazyTalk:0, wakeT:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
 }
-function mkChar(key,team,x,y){
+/* Bản sao thứ mấy của cùng một nhân vật thì đổi tông màu đi cho khỏi lẫn. Bản đầu giữ
+   nguyên màu người dùng chọn, bản thứ hai dùng đúng màu `alt` có sẵn (đúng như lối
+   "đấu gương" cũ), từ bản thứ ba trở đi thì xoay tông màu alt một góc. */
+const DUP_SUFFIX=['',' II',' III',' IV',' V',' VI'];
+function hueShift(hex,deg){
+  const n=parseInt(String(hex).replace('#',''),16);
+  let r=((n>>16)&255)/255, g=((n>>8)&255)/255, b=(n&255)/255;
+  const mx=Math.max(r,g,b), mn=Math.min(r,g,b), l=(mx+mn)/2;
+  let h=0, sa=0;
+  if(mx!==mn){
+    const dd=mx-mn;
+    sa=l>.5?dd/(2-mx-mn):dd/(mx+mn);
+    h=mx===r?((g-b)/dd+(g<b?6:0)):mx===g?((b-r)/dd+2):((r-g)/dd+4);
+    h/=6;
+  }
+  h=(h+deg/360)%1; if(h<0)h+=1;
+  const q=l<.5?l*(1+sa):l+sa-l*sa, pp=2*l-q;
+  const ch=t=>{ if(t<0)t+=1; if(t>1)t-=1;
+    if(t<1/6)return pp+(q-pp)*6*t;
+    if(t<1/2)return q;
+    if(t<2/3)return pp+(q-pp)*(2/3-t)*6;
+    return pp; };
+  const to=v=>Math.round(clamp(v,0,1)*255).toString(16).padStart(2,'0');
+  return '#'+to(ch(h+1/3))+to(ch(h))+to(ch(h-1/3));
+}
+function dupColor(C,key,dup){
+  if(dup<=0) return COLORS[key]||C.color;
+  const base=C.alt||C.color;
+  return dup===1?base:hueShift(base,(dup-1)*57);
+}
+function mkChar(key,team,x,y,dup){
   const C=CHARS[key];
-  const mirror=PICK.a===PICK.b;
+  const d=dup||0;
   const f=mk({
-    key, name:C.name+(mirror&&team===1?' II':''), team, male:C.male, role:C.role, want:C.want,
+    /* Hậu tố của bản sao. Đừng viết `DUP_SUFFIX[d] || ...`: ô đầu tiên là chuỗi RỖNG nên
+       toán tử `||` rơi luôn xuống nhánh dự phòng và AI NÀO CŨNG bị dán thêm " #1". */
+    key, dup:d, name:C.name+(d<DUP_SUFFIX.length?DUP_SUFFIX[d]:' #'+(d+1)), team, male:C.male, role:C.role, want:C.want,
     x, y, speed:C.speed, dodge:C.dodge, spriteH:C.spriteH||120,
-    color:(mirror&&team===1)?C.alt:(COLORS[key]||C.color),
+    color:dupColor(C,key,d),
     hp:HP[key]||1000, maxHp:HP[key]||1000
   });
   C.init(f);
   return f;
 }
-/* đối thủ của một đấu thủ: hai ô A/B, viện binh tính theo phe */
+/* Ai còn đứng trên sàn: chỉ tính đấu thủ chính, viện binh và đồng minh không kể.
+   Dùng để đếm phe còn sống và để chọn người thắng. */
+function aliveMains(){
+  const out=[];
+  for(const f of G.fighters) if(f&&!f.summon&&f.alive&&f.hp>0) out.push(f);
+  return out;
+}
+function aliveTeams(){
+  const s=new Set();
+  for(const f of aliveMains()) s.add(f.team);
+  return [...s];
+}
+/* Một người có còn là đối thủ hợp lệ của f không. Chỉ soi ĐẤU THỦ CHÍNH: đồng minh
+   (Ayanokouji) và viện binh không bao giờ là "đối thủ theo phe", họ chỉ bị nhắm vào
+   qua khiêu khích — đúng ranh giới foeOf / aimTarget ở mục 2 của CLAUDE.md. */
+const foeOk=(f,o)=>!!o&&o!==f&&!o.summon&&o.team!==f.team&&o.alive&&o.hp>0&&G.fighters.indexOf(o)>=0;
+function nearestFoe(f){
+  let best=null, bd=Infinity;
+  for(const o of G.fighters){
+    if(!foeOk(f,o))continue;
+    const d=dist(f,o);
+    if(d<bd){ bd=d; best=o; }
+  }
+  return best;
+}
+/* Đối thủ của một đấu thủ. Ở 1v1 thì vẫn đúng là người kia; ở hỗn chiến và đánh đội thì
+   là người địch GẦN NHẤT, nhưng bám dính chứ không đổi mỗi khung hình — step() mới bốc
+   lại sau mỗi 3~6 giây (f.foeT), nhờ vậy AI không giật qua giật lại giữa hai người.
+   Không còn ai sống thì trả về người cuối cùng đã nhắm, để mấy chỗ đọc thuộc tính của
+   đối thủ sau khi trận kết thúc không nổ — đúng như bản 1v1 cũ trả về xác đối thủ. */
 function foeOf(f){
   if(!f||!G)return null;
-  if(f===G.k)return G.c;
-  if(f===G.c)return G.k;
   if(f.master)return foeOf(f.master);   // viện binh nhắm đúng đối thủ của người gọi
-  return f.team===0?G.c:G.k;
+  if(foeOk(f,f.foe))return f.foe;
+  const n=nearestFoe(f);
+  if(n) f.foe=n;
+  return f.foe||null;
 }
 /* Ai là người mà f đang nhắm vào. Bình thường là đối thủ, nhưng khi Ayanokouji đứng
    trên sàn thì anh khiêu khích suốt quãng đó: mọi thứ f tung ra đều dồn vào anh — đó
@@ -1957,14 +2078,66 @@ function aimTarget(f){
   if(t&&t.alive&&t.hp>0&&!t.leaving&&t.team!==f.team&&G.fighters.indexOf(t)>=0) return t;
   return foeOf(f);
 }
+/* Đội hình của trận sắp tới: danh sách {key, team}.
+   1v1 dựng ra đúng cùng một đội hình như bản cũ — hai ô A/B, phe 0 và phe 1.
+   Hỗn chiến: mỗi người MỘT phe riêng, nên ai cũng là địch của tất cả những người còn lại.
+   Đánh đội: vẫn đúng hai phe 0 và 1, mỗi phe nhiều người. */
+function buildRoster(){
+  if(PMODE==='ffa')  return ROSTERS.ffa.map((key,i)=>({key,team:i}));
+  if(PMODE==='team') return ROSTERS.t0.map(key=>({key,team:0}))
+                     .concat(ROSTERS.t1.map(key=>({key,team:1})));
+  return [{key:PICK.a,team:0},{key:PICK.b,team:1}];
+}
+/* Chỗ đứng lúc vào trận. Hai người thì giữ nguyên hai đầu sàn như cũ; đánh đội thì hai
+   hàng đối mặt nhau; hỗn chiến thì đứng đều trên một vòng tròn quanh tâm sàn. */
+function spawnSpots(roster){
+  const n=roster.length;
+  if(n===2&&PMODE==='duel') return [{x:W/2,y:PAD+120},{x:W/2,y:H-PAD-120}];
+  const cx=W/2, top=PAD+96, bot=H-PAD-70, cy=(top+bot)/2;
+  if(PMODE==='team'){
+    const out=new Array(n);
+    for(const t of [0,1]){
+      const ids=[]; roster.forEach((r,i)=>{ if(r.team===t) ids.push(i); });
+      const m=ids.length, spread=Math.min(160,58+m*36);
+      ids.forEach((idx,j)=>{
+        const off=m===1?0:(j/(m-1)-.5)*2*spread;
+        out[idx]={x:clamp(cx+off,PAD+34,W-PAD-34), y:t===0?top+14:bot-14};
+      });
+    }
+    return out;
+  }
+  const R=Math.min(198,118+n*24);
+  return roster.map((r,i)=>{
+    const a=-Math.PI/2+i/n*Math.PI*2;
+    return {x:clamp(cx+Math.cos(a)*R,PAD+34,W-PAD-34),
+            y:clamp(cy+Math.sin(a)*R*.84,top,bot)};
+  });
+}
+/* Tên gọi của một phe, dùng cho băng-rôn và nhật ký lúc đánh đội. */
+function teamLabel(team){
+  const names=[];
+  for(const f of G.fighters) if(f&&!f.summon&&f.team===team) names.push(f.name);
+  return names.join(' + ');
+}
 function newGame(){
-  G={t:0,proj:[],waves:[],fx:[],floats:[],conf:[],timers:[],logs:[],over:null,winner:null,endT:0,announced:false,cam:{x:W/2,y:H/2,z:1},freeze:0,freezeAt:null,callBanner:null,loserFx:null,fighters:[],mates:[],flashback:null,flashScreen:0};
+  G={t:0,proj:[],waves:[],fx:[],floats:[],conf:[],timers:[],logs:[],over:null,winner:null,winTeam:null,endT:0,announced:false,cam:{x:W/2,y:H/2,z:1},freeze:0,freezeAt:null,callBanner:null,kos:[],fighters:[],mates:[],flashback:null,flashScreen:0};
   G.timeWarp=null;
-  G.k=mkChar(PICK.a,0,W/2,PAD+120);
-  G.c=mkChar(PICK.b,1,W/2,H-PAD-120);
-  G.fighters=[G.k,G.c];
+  G.mode=PMODE;
+  const roster=buildRoster(), spots=spawnSpots(roster), seen={};
+  G.fighters=roster.map((r,i)=>{
+    const dup=seen[r.key]|0; seen[r.key]=dup+1;
+    return mkChar(r.key,r.team,spots[i].x,spots[i].y,dup);
+  });
+  /* G.k / G.c vẫn là hai cái tên cũ: người đầu của phe đầu và người đầu của phe khác nó.
+     Ô màu, ô máu, chế độ điều khiển tay và camera phân cảnh đều đọc qua hai cái này. */
+  G.k=G.fighters[0];
+  G.c=G.fighters.find(f=>f.team!==G.k.team)||G.fighters[1]||G.fighters[0];
   if(typeof resetSfxPos==='function') resetSfxPos();
-  say(`Trận đấu sẵn sàng. ${G.k.name} vs ${G.c.name}.`,'g');
+  if(PMODE==='team')      say(`Trận đấu theo đội sẵn sàng. ${teamLabel(0)} vs ${teamLabel(1)}.`,'g');
+  else if(PMODE==='ffa')  say(`Hỗn chiến ${G.fighters.length} người sẵn sàng — ai còn đứng cuối cùng thì thắng.`,'g');
+  else                    say(`Trận đấu sẵn sàng. ${G.k.name} vs ${G.c.name}.`,'g');
+  // ô màu / ô máu / nhãn chế độ điều khiển đọc theo đội hình vừa dựng
+  applyColors(); applyHp();
   paintLog(); draw();
 }
 function say(m,c){ G.logs.unshift({m,c:c||'m'}); if(G.logs.length>50)G.logs.pop(); paintLog(); }
@@ -2136,7 +2309,7 @@ function hurt(t,amt,src,crit,kind,tint,raw){
      ngã xuống và bắn tia hoán đổi thân xác. Chỉ đúng một lần, và chỉ khi hồn anh còn
      nằm trong thân xác của chính mình. */
   if(t.hp<=0&&!t.summon&&gnCanChange(t)){ ginyuChange(t); return true; }
-  if(t.hp<=0&&!t.summon){ t.alive=false; finish(src); }
+  if(t.hp<=0&&!t.summon){ defeat(t,src); }
   return true;                              // đòn đã trúng: chỗ gọi được phép gắn thêm choáng / duy trì
 }
 function counters(src,tgt){
@@ -2151,10 +2324,74 @@ function counters(src,tgt){
       say(`ChiChi hăng máu: chí mạng +5% (tổng +${Math.round(f.critBonus*100)}%)`,'c'); } }
   }
 }
+/* Một người gục xuống: dáng ngã, hiệu ứng riêng của từng nhân vật, rồi đẩy vào G.kos
+   để draw() vẽ quãng đổ người. Tách hẳn ra khỏi finish() vì ở hỗn chiến và đánh đội thì
+   có người gục mà trận vẫn còn chạy tiếp. */
+function koFx(loser){
+  loser.pose='hurt'; loser.poseT=0; loser.flash=0; loser.recoil=0; loser.lunge=0;
+  /* Doraemon thua thì ngã ngồi, vài bảo bối rơi ra khỏi túi rồi nằm xuống choáng váng.
+     Không máu me, không hiệu ứng chết chóc — anh chỉ bị hạ gục và bất tỉnh. */
+  if(loser.key==='dora'&&!loser.swapAs){
+    loser.pose='down';
+    for(let i=0;i<7;i++) G.fx.push({type:'gadget',x:loser.x+rnd(-10,10),y:loser.y+rnd(-16,6),
+      rot:rnd(0,6),vr:rnd(-4,4),shape:i%3,life:1.6,ml:1.6,
+      color:['#F5C518','#D8E4EE','#FF9AD5','#7FD0FF'][i%4]});
+    sfx('dora_down');
+  }
+  /* Superman thua thì không biến mất, không phát nổ, không máu me: anh lùi lại,
+     chống một đầu gối xuống, cố đứng dậy mà không nổi rồi mới ngã hẳn. */
+  if(loser.key==='superman'&&!loser.swapAs){
+    loser.pose='ko'; loser.supAir=0; loser.supFly=0; loser.supMs=null;
+    sfx('sup_down');
+  }
+  G.kos.push({f:loser,t:0,puff:0,sup:loser.key==='superman'&&!loser.swapAs});
+  ring(loser.x,loser.y-10,140,loser.color,.5);
+}
+/* Một đấu thủ chính về 0 máu. Ở 1v1 thì trận xong ngay; ở hỗn chiến và đánh đội thì chỉ
+   xong khi CHỈ CÒN MỘT PHE còn người — last man standing. */
+function defeat(t,src){
+  if(!t||!t.alive)return;
+  t.alive=false; t.hp=0;
+  t.dash=null; t.lock=0; t.bind=null; t.domain=null;
+  t.supCone=null; t.supHv=null; t.supFb=null; t.supMs=null; t.supCombo=null; t.drCone=null;
+  // ai đang nhắm vào người vừa gục thì bỏ nhắm, để lượt sau bốc lại đối thủ khác
+  for(const o of G.fighters){ if(o.foe===t) o.foe=null; if(o.tauntBy===t) o.tauntBy=null; }
+  const teams=aliveTeams();
+  if(teams.length>1){
+    koFx(t);
+    /* Trận còn chạy tiếp nên phải dọn cho sạch: đồng minh (Ayanokouji) và viện binh của
+       người vừa gục cũng rời sàn theo — chủ đã ngã thì họ không còn ai để bảo vệ. Đồng
+       minh đi qua ayaRemove() để trả lại castBuff và gỡ khiêu khích, viện binh thuần thì
+       poof tại chỗ. */
+    for(let i=G.fighters.length-1;i>=0;i--){
+      const s2=G.fighters[i];
+      if(!s2||!s2.summon||s2.master!==t)continue;
+      G.fx.push({type:'poof',x:s2.x,y:s2.y-18,life:.6,ml:.6});
+      if(s2.ally) ayaRemove(s2);
+      else G.fighters.splice(i,1);
+    }
+    sfx('ko');
+    const left=aliveMains().length;
+    say(`${t.name} bị hạ gục — còn ${left} người trên sàn.`,'m');
+    return;
+  }
+  // chỉ còn một phe: chọn người thắng trong phe đó
+  const rest=aliveMains();
+  let win=null;
+  if(src&&!src.summon&&src.alive&&src.hp>0) win=src;
+  else if(src&&src.master&&src.master.alive&&src.master.hp>0) win=src.master;
+  if(!win||rest.indexOf(win)<0) win=rest[0]||null;
+  /* finish() dọn sạch G.fx / G.floats, nên quãng đổ người của người cuối cùng phải dựng
+     SAU nó — không thì mấy bảo bối rơi ra của Doraemon và vòng sáng bị xoá ngay. */
+  finish(win);
+  koFx(t);
+}
 function finish(w){
-  const win=(w&&!w.summon)?w:(G.k.hp>0?G.k:G.c);
-  G.over=win.name.toUpperCase();
-  G.winner=win; G.endT=0; G.announced=false;
+  const rest=aliveMains();
+  const win=(w&&!w.summon)?w:(rest[0]||(G.k.hp>0?G.k:G.c));
+  G.winner=win; G.winTeam=win?win.team:null;
+  G.over=(G.mode==='team'&&win)?teamLabel(win.team).toUpperCase():win.name.toUpperCase();
+  G.endT=0; G.announced=false;
   G.mates.length=0; G.flashback=null;
   // đồng minh (Ayanokouji) rời sàn cùng lúc trận kết thúc, không đứng trơ ra đó
   for(let i=G.fighters.length-1;i>=0;i--) if(G.fighters[i].ally) G.fighters.splice(i,1);
@@ -2164,27 +2401,6 @@ function finish(w){
     // kết thúc, để lại là luồng hơi lạnh hay tia nhiệt treo cứng trên sàn
     f.supCone=null; f.supHv=null; f.supFb=null; f.supMs=null; f.supCombo=null;
     f.drCone=null;
-  }
-  const loser = (win===G.k)?G.c:G.k;
-  if(loser){
-    loser.pose='hurt'; loser.poseT=0; loser.flash=0; loser.recoil=0; loser.lunge=0;
-    /* Doraemon thua thì ngã ngồi, vài bảo bối rơi ra khỏi túi rồi nằm xuống choáng váng.
-       Không máu me, không hiệu ứng chết chóc — anh chỉ bị hạ gục và bất tỉnh. */
-    if(loser.key==='dora'&&!loser.swapAs){
-      loser.pose='down';
-      for(let i=0;i<7;i++) G.fx.push({type:'gadget',x:loser.x+rnd(-10,10),y:loser.y+rnd(-16,6),
-        rot:rnd(0,6),vr:rnd(-4,4),shape:i%3,life:1.6,ml:1.6,
-        color:['#F5C518','#D8E4EE','#FF9AD5','#7FD0FF'][i%4]});
-      sfx('dora_down');
-    }
-    /* Superman thua thì không biến mất, không phát nổ, không máu me: anh lùi lại,
-       chống một đầu gối xuống, cố đứng dậy mà không nổi rồi mới ngã hẳn. */
-    if(loser.key==='superman'&&!loser.swapAs){
-      loser.pose='ko'; loser.supAir=0; loser.supFly=0; loser.supMs=null;
-      sfx('sup_down');
-    }
-    G.loserFx={f:loser,t:0,puff:0,sup:loser.key==='superman'&&!loser.swapAs};
-    ring(loser.x,loser.y-10,140,loser.color,.5);
   }
   G.proj.length=0; G.waves.length=0;
   G.floats.length=0; G.callBanner=null; G.freeze=0;
@@ -2865,11 +3081,11 @@ function eagleTick(t,dt){
       txt:'-'+Math.round(t.eagleBurn),color:'#C9CBD6',life:.85,ml:.85,sc:.5});
   }
   if(t.eagleT>=EAGLE_BURN||t.hp<=0){
-    t.hp=0; t.alive=false;
+    t.hp=0;
     ring(t.x,t.y,170,'#FFF3C4',.7);
     G.flashScreen=Math.max(G.flashScreen,.14);
     say(`${t.name} cháy hết mình — đôi cánh tan biến.`,'g');
-    finish(foeOf(t));
+    defeat(t,foeOf(t));
   }
 }
 /* va chạm bóng */
@@ -3244,7 +3460,7 @@ function suzDecide(f,e){
       G.floats.push({x:f.x,y:f.y-18,txt:'-'+self,color:'#FF6A8A',life:.95,ml:.95,sc:.62});
       ring(f.x,f.y,74,'#FF6A8A',.35);
       say(`Quyết định sai — điểm lớp âm ${self}, Horikita tự gánh ${self} dmg rồi tích lại từ 0.`,'s');
-      if(f.hp<=0){ f.alive=false; finish(foeOf(f)); }
+      if(f.hp<=0){ defeat(f,foeOf(f)); }
     }else{
       say(`Quyết định sai — mất ${pen} điểm lớp, còn ${Math.round(f.cp)}.`,'s');
     }
@@ -5412,11 +5628,14 @@ function step(dt){
     if(m.life<=0){ G.fx.push({type:'poof',x:m.x,y:m.y-18,life:.5,ml:.5}); G.mates.splice(i,1); }
   }
 
-  const k=G.k,c=G.c;
+  /* Danh sách đấu thủ chính của nhịp này. 1v1 thì đúng là [G.k, G.c]; hỗn chiến và đánh
+     đội thì dài hơn. Chụp ra một mảng riêng vì mấy vòng bên dưới có thể đẩy thêm viện
+     binh vào G.fighters giữa chừng. */
+  const MAIN=G.fighters.filter(f=>f&&!f.summon);
 
   if(G.freeze>0 && !G.over){
     G.freeze-=dt;
-    const t=G.freezeAt||c;
+    const t=G.freezeAt||G.c;
     const tz=2.2;
     const tx=clamp(t.x,W/2/tz+14,W-W/2/tz-14), ty=clamp(t.y-20,H/2/tz+14,H-H/2/tz-14);
     G.cam.z+=(tz-G.cam.z)*Math.min(1,dt*4);
@@ -5449,6 +5668,13 @@ function step(dt){
     // quãng cách lượn và hướng nhiễu: đổi liên tục cho bước chân trông ngẫu nhiên
     f.orbT-=dt; if(f.orbT<=0){ f.orbR=rnd(MELEE_MIN,MELEE_MAX); f.orbT=rnd(1.1,2.4); }
     f.jt-=dt;   if(f.jt<=0){ const ja=rnd(0,Math.PI*2); f.jx=Math.cos(ja); f.jy=Math.sin(ja); f.jt=rnd(.45,1.1); }
+    /* Hỗn chiến / đánh đội: cứ 3~6 giây thì bốc lại đối thủ gần nhất. Bám dính như vậy
+       để AI không giật qua giật lại giữa hai người đứng ngang nhau, mà vẫn đánh với ai
+       đang ở cạnh mình chứ không đuổi theo một người ở tận đầu kia sàn. */
+    if(!f.summon){
+      f.foeT-=dt;
+      if(f.foeT<=0){ f.foeT=rnd(3,6); const nf=nearestFoe(f); if(nf) f.foe=nf; }
+    }
     if(f.recoil>0) f.recoil=Math.max(0,f.recoil-dt*4);
     if(f.lunge>0) f.lunge=Math.max(0,f.lunge-dt*3.2);
     if(f.invuln>0) f.invuln=Math.max(0,f.invuln-dt);
@@ -5494,18 +5720,19 @@ function step(dt){
       if(d.left<=0)f.dots.splice(i,1);
     }
   }
+  /* Quãng đổ người của ai vừa gục. Chạy ở MỌI nhịp chứ không riêng lúc trận đã xong:
+     hỗn chiến và đánh đội thì có người ngã mà trận vẫn còn chạy tiếp. */
+  for(let i=G.kos.length-1;i>=0;i--){
+    const L=G.kos[i]; if(!L){ G.kos.splice(i,1); continue; }
+    L.t+=dt; L.puff-=dt;
+    if(L.puff<=0 && L.t<1.1){
+      L.puff=.13;
+      G.fx.push({type:'dust',x:L.f.x+rnd(-18,18),y:L.f.y+rnd(-30,16),r:5,life:.5,ml:.5});
+    }
+    if(L.t>1.9) G.kos.splice(i,1);
+  }
   if(G.over){
     G.endT+=dt;
-    if(G.loserFx){
-      const L=G.loserFx;
-      L.t+=dt;
-      L.puff-=dt;
-      if(L.puff<=0 && L.t<1.1){
-        L.puff=.13;
-        G.fx.push({type:'dust',x:L.f.x+rnd(-18,18),y:L.f.y+rnd(-30,16),r:5,life:.5,ml:.5});
-      }
-      if(L.t>1.9) G.loserFx=null;
-    }
     if(G.floats.length) G.floats.length=0;
     if(G.callBanner) G.callBanner=null;
     const w=G.winner;
@@ -5542,9 +5769,10 @@ function step(dt){
     return;
   }
 
-  for(const f of [k,c]){
+  for(const f of MAIN){
     if(!f.alive)continue;
-    const e=f===k?c:k;
+    const e=aimTarget(f)||foeOf(f);
+    if(!e)continue;
     let v={x:0,y:0};
     if(f.stun>0||f.lock>0||f.dash||f.lazy) v={x:0,y:0};   // ngồi lười thì không nhúc nhích
     else if(isPlayer(f)) v=playerVec();
@@ -5589,7 +5817,7 @@ function step(dt){
     { const tg=aimTarget(f)||e; const dx=tg.x-f.x; if(Math.abs(dx)>18) f.face = dx>=0?1:-1; }
   }
 
-  for(const f of [k,c]){
+  for(const f of MAIN){
     if(!f.dash||!f.alive)continue;
     const e=aimTarget(f)||foeOf(f);
     const D=f.dash;
@@ -5631,26 +5859,24 @@ function step(dt){
     }
   }
 
-  for(const f of [k,c]){                        // kiệt sức thì hồi chiêu chạy chậm 25%
+  for(const f of MAIN){                         // kiệt sức thì hồi chiêu chạy chậm 25%
     const rate=dt*(f.exhaust>0?EXHAUST_MUL:1)*(f.prewing?PREWING_CAST:1)*(f.castBuff||1)*(f.castMul||1);
     for(const key in f.cds) f.cds[key]=Math.max(0,f.cds[key]-rate);
   }
-  const d=dist(k,c);
-
-  for(const f of [k,c]){
+  for(const f of MAIN){
     if(!f.alive||f.stun>0||f.lock>0)continue;
     const auto=!isPlayer(f)||autoSkill;
     const C=CHARS[f.key];
     const tg=aimTarget(f);
     if(!tg)continue;
-    const dd=tg===foeOf(f)?d:dist(f,tg);
+    const dd=dist(f,tg);
     // hoán đổi thân xác rồi thì bảng CHARS của thân xác không còn đúng nữa
     if(f.swapAs) ginyuSwapThink(f,tg,dd,auto);
     else if(C&&C.think) C.think(f,tg,dd,auto);
   }
 
   // nội tại kích hoạt theo ngưỡng máu
-  for(const f of [k,c]){
+  for(const f of MAIN){
     if(!f.alive||f.hp<=0)continue;
     if(f.swapAs)continue;                       // Ginyu đã cướp xác: nội tại của thân xác tắt hẳn
     if(f.key==='chichi' && !f.summonDone && f.hp<=f.maxHp*.20){
@@ -8284,28 +8510,76 @@ function drawProj(p){
   }
   ctx.restore();
 }
+/* Băng-rôn tên cặp đấu trên đầu sàn. Ở 1v1 là "A  VS  B"; đánh đội thì mỗi bên gom tên
+   đồng đội lại; hỗn chiến thì liệt kê hết, mỗi tên một màu. Cả dải chữ tự thu cỡ cho vừa
+   bề ngang sàn — sáu cái tên dài mà giữ nguyên 19px là tràn ra ngoài khung ngay. */
+const VS_OUT='#6B6B7A';        // màu tên của người đã bị hạ gục
+function vsSegments(){
+  const mains=G.fighters.filter(f=>f&&!f.summon);
+  const seg=[];
+  const push=(txt,color,small,out)=>seg.push({txt,color,small:!!small,out:!!out});
+  /* Ai đã bị hạ thì tên xám lại và mờ đi — nhìn băng-rôn là biết ngay còn mấy người
+     trên sàn, khỏi phải đếm thanh máu giữa một đám sáu người. */
+  const name=f=>push(f.name.toUpperCase(), f.alive?f.color:VS_OUT, false, !f.alive);
+  if(G.mode==='team'){
+    for(const t of [0,1]){
+      const side=mains.filter(f=>f.team===t);
+      side.forEach((f,i)=>{ if(i) push(' + ','#5A5A66',true); name(f); });
+      if(t===0) push('  VS  ','#5A5A66',true);
+    }
+    return seg;
+  }
+  if(mains.length>2){
+    mains.forEach((f,i)=>{ if(i) push(' · ','#5A5A66',true); name(f); });
+    return seg;
+  }
+  const a=mains[0], b=mains[1]||mains[0];
+  name(a); push('  VS  ','#5A5A66',true); name(b);
+  return seg;
+}
 function versusBox(){
-  const k=G.k, c=G.c;
-  ctx.font='900 19px "Be Vietnam Pro",sans-serif';
-  const n1=k.name.toUpperCase(), n2=c.name.toUpperCase(), mid='  VS  ';
-  const w1=ctx.measureText(n1).width, w2=ctx.measureText(n2).width;
-  ctx.font='900 15px "Be Vietnam Pro",sans-serif';
-  const wm=ctx.measureText(mid).width;
-  const total=w1+wm+w2, bw=total+34, bh=38, bx=(W-bw)/2, by=(HEADER-bh)/2;
+  const seg=vsSegments();
+  const BIG=19, SM=15;
+  let sc=1, total=0;
+  const measure=k=>{
+    let t=0;
+    for(const g of seg){ ctx.font=`900 ${(g.small?SM:BIG)*k}px "Be Vietnam Pro",sans-serif`; t+=ctx.measureText(g.txt).width; }
+    return t;
+  };
+  total=measure(1);
+  const room=W-58;
+  if(total>room){ sc=Math.max(.5,room/total); total=measure(sc); }
+  const bw=total+34, bh=38, bx=(W-bw)/2, by=(HEADER-bh)/2;
 
   ctx.fillStyle='#fff'; ctx.fillRect(bx,by,bw,bh);
   ctx.strokeStyle='#000'; ctx.lineWidth=4; ctx.strokeRect(bx,by,bw,bh);
-  ctx.fillStyle=k.color; ctx.fillRect(bx+3,by+bh-6,(bw-6)/2,3);
-  ctx.fillStyle=c.color; ctx.fillRect(bx+3+(bw-6)/2,by+bh-6,(bw-6)/2,3);
+  // dải màu dưới đáy khung: chia đều cho từng người có tên trên băng-rôn
+  const cols=seg.filter(g=>!g.small);
+  cols.forEach((g,i)=>{
+    ctx.globalAlpha=g.out?.35:1;
+    ctx.fillStyle=g.color;
+    ctx.fillRect(bx+3+(bw-6)*i/cols.length,by+bh-6,(bw-6)/cols.length,3);
+  });
+  ctx.globalAlpha=1;
 
   const cy=by+bh/2+1;
   ctx.textAlign='left'; ctx.textBaseline='middle';
-  ctx.font='900 19px "Be Vietnam Pro",sans-serif';
-  ctx.fillStyle=k.color; ctx.fillText(n1,bx+17,cy);
-  ctx.font='900 15px "Be Vietnam Pro",sans-serif';
-  ctx.fillStyle='#5A5A66'; ctx.fillText(mid,bx+17+w1,cy);
-  ctx.font='900 19px "Be Vietnam Pro",sans-serif';
-  ctx.fillStyle=c.color; ctx.fillText(n2,bx+17+w1+wm,cy);
+  let tx=bx+17;
+  for(const g of seg){
+    const fs=(g.small?SM:BIG)*sc;
+    ctx.font=`900 ${fs}px "Be Vietnam Pro",sans-serif`;
+    ctx.globalAlpha=g.out?.5:1;
+    ctx.fillStyle=g.color;
+    ctx.fillText(g.txt,tx,cy);
+    const tw=ctx.measureText(g.txt).width;
+    // đã bị hạ thì gạch ngang qua tên, khỏi phải đoán màu xám nghĩa là gì
+    if(g.out){
+      ctx.strokeStyle=g.color; ctx.lineWidth=Math.max(1.4,fs*.09);
+      ctx.beginPath(); ctx.moveTo(tx,cy); ctx.lineTo(tx+tw,cy); ctx.stroke();
+    }
+    tx+=tw;
+  }
+  ctx.globalAlpha=1;
   ctx.textAlign='center'; ctx.textBaseline='alphabetic';
 }
 /* Tên chiêu và tên hiệu ứng nổi lềnh khềnh khắp sàn thì rối mắt, nên thu nhỏ lại:
@@ -8534,10 +8808,10 @@ function draw(){
     ctx.restore();
   }
   for(const p of G.proj) drawProj(p);
-  if(G.loserFx){
+  for(const L of G.kos){
     /* Superman gục: chống một gối xuống trước, gượng dậy hai nhịp không nổi, rồi mới
        đổ hẳn — nên quãng nghiêng người bắt đầu muộn hơn mấy người kia. */
-    const L=G.loserFx, f=L.f, pr=L.sup?clamp((L.t-.62)/.85,0,1):clamp(L.t/1.25,0,1);
+    const f=L.f, pr=L.sup?clamp((L.t-.62)/.85,0,1):clamp(L.t/1.25,0,1);
     const tryUp=(L.sup&&L.t<.62)?Math.abs(Math.sin(L.t*9))*3.5:0;
     const img=sprite(f);
     ctx.save();
@@ -8800,11 +9074,23 @@ function winnerBanner(){
   // Doraemon có dòng ăn mừng riêng theo đúng yêu cầu, thay cho cặp WINNER + tên
   const dora=w.key==='dora'&&!w.swapAs;
   const sup=w.key==='superman'&&!w.swapAs;
+  const head=G.mode==='team'?'WINNING TEAM':'WINNER';
   ctx.font='900 15px "Space Mono",monospace';
-  ctx.lineWidth=6; ctx.strokeStyle='#000'; ctx.strokeText('WINNER',0,-42);
-  ctx.fillStyle='#fff'; ctx.fillText('WINNER',0,-42);
-  const big=dora?'DORAEMON WINS!':(sup?'SUPERMAN WINS!':w.name.toUpperCase());
-  ctx.font=`900 ${dora||sup?38:46}px "Be Vietnam Pro",sans-serif`;
+  ctx.lineWidth=6; ctx.strokeStyle='#000'; ctx.strokeText(head,0,-42);
+  ctx.fillStyle='#fff'; ctx.fillText(head,0,-42);
+  /* Đánh đội thì trên băng-rôn là cả ĐỘI thắng chứ không riêng người còn đứng cuối cùng.
+     Tên gộp lại thì dài, nên cỡ chữ tự thu cho vừa bề ngang sàn. */
+  const team=G.mode==='team'&&G.winTeam!==null&&G.winTeam!==undefined
+    ? G.fighters.filter(f=>f&&!f.summon&&f.team===G.winTeam) : null;
+  const big=(team&&team.length>1)?team.map(f=>f.name.toUpperCase()).join(' + ')
+    :(dora?'DORAEMON WINS!':(sup?'SUPERMAN WINS!':w.name.toUpperCase()));
+  let bsize=(team&&team.length>1)?34:(dora||sup?38:46);
+  ctx.font=`900 ${bsize}px "Be Vietnam Pro",sans-serif`;
+  const room=W-56;
+  if(ctx.measureText(big).width>room){
+    bsize=Math.max(15,Math.floor(bsize*room/ctx.measureText(big).width));
+    ctx.font=`900 ${bsize}px "Be Vietnam Pro",sans-serif`;
+  }
   ctx.lineWidth=10; ctx.strokeStyle='#000'; ctx.strokeText(big,0,4);
   ctx.lineWidth=4; ctx.strokeStyle='#fff'; ctx.strokeText(big,0,4);
   ctx.fillStyle=w.color; ctx.fillText(big,0,4);
@@ -9437,39 +9723,61 @@ addEventListener('keydown',e=>{
 });
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 const shortName=k=>CHARS[k].short||CHARS[k].name;
+/* Hai ô máu / hai ô màu trên thanh công cụ vẫn là hai ô như từ trước tới nay. Ở 1v1
+   chúng là hai nhân vật A/B; ở hỗn chiến và đánh đội thì chúng chỉnh HAI người đầu của
+   đội hình. Con số vẫn nằm trong HP[key] / COLORS[key] tra theo nhân vật, nên chỉnh một
+   người là mọi bản sao của nhân vật đó cùng đổi — đúng như bản 1v1. */
+function slotKeys(){
+  if(PMODE==='ffa')  return [ROSTERS.ffa[0]||PICK.a, ROSTERS.ffa[1]||ROSTERS.ffa[0]||PICK.b];
+  if(PMODE==='team') return [ROSTERS.t0[0]||PICK.a, ROSTERS.t1[0]||PICK.b];
+  return [PICK.a,PICK.b];
+}
+/* Đội hình hiện tại viết ra một dòng cho dải chữ dưới tiêu đề trang. */
+function rosterLine(){
+  const nm=k=>CHARS[k].name;
+  if(PMODE==='ffa')  return `Hỗn chiến ${ROSTERS.ffa.length} người · ${ROSTERS.ffa.map(nm).join(' · ')}`;
+  if(PMODE==='team') return `Đánh đội · ${ROSTERS.t0.map(nm).join(' + ')} vs ${ROSTERS.t1.map(nm).join(' + ')}`;
+  return HP[PICK.a]===HP[PICK.b]
+    ? `${nm(PICK.a)} vs ${nm(PICK.b)} · ${HP[PICK.a]} HP`
+    : `${nm(PICK.a)} ${HP[PICK.a]} HP · ${nm(PICK.b)} ${HP[PICK.b]} HP`;
+}
 function applyColors(){
-  const a=el('colK'), b=el('colC'), mirror=PICK.a===PICK.b;
-  if(a) a.value=COLORS[PICK.a]||CHARS[PICK.a].color;
-  if(b){ b.value=mirror?CHARS[PICK.b].alt:(COLORS[PICK.b]||CHARS[PICK.b].color); b.disabled=mirror; }
+  const [ka,kb]=slotKeys();
+  const a=el('colK'), b=el('colC'), mirror=ka===kb;
+  if(a) a.value=COLORS[ka]||CHARS[ka].color;
+  if(b){ b.value=mirror?CHARS[kb].alt:(COLORS[kb]||CHARS[kb].color); b.disabled=mirror; }
   const na=el('colNameA'), nb=el('colNameB');
-  if(na)na.textContent=shortName(PICK.a);
-  if(nb)nb.textContent=shortName(PICK.b)+(mirror?' II':'');
-  if(G&&G.k&&a&&b){ G.k.color=a.value; G.c.color=b.value; }
+  if(na)na.textContent=shortName(ka);
+  if(nb)nb.textContent=shortName(kb)+(mirror?' II':'');
+  // dựng lại màu của cả sàn: bản sao thứ hai trở đi vẫn giữ tông riêng của nó
+  if(G&&G.fighters) for(const f of G.fighters)
+    if(!f.summon&&CHARS[f.key]) f.color=dupColor(CHARS[f.key],f.key,f.dup||0);
 }
 function onColor(){
-  COLORS[PICK.a]=el('colK').value;
-  if(PICK.a!==PICK.b) COLORS[PICK.b]=el('colC').value;
+  const [ka,kb]=slotKeys();
+  COLORS[ka]=el('colK').value;
+  if(ka!==kb) COLORS[kb]=el('colC').value;
   applyColors();
   Store.set('cfg_colors',JSON.stringify(COLORS)).catch(()=>{});
 }
 function applyHp(){
-  const a=el('hpK'), b=el('hpC'), mirror=PICK.a===PICK.b;
-  if(a)a.value=HP[PICK.a]; if(b){ b.value=HP[PICK.b]; b.disabled=mirror; }
+  const [ka,kb]=slotKeys();
+  const a=el('hpK'), b=el('hpC'), mirror=ka===kb;
+  if(a)a.value=HP[ka]; if(b){ b.value=HP[kb]; b.disabled=mirror; }
   const na=el('hpNameA'), nb=el('hpNameB');
-  if(na)na.textContent=shortName(PICK.a);
-  if(nb)nb.textContent=shortName(PICK.b)+(mirror?' II':'');
+  if(na)na.textContent=shortName(ka);
+  if(nb)nb.textContent=shortName(kb)+(mirror?' II':'');
   const m1=el('modeP1'), m2=el('modeP2');
-  if(m1)m1.textContent='Điều khiển '+CHARS[PICK.a].name;
-  if(m2)m2.textContent='Điều khiển '+CHARS[PICK.b].name+(mirror?' II':'');
+  if(m1)m1.textContent='Điều khiển '+((G&&G.k)?G.k.name:CHARS[ka].name);
+  if(m2)m2.textContent='Điều khiển '+((G&&G.c)?G.c.name:CHARS[kb].name);
   const sub=document.querySelector('.sub');
-  if(sub) sub.textContent = HP[PICK.a]===HP[PICK.b]
-    ? `${CHARS[PICK.a].name} vs ${CHARS[PICK.b].name} · ${HP[PICK.a]} HP`
-    : `${CHARS[PICK.a].name} ${HP[PICK.a]} HP · ${CHARS[PICK.b].name} ${HP[PICK.b]} HP`;
+  if(sub) sub.textContent=rosterLine();
 }
 function onHp(){
   const v=x=>clamp(Math.round(parseInt(x,10)||1000),100,9999);
-  HP[PICK.a]=v(el('hpK').value);
-  if(PICK.a!==PICK.b) HP[PICK.b]=v(el('hpC').value);
+  const [ka,kb]=slotKeys();
+  HP[ka]=v(el('hpK').value);
+  if(ka!==kb) HP[kb]=v(el('hpC').value);
   applyHp();
   Store.set('cfg_hp',JSON.stringify(HP)).catch(()=>{});
   newGame(); running=false; el('play').textContent='Bắt đầu';
@@ -9664,50 +9972,122 @@ el('testEagle').addEventListener('click',testEagle);
 el('testForest').addEventListener('click',testForest);
 
 /* ---------- màn chọn nhân vật ---------- */
-const TMP={a:PICK.a,b:PICK.b};
+/* TMP là bản nháp của cả màn chọn: hai ô A/B của 1v1, chế độ đang chọn, và hai đội hình
+   của hai chế độ nhiều người. Bấm "Vào trận" mới chép sang PICK / PMODE / ROSTERS. */
+const TMP={a:PICK.a,b:PICK.b,mode:PMODE,ffa:ROSTERS.ffa.slice(),t0:ROSTERS.t0.slice(),t1:ROSTERS.t1.slice()};
+/* Chế độ đang chọn cần mấy nhóm đội hình: 'ffa' một nhóm, 'team' hai nhóm.
+   Mỗi nhóm: khoá trong TMP, tiêu đề, số người tối thiểu / tối đa. */
+function modeGroups(m){
+  if(m==='ffa')  return [{k:'ffa',head:'Đấu thủ',min:FFA_MIN,max:FFA_MAX,full:true}];
+  if(m==='team') return [{k:'t0',head:'Đội 1',min:TEAM_MIN,max:TEAM_MAX},
+                         {k:'t1',head:'Đội 2',min:TEAM_MIN,max:TEAM_MAX}];
+  return [];
+}
+function tile(key,onClick,on){
+  const C=CHARS[key];
+  const t=document.createElement('button');
+  t.className='cTile'+(on?' on':''); t.dataset.key=key; t.type='button'; t.title=C.name;
+  t.innerHTML=`<span class="cAva" style="color:${C.color}">${C.emoji}</span>`+
+              `<span class="cName" style="color:${C.color}">${C.short||C.name}</span>`;
+  t.addEventListener('click',onClick);
+  return t;
+}
+/* Vẽ lại một nhóm đội hình: dải thẻ đã chọn (bấm ✕ để bỏ ra) và lưới nhân vật để thêm vào. */
+function paintGroup(i,g){
+  const box=el('grpBox'+i);
+  if(!g){ box.classList.add('off'); return; }
+  box.classList.remove('off');
+  box.style.gridColumn=g.full?'1 / -1':'';
+  const list=TMP[g.k];
+  el('grpHead'+i).innerHTML=`${g.head} <b>${list.length}/${g.max}</b>`;
+  const slots=el('grpSlots'+i);
+  slots.innerHTML='';
+  if(!list.length) slots.innerHTML=`<span class="cRosterEmpty">Bấm vào ô bên dưới để thêm người (tối thiểu ${g.min})</span>`;
+  list.forEach((key,j)=>{
+    const C=CHARS[key];
+    const chip=document.createElement('span');
+    chip.className='cChip'; chip.style.color=C.color;
+    chip.innerHTML=`<span>${C.emoji}</span><span>${C.short||C.name}</span>`;
+    const x=document.createElement('button');
+    x.type='button'; x.textContent='✕'; x.title='Bỏ ra khỏi đội hình';
+    x.addEventListener('click',()=>{ list.splice(j,1); cselRefresh(); });
+    chip.appendChild(x);
+    slots.appendChild(chip);
+  });
+  const grid=el('grpList'+i);
+  grid.innerHTML='';
+  for(const key of CKEYS){
+    grid.appendChild(tile(key,()=>{
+      if(TMP[g.k].length>=g.max)return;
+      TMP[g.k].push(key); cselRefresh();
+    },list.indexOf(key)>=0));
+  }
+}
+/* Đội hình đang nháp đã đủ người để vào trận chưa. */
+function tmpReady(){
+  for(const g of modeGroups(TMP.mode)){
+    const n=TMP[g.k].length;
+    if(n<g.min||n>g.max) return false;
+  }
+  return true;
+}
 function cselRefresh(){
+  const duel=TMP.mode==='duel';
+  el('duelPane').classList.toggle('off',!duel);
+  el('multiPane').classList.toggle('off',duel);
+  for(const t of document.querySelectorAll('.mTab')) t.classList.toggle('on',t.dataset.mode===TMP.mode);
+  // 1v1: hai cột như cũ, chỉ nhân vật đang chọn mới trải kỹ năng ra
   for(const slot of ['a','b']){
     const key=TMP[slot], C=CHARS[key];
     const list=el(slot==='a'?'listA':'listB');
     [...list.children].forEach(t=>t.classList.toggle('on',t.dataset.key===key));
     el(slot==='a'?'pickNameA':'pickNameB').textContent='· '+C.name;
-    // chỉ nhân vật đang chọn mới trải kỹ năng ra, những người còn lại chỉ là ô nhỏ
     el(slot==='a'?'detailA':'detailB').innerHTML=
       `<span class="cName" style="color:${C.color}">${C.name}</span>`+
       `<span class="cTag">${C.tag}</span>`+
       `<span class="cSkills">${C.skills.map(x=>'<i>·</i> '+x).join('<br>')}</span>`;
   }
-  el('cselVs').innerHTML=`<b>${CHARS[TMP.a].name}</b> vs <b>${CHARS[TMP.b].name}</b>`;
+  const groups=modeGroups(TMP.mode);
+  paintGroup(0,groups[0]); paintGroup(1,groups[1]);
+
+  const nm=key=>CHARS[key].short||CHARS[key].name;
+  const sub=el('cselCount'), vs=el('cselVs'), go=el('cselGo');
+  if(duel){
+    if(sub) sub.textContent=`Chọn một nhân vật cho mỗi bên · ${CKEYS.length} nhân vật`;
+    if(vs) vs.innerHTML=`<b>${CHARS[TMP.a].name}</b> vs <b>${CHARS[TMP.b].name}</b>`;
+  }else if(TMP.mode==='ffa'){
+    if(sub) sub.textContent=`Hỗn chiến — chọn ${FFA_MIN}–${FFA_MAX} người, ai còn đứng cuối cùng thì thắng`;
+    if(vs) vs.innerHTML=TMP.ffa.length?TMP.ffa.map(k=>`<b>${nm(k)}</b>`).join(' · ')
+      :`<b>Chưa đủ người</b>`;
+  }else{
+    if(sub) sub.textContent=`Đánh theo đội — mỗi đội ${TEAM_MIN}–${TEAM_MAX} người, đội nào còn người thì thắng`;
+    if(vs) vs.innerHTML=`<b>${TMP.t0.map(nm).join(' + ')||'—'}</b> vs <b>${TMP.t1.map(nm).join(' + ')||'—'}</b>`;
+  }
+  if(go){ const ok=tmpReady(); go.disabled=!ok; go.style.opacity=ok?'':'.5'; go.style.cursor=ok?'':'not-allowed'; }
 }
 function buildCsel(){
   for(const slot of ['a','b']){
     const list=el(slot==='a'?'listA':'listB');
     list.innerHTML='';
-    for(const key of CKEYS){
-      const C=CHARS[key];
-      const tile=document.createElement('button');
-      tile.className='cTile'; tile.dataset.key=key; tile.type='button'; tile.title=C.name;
-      tile.innerHTML=
-        `<span class="cAva" style="color:${C.color}">${C.emoji}</span>`+
-        `<span class="cName" style="color:${C.color}">${C.short||C.name}</span>`;
-      tile.addEventListener('click',()=>{ TMP[slot]=key; cselRefresh(); });
-      list.appendChild(tile);
-    }
+    for(const key of CKEYS) list.appendChild(tile(key,()=>{ TMP[slot]=key; cselRefresh(); }));
   }
-  const sub=el('cselCount');
-  if(sub) sub.textContent=`Chọn một nhân vật cho mỗi bên · ${CKEYS.length} nhân vật`;
+  for(const t of document.querySelectorAll('.mTab'))
+    t.addEventListener('click',()=>{ TMP.mode=t.dataset.mode; cselRefresh(); });
   cselRefresh();
 }
 function openCsel(){
-  TMP.a=PICK.a; TMP.b=PICK.b;
+  TMP.a=PICK.a; TMP.b=PICK.b; TMP.mode=PMODE;
+  TMP.ffa=ROSTERS.ffa.slice(); TMP.t0=ROSTERS.t0.slice(); TMP.t1=ROSTERS.t1.slice();
   cselRefresh();
   el('charSelect').classList.remove('off');
   running=false; el('play').textContent='Bắt đầu';
 }
 function closeCsel(){ el('charSelect').classList.add('off'); }
 function startPicked(){
-  PICK.a=TMP.a; PICK.b=TMP.b;
-  Store.set('cfg_picks',JSON.stringify({a:PICK.a,b:PICK.b})).catch(()=>{});
+  if(!tmpReady())return;
+  PICK.a=TMP.a; PICK.b=TMP.b; PMODE=TMP.mode;
+  ROSTERS.ffa=TMP.ffa.slice(); ROSTERS.t0=TMP.t0.slice(); ROSTERS.t1=TMP.t1.slice();
+  Store.set('cfg_picks',JSON.stringify({a:PICK.a,b:PICK.b,mode:PMODE,rosters:ROSTERS})).catch(()=>{});
   applyColors(); applyHp();
   newGame(); running=false; el('play').textContent='Bắt đầu';
   closeCsel();
