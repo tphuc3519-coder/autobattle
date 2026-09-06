@@ -1276,7 +1276,24 @@ lưu lại chung khoá `cfg_picks` với hai ô A/B cũ. `G.mode` chụp lại `
 |---|---|---|---|
 | `duel` | đúng 2 | phe 0 và phe 1 | đối thủ về 0 máu |
 | `ffa` | `FFA_MIN`–`FFA_MAX` = **3–6** | **mỗi người MỘT phe riêng** (`team` = số thứ tự) | chỉ còn **một người** đứng |
-| `team` | mỗi đội `TEAM_MIN`–`TEAM_MAX` = **1–3** | vẫn đúng hai phe 0 và 1 | chỉ còn **một đội** còn người |
+| `team` | **`TEAM_MIN_N`–`TEAM_MAX_N` = 2–4 ĐỘI**, mỗi đội `TEAM_MIN`–`TEAM_MAX` = **1–3** người, cả sàn không quá `TEAM_TOTAL` = **8** | mỗi đội một phe (0, 1, 2, 3) | chỉ còn **một đội** còn người |
+
+> **Số ĐỘI cũng tuỳ chọn, không cắm cứng hai đội** (người dùng: *"theo team là tuỳ chọn
+> team"*). `ROSTERS.teams` là **mảng các đội**, mỗi đội là một mảng khoá nhân vật; màn chọn
+> có nút **+ Thêm đội** / **✕ Bỏ đội**. Vì hỗn chiến vốn đã chạy N phe nên ruột game không
+> phải sửa gì thêm — `aliveTeams()`, `foeOf()`, `finish()` đều đã đếm theo số phe thật.
+> *(Bản đầu chốt cứng hai đội `ROSTERS.t0` / `t1`; `loadSaved()` vẫn đọc được hai khoá cũ đó
+> để ai đã lưu đội hình từ bản trước thì mở lại vẫn còn.)*
+
+**Nhận ra ai cùng phe với ai.** Bốn đội trên sàn mà mỗi người vẫn giữ màu riêng của họ thì
+nhìn không đoán ra được, nên dấu hiệu phe phải nằm **ngoài** người:
+- `TEAM_TINT` / `teamTint(t)` cho mỗi đội một màu nhận dạng (xanh · đỏ · lục · vàng).
+- **Viền thanh máu tô theo màu đội** — `bar()` nhận thêm tham số `edge`; đây là dấu hiệu
+  đọc được chắc chắn nhất ở cỡ trong trận.
+- Một vòng dưới chân theo màu đội trong `drawFighter()`. Vòng này hay bị **chính dòng tên
+  đè lên** (dòng tên nằm ở `f.y+26`, ngay trên thanh máu), nên nó chỉ là dấu hiệu phụ —
+  đừng bỏ viền thanh máu mà chỉ giữ mỗi cái vòng.
+- **Vẫn không dán chữ nào lên sàn**, đúng luật đã chốt ở mục Horikita.
 
 > **`duel` phải dựng ra ĐÚNG cùng một đội hình như bản cũ** — hai người, hai đầu sàn,
 > `G.k`/`G.c` như cũ. Mọi test hiện có đi qua đường này, và `openGame()` trong `probe.js`
@@ -1320,9 +1337,12 @@ nhận thêm số thứ tự bản sao: tên nối `DUP_SUFFIX` (`''`, `' II'`, 
 xoay tông màu `alt` thêm 57° mỗi bản (`hueShift`). `f.dup` giữ lại trên fighter để
 `applyColors()` dựng lại màu mà không làm mất tông riêng của từng bản sao.
 
-**Chỗ đứng lúc vào trận — `spawnSpots()`.** 1v1 giữ nguyên hai đầu sàn; đánh đội thì hai
-hàng đối mặt nhau (đội 0 ở trên, đội 1 ở dưới); hỗn chiến thì đứng đều trên một vòng tròn
-quanh tâm sàn, bán kính `min(198, 118+n*24)`. Mọi điểm đều clamp vào trong sàn.
+**Chỗ đứng lúc vào trận — `spawnSpots()`.** 1v1 giữ nguyên hai đầu sàn; **đúng hai đội** thì
+hai hàng đối mặt nhau (đội 0 ở trên, đội 1 ở dưới) y như bản trước; **ba đội trở lên** thì
+mỗi đội một góc trên vòng tròn, đồng đội dàn theo phương **tiếp tuyến** nên đứng túm lại
+thành một cụm — đo được: quãng xa nhất trong cùng một đội vẫn nhỏ hơn quãng gần nhất sang
+đội khác. Hỗn chiến thì đứng đều trên vòng tròn, bán kính `min(198, 118+n*24)`. Mọi điểm
+đều clamp vào trong sàn.
 
 **Chỗ khác phải đi theo:**
 - `step()` không còn `const k=G.k,c=G.c` với năm vòng `for(const f of [k,c])`. Giờ là một
@@ -1331,7 +1351,10 @@ quanh tâm sàn, bán kính `min(198, 118+n*24)`. Mọi điểm đều clamp và
 - Vòng đi lại đọc `aimTarget(f)||foeOf(f)` thay cho `f===k?c:k`.
 - `versusBox()` dựng băng-rôn qua `vsSegments()`: 1v1 là `A  VS  B`, đánh đội gom tên đồng
   đội bằng ` + `, hỗn chiến liệt kê hết bằng ` · `. Cả dải chữ **tự thu cỡ cho vừa bề ngang
-  sàn** — sáu cái tên dài mà giữ nguyên 19px là tràn hẳn ra ngoài khung. **Ai đã bị hạ thì
+  sàn** theo ba nấc: tên đầy đủ cỡ gốc → tên đầy đủ thu tới 0.62 → **đổi sang tên rút gọn**
+  (`CHARS[key].short`, giữ hậu tố bản sao) rồi mới thu tiếp. Chỉ thu cỡ chữ thôi là không đủ:
+  tám cái tên dài ở trận bốn đội vẫn làm hộp thò hẳn ra ngoài hai mép sàn — đo được đúng
+  cảnh đó. **Ai đã bị hạ thì
   tên xám lại (`VS_OUT`), mờ đi và bị gạch ngang**, dải màu dưới đáy khung cũng nhạt theo:
   nhìn băng-rôn là biết còn mấy người trên sàn, khỏi phải đếm thanh máu giữa một đám sáu người.
 - `winnerBanner()` ở chế độ đội ghi **`WINNING TEAM` + tên cả đội**, cũng tự thu cỡ chữ.
@@ -1685,8 +1708,10 @@ node tools/t_modes.js   # ba chế độ đấu: 1v1 vẫn y như cũ (hai ngư�
                         # hỗn chiến (mỗi người một phe, hạ một người thì trận còn chạy,
                         # người cuối cùng thắng, băng-rôn gạch tên người đã bị hạ,
                         # trùng nhân vật thì đổi tên và đổi màu),
-                        # đánh đội (đồng đội không là đối thủ của nhau, hạ hết đội kia thì
-                        # đội còn người thắng, chủ gục thì đồng minh rời sàn theo),
+                        # đánh đội 2 đội (đồng đội không là đối thủ của nhau, hạ hết đội
+                        # kia thì đội còn người thắng, chủ gục thì đồng minh rời sàn theo),
+                        # đánh đội 3 đội (đồng đội đứng túm một cụm, quét sạch một đội mà
+                        # còn hai đội thì trận vẫn chạy) và 4 đội (trần 4 đội / 8 người),
                         # và một trận hỗn chiến 6 người chạy thật
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)

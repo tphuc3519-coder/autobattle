@@ -126,7 +126,7 @@ function ok(name, pass, note) {
   /* ================= đánh theo đội ================= */
   {
     const { browser, page, errors } = await openMulti('team',
-      { t0: ['kono', 'chichi'], t1: ['tsubasa', 'shika'] }, { play: false });
+      [['kono', 'chichi'], ['tsubasa', 'shika']], { play: false });
     await page.waitForTimeout(300);
 
     const r = await page.evaluate(() => {
@@ -176,10 +176,101 @@ function ok(name, pass, note) {
     await browser.close();
   }
 
+  /* ===== đánh đội với BA đội: số đội cũng tuỳ chọn ===== */
+  {
+    const { browser, page, errors } = await openMulti('team',
+      [['kono', 'chichi'], ['tsubasa', 'shika'], ['ginyu', 'dora']], { play: false });
+    await page.waitForTimeout(300);
+    const r = await page.evaluate(() => {
+      const G = window.__G(), WH = window.__WH(), PAD = 54;
+      for (const f of G.fighters) { f.foe = null; f.foeT = 0; }
+      /* Đo trên CHỖ ĐỨNG spawnSpots() trả về, đừng đo vị trí thật: Ginyu / Superman mở
+         màn bằng cách bay từ ngoài mép sàn vào nên lúc chưa bấm chạy họ còn đứng hẳn
+         ngoài khung — đo vị trí thật thì ra 423px và test báo hỏng oan. */
+      const roster = window.__buildRoster(), spots = window.__spawnSpots(roster);
+      const cung = [], khac = [];
+      for (let i = 0; i < roster.length; i++) for (let j = i + 1; j < roster.length; j++) {
+        const d = Math.hypot(spots[i].x - spots[j].x, spots[i].y - spots[j].y);
+        (roster[i].team === roster[j].team ? cung : khac).push(d);
+      }
+      return {
+        n: G.fighters.length,
+        teams: G.fighters.map(f => f.team),
+        phe: window.__aliveTeams().length,
+        foeTeams: G.fighters.map(f => window.__foeOf(f).team !== f.team),
+        trongSan: spots.every(p => p.x >= PAD && p.x <= WH.W - PAD && p.y >= PAD && p.y <= WH.H - PAD),
+        cungXa: +Math.max(...cung).toFixed(1),
+        khacGan: +Math.min(...khac).toFixed(1),
+        tint: [0, 1, 2].map(t => window.__teamTint(t)),
+        seg: window.__vsSegments().filter(s => !s.small).length,
+        vs: window.__vsSegments().filter(s => s.txt.trim() === 'VS').length
+      };
+    });
+    ok('dựng được ba đội × hai người', r.n === 6 && r.teams.join() === '0,0,1,1,2,2' && r.phe === 3,
+      `${r.n} người · phe ${r.teams.join('/')}`);
+    ok('ai cũng nhắm sang đội khác, không nhắm đồng đội',
+      r.foeTeams.every(Boolean), JSON.stringify(r.foeTeams));
+    ok('đồng đội đứng túm một cụm, tách hẳn khỏi đội khác',
+      r.trongSan && r.cungXa < r.khacGan, `xa nhất trong đội ${r.cungXa}px · gần nhất sang đội khác ${r.khacGan}px`);
+    ok('ba đội có ba màu nhận dạng khác nhau', new Set(r.tint).size === 3, r.tint.join(' '));
+    ok('băng-rôn ghép đủ ba đội, ngăn nhau bằng VS', r.seg === 6 && r.vs === 2,
+      `${r.seg} tên · ${r.vs} chữ VS`);
+
+    const ko = await page.evaluate(() => {
+      const G = window.__G(), buoc = [];
+      const ha = t => { for (const f of G.fighters.filter(x => x.team === t)) { f.hp = 0; window.__defeat(f, G.fighters[0]); } };
+      ha(2); buoc.push({ over: G.over, phe: window.__aliveTeams().length });
+      ha(1); buoc.push({ over: G.over, phe: window.__aliveTeams().length, winTeam: G.winTeam });
+      return buoc;
+    });
+    ok('quét sạch một đội mà còn hai đội thì trận vẫn chạy tiếp',
+      !ko[0].over && ko[0].phe === 2, `còn ${ko[0].phe} đội`);
+    ok('còn đúng một đội thì đội đó thắng',
+      !!ko[1].over && ko[1].phe === 1 && ko[1].winTeam === 0 && ko[1].over === 'KONOHAMARU + CHICHI',
+      `${ko[1].over} · phe ${ko[1].winTeam}`);
+    ok('ba đội không lỗi trang', errors.length === 0, errors.join(' | '));
+    await browser.close();
+  }
+
+  /* ===== bốn đội, và trần tổng số người trên sàn ===== */
+  {
+    const { browser, page, errors } = await openMulti('team',
+      [['kono'], ['chichi'], ['tsubasa'], ['shika']], { play: false });
+    await page.waitForTimeout(300);
+    const r = await page.evaluate(() => {
+      const G = window.__G();
+      return { n: G.fighters.length, teams: G.fighters.map(f => f.team), phe: window.__aliveTeams().length };
+    });
+    ok('dựng được bốn đội mỗi đội một người',
+      r.n === 4 && r.teams.join() === '0,1,2,3' && r.phe === 4, `${r.n} người · phe ${r.teams.join('/')}`);
+
+    // trần: không thêm được đội thứ năm, và không quá TEAM_TOTAL người trên sàn
+    const tran = await page.evaluate(async () => {
+      const el = id => document.getElementById(id);
+      el('pick').click();
+      const themDoi = () => [...document.querySelectorAll('.grpBtn.on')][0];
+      let n = 0;
+      while (themDoi() && n < 8) { themDoi().click(); n++; }
+      const soDoi = document.querySelectorAll('#multiPane .cselCol:not(.off)').length;
+      // nhồi thêm người cho tới khi chạm trần tổng
+      for (let i = 0; i < 4; i++)
+        for (const k of ['kono', 'chichi'])
+          { const t = document.querySelector(`#grpList${i} .cTile[data-key="${k}"]`); if (t) t.click(); }
+      let tong = 0;
+      for (let i = 0; i < 4; i++) tong += document.querySelectorAll(`#grpSlots${i} .cChip`).length;
+      return { soDoi, tong, vaoTran: !el('cselGo').disabled };
+    });
+    ok('không thêm được quá bốn đội', tran.soDoi === 4, `${tran.soDoi} đội`);
+    ok('cả sàn không quá 8 người dù bấm thêm bao nhiêu lần',
+      tran.tong === 8 && tran.vaoTran, `${tran.tong} người · vào trận được: ${tran.vaoTran}`);
+    ok('bốn đội không lỗi trang', errors.length === 0, errors.join(' | '));
+    await browser.close();
+  }
+
   /* ===== đồng minh và viện binh rời sàn theo chủ khi chủ gục giữa trận ===== */
   {
     const { browser, page, errors } = await openMulti('team',
-      { t0: ['suzune', 'chichi'], t1: ['kono', 'shika'] }, { play: false });
+      [['suzune', 'chichi'], ['kono', 'shika']], { play: false });
     await page.waitForTimeout(300);
     const r = await page.evaluate(() => {
       const G = window.__G();

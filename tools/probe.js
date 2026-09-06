@@ -79,9 +79,9 @@ window.__buildRoster=buildRoster; window.__spawnSpots=spawnSpots; window.__newGa
 window.__foeOf=foeOf; window.__nearestFoe=nearestFoe; window.__aliveMains=aliveMains;
 window.__aliveTeams=aliveTeams; window.__defeat=defeat; window.__finish=finish;
 window.__teamLabel=teamLabel; window.__vsSegments=vsSegments; window.__versusBox=versusBox;
-window.__dupColor=dupColor; window.__setMode=(m,r)=>{
+window.__dupColor=dupColor; window.__teamTint=teamTint; window.__setMode=(m,r)=>{
   PMODE=m;
-  if(r){ if(r.ffa)ROSTERS.ffa=r.ffa.slice(); if(r.t0)ROSTERS.t0=r.t0.slice(); if(r.t1)ROSTERS.t1=r.t1.slice(); }
+  if(r){ if(r.ffa)ROSTERS.ffa=r.ffa.slice(); if(r.teams)ROSTERS.teams=r.teams.map(a=>a.slice()); }
   newGame();
 };
 `;
@@ -126,7 +126,7 @@ async function openGame(keyA, keyB, opt) {
 }
 
 /* Mở một trận nhiều người qua ĐÚNG màn chọn nhân vật, không gọi tắt vào ruột game:
-   mode = 'ffa' (danh sách keys) hoặc 'team' ({t0:[...], t1:[...]}). */
+   mode = 'ffa' (một mảng keys) hoặc 'team' (mảng CÁC ĐỘI, mỗi đội một mảng keys). */
 async function openMulti(mode, picks, opt) {
   const o = opt || {};
   const { chromium } = playwright();
@@ -139,8 +139,15 @@ async function openMulti(mode, picks, opt) {
   await page.goto('file://' + (o.file || build()), { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
   await page.click(mode === 'ffa' ? '#mTabFfa' : '#mTabTeam');
-  const groups = mode === 'ffa' ? [['#grpSlots0', '#grpList0', picks]]
-    : [['#grpSlots0', '#grpList0', picks.t0], ['#grpSlots1', '#grpList1', picks.t1]];
+  const sides = mode === 'ffa' ? [picks] : picks;
+  // số đội mặc định là 2; thêm hoặc bớt cho khớp đội hình muốn dựng
+  if (mode === 'team') {
+    for (let i = 0; i < 6 && await page.$$eval('#multiPane .cselCol:not(.off)', b => b.length) > sides.length; i++)
+      await page.click('#multiPane .cselCol:not(.off) .grpBtn:not(.on)');
+    for (let i = 0; i < 6 && await page.$$eval('#multiPane .cselCol:not(.off)', b => b.length) < sides.length; i++)
+      await page.click('#multiPane .grpBtn.on');
+  }
+  const groups = sides.map((keys, i) => [`#grpSlots${i}`, `#grpList${i}`, keys]);
   for (const [slots, list, keys] of groups) {
     // dọn sạch đội hình mặc định rồi mới bấm thêm đúng những người cần
     for (let i = 0; i < 12; i++) {

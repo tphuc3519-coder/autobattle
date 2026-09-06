@@ -123,6 +123,13 @@
   .cChip button{all:unset;cursor:pointer;color:var(--mute);font-size:12px;line-height:1;padding:0 2px}
   .cChip button:hover{color:#FF6A8A}
   .cRosterEmpty{font-family:"Space Mono",monospace;font-size:10px;color:var(--mute);padding:6px 4px}
+  /* nút thêm / bỏ đội, nằm cuối dòng tiêu đề của từng khung đội */
+  .grpBtn{margin-left:auto;padding:3px 8px;background:#191436;border:1px solid #2E2758;border-radius:7px;
+    cursor:pointer;color:var(--mute);font-family:"Be Vietnam Pro",sans-serif;font-size:10.5px;
+    font-weight:700;letter-spacing:0;text-transform:none}
+  .grpBtn+.grpBtn{margin-left:5px}
+  .grpBtn:hover{background:#241D4C;border-color:#4A3F8C;color:var(--paper)}
+  .grpBtn.on{border-color:var(--gold);color:var(--gold)}
 </style>
 </head>
 <body>
@@ -245,7 +252,7 @@
     <div class="cselModes">
       <button class="mTab on" id="mTabDuel" data-mode="duel" type="button">⚔ Đấu tay đôi<i>1 vs 1</i></button>
       <button class="mTab" id="mTabFfa" data-mode="ffa" type="button">🔥 Hỗn chiến<i>3–6 người · last man standing</i></button>
-      <button class="mTab" id="mTabTeam" data-mode="team" type="button">🛡 Đánh theo đội<i>tối đa 3 vs 3</i></button>
+      <button class="mTab" id="mTabTeam" data-mode="team" type="button">🛡 Đánh theo đội<i>2–4 đội · tối đa 8 người</i></button>
     </div>
     <div class="cselSub" id="cselCount">Chọn một nhân vật cho mỗi bên</div>
     <div class="cselBody">
@@ -261,18 +268,8 @@
           <div class="cDetail" id="detailB"></div>
         </div>
       </div>
-      <div class="cselCols off" id="multiPane">
-        <div class="cselCol" id="grpBox0">
-          <div class="cselHead" id="grpHead0"></div>
-          <div class="cRoster" id="grpSlots0"></div>
-          <div class="cTiles" id="grpList0"></div>
-        </div>
-        <div class="cselCol" id="grpBox1">
-          <div class="cselHead" id="grpHead1"></div>
-          <div class="cRoster" id="grpSlots1"></div>
-          <div class="cTiles" id="grpList1"></div>
-        </div>
-      </div>
+      <!-- các khung đội hình dựng bằng JS: số đội thay đổi được nên không cắm sẵn ở đây -->
+      <div class="cselCols off" id="multiPane"></div>
     </div>
     <div class="cselBar">
       <button id="cselGo" class="primary">⚔ Vào trận</button>
@@ -347,8 +344,16 @@ const PICK={a:'kono',b:'chichi'};
    Chế độ 'duel' phải dựng ra đúng cùng một đội hình như bản cũ — mọi test hiện có đi
    qua đường này. */
 let PMODE='duel';
-const FFA_MIN=3, FFA_MAX=6, TEAM_MIN=1, TEAM_MAX=3;
-const ROSTERS={ffa:['kono','chichi','tsubasa'], t0:['kono','chichi'], t1:['tsubasa','shika']};
+/* Hỗn chiến: 3~6 người. Đánh đội: SỐ ĐỘI cũng tuỳ chọn — 2~4 đội, mỗi đội 1~3 người,
+   nhưng cả sàn không quá TEAM_TOTAL người (620×620 mà nhét chín người thì thanh máu
+   chồng lên nhau, đọc không ra ai với ai). */
+const FFA_MIN=3, FFA_MAX=6;
+const TEAM_MIN=1, TEAM_MAX=3, TEAM_MIN_N=2, TEAM_MAX_N=4, TEAM_TOTAL=8;
+const ROSTERS={ffa:['kono','chichi','tsubasa'], teams:[['kono','chichi'],['tsubasa','shika']]};
+/* Màu nhận dạng của từng đội. Đánh đội từ ba đội trở lên thì nhìn nhân vật không đoán
+   ra ai cùng phe với ai, nên mỗi đội có một vòng sáng dưới chân theo màu này. */
+const TEAM_TINT=['#63B4FF','#FF4D6D','#2ED573','#FFC542'];
+const teamTint=t=>TEAM_TINT[t%TEAM_TINT.length];
 const GOAL_MAX=5;                 // số goal cần để mở Victory Twin Shot
 const EAGLE_HP=.10;               // Wings of the Eagle bật khi máu tụt xuống dưới mức này
 const PREWING_HP=.20;             // Pre-Wings: chặng đệm trước khi đôi cánh hiện ra
@@ -1034,8 +1039,11 @@ async function loadSaved(){
       if(p.rosters){
         const ok=a=>Array.isArray(a)&&a.length&&a.every(k=>!!CHARS[k]);
         if(ok(p.rosters.ffa)) ROSTERS.ffa=p.rosters.ffa.slice(0,FFA_MAX);
-        if(ok(p.rosters.t0))  ROSTERS.t0=p.rosters.t0.slice(0,TEAM_MAX);
-        if(ok(p.rosters.t1))  ROSTERS.t1=p.rosters.t1.slice(0,TEAM_MAX);
+        /* Bản trước lưu hai đội bằng hai khoá rời t0/t1; giờ là mảng teams. Đọc cả hai
+           lối để ai đã lưu đội hình từ bản cũ thì mở lại vẫn còn. */
+        const sides=Array.isArray(p.rosters.teams)?p.rosters.teams:[p.rosters.t0,p.rosters.t1];
+        const good=sides.filter(ok).map(a=>a.slice(0,TEAM_MAX)).slice(0,TEAM_MAX_N);
+        if(good.length>=TEAM_MIN_N) ROSTERS.teams=good;
       }
       if(PMODE==='ffa'&&ROSTERS.ffa.length<FFA_MIN) PMODE='duel';
     }
@@ -1048,7 +1056,7 @@ async function loadSaved(){
     applyColors(); applyHp();
     if(typeof cselRefresh==='function'){
       TMP.a=PICK.a; TMP.b=PICK.b; TMP.mode=PMODE;
-      TMP.ffa=ROSTERS.ffa.slice(); TMP.t0=ROSTERS.t0.slice(); TMP.t1=ROSTERS.t1.slice();
+      TMP.ffa=ROSTERS.ffa.slice(); TMP.teams=ROSTERS.teams.map(a=>a.slice());
       cselRefresh();
     }
     if(dirty&&typeof newGame==='function'){ newGame(); running=false; document.getElementById('play').textContent='Bắt đầu'; }
@@ -2084,8 +2092,11 @@ function aimTarget(f){
    Đánh đội: vẫn đúng hai phe 0 và 1, mỗi phe nhiều người. */
 function buildRoster(){
   if(PMODE==='ffa')  return ROSTERS.ffa.map((key,i)=>({key,team:i}));
-  if(PMODE==='team') return ROSTERS.t0.map(key=>({key,team:0}))
-                     .concat(ROSTERS.t1.map(key=>({key,team:1})));
+  if(PMODE==='team'){
+    const out=[];
+    ROSTERS.teams.forEach((side,t)=>{ for(const key of side) out.push({key,team:t}); });
+    return out;
+  }
   return [{key:PICK.a,team:0},{key:PICK.b,team:1}];
 }
 /* Chỗ đứng lúc vào trận. Hai người thì giữ nguyên hai đầu sàn như cũ; đánh đội thì hai
@@ -2096,12 +2107,30 @@ function spawnSpots(roster){
   const cx=W/2, top=PAD+96, bot=H-PAD-70, cy=(top+bot)/2;
   if(PMODE==='team'){
     const out=new Array(n);
-    for(const t of [0,1]){
-      const ids=[]; roster.forEach((r,i)=>{ if(r.team===t) ids.push(i); });
-      const m=ids.length, spread=Math.min(160,58+m*36);
+    const nt=Math.max(1,roster.reduce((m,r)=>Math.max(m,r.team+1),0));
+    const side=t=>{ const ids=[]; roster.forEach((r,i)=>{ if(r.team===t) ids.push(i); }); return ids; };
+    /* Đúng hai đội thì vẫn là hai hàng đối mặt nhau ở hai đầu sàn, y như bản trước. */
+    if(nt<=2){
+      for(let t=0;t<nt;t++){
+        const ids=side(t), m=ids.length, spread=Math.min(160,58+m*36);
+        ids.forEach((idx,j)=>{
+          const off=m===1?0:(j/(m-1)-.5)*2*spread;
+          out[idx]={x:clamp(cx+off,PAD+34,W-PAD-34), y:t===0?top+14:bot-14};
+        });
+      }
+      return out;
+    }
+    /* Ba đội trở lên: mỗi đội một góc trên vòng tròn, đồng đội đứng túm lại một cụm
+       theo phương tiếp tuyến — nhìn là thấy ngay ai đứng chung với ai. */
+    const R=Math.min(190,140+nt*14);
+    for(let t=0;t<nt;t++){
+      const ids=side(t), m=ids.length;
+      const a=-Math.PI/2+t/nt*Math.PI*2;
+      const ax=cx+Math.cos(a)*R, ay=cy+Math.sin(a)*R*.84;
+      const tx=-Math.sin(a), ty=Math.cos(a)*.84;      // hướng tiếp tuyến để dàn đồng đội
       ids.forEach((idx,j)=>{
-        const off=m===1?0:(j/(m-1)-.5)*2*spread;
-        out[idx]={x:clamp(cx+off,PAD+34,W-PAD-34), y:t===0?top+14:bot-14};
+        const off=m===1?0:(j/(m-1)-.5)*2*Math.min(62,26+m*16);
+        out[idx]={x:clamp(ax+tx*off,PAD+34,W-PAD-34), y:clamp(ay+ty*off,top,bot)};
       });
     }
     return out;
@@ -6782,6 +6811,18 @@ function drawFighter(f){
     ctx.beginPath(); ctx.ellipse(f.x+ox,f.y+22,26+br*5,8+br*1.6,0,0,7); ctx.stroke();
     ctx.restore();
   }
+  /* Đánh theo đội: một vòng dưới chân theo màu của đội. Ba bốn đội trên sàn thì nhìn
+     nhân vật không đoán ra ai cùng phe với ai — mỗi người vẫn giữ màu riêng của họ, nên
+     dấu hiệu phe phải nằm ngoài người. Vòng liền, không nhấp nháy, không chữ nào lên sàn:
+     người dùng đã bác kiểu dán chữ giải thích xuống sàn đấu. */
+  if(G.mode==='team'&&!f.summon){
+    const tc=teamTint(f.team), cx0=f.x+ox, cy0=f.y+19;
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(cx0,cy0,29,8.5,0,0,7);
+    ctx.globalAlpha=.20; ctx.fillStyle=tc; ctx.fill();       // đĩa mờ cho nổi trên nền sàn
+    ctx.globalAlpha=.85; ctx.strokeStyle=tc; ctx.lineWidth=2.6; ctx.stroke();
+    ctx.restore();
+  }
 
   // Pre-Wings: quầng sáng dâng dần, nhạt hơn hào quang Drive Shot nhưng vẫn thấy rõ
   if(f.prewingA>0&&!f.eagle){
@@ -7165,10 +7206,14 @@ function drawStun(f,hy){
     ctx.restore();
   }
 }
-function bar(x,y,w,h,pct,fill,text,textCol){
+/* edge: màu viền khung, mặc định đen. Đánh theo đội thì viền thanh máu tô theo màu đội —
+   dấu hiệu phe duy nhất đọc được ngay ở cỡ trong trận, vì vòng dưới chân hay bị chính
+   dòng tên đè lên. */
+function bar(x,y,w,h,pct,fill,text,textCol,edge){
   ctx.fillStyle='#fff'; ctx.fillRect(x,y,w,h);
   ctx.fillStyle=fill; ctx.fillRect(x,y,w*clamp(pct,0,1),h);
-  ctx.strokeStyle='#000'; ctx.lineWidth=3; ctx.strokeRect(x,y,w,h);
+  if(edge){ ctx.strokeStyle='#000'; ctx.lineWidth=5; ctx.strokeRect(x,y,w,h); }
+  ctx.strokeStyle=edge||'#000'; ctx.lineWidth=3; ctx.strokeRect(x,y,w,h);
   ctx.fillStyle=textCol||'#000';
   ctx.textAlign='center'; ctx.textBaseline='middle';
   /* Chữ phải nằm gọn trong khung. Cỡ 15px cố định thì hễ con số lên hai ba chữ số là
@@ -7244,7 +7289,8 @@ function drawBars(f){
     ctx.strokeText(f.name.toUpperCase(),x+w/2,y-4);
     ctx.fillStyle=f.color; ctx.fillText(f.name.toUpperCase(),x+w/2,y-4);
   }
-  bar(x,y,w,h,f.hp/f.maxHp,f.color,String(Math.ceil(f.hp)));
+  bar(x,y,w,h,f.hp/f.maxHp,f.color,String(Math.ceil(f.hp)),null,
+      G.mode==='team'?teamTint(f.team):null);
   /* Hoán đổi thân xác rồi thì thanh phụ của thân xác không còn nói đúng chuyện gì nữa
      (Rage / Goal / Chakra là của người kia), nên đọc thanh của Ginyu — chữ trên thanh máu
      cũng đã là tên của linh hồn đang ngồi trong đó chứ không phải tên thân xác. */
@@ -8514,18 +8560,27 @@ function drawProj(p){
    đồng đội lại; hỗn chiến thì liệt kê hết, mỗi tên một màu. Cả dải chữ tự thu cỡ cho vừa
    bề ngang sàn — sáu cái tên dài mà giữ nguyên 19px là tràn ra ngoài khung ngay. */
 const VS_OUT='#6B6B7A';        // màu tên của người đã bị hạ gục
-function vsSegments(){
+function vsSegments(shortNames){
   const mains=G.fighters.filter(f=>f&&!f.summon);
   const seg=[];
   const push=(txt,color,small,out)=>seg.push({txt,color,small:!!small,out:!!out});
   /* Ai đã bị hạ thì tên xám lại và mờ đi — nhìn băng-rôn là biết ngay còn mấy người
-     trên sàn, khỏi phải đếm thanh máu giữa một đám sáu người. */
-  const name=f=>push(f.name.toUpperCase(), f.alive?f.color:VS_OUT, false, !f.alive);
+     trên sàn, khỏi phải đếm thanh máu giữa một đám sáu người.
+     Tám người mà viết đủ tên dài thì dù thu cỡ chữ hết mức vẫn tràn khung, nên có lối
+     rút gọn: lấy tên ngắn trong CHARS, giữ nguyên hậu tố bản sao (II, III…). */
+  const label=f=>{
+    if(!shortNames) return f.name.toUpperCase();
+    const C=CHARS[f.key], sn=(C&&(C.short||C.name))||f.name;
+    return (sn+(DUP_SUFFIX[f.dup||0]||'')).toUpperCase();
+  };
+  const name=f=>push(label(f), f.alive?f.color:VS_OUT, false, !f.alive);
   if(G.mode==='team'){
-    for(const t of [0,1]){
+    const nt=mains.reduce((m,f)=>Math.max(m,f.team+1),0);
+    for(let t=0;t<nt;t++){
       const side=mains.filter(f=>f.team===t);
+      if(!side.length)continue;
+      if(seg.length) push('  VS  ','#5A5A66',true);
       side.forEach((f,i)=>{ if(i) push(' + ','#5A5A66',true); name(f); });
-      if(t===0) push('  VS  ','#5A5A66',true);
     }
     return seg;
   }
@@ -8538,18 +8593,25 @@ function vsSegments(){
   return seg;
 }
 function versusBox(){
-  const seg=vsSegments();
   const BIG=19, SM=15;
-  let sc=1, total=0;
-  const measure=k=>{
+  const room=W-58;
+  const measure=(list,k)=>{
     let t=0;
-    for(const g of seg){ ctx.font=`900 ${(g.small?SM:BIG)*k}px "Be Vietnam Pro",sans-serif`; t+=ctx.measureText(g.txt).width; }
+    for(const g of list){ ctx.font=`900 ${(g.small?SM:BIG)*k}px "Be Vietnam Pro",sans-serif`; t+=ctx.measureText(g.txt).width; }
     return t;
   };
-  total=measure(1);
-  const room=W-58;
-  if(total>room){ sc=Math.max(.5,room/total); total=measure(sc); }
-  const bw=total+34, bh=38, bx=(W-bw)/2, by=(HEADER-bh)/2;
+  /* Thu cho vừa khung theo ba nấc: tên đầy đủ cỡ gốc → tên đầy đủ thu nhỏ tới 0.62 →
+     tên rút gọn rồi mới thu tiếp. Tám cái tên dài mà chỉ thu cỡ chữ thì hộp vẫn thò ra
+     ngoài hai mép sàn — đo được đúng cảnh đó ở trận bốn đội. */
+  let seg=vsSegments(false), sc=1, total=measure(seg,1);
+  if(total>room){
+    sc=Math.max(.62,room/total); total=measure(seg,sc);
+    if(total>room){
+      seg=vsSegments(true); sc=1; total=measure(seg,1);
+      if(total>room){ sc=Math.max(.5,room/total); total=measure(seg,sc); }
+    }
+  }
+  const bw=Math.min(total+34,W-16), bh=38, bx=(W-bw)/2, by=(HEADER-bh)/2;
 
   ctx.fillStyle='#fff'; ctx.fillRect(bx,by,bw,bh);
   ctx.strokeStyle='#000'; ctx.lineWidth=4; ctx.strokeRect(bx,by,bw,bh);
@@ -9729,14 +9791,15 @@ const shortName=k=>CHARS[k].short||CHARS[k].name;
    người là mọi bản sao của nhân vật đó cùng đổi — đúng như bản 1v1. */
 function slotKeys(){
   if(PMODE==='ffa')  return [ROSTERS.ffa[0]||PICK.a, ROSTERS.ffa[1]||ROSTERS.ffa[0]||PICK.b];
-  if(PMODE==='team') return [ROSTERS.t0[0]||PICK.a, ROSTERS.t1[0]||PICK.b];
+  if(PMODE==='team') return [(ROSTERS.teams[0]||[])[0]||PICK.a, (ROSTERS.teams[1]||[])[0]||PICK.b];
   return [PICK.a,PICK.b];
 }
 /* Đội hình hiện tại viết ra một dòng cho dải chữ dưới tiêu đề trang. */
 function rosterLine(){
   const nm=k=>CHARS[k].name;
   if(PMODE==='ffa')  return `Hỗn chiến ${ROSTERS.ffa.length} người · ${ROSTERS.ffa.map(nm).join(' · ')}`;
-  if(PMODE==='team') return `Đánh đội · ${ROSTERS.t0.map(nm).join(' + ')} vs ${ROSTERS.t1.map(nm).join(' + ')}`;
+  if(PMODE==='team') return `Đánh đội ${ROSTERS.teams.length} đội · `+
+    ROSTERS.teams.map(side=>side.map(nm).join(' + ')).join(' vs ');
   return HP[PICK.a]===HP[PICK.b]
     ? `${nm(PICK.a)} vs ${nm(PICK.b)} · ${HP[PICK.a]} HP`
     : `${nm(PICK.a)} ${HP[PICK.a]} HP · ${nm(PICK.b)} ${HP[PICK.b]} HP`;
@@ -9972,17 +10035,22 @@ el('testEagle').addEventListener('click',testEagle);
 el('testForest').addEventListener('click',testForest);
 
 /* ---------- màn chọn nhân vật ---------- */
-/* TMP là bản nháp của cả màn chọn: hai ô A/B của 1v1, chế độ đang chọn, và hai đội hình
-   của hai chế độ nhiều người. Bấm "Vào trận" mới chép sang PICK / PMODE / ROSTERS. */
-const TMP={a:PICK.a,b:PICK.b,mode:PMODE,ffa:ROSTERS.ffa.slice(),t0:ROSTERS.t0.slice(),t1:ROSTERS.t1.slice()};
-/* Chế độ đang chọn cần mấy nhóm đội hình: 'ffa' một nhóm, 'team' hai nhóm.
-   Mỗi nhóm: khoá trong TMP, tiêu đề, số người tối thiểu / tối đa. */
+/* TMP là bản nháp của cả màn chọn: hai ô A/B của 1v1, chế độ đang chọn, và đội hình của
+   hai chế độ nhiều người. Bấm "Vào trận" mới chép sang PICK / PMODE / ROSTERS.
+   TMP.teams là MẢNG các đội — số đội cũng do người chơi chọn (TEAM_MIN_N~TEAM_MAX_N). */
+const TMP={a:PICK.a,b:PICK.b,mode:PMODE,ffa:ROSTERS.ffa.slice(),teams:ROSTERS.teams.map(a=>a.slice())};
+/* Chế độ đang chọn cần mấy nhóm đội hình: 'ffa' đúng một nhóm gộp chung, 'team' thì mỗi
+   đội một nhóm. Mỗi nhóm trỏ vào một mảng trong TMP qua hàm list(). */
 function modeGroups(m){
-  if(m==='ffa')  return [{k:'ffa',head:'Đấu thủ',min:FFA_MIN,max:FFA_MAX,full:true}];
-  if(m==='team') return [{k:'t0',head:'Đội 1',min:TEAM_MIN,max:TEAM_MAX},
-                         {k:'t1',head:'Đội 2',min:TEAM_MIN,max:TEAM_MAX}];
+  if(m==='ffa')  return [{list:()=>TMP.ffa,head:'Đấu thủ',min:FFA_MIN,max:FFA_MAX,full:true}];
+  if(m==='team') return TMP.teams.map((side,t)=>({
+    list:()=>TMP.teams[t], head:'Đội '+(t+1), tint:teamTint(t),
+    min:TEAM_MIN, max:TEAM_MAX, team:t
+  }));
   return [];
 }
+/* Tổng số người của đội hình đang nháp — dùng cho trần TEAM_TOTAL. */
+const tmpTotal=()=>modeGroups(TMP.mode).reduce((n,g)=>n+g.list().length,0);
 function tile(key,onClick,on){
   const C=CHARS[key];
   const t=document.createElement('button');
@@ -9992,14 +10060,47 @@ function tile(key,onClick,on){
   t.addEventListener('click',onClick);
   return t;
 }
+/* Khung của một nhóm đội hình. Số đội thay đổi được nên mấy khung này dựng bằng JS chứ
+   không cắm sẵn trong HTML; id vẫn giữ nguyên lối grpBox0/grpSlots0/grpList0… */
+function groupBox(i){
+  let box=el('grpBox'+i);
+  if(box) return box;
+  box=document.createElement('div');
+  box.className='cselCol'; box.id='grpBox'+i;
+  box.innerHTML=`<div class="cselHead" id="grpHead${i}"></div>`+
+                `<div class="cRoster" id="grpSlots${i}"></div>`+
+                `<div class="cTiles" id="grpList${i}"></div>`;
+  el('multiPane').appendChild(box);
+  return box;
+}
 /* Vẽ lại một nhóm đội hình: dải thẻ đã chọn (bấm ✕ để bỏ ra) và lưới nhân vật để thêm vào. */
 function paintGroup(i,g){
-  const box=el('grpBox'+i);
+  const box=groupBox(i);
   if(!g){ box.classList.add('off'); return; }
   box.classList.remove('off');
   box.style.gridColumn=g.full?'1 / -1':'';
-  const list=TMP[g.k];
-  el('grpHead'+i).innerHTML=`${g.head} <b>${list.length}/${g.max}</b>`;
+  box.style.borderColor=g.tint||'';
+  const list=g.list();
+  const day=tmpTotal()>=TEAM_TOTAL;
+  const head=el('grpHead'+i);
+  head.innerHTML=(g.tint?`<span style="color:${g.tint}">●</span> `:'')+
+                 `${g.head} <b>${list.length}/${g.max}</b>`;
+  // đánh đội: mỗi đội có nút bỏ đội, còn nút thêm đội nằm ở đội cuối
+  if(g.team!==undefined){
+    const nt=TMP.teams.length;
+    if(nt>TEAM_MIN_N){
+      const rm=document.createElement('button');
+      rm.type='button'; rm.className='grpBtn'; rm.textContent='✕ Bỏ đội';
+      rm.addEventListener('click',()=>{ TMP.teams.splice(g.team,1); cselRefresh(); });
+      head.appendChild(rm);
+    }
+    if(g.team===nt-1&&nt<TEAM_MAX_N&&!day){
+      const add=document.createElement('button');
+      add.type='button'; add.className='grpBtn on'; add.textContent='+ Thêm đội';
+      add.addEventListener('click',()=>{ TMP.teams.push([CKEYS[TMP.teams.length%CKEYS.length]]); cselRefresh(); });
+      head.appendChild(add);
+    }
+  }
   const slots=el('grpSlots'+i);
   slots.innerHTML='';
   if(!list.length) slots.innerHTML=`<span class="cRosterEmpty">Bấm vào ô bên dưới để thêm người (tối thiểu ${g.min})</span>`;
@@ -10010,7 +10111,7 @@ function paintGroup(i,g){
     chip.innerHTML=`<span>${C.emoji}</span><span>${C.short||C.name}</span>`;
     const x=document.createElement('button');
     x.type='button'; x.textContent='✕'; x.title='Bỏ ra khỏi đội hình';
-    x.addEventListener('click',()=>{ list.splice(j,1); cselRefresh(); });
+    x.addEventListener('click',()=>{ g.list().splice(j,1); cselRefresh(); });
     chip.appendChild(x);
     slots.appendChild(chip);
   });
@@ -10018,17 +10119,23 @@ function paintGroup(i,g){
   grid.innerHTML='';
   for(const key of CKEYS){
     grid.appendChild(tile(key,()=>{
-      if(TMP[g.k].length>=g.max)return;
-      TMP[g.k].push(key); cselRefresh();
+      const L=g.list();
+      if(L.length>=g.max||tmpTotal()>=TEAM_TOTAL)return;
+      L.push(key); cselRefresh();
     },list.indexOf(key)>=0));
   }
 }
 /* Đội hình đang nháp đã đủ người để vào trận chưa. */
 function tmpReady(){
-  for(const g of modeGroups(TMP.mode)){
-    const n=TMP[g.k].length;
+  const gs=modeGroups(TMP.mode);
+  if(TMP.mode==='team'&&(gs.length<TEAM_MIN_N||gs.length>TEAM_MAX_N)) return false;
+  let tong=0;
+  for(const g of gs){
+    const n=g.list().length;
     if(n<g.min||n>g.max) return false;
+    tong+=n;
   }
+  if(TMP.mode==='team'&&tong>TEAM_TOTAL) return false;
   return true;
 }
 function cselRefresh(){
@@ -10048,7 +10155,7 @@ function cselRefresh(){
       `<span class="cSkills">${C.skills.map(x=>'<i>·</i> '+x).join('<br>')}</span>`;
   }
   const groups=modeGroups(TMP.mode);
-  paintGroup(0,groups[0]); paintGroup(1,groups[1]);
+  for(let i=0;i<TEAM_MAX_N;i++) paintGroup(i,groups[i]);
 
   const nm=key=>CHARS[key].short||CHARS[key].name;
   const sub=el('cselCount'), vs=el('cselVs'), go=el('cselGo');
@@ -10060,8 +10167,10 @@ function cselRefresh(){
     if(vs) vs.innerHTML=TMP.ffa.length?TMP.ffa.map(k=>`<b>${nm(k)}</b>`).join(' · ')
       :`<b>Chưa đủ người</b>`;
   }else{
-    if(sub) sub.textContent=`Đánh theo đội — mỗi đội ${TEAM_MIN}–${TEAM_MAX} người, đội nào còn người thì thắng`;
-    if(vs) vs.innerHTML=`<b>${TMP.t0.map(nm).join(' + ')||'—'}</b> vs <b>${TMP.t1.map(nm).join(' + ')||'—'}</b>`;
+    if(sub) sub.textContent=`Đánh theo đội — ${TMP.teams.length} đội (${TEAM_MIN_N}–${TEAM_MAX_N}), `+
+      `mỗi đội ${TEAM_MIN}–${TEAM_MAX} người, cả sàn tối đa ${TEAM_TOTAL} · ${tmpTotal()}/${TEAM_TOTAL} người`;
+    if(vs) vs.innerHTML=TMP.teams.map((side,t)=>
+      `<b style="color:${teamTint(t)}">${side.map(nm).join(' + ')||'—'}</b>`).join(' vs ');
   }
   if(go){ const ok=tmpReady(); go.disabled=!ok; go.style.opacity=ok?'':'.5'; go.style.cursor=ok?'':'not-allowed'; }
 }
@@ -10077,7 +10186,7 @@ function buildCsel(){
 }
 function openCsel(){
   TMP.a=PICK.a; TMP.b=PICK.b; TMP.mode=PMODE;
-  TMP.ffa=ROSTERS.ffa.slice(); TMP.t0=ROSTERS.t0.slice(); TMP.t1=ROSTERS.t1.slice();
+  TMP.ffa=ROSTERS.ffa.slice(); TMP.teams=ROSTERS.teams.map(a=>a.slice());
   cselRefresh();
   el('charSelect').classList.remove('off');
   running=false; el('play').textContent='Bắt đầu';
@@ -10086,7 +10195,7 @@ function closeCsel(){ el('charSelect').classList.add('off'); }
 function startPicked(){
   if(!tmpReady())return;
   PICK.a=TMP.a; PICK.b=TMP.b; PMODE=TMP.mode;
-  ROSTERS.ffa=TMP.ffa.slice(); ROSTERS.t0=TMP.t0.slice(); ROSTERS.t1=TMP.t1.slice();
+  ROSTERS.ffa=TMP.ffa.slice(); ROSTERS.teams=TMP.teams.map(a=>a.slice());
   Store.set('cfg_picks',JSON.stringify({a:PICK.a,b:PICK.b,mode:PMODE,rosters:ROSTERS})).catch(()=>{});
   applyColors(); applyHp();
   newGame(); running=false; el('play').textContent='Bắt đầu';
