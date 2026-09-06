@@ -519,7 +519,13 @@ const DORA={
   /* Độ chính xác theo khoảng cách: [quãng, tỉ lệ] — nội suy tuyến tính giữa hai mốc */
   acAcc:[[0,.90],[140,.75],[290,.60],[430,.50],[520,.40],[700,.30]],
   /* Chiêu 3 — Small Light */
-  slCd:gs(16), slAim:gs(1), slDmg:35, slSpd:560,
+  /* KHÔNG còn là một tia bay đi: ánh sáng toả ra thành một VÙNG NÓN ngay lập tức, đúng
+     lối Freeze Breath của Superman nhưng rộng hơn — nón .55 rad so với .42 và tầm 240
+     so với 210. Vì là ánh sáng nên nó không bay, không né bằng cách chạy ngang được;
+     muốn thoát thì phải đứng ngoài nón. */
+  slCd:gs(16), slAim:gs(1), slDmg:35,
+  slRange:240, slCone:.55, slCore:.22, slMax:3, slT:gs(.55),
+  slEdgeDmg:20, slEdgeT:gs(4), // đứng rìa nón: nhẹ hơn và thu nhỏ ngắn hơn hẳn
   shrunkT:gs(7), shrunkSize:.55,
   shrunkHit:.85,             // vòng ăn đòn chỉ được nhỏ đi tối đa 15%
   shrunkMove:.45, shrunkCast:.60, shrunkDmg:.65, shrunkReach:.80, shrunkKb:1.40,
@@ -781,7 +787,7 @@ const CHARS={
       `<b>Passive · Emergency Door</b> ${Math.round(DORA.edOdds*100)}% of the time an incoming hit makes him dive through a pink door instead — <b>${Math.round(DORA.edOddsUlt*100)}% against an ultimate</b> (Twin Shot, Kamehameha, Masenko, Rasengan, CHANGE), and never against damage over time: untouchable in transit, every slow washed off (stun, burn and the rest stay), out again ${Math.round(DORA.edDist*100)}% of the arena away on the far side of the foe, +${Math.round((DORA.edSpeed-1)*100)}% move for ${rts(DORA.edSpeedT)}s · deals no damage · every ${rts(DORA.edCd)}s`,
       `<b>1 · Basic Attack</b> three round-handed blows ${DORA.hit[0]} / ${DORA.hit[1]} / ${DORA.hit[2]} dmg, ${rts(DORA.hitGap)}s apart — the third is a belly charge that knocks back hard and stuns ${rts(DORA.slamStun)}s · each blow ${Math.round(DORA.disOdds*100)}% to leave <b>Disoriented</b> for ${rts(DORA.disT)}s (−${Math.round((1-DORA.disMove)*100)}% move, −${Math.round((1-DORA.disCast)*100)}% cast)`,
       `<b>2 · Air Cannon</b> every ${rts(DORA.acCd)}s — ${rts(DORA.acAim)}s to aim, then a ring of compressed air for ${DORA.acDmg} dmg, ${Math.round(DORA.acKbDist*100)}% of the arena in knockback, ${rts(DORA.acStun)}s stun, and it cuts any channelled skill short · accuracy runs ${Math.round(DORA.acAcc[1][1]*100)}–${Math.round(DORA.acAcc[0][1]*100)}% up close down to ${Math.round(DORA.acAcc[5][1]*100)}–${Math.round(DORA.acAcc[4][1]*100)}% across the arena · pierces <b>two</b> bodies, the second takes ${Math.round(DORA.acPierce2*100)}% · a hit inside the first ${rts(DORA.acBreak)}s cancels it for half the cooldown`,
-      `<b>3 · Small Light</b> every ${rts(DORA.slCd)}s — ${rts(DORA.slAim)}s to aim, then a pale yellow beam for ${DORA.slDmg} dmg that leaves the foe <b>Shrunk</b> at ${Math.round(DORA.shrunkSize*100)}% size for ${rts(DORA.shrunkT)}s: −${Math.round((1-DORA.shrunkMove)*100)}% move, −${Math.round((1-DORA.shrunkCast)*100)}% cast, −${Math.round((1-DORA.shrunkDmg)*100)}% damage dealt, −${Math.round((1-DORA.shrunkReach)*100)}% melee reach, +${Math.round((DORA.shrunkKb-1)*100)}% knockback taken · it never stacks, a second beam only refreshes the timer · the beam does not curve`,
+      `<b>3 · Small Light</b> every ${rts(DORA.slCd)}s — ${rts(DORA.slAim)}s to aim, then the lamp floods a wide <b>cone</b> of pale yellow light reaching ${DORA.slRange}px, wider than any frost breath, and it lands at once on up to ${DORA.slMax} fighters · dead centre: ${DORA.slDmg} dmg and <b>Shrunk</b> at ${Math.round(DORA.shrunkSize*100)}% size for ${rts(DORA.shrunkT)}s — −${Math.round((1-DORA.shrunkMove)*100)}% move, −${Math.round((1-DORA.shrunkCast)*100)}% cast, −${Math.round((1-DORA.shrunkDmg)*100)}% damage dealt, −${Math.round((1-DORA.shrunkReach)*100)}% melee reach, +${Math.round((DORA.shrunkKb-1)*100)}% knockback taken · at the rim of the cone only ${DORA.slEdgeDmg} dmg and ${rts(DORA.slEdgeT)}s of Shrunk · light does not fly, so there is nothing to sidestep — the only way out is to stand outside the cone · it never stacks, a second flash only refreshes the timer`,
       `<b>4 · Time Machine: Second Chance</b> at 0 HP he does not fall — the Time Machine rolls in and winds him back ${DORA.tmBackLo}–${DORA.tmBackHi}s: his old spot, his old HP (never more than ${Math.round(DORA.tmHealCap*100)}% of max healed), every debuff gone, ${Math.round(DORA.tmCdCut*100)}% off what is left of his cooldowns · <b>once per match</b>, and only he is rewound`,
       `<b>4 · Future Knowledge</b> ${rts(DORA.fkT)}s after the rewind — −${Math.round((1-DORA.fkTake)*100)}% damage taken, +${Math.round((DORA.fkMove-1)*100)}% move, +${Math.round((DORA.fkCast-1)*100)}% cast, +${Math.round(DORA.fkAcc*100)}% accuracy on both Air Cannon and Small Light, ${Math.round(DORA.fkCcRes*100)}% resist to slows and stuns`],
     init(f){
@@ -797,7 +803,8 @@ const CHARS={
       if(f.drEntry||f.drAim||f.tm||f.edT>0)return;
       /* Thứ tự hành động: thu nhỏ trước, thổi bay sau, hết bảo bối mới xáp lá cà.
          Take-copter và Emergency Door là nội tại, chạy ngoài chỗ này. */
-      if(f.cds.s3<=0&&(auto?d<520:keys['l'])){ f.cds.s3=DORA.slCd; doraSmallLight(f,e); return; }
+      // Small Light là vùng nón chứ không phải tia bay xa nữa, nên phải vào trong tầm nón
+      if(f.cds.s3<=0&&(auto?d<DORA.slRange*.9:keys['l'])){ f.cds.s3=DORA.slCd; doraSmallLight(f,e); return; }
       if(f.cds.s2<=0&&(auto?d<540:keys['k'])){ f.cds.s2=DORA.acCd; doraAirCannon(f,e); return; }
       if(f.cds.s1<=0&&!f.drCombo&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])) doraCombo(f,e);
     },
@@ -1127,7 +1134,7 @@ const SFX_EVENTS=[
   ['dora_door','Anywhere Door hiện ra / mở ra'],
   ['dora_hi','🎙 GIỌNG · Doraemon bước ra chào sân'],
   ['dora_aircannon','Air Cannon bắn ra'],
-  ['dora_smalllight','Small Light bắn tia'],
+  ['dora_smalllight','Small Light bật vùng sáng'],
   ['dora_shrink','Đối thủ bị thu nhỏ'],
   ['dora_copter','Take-copter quay cánh'],
   ['dora_escape','Chui qua Emergency Door'],
@@ -1866,7 +1873,7 @@ function mk(o){
     dis:0, shrunk:0, szMul:1, hitMul:1, reachMul:1, kbTake:1, drCcRes:0, dmgDealt:0,
     copter:0, copCd:0, copAcDone:false, drNoHit:0, edCd:0, edT:0, edMoved:false, edSpeed:0, edFrom:null, edTo:null,
     fk:0,
-    drEntry:null, drAim:null, drCombo:null, drHide:false, tm:null, tmDone:false,
+    drEntry:null, drAim:null, drCombo:null, drCone:null, drHide:false, tm:null, tmDone:false,
     /* Superman: Frozen / Chilled / làm chậm của vùng chấn động và trần khống chế cứng
        là thứ anh dán lên NGƯỜI KHÁC, nên khai chung ở đây với giá trị trung tính. */
     frozen:0, frozenDmg:0, chill:0, chillAfter:0, hvSlowT:0, supSlow:0, supQuake:0,
@@ -2115,6 +2122,7 @@ function finish(w){
     // dọn mấy thứ Superman đang gồng dở: supermanTick() không chạy nữa sau khi trận
     // kết thúc, để lại là luồng hơi lạnh hay tia nhiệt treo cứng trên sàn
     f.supCone=null; f.supHv=null; f.supFb=null; f.supMs=null; f.supCombo=null;
+    f.drCone=null;
   }
   const loser = (win===G.k)?G.c:G.k;
   if(loser){
@@ -4271,33 +4279,56 @@ function doraSmallLight(f,e){
     banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
   say('Doraemon rút Small Light ra, cầm hai tay và ngắm.','m');
 }
+/* Ánh sáng toả thành VÙNG NÓN ngay lập tức, không có viên đạn nào bay đi. Trúng tối đa
+   slMax người; chỉ người nằm sát trục nón mới ăn đủ, mấy người ở rìa ăn phần giảm —
+   cùng lối chia core/edge với Freeze Breath của Superman, chỉ khác là nón rộng hơn. */
 function drSlFire(f,e,A){
-  const jolt=A.jolt*(f.fk>0?(1-DORA.fkAcc):1);      // bị đánh lúc ngắm thì hướng bắn lệch
+  const jolt=A.jolt*(f.fk>0?(1-DORA.fkAcc):1);      // bị đánh lúc ngắm thì hướng nón lệch
   const sy=f.y-34;
-  const a=Math.atan2(bodyCY(e)-sy,e.x-f.x)+jolt;
-  if(Math.abs(Math.cos(a))>.12) f.face=Math.cos(a)>=0?1:-1;
-  f.ax=Math.cos(a); f.ay=Math.sin(a); f.lunge=Math.max(f.lunge,.6);
+  const ang=Math.atan2(bodyCY(e)-sy,e.x-f.x)+jolt;
+  if(Math.abs(Math.cos(ang))>.12) f.face=Math.cos(ang)>=0?1:-1;
+  f.ax=Math.cos(ang); f.ay=Math.sin(ang); f.lunge=Math.max(f.lunge,.6);
   setPose(f,'smalllight',gs(.4));
-  // tia bay nhanh nhưng KHÔNG bẻ cong đuổi theo mục tiêu
-  G.proj.push({type:'smalllight',team:f.team,owner:f,x:f.x+Math.cos(a)*28,y:sy+Math.sin(a)*28,
-    vx:Math.cos(a)*DORA.slSpd,vy:Math.sin(a)*DORA.slSpd,r:13,dmg:DORA.slDmg,
-    life:2.4,ang:a,wob:rnd(0,9)});
+  f.drCone={x:f.x,y:sy,ang,t:DORA.slT,ml:DORA.slT};
   sfx('dora_smalllight');
-  ring(f.x+Math.cos(a)*24,sy+Math.sin(a)*24,40,'#FFF3B0',.26);
-  say(jolt?'Small Light bắn ra — nhưng vừa ăn đòn nên hướng bắn lệch đi.':'Small Light bắn ra một tia vàng nhạt.','m');
+  ring(f.x+Math.cos(ang)*24,sy+Math.sin(ang)*24,40,'#FFF3B0',.26);
+  if(jolt) say('Small Light bật lên — nhưng vừa ăn đòn nên vùng sáng quét lệch đi.','m');
+  const list=drConeTargets(f,sy,ang);
+  if(!list.length){ say('Vùng sáng vàng nhạt quét qua khoảng không — không ai đứng trong nón.','m'); return; }
+  list.forEach((it,i)=>{
+    const core=(i===0&&it.da<=DORA.slCore), o=it.o;
+    const landed=hurt(o,core?DORA.slDmg:DORA.slEdgeDmg,f,false,'big');
+    if(!landed)return;
+    drShrink(o,core?DORA.shrunkT:DORA.slEdgeT);
+  });
+  const main=list[0];
+  say(main.da<=DORA.slCore
+    ? `Vùng sáng trùm đúng giữa — ${DORA.slDmg} dmg và thu nhỏ ${rts(DORA.shrunkT)} giây.`
+    : `Vùng sáng chỉ liếm qua rìa — ${DORA.slEdgeDmg} dmg và thu nhỏ ${rts(DORA.slEdgeT)} giây.`,'m');
 }
-function drSlHit(p,t){
-  const landed=hurt(t,p.dmg,p.owner,false,'big');
-  if(!landed)return;
-  drShrink(t);
+/* Ai đang đứng trong nón, xếp theo độ lệch góc: người sát trục đứng đầu. */
+function drConeTargets(f,sy,ang){
+  const list=[];
+  for(const o of G.fighters){
+    if(o.team===f.team||!o.alive||o.leaving>0||o.summon||offField(o))continue;
+    const dx=o.x-f.x, dy=bodyCY(o)-sy, dd=Math.hypot(dx,dy)||1;
+    if(dd>DORA.slRange+o.r)continue;
+    const da=Math.abs(Math.atan2(Math.sin(Math.atan2(dy,dx)-ang),Math.cos(Math.atan2(dy,dx)-ang)));
+    if(da>DORA.slCone)continue;
+    list.push({o,da});
+  }
+  list.sort((a,b)=>a.da-b.da);
+  return list.slice(0,DORA.slMax);
 }
-/* Shrunk KHÔNG cộng dồn: đang bị thu nhỏ mà ăn thêm một tia thì chỉ làm mới đồng hồ. */
-function drShrink(t){
+/* Shrunk KHÔNG cộng dồn: đang bị thu nhỏ mà ăn thêm một lượt sáng thì chỉ làm mới đồng
+   hồ, và lấy quãng dài hơn trong hai quãng chứ không rút ngắn phần đang có. */
+function drShrink(t,dur){
   if(!t||t.summon)return;
+  const T=dur||DORA.shrunkT;
   const fresh=!(t.shrunk>0);
-  t.shrunk=DORA.shrunkT;
+  t.shrunk=Math.max(t.shrunk,T);
   if(!fresh){
-    G.floats.push({x:t.x,y:t.y-112,txt:`SHRUNK REFRESHED ${rts(DORA.shrunkT)}s`,color:'#FFF3B0',
+    G.floats.push({x:t.x,y:t.y-112,txt:`SHRUNK REFRESHED ${rts(t.shrunk)}s`,color:'#FFF3B0',
       life:1.3,ml:1.3,banner:true,sc:.62});
     return;
   }
@@ -4308,9 +4339,9 @@ function drShrink(t){
   t.hitMul=DORA.shrunkHit; t.reachMul=DORA.shrunkReach; t.kbTake=DORA.shrunkKb;
   sfx('dora_shrink');
   ring(t.x,t.y,110,'#FFF3B0',.45);
-  G.floats.push({x:t.x,y:t.y-118,txt:`SHRUNK ${Math.round(DORA.shrunkSize*100)}% SIZE ${rts(DORA.shrunkT)}s`,
+  G.floats.push({x:t.x,y:t.y-118,txt:`SHRUNK ${Math.round(DORA.shrunkSize*100)}% SIZE ${rts(t.shrunk)}s`,
     color:'#FFF3B0',life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.05,.05)});
-  say(`${t.name} bị Small Light thu nhỏ — chậm hẳn, đánh nhẹ hẳn và bị thổi bay dễ hơn trong ${rts(DORA.shrunkT)} giây.`,'m');
+  say(`${t.name} bị Small Light thu nhỏ — chậm hẳn, đánh nhẹ hẳn và bị thổi bay dễ hơn trong ${rts(t.shrunk)} giây.`,'m');
 }
 
 /* ---- chiêu 4: Time Machine: Second Chance ---- */
@@ -4402,7 +4433,11 @@ function doraVec(f,e){
   }else{
     // còn bảo bối: giữ đúng quãng trung bình để rút đồ ra dùng
     const want=f.want||205;
-    if(d<want-45){ x-=ux*1.15; y-=uy*1.15; }
+    /* Vùng nón của Small Light với không tới quãng lượn xa nhất, nên hễ nó hồi xong mà
+       địch đứng ngoài tầm nón thì phải bước vào cho tới — không thì anh cứ lượn ngoài
+       tầm và chẳng bao giờ bật đèn. */
+    if(f.cds.s3<=0&&!f.drAim&&d>DORA.slRange*.9){ x+=ux*.9; y+=uy*.9; }
+    else if(d<want-45){ x-=ux*1.15; y-=uy*1.15; }
     else if(d>want+65){ x+=ux*.75; y+=uy*.75; }
     x+=wxu*.85-uy*f.strafe*.4+f.jx*.25;
     y+=wyu*.85+ux*f.strafe*.4+f.jy*.25;
@@ -4412,6 +4447,8 @@ function doraVec(f,e){
 }
 
 function doraTick(f,dt){
+  // vùng sáng chỉ là hiệu ứng nhìn, cứ tự tàn dù anh có đang chui cửa hay quay ngược giờ
+  if(f.drCone){ f.drCone.t-=dt; if(f.drCone.t<=0) f.drCone=null; }
   if(f.drEntry){ drEntryTick(f,dt); return; }
   drHistTick(f,dt);
   if(f.tm){ f.lock=Math.max(f.lock,.3); f.pose='down'; f.poseT=0; return; }
@@ -5702,7 +5739,6 @@ function step(dt){
       if(p.type==='gbeam'&&hitsBody(p,f)){ gnBeamHit(p,f); dead=true; break; }
       // luồng khí nén xuyên được tối đa hai người rồi mới tan
       if(p.type==='aircan'){ if(hitsBody(p,f)&&drAcHit(p,f)){ dead=true; break; } continue; }
-      if(p.type==='smalllight'&&hitsBody(p,f)){ drSlHit(p,f); dead=true; break; }
       if(p.type==='decision'&&hitsBody(p,f)){ suzDecisionHit(p,f); dead=true; break; }
       if(p.type==='kunai'&&hitsBody(p,f)){ explode(p); dead=true; break; }
       if((p.type==='ball'||p.type==='drive'||p.type==='twin')&&hitsBody(p,f)){ ballHit(p,f); dead=true; break; }
@@ -7658,6 +7694,36 @@ function drawSupFreeze(){
     ctx.restore();
   }
 }
+/* Small Light — vùng sáng vàng nhạt hình NÓN, rộng hơn luồng hơi của Superman. Vẽ SAU
+   nhân vật để ánh sáng phủ lên người bị chiếu, đúng lối drawSupFreeze(). */
+function drawDoraLight(){
+  for(const f of G.fighters){
+    const C=f.drCone; if(!C)continue;
+    const a=clamp(C.t/C.ml,0,1), grow=1-a;
+    const L=DORA.slRange*clamp(.45+grow*.9,0,1);
+    ctx.save();
+    ctx.translate(C.x,C.y); ctx.rotate(C.ang);
+    ctx.globalAlpha=.24*a; ctx.fillStyle='#FFF3B0';
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,L,-DORA.slCone,DORA.slCone); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=.30*a; ctx.fillStyle='#FFF9DC';     // lõi sáng hơn dọc theo trục nón
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,L,-DORA.slCore,DORA.slCore); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=.5*a; ctx.fillStyle='#FFFDF0';
+    for(let i=0;i<9;i++){                               // đốm sáng trôi ra theo vùng nón
+      const q=((i*.12)+grow*1.15)%1, off=Math.sin(i*2.7+G.t*6)*DORA.slCone*.85;
+      ctx.beginPath(); ctx.arc(Math.cos(off)*q*L,Math.sin(off)*q*L,3+q*11,0,7); ctx.fill();
+    }
+    ctx.globalAlpha=.7*a; ctx.strokeStyle='#FFE9A8'; ctx.lineWidth=1.3; ctx.lineCap='round';
+    for(let i=0;i<7;i++){                               // tia sáng mảnh chạy dọc nón
+      const off=(-DORA.slCone)+(i+.5)*(DORA.slCone*2/7);
+      const q=((i*.17)+grow*1.3)%1;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(off)*q*L*.35,Math.sin(off)*q*L*.35);
+      ctx.lineTo(Math.cos(off)*L*.98,Math.sin(off)*L*.98);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
 /* Anywhere Door — cánh cửa hồng. Dùng chung cho màn ra mắt, Emergency Door và màn ăn
    mừng. open = 0 (đóng kín) tới 1 (mở toang), a = độ đậm. */
 function drawDoorAt(x,y,open,a,scale){
@@ -7811,16 +7877,6 @@ function drawProj(p){
       const o=Math.sin(G.t*20+i*1.7+p.wob)*12;
       ctx.beginPath(); ctx.moveTo(-18,o*.4); ctx.lineTo(-42-i*11,o); ctx.stroke();
     }
-    ctx.restore(); return;
-  }
-  if(p.type==='smalllight'){                  // tia sáng vàng nhạt, bay thẳng không bẻ cong
-    ctx.translate(p.x,p.y); ctx.rotate(p.ang);
-    ctx.globalAlpha=.3; ctx.fillStyle='#FFF3B0';
-    ctx.beginPath(); ctx.ellipse(-6,0,26,10,0,0,7); ctx.fill();
-    ctx.globalAlpha=.95; ctx.fillStyle='#FFF9DC';
-    ctx.beginPath(); ctx.ellipse(0,0,14,5,0,0,7); ctx.fill();
-    ctx.fillStyle='#FFFFFF';
-    ctx.beginPath(); ctx.ellipse(3,0,7,2.6,0,0,7); ctx.fill();
     ctx.restore(); return;
   }
   if(p.type==='gbeam'){                       // luồng khí tím của Ginyu
@@ -8336,6 +8392,7 @@ function draw(){
   drawGinyuFlash();
   drawSupHeat();
   drawSupFreeze();
+  drawDoraLight();
   for(const f of order) drawDoraGhosts(f);
   if(!G.flashback) for(const f of order) drawBars(f);   // hồi tưởng thì giấu thanh máu cho sạch hình
 
@@ -9361,8 +9418,8 @@ function testDoraShrink(){
   const f=findDora(); if(!f)return;
   const e=drSlTarget(f)||foeOf(f);
   if(!e){ say('Không có mục tiêu nào để thu nhỏ.','m'); return; }
-  drShrink(e);
-  say('[Thử nghiệm] Ép Small Light thu nhỏ đối thủ.','m');
+  say('[Thử nghiệm] Ép Small Light toả vùng sáng ngay.','m');
+  drSlFire(f,e,{jolt:0});
 }
 function testDoraDoor(){
   const f=findDora(); if(!f)return;

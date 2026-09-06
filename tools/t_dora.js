@@ -4,7 +4,7 @@
         (miễn thương lúc chui cửa, chỉ xoá hiệu ứng làm chậm, đáp trong sàn và tránh xa địch,
         và né được cả tia CHANGE cướp xác của Ginyu);
      3. ba chiêu: combo 15/15/20 cách nhau 0.6s, Air Cannon (đẩy 22% sàn, choáng 3s, xuyên
-        hai người, đứt trong 0.35s đầu thì nửa hồi chiêu), Small Light (thu nhỏ, không cộng dồn),
+        hai người, đứt trong 0.35s đầu thì nửa hồi chiêu), Small Light (vùng nón rộng hơn Freeze Breath, giữa nón / rìa nón, thu nhỏ không cộng dồn),
         và phát Air Cannon nã kèm lúc đang bay Take-copter;
      4. Time Machine: Second Chance — quay ngược 1~3 giây, trần hồi máu 20%, cắt 40% hồi chiêu;
      5. chữ hiển thị đều bằng tiếng Anh.
@@ -252,6 +252,43 @@ async function waitGame(page, body, limit) {
     ok('Shrunk không cộng dồn, tia thứ hai chỉ làm mới đồng hồ',
       Math.abs(sl.b.t - sl.D.t) < .01 && sl.b.hit === sl.D.hit && sl.b.r === sl.a.r,
       `làm mới về ${(sl.b.t * sl.RT).toFixed(1)}s, hệ số giữ nguyên`);
+
+    /* Small Light là VÙNG NÓN chứ không phải tia bay đi: bắn thẳng thì trúng giữa nón,
+       lệch một quãng thì chỉ ăn rìa, lệch hẳn hoặc đứng xa quá thì không dính gì. */
+    const cone = await page.evaluate(() => {
+      const G = window.__G(), D = window.__DORA, SUP = window.__SUP;
+      const f = G.fighters.find(x => x.key === 'dora'), e = G.fighters.find(x => x !== f);
+      const shot = (dist, jolt) => {
+        e.x = f.x + dist; e.y = f.y;
+        e.hp = 900; e.shrunk = 0; e.stun = 0; e.invuln = 0; e.dots.length = 0;
+        if (e.r0 !== undefined) { e.r = e.r0; e.r0 = undefined; }
+        e.hitMul = 1; e.reachMul = 1; e.kbTake = 1; e.szMul = 1;
+        f.drCone = null;
+        window.__drSlFire(f, e, { jolt });
+        return { dmg: Math.round(900 - e.hp), shrunk: +e.shrunk.toFixed(2), lit: !!f.drCone };
+      };
+      return {
+        core: shot(150, 0), edge: shot(150, .35), off: shot(150, .8), far: shot(400, 0),
+        D: { dmg: D.slDmg, edmg: D.slEdgeDmg, t: D.shrunkT, et: D.slEdgeT,
+             cone: D.slCone, range: D.slRange, max: D.slMax },
+        S: { cone: SUP.fbCone, range: SUP.fbRange }, RT: window.__RT
+      };
+    });
+    ok('trúng giữa nón: đủ 35 dmg và Shrunk 7 giây người chơi',
+      cone.core.dmg === cone.D.dmg && Math.abs(cone.core.shrunk - cone.D.t) < .01,
+      `${cone.core.dmg} dmg · ${(cone.core.shrunk * cone.RT).toFixed(1)}s`);
+    ok('đứng rìa nón: chỉ 20 dmg và Shrunk 4 giây người chơi',
+      cone.edge.dmg === cone.D.edmg && Math.abs(cone.edge.shrunk - cone.D.et) < .01,
+      `${cone.edge.dmg} dmg · ${(cone.edge.shrunk * cone.RT).toFixed(1)}s`);
+    ok('lệch hẳn ra ngoài nón thì không dính gì',
+      cone.off.dmg === 0 && cone.off.shrunk === 0, `${cone.off.dmg} dmg`);
+    ok('đứng xa quá tầm nón thì không dính gì',
+      cone.far.dmg === 0 && cone.far.shrunk === 0, `ở 400px, ${cone.far.dmg} dmg`);
+    ok('vùng sáng vẫn toả ra dù không trúng ai',
+      cone.off.lit && cone.far.lit);
+    ok('vùng nón rộng hơn luồng hơi lạnh của Superman',
+      cone.D.cone > cone.S.cone && cone.D.range > cone.S.range && cone.D.max >= 3,
+      `nón ${cone.D.cone} rad / ${cone.D.range}px so với ${cone.S.cone} rad / ${cone.S.range}px, tối đa ${cone.D.max} người`);
 
     const grow = await waitGame(page, 'G.fighters.some(f=>f.key!=="dora"&&f.szMul<.6)', 4);
     const back = await page.evaluate(() => new Promise(res => {

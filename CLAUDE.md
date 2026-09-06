@@ -771,8 +771,27 @@ ChiChi (`cm(.25)`): cả combo mất 1.2 giây rồi mới `cm(.5)` hồi chiêu
 - Địch đang **Shrunk** thì Air Cannon **không** cộng thêm sát thương, chỉ **đẩy xa thêm 40%**
   — phần +40% đó nằm ở `f.kbTake` của Shrunk chứ không khai riêng, **đừng cộng hai lần**.
 
-**Chiêu 3 — Small Light.** Mỗi **16 giây**: cầm hai tay, **ngắm 1 giây**, bắn một tia vàng nhạt
-**bay nhanh nhưng KHÔNG bẻ cong đuổi theo**. Trúng thì **35 dmg** + **Shrunk 7 giây**:
+**Chiêu 3 — Small Light.** Mỗi **16 giây**: cầm hai tay, **ngắm 1 giây**, rồi **toả một VÙNG
+NÓN ánh sáng vàng nhạt ngay lập tức** — đúng lối Freeze Breath của Superman nhưng **rộng
+hơn**: nón `slCone = .55` rad so với `fbCone = .42`, tầm `slRange = 240` so với `fbRange = 210`.
+**Không còn viên đạn nào bay đi** (`DORA.slSpd`, `p.type==='smalllight'` và `drSlHit()` đã bỏ
+hẳn), nên **không né được bằng cách chạy ngang** — muốn thoát thì phải đứng ngoài nón.
+*(Người dùng: "thay đổi small light là ảnh hưởng theo vùng như skill thổi băng của superman,
+nhưng vùng rộng hơn xíu".)*
+
+- Trúng tối đa **3 người** (`slMax`), xếp theo độ lệch góc; `drConeTargets()` bỏ qua viện binh
+  và ai đang `offField()`.
+- **Giữa nón** (lệch góc ≤ `slCore = .22`, và phải là người sát trục nhất): **35 dmg** +
+  **Shrunk 7 giây người chơi**.
+- **Rìa nón**: **20 dmg** (`slEdgeDmg`) + **Shrunk 4 giây** (`slEdgeT`).
+- Vùng sáng sống `slT = gs(.55)` như hiệu ứng nhìn (`f.drCone`), `drawDoraLight()` vẽ **sau**
+  nhân vật đúng lối `drawSupFreeze()`. Đồng hồ của nó đếm ở **đầu `doraTick()`**, trước mọi
+  nhánh return sớm, nên chui cửa hay quay ngược giờ thì vùng sáng vẫn tự tàn.
+- **AI phải vào trong tầm nón**: `think()` gác ở `d < slRange*.9` (cũ là `d < 520` của thời
+  còn bắn tia), và `doraVec()` có nhánh riêng bước tới khi Small Light hồi xong mà địch đứng
+  ngoài mốc đó — không thì anh cứ lượn ở quãng 205~270 và chẳng bao giờ bật đèn.
+
+Trúng thì **35 dmg** + **Shrunk 7 giây**:
 
 | | |
 |---|---|
@@ -784,8 +803,10 @@ ChiChi (`cm(.25)`): cả combo mất 1.2 giây rồi mới `cm(.5)` hồi chiêu
 
 - **Model 55% mà hitbox chỉ 85% là CỐ Ý lệch nhau** — nhỏ hitbox theo model thì đối phương
   gần như không đánh trúng được nữa.
-- **Không cộng dồn**: tia thứ hai chỉ làm mới đồng hồ về tối đa 7 giây, hệ số giữ nguyên.
-- Bị đánh lúc đang ngắm thì **hướng bắn lệch** (`A.jolt`), chứ chiêu không đứt.
+- **Không cộng dồn**: lượt sáng thứ hai chỉ làm mới đồng hồ, hệ số giữ nguyên. `drShrink(t,dur)`
+  lấy `Math.max` chứ không gán đè — quãng rìa nón 4 giây **không được rút ngắn** quãng 7 giây
+  đang chạy dở.
+- Bị đánh lúc đang ngắm thì **hướng nón lệch** (`A.jolt`), chứ chiêu không đứt.
 - Hết hiệu ứng thì model **phình lại từ từ trong 0.4 giây**. Nhịp bước phải nhân `1 −
   shrunkSize` vì quãng đi chỉ là 0.45 dải chứ không phải cả dải 0→1 — **từng thiếu chỗ này
   nên phình lại chỉ mất 45% thời gian đã hẹn**.
@@ -882,7 +903,8 @@ Horikita và Ginyu — đừng dựng ô mới.
 > xuống 8 giây là mục đó đổ oan (đo ra 0.58 trên mốc 0.60). Phép đo nào bám theo hằng số cân
 > bằng thì nên gọi thẳng hàm, đừng đo theo dòng thời gian.
 
-Nút thử tay: `#testDoraShrink`, `#testDoraDoor`, `#testDoraTime`.
+Nút thử tay: `#testDoraShrink` (bật hẳn vùng nón thật, không còn ép thu nhỏ suông),
+`#testDoraDoor`, `#testDoraTime`.
 Kiểm bằng `node tools/t_dora.js`.
 
 ### Superman (`superman`)
@@ -1499,8 +1521,9 @@ node tools/t_ginyu.js   # Captain Ginyu: bay vào sân đúng 1.5s và địch b
 node tools/t_dora.js    # Doraemon: Anywhere Door đúng 1.5s bốn pha và địch chỉ đứng chờ,
                         # cửa thần kỳ né được cả tia CHANGE cướp xác của Ginyu (trận 4),
                         # combo 15/15/20 cách nhau 0.6s, Air Cannon (ba dải chính xác, đẩy
-                        # 22% sàn, xuyên hai người, đứt trong 0.35s đầu), Small Light (model
-                        # 55% mà hitbox 85%, không cộng dồn, phình lại đúng 0.4s), Emergency
+                        # 22% sàn, xuyên hai người, đứt trong 0.35s đầu), Small Light (vùng nón
+                        # rộng hơn Freeze Breath, giữa nón 35 / rìa nón 20, model 55% mà
+                        # hitbox 85%, không cộng dồn, phình lại đúng 0.4s), Emergency
                         # Door (miễn thương, chỉ xoá slow, đáp trong sàn), Take-copter,
                         # Time Machine (2.2s, trần hồi máu 20%, cắt 40% hồi chiêu), và chữ
                         # hiển thị đều bằng tiếng Anh
