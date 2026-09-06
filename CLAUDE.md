@@ -684,11 +684,19 @@ kỳ đủ để làm chậm, giữ khoảng cách, chạy thoát và lật ngư
 Suốt cả 1.5 giây, `drEntryTick()` đặt `lock` cho mọi đối thủ mỗi nhịp — họ đứng chờ, không
 di chuyển cũng không đánh. Trận chỉ thật sự bắt đầu khi cửa biến mất hẳn.
 
-**Nội tại 1 — Take-copter.** Địch xa hơn **55% chiều dài sàn** VÀ suốt `copIdle` (2.5 giây
-người chơi) không đánh trúng ai (`f.drNoHit`, `counters()` đặt lại về 0 mỗi lần anh gây được
-sát thương) thì chong chóng lên đầu: **+70% tốc chạy**, hiệu ứng làm chậm **chỉ còn 60% hiệu
-lực**, **+20% né đạn** (`dodgeVec` nhân thêm), tối đa **4 giây**, **hết sớm ngay khi vào đủ
-tầm vung tay**. Hồi chiêu 15 giây. Bay là là (`DORA.copHover`), không bao giờ rời sàn.
+**Nội tại 1 — Take-copter.** Địch xa hơn **35% chiều dài sàn** (`copFar`) VÀ suốt `copIdle`
+(**1.2 giây người chơi**) không đánh trúng ai (`f.drNoHit`, `counters()` đặt lại về 0 mỗi lần
+anh gây được sát thương) thì chong chóng lên đầu: **+150% tốc chạy** (`copMove = 2.50`), hiệu
+ứng làm chậm **chỉ còn 60% hiệu lực**, **+20% né đạn** (`dodgeVec` nhân thêm), tối đa **4
+giây**, **hết sớm ngay khi vào đủ tầm vung tay**. Hồi chiêu 15 giây. Bay là là
+(`DORA.copHover`), không bao giờ rời sàn.
+
+> **Hai cửa vào đã nới hẳn** *(người dùng: "chong chóng tre dùng để tăng 150% tốc độ di
+> chuyển và điều kiện dùng chong chóng tre bớt khắt nghiệt lại")*: `copFar` **55% → 35%**
+> chiều dài sàn, `copIdle` **2.5 → 1.2 giây người chơi**, tốc chạy **+70% → +150%**. Hai cửa
+> cũ chặn nhau nên cả trận anh hiếm khi bay nổi một lượt. **Hồi chiêu vẫn 15 giây** — người
+> dùng chỉ nêu "điều kiện", mà hồi chiêu là chuyện khác; muốn xả dày hơn nữa thì sửa
+> `DORA.copCd`.
 - **Bay tới đâu nã một phát Air Cannon tới đó** — bay được `copAcAt` (0.6 giây người chơi)
   thì rút ống ra bắn, **ĐÚNG MỘT phát mỗi lượt bay** (cờ `f.copAcDone`, đặt lại trong
   `drCopterOn()`). Vừa bay vừa ôm cái ống thì phải trả giá: **chỉ còn 70% sát thương**
@@ -756,7 +764,7 @@ ChiChi (`cm(.25)`): cả combo mất 1.2 giây rồi mới `cm(.5)` hồi chiêu
 **Chiêu 2 — Air Cannon.** Mỗi **8 giây**: thò tay vào túi, lắp ống vào tay, **đứng yên ngắm
 0.7 giây**, rồi bắn **một VÒNG khí nén trắng xanh** có gió xoáy (`drawProj` nhánh `aircan`)
 — **không phải tia năng lượng liên tục kiểu Kamehameha**.
-- **85 dmg · đẩy lùi 22% chiều dài sàn · choáng 1.75 giây · cắt ngang mọi chiêu đang gồng**
+- **85 dmg · đẩy lùi 22% chiều dài sàn · choáng 2.5 giây · cắt ngang mọi chiêu đang gồng**
   (`drInterrupt()`: dải bóng và cú đâm của Shikamaru, Ginyu Flash, và chính bảo bối của
   Doraemon). **Quãng đứng suy nghĩ của Horikita thì KHÔNG đụng vào** — máy quyết định của cô
   là một chuỗi trạng thái, cắt giữa chừng là hỏng cả mạch chứ không phải chỉ mất một chiêu.
@@ -893,9 +901,10 @@ Horikita và Ginyu — đừng dựng ô mới.
 
 > **Đường đi của mấy con số cân bằng** (người dùng chỉnh dần, ghi lại cho khỏi cãi nhau):
 > Air Cannon **100 → 85 dmg**, hồi chiêu **10 → 8 giây** ("giảm dmg 15% nhưng xả đạn thường
-> xuyên hơn") và choáng **3 → 1.75 giây** · Small Light hồi chiêu **18 → 16 giây** ("xả đạn
-> thường xuyên hơn tí") · cửa thoát hiểm hồi chiêu **8 → 6 giây**, và tỉ lệ né tách làm hai
-> mức 60% / 30%.
+> xuyên hơn") và choáng **3 → 1.75 → 2.5 giây** (buff lại một nấc) · Small Light hồi chiêu
+> **18 → 16 giây** ("xả đạn thường xuyên hơn tí") · cửa thoát hiểm hồi chiêu **8 → 6 giây**,
+> và tỉ lệ né tách làm hai mức 60% / 30% · Take-copter **+70% → +150%** tốc chạy, hai cửa vào
+> nới từ 55% sàn / 2.5 giây xuống **35% sàn / 1.2 giây**.
 
 > **`t_dora.js` đo phần cắt hồi chiêu của Time Machine bằng cách gọi thẳng `drTimeBack()`**,
 > không đọc qua vòng poll nữa. Đọc qua poll thì trận đã chạy tiếp và hồi chiêu trôi thêm một
@@ -1524,7 +1533,8 @@ node tools/t_dora.js    # Doraemon: Anywhere Door đúng 1.5s bốn pha và đ�
                         # 22% sàn, xuyên hai người, đứt trong 0.35s đầu), Small Light (vùng nón
                         # rộng hơn Freeze Breath, giữa nón 35 / rìa nón 20, model 55% mà
                         # hitbox 85%, không cộng dồn, phình lại đúng 0.4s), Emergency
-                        # Door (miễn thương, chỉ xoá slow, đáp trong sàn), Take-copter,
+                        # Door (miễn thương, chỉ xoá slow, đáp trong sàn), Take-copter
+                        # (+150% tốc chạy, hai cửa vào đã nới còn 35% sàn / 1.2 giây),
                         # Time Machine (2.2s, trần hồi máu 20%, cắt 40% hồi chiêu), và chữ
                         # hiển thị đều bằng tiếng Anh
 node tools/t_superman.js # Superman: màn xuất hiện 1.5s bốn pha (bóng người trên cao, tiếp đất

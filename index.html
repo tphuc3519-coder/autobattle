@@ -487,10 +487,13 @@ const DORA={
      Mốc pha tính bằng giây trong trận, cộng dồn: cửa hiện · cửa mở · bước ra · cửa đóng. */
   doorT:gs(1.5), doorPh:[gs(.35),gs(.75),gs(1.2),gs(1.5)],
   /* Nội tại 1 — Take-copter */
-  copFar:.55,                // địch xa hơn 55% chiều dài sàn
-  copIdle:gs(2.5),           // và bấy nhiêu giây người chơi không đánh trúng ai
+  /* Điều kiện đã NỚI HẲN theo yêu cầu: trước là địch phải xa hơn 55% chiều dài sàn VÀ
+     suốt 2.5 giây người chơi không đánh trúng ai — hai cửa đó chặn nhau nên cả trận anh
+     hiếm khi bay được lượt nào. */
+  copFar:.35,                // địch xa hơn 35% chiều dài sàn
+  copIdle:gs(1.2),           // và bấy nhiêu giây người chơi không đánh trúng ai
   copT:gs(4), copCd:gs(15),
-  copMove:1.70,              // +70% tốc chạy
+  copMove:2.50,              // +150% tốc chạy
   copSlowRes:.40,            // hiệu ứng làm chậm chỉ còn 60% hiệu lực
   copDodge:.20,              // né đạn tốt hơn 20%
   copHover:9,                // bay là là, không bao giờ rời sàn
@@ -511,7 +514,7 @@ const DORA={
   slamStun:gs(.6), slamKb:340,
   disOdds:.25, disT:gs(1.5), disMove:.80, disCast:.85,
   /* Chiêu 2 — Air Cannon */
-  acCd:gs(8), acAim:gs(.7), acDmg:85, acStun:gs(1.75), acSpd:520,
+  acCd:gs(8), acAim:gs(.7), acDmg:85, acStun:gs(2.5), acSpd:520,
   acKbDist:.22,              // đẩy lùi bằng 22% chiều dài sàn
   acBreak:gs(.35),           // bị đánh trong bấy nhiêu giây đầu thì đứt chiêu
   acBreakCut:.50,            // đứt thì chỉ phải chờ nửa hồi chiêu
@@ -3992,7 +3995,7 @@ function drCopterTick(f,dt,e,d){
     return;
   }
   if(f.copCd>0||!e||!e.alive||f.drAim||f.drCombo||f.tm)return;
-  /* Điều kiện: địch ở xa hơn 55% chiều dài sàn VÀ suốt copIdle vừa rồi không đánh
+  /* Điều kiện: địch ở xa hơn copFar chiều dài sàn VÀ suốt copIdle vừa rồi không đánh
      trúng ai. drNoHit được counters() đặt lại về 0 mỗi lần anh gây được sát thương. */
   if(d>W*DORA.copFar&&f.drNoHit>=DORA.copIdle) drCopterOn(f);
 }

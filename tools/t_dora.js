@@ -3,7 +3,7 @@
      2. hai nội tại: Take-copter (bay đuổi, dải bóng không bám được) và Emergency Door
         (miễn thương lúc chui cửa, chỉ xoá hiệu ứng làm chậm, đáp trong sàn và tránh xa địch,
         và né được cả tia CHANGE cướp xác của Ginyu);
-     3. ba chiêu: combo 15/15/20 cách nhau 0.6s, Air Cannon (đẩy 22% sàn, choáng 3s, xuyên
+     3. ba chiêu: combo 15/15/20 cách nhau 0.6s, Air Cannon (đẩy 22% sàn, choáng 2.5s, xuyên
         hai người, đứt trong 0.35s đầu thì nửa hồi chiêu), Small Light (vùng nón rộng hơn Freeze Breath, giữa nón / rìa nón, thu nhỏ không cộng dồn),
         và phát Air Cannon nã kèm lúc đang bay Take-copter;
      4. Time Machine: Second Chance — quay ngược 1~3 giây, trần hồi máu 20%, cắt 40% hồi chiêu;
@@ -126,7 +126,7 @@ async function waitGame(page, body, limit) {
       combo.kb > 200 && Math.abs(combo.stun - combo.slamStun) < .06,
       `lực đẩy ${combo.kb}, choáng ${(combo.stun * combo.RT).toFixed(2)}s người chơi`);
 
-    // Air Cannon: độ chính xác theo ba dải, sát thương, đẩy lùi 22% sàn, choáng 3 giây
+    // Air Cannon: độ chính xác theo ba dải, sát thương, đẩy lùi 22% sàn, choáng 2.5 giây
     const acc = await page.evaluate(() => {
       const f = window.__drAcOdds, D = window.__DORA;
       return { near: +f(60).toFixed(3), mid: +f(360).toFixed(3), far: +f(600).toFixed(3),
@@ -162,7 +162,7 @@ async function waitGame(page, body, limit) {
       }, 10);
       setTimeout(() => { clearInterval(id); res({ dmg: Math.round(dmg), far: Math.round(far), timeout: 1 }); }, 30000);
     }));
-    ok('Air Cannon gây 85 dmg và choáng 1.75 giây người chơi',
+    ok('Air Cannon gây 85 dmg và choáng 2.5 giây người chơi',
       ac.dmg === 85 && Math.abs(ac.stun - ac.acStun) < .06,
       `${ac.dmg} dmg · choáng ${(ac.stun * ac.RT).toFixed(2)}s người chơi`);
     ok('Air Cannon thổi địch lùi khoảng 22% chiều dài sàn',
@@ -363,11 +363,40 @@ async function waitGame(page, body, limit) {
       f.copter = 0; f.dis = 0; window.__statusTick(f, 0);
       return { base, bay, cham, chamBay, mul: D.copMove, res: D.copSlowRes, dis: D.disMove };
     });
-    ok('Take-copter tăng đúng 70% tốc chạy',
+    ok('Take-copter tăng đúng 150% tốc chạy',
       Math.abs(cop.bay / cop.base - cop.mul) < .01, `×${(cop.bay / cop.base).toFixed(2)}`);
     ok('đang bay thì hiệu ứng làm chậm chỉ còn 60% hiệu lực',
       Math.abs((1 - cop.chamBay / cop.mul) / (1 - cop.cham) - (1 - cop.res)) < .02,
       `chậm ${Math.round((1 - cop.cham) * 100)}% dưới đất, còn ${Math.round((1 - cop.chamBay / cop.mul) * 100)}% khi bay`);
+
+    /* Điều kiện cất cánh đã nới: địch chỉ cần xa hơn 35% chiều dài sàn và 1.2 giây người
+       chơi không đánh trúng ai. Đo bằng cách đẩy anh vào đúng quãng ở GIỮA mốc cũ và mốc
+       mới — mốc cũ thì không bay nổi, mốc mới thì phải bay. */
+    const gate = await page.evaluate(() => {
+      const G = window.__G(), D = window.__DORA, WH = window.__WH();
+      const f = G.fighters.find(x => x.key === 'dora'), e = G.fighters.find(x => x !== f);
+      const thu = (fracXa, cho) => {
+        f.copter = 0; f.copCd = 0; f.drAim = null; f.drCombo = null; f.tm = null;
+        f.edT = 0; f.lock = 0; f.stun = 0;
+        f.x = 60; f.y = 300; e.x = f.x + WH.W * fracXa; e.y = 300;
+        f.drNoHit = cho;
+        window.__doraTick(f, 1 / 120);
+        const bay = f.copter > 0;
+        f.copter = 0; f.copCd = 0;
+        return bay;
+      };
+      return {
+        giua: thu(.45, D.copIdle + .01),      // xa 45% sàn: mốc cũ 55% thì trượt, mốc mới 35% thì ăn
+        choNgan: thu(.45, window.__gs(1)),     // mới chờ 1 giây người chơi: dưới mốc mới, chưa được bay
+        gan: thu(.20, D.copIdle + .01),        // đứng sát quá thì vẫn không bay
+        far: D.copFar, idle: +(D.copIdle * window.__RT).toFixed(2), RT: window.__RT
+      };
+    });
+    ok('điều kiện cất cánh đã nới: xa 45% sàn và 1.2 giây không đánh trúng là bay được',
+      gate.giua === true && gate.far === .35 && Math.abs(gate.idle - 1.2) < .01,
+      `mốc xa ${Math.round(gate.far * 100)}% sàn · chờ ${gate.idle}s người chơi`);
+    ok('nới rồi vẫn còn đủ hai cửa: đứng sát hoặc vừa đánh trúng thì không bay',
+      gate.gan === false && gate.choNgan === false);
 
     /* Bay tới đâu nã một phát Air Cannon tới đó — ĐÚNG MỘT phát mỗi lượt bay, sát thương
        còn 70% và độ chính xác trừ thẳng 20 điểm. Chạy tay từng bước cho khỏi phụ thuộc
