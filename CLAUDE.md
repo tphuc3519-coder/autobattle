@@ -136,8 +136,15 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
 - Chiêu 1 cận chiến, chiêu 2 **Mắng** — 5 đợt sóng xung kích, phản lại shuriken / kunai / bóng.
 - **Flying Kick**: đồng hồ riêng `f.dashCd`, **không** nằm trong `f.cds` — cố định
   `CHICHI_DASH_CD = 5` giây-trong-trận = **10 giây người chơi**, nên hiệu ứng Kiệt sức
-  không kéo dài được nó. Lúc lao: chí mạng chắc chắn, miễn khống chế, chỉ nhận 70% sát
-  thương (`CHICHI_DASH_RES`).
+  không kéo dài được nó. Lúc lao: miễn khống chế, chỉ nhận 70% sát thương
+  (`CHICHI_DASH_RES`). Chạm người thì **45 dmg** (`CHICHI_KICK_DMG`) + **choáng 2 giây
+  người chơi** (`CHICHI_KICK_STUN`) — cũ là ăn theo cú đá chí mạng 25 dmg và không choáng.
+  - `melee(c,e,forceCrit,dmg)` nhận thêm tham số `dmg` để cú lao truyền thẳng 45 vào, và
+    **trả về giá trị của `hurt()`** — cái choáng gọi sau khi xét giá trị đó, đúng luật ở
+    mục 6: né được thì không dính choáng ăn theo.
+  - **Đo cú đá phải chạy tay từng bước bằng `__step()`**, đừng đọc qua vòng poll: trận vẫn
+    chạy nên ChiChi còn đấm thường và lao lại lần nữa xen vào, đo kiểu đó ra 90~95 thay vì
+    45. Test khoá `dashCd` / `cds` của cả hai người rồi mới ép `chichiCharge()`.
 - Nội tại: cứ 5 đòn +5% chí mạng.
 - Dưới 20% máu: gọi **Goku / Gohan**. Có phân cảnh đóng băng (`G.freeze`) + zoom camera.
 
@@ -1585,8 +1592,9 @@ node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choán
 node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ nổ là AoE nhạt dần
                         # 100%->40% rồi tắt hẳn + bén lửa 5 dmg/s trong 3s (nổ vào tường cũng
                         # lan ra), và Mini Rasengan gỡ vây 40 dmg + hất 30% sàn, hồi chiêu 12s
-node tools/t_chichi.js  # viện binh của ChiChi: Kamehameha 400 dmg + choáng 2s rồi ghì chân 4s
-                        # (hết choáng mới tới), Masenko 100 dmg mỗi đợt + chồng lớp −10%/−7%
+node tools/t_chichi.js  # ChiChi: Flying Kick 45 dmg + choáng 2s, và viện binh — Kamehameha
+                        # 400 dmg + choáng 2s rồi ghì chân 4s (hết choáng mới tới),
+                        # Masenko 100 dmg mỗi đợt + chồng lớp −10%/−7%
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác

@@ -2,7 +2,8 @@
      1. Kamehameha của Goku: 400 dmg, choáng 2 giây người chơi, HẾT choáng mới tới quãng
         ghì chân 4 giây (−60% tốc chạy, −30% tốc ra chiêu);
      2. Masenko của Gohan: vẫn 100 dmg mỗi đợt, nhưng mỗi đợt trúng chồng thêm −10% tốc
-        chạy / −7% tốc ra chiêu, trúng hai đợt là −20% / −14%.
+        chạy / −7% tốc ra chiêu, trúng hai đợt là −20% / −14%;
+     3. Flying Kick: 45 dmg và choáng 2 giây người chơi.
    Chạy: node tools/t_chichi.js */
 const { openGame } = require('./probe');
 
@@ -97,6 +98,30 @@ function ok(name, pass, note) {
     `${r.tran.n} lớp · ×${r.tran.move} chạy`);
   ok('hết giờ thì rơi sạch chồng lớp',
     r.roi.n === 0 && r.roi.move === r.nen.move && r.roi.cast === r.nen.cast);
+
+  /* ---------- Flying Kick: 45 dmg + choáng 2 giây người chơi ---------- */
+  /* Chạy tay từng bước bằng __step() chứ đừng đọc qua vòng poll: trận vẫn đang chạy nên
+     ChiChi còn đấm thường và lao lại lần nữa xen vào, đo kiểu đó ra 90~95 thay vì 45. */
+  const kick = await page.evaluate(() => {
+    const G = window.__G(), KI = window.__KICK, dt = 1 / 120;
+    const c = G.fighters.find(x => x.key === 'chichi'), e = G.fighters.find(x => x !== c);
+    e.hp = 9000; e.maxHp = 9000; e.evade = 0; e.prewing = false; e.eagle = false;
+    e.stun = 0; e.invuln = 0; e.ccRes = 0; e.dash = null; e.dots.length = 0;
+    e.lock = 999;                                  // địch đứng im, không đánh trả
+    for (const k in e.cds) e.cds[k] = 999;
+    c.stun = 0; c.lock = 0; c.dashCd = 999;        // khoá luôn cú lao thứ hai
+    for (const k in c.cds) c.cds[k] = 999;         // và khoá đòn tay thường
+    c.x = 200; c.y = 300; e.x = 420; e.y = 300;
+    G.proj.length = 0;
+    const hp0 = e.hp;
+    window.__chichiCharge(c, e);
+    for (let i = 0; i < 600 && c.dash; i++) window.__step(dt);
+    return { mat: Math.round(hp0 - e.hp), choang: +e.stun.toFixed(3), want: KI, RT: window.__RT };
+  });
+  ok('Flying Kick gây đúng 45 dmg', kick.mat === kick.want.dmg, `${kick.mat} dmg`);
+  ok('và choáng 2 giây người chơi',
+    Math.abs(kick.choang - kick.want.stun) < .12,
+    `${(kick.choang * kick.RT).toFixed(2)}s người chơi`);
 
   // sát thương: đọc thẳng viên đạn hai viện binh bắn ra
   const dmg = await page.evaluate(() => new Promise(res => {

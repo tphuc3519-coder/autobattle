@@ -362,6 +362,8 @@ const SUMMON_CHARGE=1.4;          // viện binh hiện ra rồi dồn khí bấ
 const SCOLD_BUBBLE=1.5;           // bong bóng mỗi câu mắng của ChiChi
 const CHICHI_CALL_LOCK=1.5;       // khoá ChiChi bấy nhiêu giây sau phân cảnh gọi viện binh
 const CHICHI_DASH_RES=.7;         // lúc lao tới chỉ nhận 70% sát thương
+const CHICHI_KICK_DMG=45;         // Flying Kick: 45 dmg chứ không còn ăn theo cú đá chí mạng 25
+const CHICHI_KICK_STUN=1;         // và choáng 2 giây người chơi
 const EXHAUST_T=4;                // phân thân gây kiệt sức bấy nhiêu giây trong trận
 const SEXY_DPS=15;                // khói hồng: nhịp nửa giây một lần, 4 nhịp x 7.5 = 30 dmg
 const SEXY_STUN=1.25;             // Sexy no Jutsu choáng nhân vật nam (2.5 giây người chơi)
@@ -674,7 +676,7 @@ const CHARS={
   chichi:{
     name:'ChiChi', short:'ChiChi', tag:'Housewife · Melee', emoji:'🍳', color:'#FF4D6D', alt:'#FF93A8',
     role:'melee', speed:106, dodge:.55, male:false,
-    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in, guaranteed crit, CC immune &amp; −30% dmg while dashing`,'<b>Passive</b> every 5 hits +5% crit',`<b>Below 20% HP</b> calls Goku / Gohan — Goku's Kamehameha ${KAME_DMG} dmg, stun ${rts(KAME_STUN)}s then −${Math.round((1-KAME_SLOW_MOVE)*100)}% move / −${Math.round((1-KAME_SLOW_CAST)*100)}% cast for ${rts(KAME_SLOW_T)}s · Gohan's Masenko ${MASENKO_DMG} dmg a wave, each wave stacking −${Math.round(MASENKO_STACK_MOVE*100)}% move / −${Math.round(MASENKO_STACK_CAST*100)}% cast for ${rts(MASENKO_STACK_T)}s`],
+    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in for a guaranteed ${CHICHI_KICK_DMG} damage and a ${rts(CHICHI_KICK_STUN)}s stun, CC immune &amp; −30% dmg taken while dashing`,'<b>Passive</b> every 5 hits +5% crit',`<b>Below 20% HP</b> calls Goku / Gohan — Goku's Kamehameha ${KAME_DMG} dmg, stun ${rts(KAME_STUN)}s then −${Math.round((1-KAME_SLOW_MOVE)*100)}% move / −${Math.round((1-KAME_SLOW_CAST)*100)}% cast for ${rts(KAME_SLOW_T)}s · Gohan's Masenko ${MASENKO_DMG} dmg a wave, each wave stacking −${Math.round(MASENKO_STACK_MOVE*100)}% move / −${Math.round(MASENKO_STACK_CAST*100)}% cast for ${rts(MASENKO_STACK_T)}s`],
     init(f){ f.cds={s1:0,s2:cm(3)}; f.dashCd=CHICHI_DASH_CD; f.hits=0; f.critBonus=0; },
     think(f,e,d,auto){
       if(f.cds.s1<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
@@ -2351,12 +2353,15 @@ function rasengan(k,e){
 }
 
 /* ---------- ChiChi ---------- */
-function melee(c,e,forceCrit){
+/* `dmg` để trống thì ăn theo bảng cũ (chí mạng 25 / thường 5). TRẢ VỀ đúng giá trị của
+   hurt() để chỗ gọi biết đòn có trúng không — mọi hiệu ứng ăn theo phải xét cái này. */
+function melee(c,e,forceCrit,dmg){
   setPose(c,'atk1',cm(.26)); aim(c,e,.85); sfx('punch');
   const crit=forceCrit||chance(.10+c.critBonus);
-  hurt(e,crit?25:5,c,crit);
+  const landed=hurt(e,dmg!==undefined?dmg:(crit?25:5),c,crit);
   if(crit&&!forceCrit) say('Cú đá chí mạng 25 dmg!','c');
   G.fx.push({type:'punch',x:(c.x+e.x)/2,y:(c.y+e.y)/2,life:.16,ml:.16});
+  return landed;
 }
 /* ================= Shikamaru ================= */
 
@@ -5599,8 +5604,15 @@ function step(dt){
       }else if(D.kind==='charge'){                     // ChiChi lao tới: cú đá chắc chắn chí mạng
         ring(e.x,e.y,120,f.color,.5);
         G.flashScreen=Math.max(G.flashScreen,.1);
-        melee(f,e,'FLYING KICK!');
-        say('ChiChi lao tới, cú đá chí mạng chắc chắn 25 dmg!','c');
+        // né được thì cả choáng cũng trượt, nên phải xem melee() -> hurt() trả về gì
+        const kicked=melee(f,e,'FLYING KICK!',CHICHI_KICK_DMG);
+        const kst=kicked&&stunFx(e,CHICHI_KICK_STUN,'spin');
+        if(kst) G.floats.push({x:e.x,y:e.y-104,txt:`STUNNED ${rts(CHICHI_KICK_STUN)}s`,
+          color:'#7FD0FF',life:1.2,ml:1.2,banner:true,sc:.6});
+        say(kicked
+          ? (kst?`ChiChi lao tới, cú đá chắc chắn ${CHICHI_KICK_DMG} dmg và choáng ${rts(CHICHI_KICK_STUN)} giây!`
+                :`ChiChi lao tới, cú đá chắc chắn ${CHICHI_KICK_DMG} dmg — nhưng đối thủ miễn nhiễm khống chế.`)
+          : 'ChiChi lao tới nhưng cú đá bị né mất.','c');
       }else{
         const rasHit=hurt(e,150,f,'RASENGAN!','ult');
         const st=rasHit&&stunFx(e,3,'spin');
