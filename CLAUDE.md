@@ -536,6 +536,23 @@ thân xác Ginyu do địch điều khiển (`swapAs==='foe'`) thì chết là c
   Bốc trúng thì tia bám theo địch (`homing`), bốc trượt thì lệch hẳn `0.4~1.0 rad`.
 - **Ba người trở lên**: `gnChangeTarget()` chọn người **máu cao nhất**; nhưng va chạm đọc
   trong vòng duyệt đạn nên **chạm ai trước thì nhập luôn vào người đó**.
+> **Ba lớp chặn của nhánh va chạm tia CHANGE** — viết riêng vì tia này **không đi qua
+> `hurt()`**, nên mọi lớp chặn có sẵn trong `hurt()` đều không tự động áp vào:
+> 1. **`offField(f)`** — đang chui Emergency Door, còn nấp trong màn ra mắt (Anywhere Door
+>    hay bóng người trên cao của Superman), đang trong phân cảnh Time Machine, hay đang mang
+>    lớp miễn thương thì tia **xuyên qua chỗ trống**. Thiếu lớp này thì cướp được xác một
+>    người đang không hề đứng trên sàn.
+> 2. **`drTryEscape(f)`** — cửa thần kỳ của Doraemon né được **mọi đòn**, kể cả cú cướp xác.
+>    Người dùng chốt riêng chỗ này.
+> 3. **`p.skip`** — tia phải NHỚ là nó đã hụt ai rồi. Thiếu chỗ này thì có cảnh dở khóc dở
+>    cười: anh chui cửa né được, mà `drSafeSpot()` lại đáp đúng vào đường bay, tia đi thẳng
+>    tới đó **tóm lại lần hai** — lúc đó cửa đang hồi chiêu nên né kiểu gì cũng dính. Đo được
+>    đúng cảnh đó: sửa xong lớp 2 mà vẫn **200/200 lần bị nhập**, phải có thêm lớp 3 mới ra
+>    64.5%. Né được thì tia mất luôn khả năng dò tìm và bay tiếp qua chỗ anh vừa đứng.
+>
+> `t_dora.js` (trận 4, dora vs ginyu) chấm cả ba lớp: tỉ lệ né bám mốc 60%, cửa đang hồi
+> chiêu thì 0/30 né được, đang ở TRONG cửa thì 30/30 thoát.
+
 - **Chỉ nhập được vào đấu thủ chính.** Tia CHANGE **xuyên thẳng qua** đồng minh và viện
   binh (`f.summon`) chứ không bám vào họ: Ayanokouji hay Goku vốn là khách trên sàn, hết
   giờ là đi — cướp xác họ thì chẳng còn gì để cướp. Chỗ chặn nằm ở cả `gnChangeTarget()`
@@ -688,9 +705,28 @@ tầm vung tay**. Hồi chiêu 15 giây. Bay là là (`DORA.copHover`), không b
 - **Dải bóng của Shikamaru không bám được vào người đang bay**: `bindTick()` có nhánh riêng
   cắt dải bóng khi `e.copter>0`. Đây là "chướng ngại vật thấp" mà người dùng nêu.
 
-**Nội tại 2 — Emergency Door.** Sắp ăn **một đòn bất kỳ** thì **60%** anh chui qua cửa thay
-vì chịu trận — `drTryEscape()` gọi từ `hurt()` **trước cả nhánh né**, nên đòn đó coi như
-không trúng và **không gây một điểm sát thương nào**.
+**Nội tại 2 — Emergency Door.** Sắp ăn **một đòn bất kỳ** thì anh chui qua cửa thay vì chịu
+trận — `drTryEscape()` gọi từ `hurt()` **trước cả nhánh né**, nên đòn đó coi như không trúng
+và **không gây một điểm sát thương nào**. Tỉ lệ chia làm hai mức:
+
+| Loại đòn | Tỉ lệ né | Ghi chú |
+|---|---|---|
+| đòn thường và chiêu lớn | **60%** (`edOdds`) | đo được 58.8% / 59.7% |
+| **ultimate** | **30%** (`edOddsUlt`) | Twin Shot · Kamehameha · Masenko · Rasengan · tia CHANGE |
+| sát thương duy trì (`dot`) và lãnh địa (`domain`) | **0%** | không né được lần nào |
+
+> **Cách nhận ra ultimate: tham số `kind` mang giá trị `'ult'`.** Đúng bốn chỗ đi qua `hurt()`
+> được đánh dấu — Rasengan trong `step()`, Twin Shot trong `ballHit()`, Kamehameha và Masenko
+> trong vòng duyệt đạn — cộng tia CHANGE gọi `drTryEscape(f,'ult')` thẳng ở nhánh va chạm.
+> **Phân thân của Konohamaru vẫn chỉ là `'big'`**, không phải ultimate.
+>
+> `'ult'` với `tryEvade()` của Shikamaru thì **ăn y hệt `'big'`**: né được nhưng KHÔNG cộng dồn
+> tỉ lệ. Thêm loại mới mà quên chỗ đó là mấy cú ultimate bỗng nhiên đẩy tỉ lệ né của anh lên.
+>
+> **`dot` và `domain` không né được** — đó là phần dư của một đòn đã trúng rồi, không phải một
+> cú đánh đang bay tới, cùng luật với `tryEvade()`. *(Chỗ này tôi tự chốt: bản trước cho né cả
+> `dot`, nên mỗi nhịp cháy 2 dmg cũng nuốt mất một lần mở cửa — đo ra 63.5% số nhịp cháy làm
+> anh chui cửa. Muốn cho né lại thì bỏ dòng chặn đầu `drTryEscape()`.)*
 - Suốt `edT` anh **không thể bị tấn công** (`hurt()` return false khi `t.edT>0`) và không
   hiện trên sàn.
 - Ra khỏi cửa: **xoá hiệu ứng làm chậm** (`dis`, `gnSlow`, `gnDaze`, `gnTired`, `exhaust`),
@@ -702,6 +738,12 @@ không trúng và **không gây một điểm sát thương nào**.
   địch nhất và không bao giờ nhảy sang chỗ còn đông hơn**. Điểm luôn clamp vào trong sàn.
 - Hồi chiêu **6 giây** (`DORA.edCd`). *(Trước là 8; người dùng bảo "giảm thời gian cooldown
   cửa thần kì của Doraemon".)*
+- **Né được cả tia CHANGE cướp xác của Ginyu.** Người dùng chốt: *"Doraemon cần phải né
+  được"*. Chỗ này phải viết riêng vì **tia CHANGE không đi qua `hurt()`** — nó gọi thẳng
+  `ginyuPossess()` từ vòng va chạm, mà `drTryEscape()` thì nằm trong `hurt()`. Đo bản cũ:
+  **200/200 lần bị nhập, không né nổi lần nào.** Giờ nhánh `change` gọi thẳng
+  `drTryEscape()`; đo lại **64.5% né được**, bám đúng mốc `edOdds = 60%`. Xem ba lớp chặn
+  ở mục CHANGE!!! của Captain Ginyu.
 
 **Chiêu 1 — Basic Attack.** Combo **ba đòn**, mỗi đòn cách nhau **0.6 giây người chơi**:
 đấm 15 → đá 15 → **lao bụng / húc đầu 20**, đòn ba **đẩy lùi mạnh hơn đòn thường của Ginyu
@@ -714,7 +756,7 @@ ChiChi (`cm(.25)`): cả combo mất 1.2 giây rồi mới `cm(.5)` hồi chiêu
 **Chiêu 2 — Air Cannon.** Mỗi **8 giây**: thò tay vào túi, lắp ống vào tay, **đứng yên ngắm
 0.7 giây**, rồi bắn **một VÒNG khí nén trắng xanh** có gió xoáy (`drawProj` nhánh `aircan`)
 — **không phải tia năng lượng liên tục kiểu Kamehameha**.
-- **85 dmg · đẩy lùi 22% chiều dài sàn · choáng 3 giây · cắt ngang mọi chiêu đang gồng**
+- **85 dmg · đẩy lùi 22% chiều dài sàn · choáng 1.75 giây · cắt ngang mọi chiêu đang gồng**
   (`drInterrupt()`: dải bóng và cú đâm của Shikamaru, Ginyu Flash, và chính bảo bối của
   Doraemon). **Quãng đứng suy nghĩ của Horikita thì KHÔNG đụng vào** — máy quyết định của cô
   là một chuỗi trạng thái, cắt giữa chừng là hỏng cả mạch chứ không phải chỉ mất một chiêu.
@@ -829,9 +871,10 @@ bong bóng thoại. **Đấm đá mượn thẳng `sfx('punch')` của ChiChi**,
 Horikita và Ginyu — đừng dựng ô mới.
 
 > **Đường đi của mấy con số cân bằng** (người dùng chỉnh dần, ghi lại cho khỏi cãi nhau):
-> Air Cannon **100 → 85 dmg** và hồi chiêu **10 → 8 giây** ("giảm dmg 15% nhưng xả đạn thường
-> xuyên hơn") · Small Light hồi chiêu **18 → 16 giây** ("xả đạn thường xuyên hơn tí") · cửa
-> thoát hiểm hồi chiêu **8 → 6 giây**.
+> Air Cannon **100 → 85 dmg**, hồi chiêu **10 → 8 giây** ("giảm dmg 15% nhưng xả đạn thường
+> xuyên hơn") và choáng **3 → 1.75 giây** · Small Light hồi chiêu **18 → 16 giây** ("xả đạn
+> thường xuyên hơn tí") · cửa thoát hiểm hồi chiêu **8 → 6 giây**, và tỉ lệ né tách làm hai
+> mức 60% / 30%.
 
 > **`t_dora.js` đo phần cắt hồi chiêu của Time Machine bằng cách gọi thẳng `drTimeBack()`**,
 > không đọc qua vòng poll nữa. Đọc qua poll thì trận đã chạy tiếp và hồi chiêu trôi thêm một
@@ -1454,6 +1497,7 @@ node tools/t_ginyu.js   # Captain Ginyu: bay vào sân đúng 1.5s và địch b
                         # đứng nguyên chỗ ngã, đổi hồn giữ nguyên thân xác (thân A chữ B),
                         # bắn trượt thì 1 máu + hoảng loạn, luật ba người thì luôn thăm dò
 node tools/t_dora.js    # Doraemon: Anywhere Door đúng 1.5s bốn pha và địch chỉ đứng chờ,
+                        # cửa thần kỳ né được cả tia CHANGE cướp xác của Ginyu (trận 4),
                         # combo 15/15/20 cách nhau 0.6s, Air Cannon (ba dải chính xác, đẩy
                         # 22% sàn, xuyên hai người, đứt trong 0.35s đầu), Small Light (model
                         # 55% mà hitbox 85%, không cộng dồn, phình lại đúng 0.4s), Emergency

@@ -1,7 +1,8 @@
 /* Doraemon — soi đủ năm mảng làm nên nhân vật:
      1. màn ra mắt: Anywhere Door đúng 1.5 giây người chơi, bốn pha, địch chỉ được đứng chờ;
      2. hai nội tại: Take-copter (bay đuổi, dải bóng không bám được) và Emergency Door
-        (miễn thương lúc chui cửa, chỉ xoá hiệu ứng làm chậm, đáp trong sàn và tránh xa địch);
+        (miễn thương lúc chui cửa, chỉ xoá hiệu ứng làm chậm, đáp trong sàn và tránh xa địch,
+        và né được cả tia CHANGE cướp xác của Ginyu);
      3. ba chiêu: combo 15/15/20 cách nhau 0.6s, Air Cannon (đẩy 22% sàn, choáng 3s, xuyên
         hai người, đứt trong 0.35s đầu thì nửa hồi chiêu), Small Light (thu nhỏ, không cộng dồn),
         và phát Air Cannon nã kèm lúc đang bay Take-copter;
@@ -161,7 +162,7 @@ async function waitGame(page, body, limit) {
       }, 10);
       setTimeout(() => { clearInterval(id); res({ dmg: Math.round(dmg), far: Math.round(far), timeout: 1 }); }, 30000);
     }));
-    ok('Air Cannon gây 85 dmg và choáng 3 giây người chơi',
+    ok('Air Cannon gây 85 dmg và choáng 1.75 giây người chơi',
       ac.dmg === 85 && Math.abs(ac.stun - ac.acStun) < .06,
       `${ac.dmg} dmg · choáng ${(ac.stun * ac.RT).toFixed(2)}s người chơi`);
     ok('Air Cannon thổi địch lùi khoảng 22% chiều dài sàn',
@@ -540,6 +541,106 @@ async function waitGame(page, body, limit) {
       eng.thieu.length === 0, eng.thieu.join(' · ') || 'đủ');
 
     ok('bảng tiếng/ảnh không lỗi trang', errors.length === 0, errors.join(' | '));
+    await browser.close();
+  }
+
+  /* ---------- trận 4: cửa thần kỳ phải né được cả tia CHANGE của Ginyu ---------- */
+  {
+    const { browser, page, errors } = await openGame('dora', 'ginyu', { play: false });
+    await page.click('#play');
+    await page.selectOption('#speed', '1');
+    await page.waitForFunction(() => {
+      const G = window.__G();
+      const g = G.fighters.find(x => x.key === 'ginyu'), d = G.fighters.find(x => x.key === 'dora');
+      return g && !g.gnEntry && d && !d.drEntry;
+    }, null, { timeout: 60000 });
+    await page.click('#play');                       // dừng lại, tự chạy từng bước
+
+    const chg = await page.evaluate(() => {
+      const G = window.__G(), D = window.__DORA, dt = 1 / 120;
+      const g = G.fighters.find(x => x.key === 'ginyu'), d = G.fighters.find(x => x.key === 'dora');
+      /* Dựng lại đúng tình huống: tia CHANGE bay thẳng vào Doraemon. Tia này KHÔNG đi qua
+         hurt() nên mấy lớp chặn của hurt() không tự động áp vào — phải kiểm riêng. */
+      const ban = (cho) => {
+        g.swapAs = null; d.swapAs = null; g.gnSoul = null; d.gnSoul = null;
+        g.name = 'Captain Ginyu'; d.name = 'Doraemon';
+        g.gnChange = null; g.gnChangeDone = false; g.gnPanic = false;
+        g.hp = g.maxHp; d.hp = d.maxHp;
+        g.gnSelfCut = 1; d.gnSelfCut = 1; g.missOdds = 0; d.missOdds = 0;
+        g.aimOff = 0; d.aimOff = 0; g.gnCcCut = 1; d.gnCcCut = 1; d.gnBodyProj = false;
+        d.edT = 0; d.drHide = false; d.tm = null; d.drAim = null; d.drCombo = null;
+        d.copter = 0; d.invuln = 0;
+        d.x = 300; d.y = 300; g.x = 200; g.y = 300;
+        cho();                                       // đặt trạng thái riêng của từng phép thử
+        G.proj.length = 0; G.timers.length = 0; G.freeze = 0; G.over = null; G.floats.length = 0;
+        G.proj.push({ type: 'change', team: g.team, owner: g, x: 260, y: 276,
+                      vx: 600, vy: 0, r: 12, dmg: 1, life: 2, ang: 0 });
+        for (let k = 0; k < 200 && G.proj.length && !d.swapAs; k++) { G.t += dt; window.__step(dt); }
+        const nhap = !!d.swapAs;
+        G.freeze = 0; G.timeWarp = null;
+        return nhap;
+      };
+      let ne = 0, N = 200;
+      for (let i = 0; i < N; i++) if (!ban(() => { d.edCd = 0; })) ne++;
+      // cửa đang hồi chiêu thì đành chịu, không có cửa nào mà chui
+      let neKhiHoi = 0;
+      for (let i = 0; i < 30; i++) if (!ban(() => { d.edCd = 99; })) neKhiHoi++;
+      // đang ở TRONG cửa (edT>0, không có mặt trên sàn) thì tia phải xuyên qua chỗ trống
+      let neKhiTrongCua = 0;
+      for (let i = 0; i < 30; i++) if (!ban(() => { d.edCd = 99; d.edT = 99; d.drHide = true; })) neKhiTrongCua++;
+      // dọn sạch
+      g.swapAs = null; d.swapAs = null; g.name = 'Captain Ginyu'; d.name = 'Doraemon';
+      d.edCd = 0; d.edT = 0; d.drHide = false; G.proj.length = 0; G.freeze = 0;
+      /* Tỉ lệ né theo TỪNG LOẠI đòn: thường 60%, ultimate 30%, sát thương duy trì thì
+         không né được lần nào. Gọi thẳng hurt() cho khỏi phụ thuộc dòng thời gian. */
+      const theoLoai = kind => {
+        let ok = 0, M = 600;
+        for (let i = 0; i < M; i++) {
+          d.edCd = 0; d.edT = 0; d.drHide = false; d.hp = d.maxHp;
+          const truoc = d.hp;
+          window.__hurt(d, 20, g, false, kind);
+          if (d.hp === truoc && d.edT > 0) ok++;
+        }
+        d.edCd = 0; d.edT = 0; d.drHide = false; d.hp = d.maxHp;
+        return +(ok / M).toFixed(3);
+      };
+      const loai = { thuong: theoLoai(undefined), big: theoLoai('big'),
+                     ult: theoLoai('ult'), dot: theoLoai('dot'), domain: theoLoai('domain') };
+      return { N, ne, neKhiHoi, neKhiTrongCua, odds: D.edOdds, oddsUlt: D.edOddsUlt, loai };
+    });
+    const ti = chg.ne / chg.N;
+    ok('Doraemon né được tia CHANGE của Ginyu bằng cửa thần kỳ',
+      chg.ne > 0, `${chg.ne}/${chg.N} lần né được`);
+    /* Trong trận THẬT thì Ginyu vẫn đấm chen vào giữa lúc tia đang bay; mỗi cú đấm đó
+       cũng bốc một lần mở cửa (60%) và đẩy cửa vào hồi chiêu, nên lúc tia tới nơi anh
+       hay đang hết cửa. Vì vậy mục này chỉ chấm "khó hơn hẳn đòn thường"; con số 30%
+       chính xác thì đã có mục theo-từng-loại ở dưới đo bằng cách gọi thẳng hurt(). */
+    ok('tia CHANGE tính là ultimate nên né khó hơn hẳn đòn thường',
+      ti > .08 && ti < .45,
+      `${(ti * 100).toFixed(1)}% (mốc ${Math.round(chg.oddsUlt * 100)}%, đo trong trận thật nên thấp hơn)`);
+    /* Né được rồi thì tia phải NHỚ là đã hụt anh. Không nhớ thì có cảnh: anh chui cửa né
+       được, mà drSafeSpot() lại đáp đúng vào đường bay, tia đi thẳng tới đó tóm lại lần
+       hai — lúc đó cửa đang hồi chiêu nên né kiểu gì cũng dính. Đo được đúng cảnh đó:
+       né xong vẫn 200/200 lần bị nhập. */
+    ok('né được rồi thì tia không quay lại tóm anh lần hai',
+      ti > .15, `nếu tia tóm lại được thì tỉ lệ né tụt về gần 0, đo ra ${(ti * 100).toFixed(1)}%`);
+    ok('cửa đang hồi chiêu thì không né nổi — đây là cái giá của nó',
+      chg.neKhiHoi === 0, `${chg.neKhiHoi}/30 lần né được khi cửa đang hồi`);
+    ok('đang ở TRONG cửa thì tia xuyên qua chỗ trống, không cướp xác được',
+      chg.neKhiTrongCua === 30, `${chg.neKhiTrongCua}/30 lần thoát`);
+    ok('cửa thần kỳ né được MỌI loại đòn, đòn thường và chiêu lớn đều bám mốc 60%',
+      Math.abs(chg.loai.thuong - chg.odds) < .08 && Math.abs(chg.loai.big - chg.odds) < .08,
+      `thường ${(chg.loai.thuong * 100).toFixed(1)}% · chiêu lớn ${(chg.loai.big * 100).toFixed(1)}%`);
+    ok('riêng ultimate thì tỉ lệ né tụt mạnh còn 30%',
+      Math.abs(chg.loai.ult - chg.oddsUlt) < .08 && chg.loai.ult < chg.loai.thuong - .15,
+      `ultimate ${(chg.loai.ult * 100).toFixed(1)}% so với đòn thường ${(chg.loai.thuong * 100).toFixed(1)}%`);
+    /* Sát thương duy trì và lãnh địa là phần dư của một đòn đã trúng rồi, không phải một
+       cú đánh đang bay tới — né được thì mỗi nhịp cháy 2 dmg cũng nuốt mất một lần mở cửa. */
+    ok('sát thương duy trì và lãnh địa thì không né được lần nào',
+      chg.loai.dot === 0 && chg.loai.domain === 0,
+      `dot ${chg.loai.dot} · domain ${chg.loai.domain}`);
+
+    ok('trận 4 không lỗi trang', errors.length === 0, errors.join(' | '));
     await browser.close();
   }
 

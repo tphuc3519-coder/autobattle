@@ -46,7 +46,7 @@ window.__doraTime=doraTime; window.__drTimeBack=drTimeBack; window.__drShrink=dr
 window.__doraAirCannon=doraAirCannon; window.__doraSmallLight=doraSmallLight;
 window.__doraCombo=doraCombo; window.__drAcOdds=drAcOdds; window.__drSlTarget=drSlTarget;
 window.__drSafeSpot=drSafeSpot; window.__drCanTime=drCanTime; window.__drStatus=drStatus; window.__statusTick=statusTick;
-window.__doraTick=doraTick; window.__drCopterOn=drCopterOn; window.__drTryEscape=drTryEscape; window.__drInterrupt=drInterrupt; window.__drAcHit=drAcHit;
+window.__step=step; window.__doraTick=doraTick; window.__drCopterOn=drCopterOn; window.__drTryEscape=drTryEscape; window.__drInterrupt=drInterrupt; window.__drAcHit=drAcHit;
 window.__drSlHit=drSlHit; window.__drDisorient=drDisorient;
 window.__meleeReach=meleeReach; window.__MUSIC=MUSIC; window.__doraVector=doraVector;
 window.__GN=GN; window.__ginyuAura=ginyuAura; window.__ginyuState=ginyuState;
