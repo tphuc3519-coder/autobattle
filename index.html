@@ -5989,10 +5989,41 @@ function vector(f){
     ctx.strokeStyle='#5CE07A'; ctx.lineWidth=1.4;
     ctx.beginPath(); ctx.moveTo(6,y-22); ctx.lineTo(-1,y-22); ctx.stroke();
     if(f.injured){
+      /* Tơi tả phải NHÌN RA ĐƯỢC ở cỡ trong trận. Bản cũ chỉ có hai vệt xước con con
+         cộng một mảnh rách — đo ra 113 điểm ảnh, đứng xa thì chẳng thấy gì, người dùng
+         bác đúng chỗ đó. Giờ đánh vào mấy mảng LỚN và dễ nhận: giáp ngực sứt một góc,
+         scouter nứt (mảng xanh lá sáng nhất trên người anh), đệm vai gãy, da bầm tím. */
+      const nut='#2E1B44';                                  // chỗ giáp vỡ, lộ đồ bên trong
+      // giáp ngực sứt hẳn một mảng góc dưới bên trái
+      ctx.fillStyle=nut;
+      ctx.beginPath();
+      ctx.moveTo(-13,y-16); ctx.lineTo(-5,y-15); ctx.lineTo(-8,y-22); ctx.lineTo(-13,y-21);
+      ctx.closePath(); ctx.fill();
+      // vết nứt chạy trên mặt giáp
+      ctx.strokeStyle='#8E94A8'; ctx.lineWidth=1.2; ctx.lineCap='round'; ctx.lineJoin='round';
+      ctx.beginPath(); ctx.moveTo(-8,y-25); ctx.lineTo(-3,y-21); ctx.lineTo(-5,y-16); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(10,y-24); ctx.lineTo(6,y-19); ctx.lineTo(8,y-15); ctx.stroke();
+      // đệm vai bên phải gãy mất một góc
+      ctx.fillStyle=nut; ctx.fillRect(13,y-10,4,5);
+      // dải cam dưới giáp rách một khúc
+      ctx.fillStyle=nut; ctx.fillRect(-2,y+4,7,3);
+      // scouter nứt: mất một mảnh kính, còn lại hai vết rạn
+      ctx.fillStyle='#1B1428'; ctx.fillRect(12,y-24,3,5);
+      ctx.strokeStyle='#124A24'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(7,y-24); ctx.lineTo(9.5,y-20); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(10,y-24); ctx.lineTo(8.5,y-19.5); ctx.stroke();
+      // da bầm tím sẫm: một mảng trên đùi, một mảng trên má
+      ctx.fillStyle='rgba(48,10,64,.5)';
+      ctx.beginPath(); ctx.ellipse(7,y+4,4.5,5.5,-.2,0,7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-7,y-24,3.6,3,.3,0,7); ctx.fill();
+      // vết xước
       ctx.strokeStyle='#8E1023'; ctx.lineWidth=2.4; ctx.lineCap='round';
       ctx.beginPath(); ctx.moveTo(-9,y+1); ctx.lineTo(-2,y+8); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(4,y-24); ctx.lineTo(10,y-19); ctx.stroke();
-      ctx.fillStyle='#2B2B3C';
+      ctx.beginPath(); ctx.moveTo(-10,y-31); ctx.lineTo(-4,y-28); ctx.stroke();   // trên mặt
+      ctx.beginPath(); ctx.moveTo(5,y+13); ctx.lineTo(10,y+19); ctx.stroke();     // trên chân
+      // ống quần rách một góc
+      ctx.fillStyle=nut;
       ctx.beginPath(); ctx.moveTo(-13,y+8); ctx.lineTo(-8,y+2); ctx.lineTo(-4,y+8); ctx.closePath(); ctx.fill();
     }
     ctx.restore();

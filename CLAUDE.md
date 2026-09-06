@@ -593,6 +593,23 @@ nhịp** và **dựng lại từ đầu** (đừng cộng trừ dần — hiệu
 > đường `dmgOut`. Thêm chiêu mới cho Ginyu thì nhớ cặp `gnDmg()` + `raw=true`, đừng quên
 > một trong hai.
 
+> **Model tơi tả phải NHÌN RA ĐƯỢC ở cỡ trong trận.** Người dùng bác: *"lúc Ginyu cả 2 về
+> trạng thái 20% máu, thì tất nhiên phải là model tơi tả cho cả 2 chứ, sao tôi k thấy tơi
+> tả"*. Soi ra thì **cờ `injured` vẫn bật đúng** cho cả hai thân xác — `ginyuPossess()` đưa
+> cả hai về đúng 20% máu tối đa, chạm đúng mốc `f.hp<=f.maxHp*.20` trong `step()` — và dấu
+> vết **vẫn được vẽ**. Hỏng ở chỗ nó quá mờ: bản cũ chỉ có **hai vệt xước con con cộng một
+> mảnh rách, đo ra 113 điểm ảnh**, đứng ở cỡ trong trận thì chẳng thấy gì.
+>
+> Cách sửa là đánh vào mấy mảng **lớn và dễ nhận** chứ đừng thêm nét mảnh: **giáp ngực sứt
+> một góc lộ đồ bên trong**, **scouter nứt và mất một mảnh kính** (đó là mảng xanh lá sáng
+> nhất trên người anh, vỡ là thấy ngay), **đệm vai gãy**, **dải cam dưới giáp rách**, cộng
+> bầm tím trên đùi và má. Đo lại: **464 điểm ảnh**. `t_ginyu.js` đòi tối thiểu **300**.
+>
+> *Mấy nhân vật kia vẫn ở mức cũ và cũng mờ tương tự* — đo được: kono 190 · chichi 113 ·
+> tsubasa 113 · shika 89 · dora 100 · superman 114. Chưa đụng vào vì người dùng mới chỉ nêu
+> Ginyu; muốn làm đậm cả bảng thì nhớ **Horikita là ngoại lệ** — `t_suzune.js` ghim cứng số
+> điểm ảnh của cô (form 1/2 được 113, form 3 được 209), sửa art của cô là test đổ.
+
 **Ô dán ảnh riêng**: `fly` · `dance1/2/3` · `beam` · `flash` · `change` · `panic`, cộng
 `idle/punch/kick/hurt/injured`. Thiếu ảnh thì lùi về ô gần nghĩa nhất (`flash` → `beam` →
 `atk1` → `idle`). Dáng vector vẽ da tím, hai sừng, giáp trắng lực lượng Frieza, scouter

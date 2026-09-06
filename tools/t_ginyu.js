@@ -619,6 +619,51 @@ async function waitGame(page, fnBody, limit) {
       pose.flash.poseEnd > pose.flash.xong + .2,
       `luồng sáng tắt ở giây ${pose.flash.xong.toFixed(2)}, dáng giữ tới ${pose.flash.poseEnd.toFixed(2)} (thừa ${(pose.flash.poseEnd - pose.flash.xong).toFixed(2)}s)`);
 
+    /* Hoán đổi thân xác xong thì CẢ HAI thân xác cùng về 20% máu — đúng cái mốc bật cờ
+       tơi tả — nên cả hai phải mang model tơi tả, và dấu vết phải NHÌN RA ĐƯỢC chứ không
+       phải vài nét mờ. Chấm bằng cách đếm điểm ảnh lệch giữa lành lặn và tơi tả. */
+    const toi = await page.evaluate(() => {
+      const G = window.__G(), GN = window.__GN;
+      const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f !== g);
+      g.gnEntry = null; g.gnChange = null; g.gnChangeDone = false; g.swapAs = null;
+      e.swapAs = null; e.hp = e.maxHp; g.hp = g.maxHp;
+      g.injured = false; e.injured = false;
+      window.__ginyuPossess(g, e);
+      // cờ tơi tả do step() bật theo ngưỡng máu; ở đây soi thẳng mốc cho khỏi phải chờ
+      const moc = [g, e].map(f => ({
+        key: f.key, ten: f.name, hp: Math.round(f.hp), max: f.maxHp,
+        duoiMoc: f.hp <= f.maxHp * .20
+      }));
+      // đếm điểm ảnh của dấu vết tơi tả, soi cả bốn kênh RGBA
+      const dem = key => {
+        const ve = inj => {
+          const c = document.createElement('canvas'); c.width = 140; c.height = 180;
+          const cx = c.getContext('2d');
+          const old = window.__getCtx(); window.__setCtx(cx);
+          cx.save(); cx.translate(70, 150);
+          window.__vector({ key, pose: 'idle', moving: false, injured: inj, face: 1,
+                            spriteH: 120, vx: 0, vy: 0, speed: 100, form: 2 });
+          cx.restore(); window.__setCtx(old);
+          return cx.getImageData(0, 0, 140, 180).data;
+        };
+        const a = ve(false), b = ve(true);
+        let n = 0;
+        for (let i = 0; i < a.length; i += 4)
+          if (a[i] !== b[i] || a[i+1] !== b[i+1] || a[i+2] !== b[i+2] || a[i+3] !== b[i+3]) n++;
+        return n;
+      };
+      return { moc, px: dem('ginyu'), pxFoe: dem(e.key), foeKey: e.key, changeHp: GN.changeHp };
+    });
+    ok('CHANGE xong thì cả hai thân xác cùng nằm dưới mốc tơi tả 20% máu',
+      toi.moc.every(m => m.duoiMoc),
+      toi.moc.map(m => `${m.key} ${m.hp}/${m.max}`).join(' · '));
+    /* Bản cũ chỉ có hai vệt xước con con, đo ra 113 điểm ảnh — đứng ở cỡ trong trận thì
+       chẳng thấy gì. Đòi hẳn 300 để không ai lỡ tay rút gọn lại. */
+    ok('dấu vết tơi tả của Ginyu đủ đậm để nhìn ra ở cỡ trong trận',
+      toi.px >= 300, `${toi.px} điểm ảnh lệch (bản cũ chỉ 113)`);
+    ok('thân xác bị cướp cũng mang dấu vết tơi tả của chính nó',
+      toi.pxFoe > 60, `${toi.foeKey}: ${toi.pxFoe} điểm ảnh lệch`);
+
     ok('bảng tiếng/ảnh không lỗi trang', errors.length === 0, errors.join(' | '));
     await browser.close();
   }
