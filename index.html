@@ -317,6 +317,19 @@ const EAGLE_DRIVE=.5;             // riêng Drive Shot còn ra nhanh gấp đôi
 const EAGLE_DRIVE_SPD=420;        // lúc Wings of the Eagle: drive bay thẳng vào địch, nhanh hơn cú sút thường
 const EAGLE_QUOTA={drive:2,bic:2}; // trong quãng cháy phải tung đủ chừng này
 const CHICHI_DASH_CD=5;           // ChiChi lao tới mỗi 5 giây trong trận, tức 10 giây người chơi thấy
+/* Viện binh của ChiChi. ChiChi là nhân vật CŨ nên mọi con số thời gian ở đây khai thẳng
+   bằng giây TRONG TRẬN (nhân đôi ra giây người chơi), đừng trộn với lối gs() của mấy
+   nhân vật mới — mà `gs()` cũng khai ở dưới nên viết gs() ở đây là dính TDZ. */
+const KAME_DMG=400;               // Kamehameha của Goku
+const KAME_STUN=1;                // choáng 2 giây người chơi
+const KAME_SLOW_T=2;              // HẾT choáng mới tới quãng ghì chân, 4 giây người chơi
+const KAME_SLOW_MOVE=.40;         // −60% tốc chạy
+const KAME_SLOW_CAST=.70;         // −30% tốc ra chiêu
+const MASENKO_DMG=100;            // mỗi đợt Masenko của Gohan, sát thương giữ nguyên
+const MASENKO_STACK_MOVE=.10;     // mỗi đợt trúng: −10% tốc chạy
+const MASENKO_STACK_CAST=.07;     // và −7% tốc ra chiêu — CỘNG DỒN theo số đợt trúng
+const MASENKO_STACK_MAX=5;        // trần đúng bằng số đợt của một lượt Masenko
+const MASENKO_STACK_T=2;          // mỗi đợt trúng làm mới đồng hồ về 4 giây người chơi
 
 /* ---------- Shikamaru ----------
    Mọi con số dưới đây viết theo giây người chơi rồi đổi sang giây trong trận bằng gs(),
@@ -354,6 +367,24 @@ const SEXY_DPS=15;                // khói hồng: nhịp nửa giây một lầ
 const SEXY_STUN=1.25;             // Sexy no Jutsu choáng nhân vật nam (2.5 giây người chơi)
 const SEXY_IMMUNE=.375;           // Konohamaru tự miễn nhiễm sau khi tung (0.75 giây người chơi)
 const EXHAUST_MUL=.75;            // kiệt sức: giảm 25% tốc chạy và 25% tốc ra chiêu
+/* Chiêu 1 của Konohamaru. Nhân vật CŨ nên mọi con số thời gian ở đây khai thẳng bằng
+   giây TRONG TRẬN (nhân đôi ra giây người chơi) — `gs()` khai mãi dưới khối Shikamaru. */
+const SHURIKEN_DMG=25;            // phi tiêu thường (cũ 20)
+const KUNAI_ODDS=.30;             // tỉ lệ ra kunai nổ thay vì phi tiêu (cũ .15)
+const KUNAI_DMG=45;               // sát thương ở TÂM vụ nổ
+/* Vụ nổ ăn theo MỨC ĐỘ đứng gần tâm, đo từ tâm tới MÉP model — cùng lối vùng chấn động
+   của Meteor Strike. Chạm tường cũng nổ, nên ai đứng cạnh tường vẫn dính. */
+const KUNAI_R=82;                 // quá mép này thì không dính một điểm nào
+const KUNAI_CORE=34;              // trong lõi này thì ăn đủ 100%
+const KUNAI_MIN=.40;              // ra tới sát mép chỉ còn bấy nhiêu
+const KUNAI_BURN_DPS=5*RT;        // đốt 5 dmg mỗi giây NGƯỜI CHƠI (dots tính theo giây trong trận)
+const KUNAI_BURN_T=1.5;           // cháy 3 giây người chơi
+/* Mini Rasengan — cửa thoát khi bị vây cận chiến. */
+const KONO_MINI_DMG=40;
+const KONO_MINI_T=1.25;           // bị áp sát bấy nhiêu giây trong trận (2.5 giây người chơi)
+const KONO_MINI_CD=6;             // hồi chiêu 12 giây người chơi
+const KONO_MINI_KB=.30;           // hất lùi 30% chiều dài sàn (cũ .18)
+const KONO_MINI_PAD=18;           // nới thêm ngoài tầm tay mới tính là "bị áp sát"
 const EAGLE_ACC=.5;               // độ lệch khi sút giảm một nửa, tức chuẩn xác gấp đôi
 
 /* ---------- Horikita Suzune ----------
@@ -487,11 +518,10 @@ const DORA={
      Mốc pha tính bằng giây trong trận, cộng dồn: cửa hiện · cửa mở · bước ra · cửa đóng. */
   doorT:gs(1.5), doorPh:[gs(.35),gs(.75),gs(1.2),gs(1.5)],
   /* Nội tại 1 — Take-copter */
-  /* Điều kiện đã NỚI HẲN theo yêu cầu: trước là địch phải xa hơn 55% chiều dài sàn VÀ
-     suốt 2.5 giây người chơi không đánh trúng ai — hai cửa đó chặn nhau nên cả trận anh
-     hiếm khi bay được lượt nào. */
-  copFar:.35,                // địch xa hơn 35% chiều dài sàn
-  copIdle:gs(1.2),           // và bấy nhiêu giây người chơi không đánh trúng ai
+  /* Điều kiện đã nới theo yêu cầu, rồi siết lại một nấc: gốc là 55% sàn / 2.5 giây, nới
+     hẳn xuống 35% / 1.2 giây, giờ chốt ở 40% / 2 giây. */
+  copFar:.40,                // địch xa hơn 40% chiều dài sàn
+  copIdle:gs(2),             // và bấy nhiêu giây người chơi không đánh trúng ai
   copT:gs(4), copCd:gs(15),
   copMove:2.50,              // +150% tốc chạy
   copSlowRes:.40,            // hiệu ứng làm chậm chỉ còn 60% hiệu lực
@@ -630,8 +660,8 @@ const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
     role:'ranged', want:215, speed:92, dodge:1, male:true,
-    skills:['<b>1</b> Shuriken / Explosive Kunai','<b>2</b> Kage Bunshin 60 dmg — homing clone, exhausts foe −25% move &amp; cast','<b>3</b> Sexy no Jutsu','<b>Rage 20</b> Rasengan Dash'],
-    init(f){ f.cds={s1:cm(1),s2:cm(3),s3:cm(2)}; f.rage=0; },
+    skills:[`<b>1</b> Shuriken ${SHURIKEN_DMG} — ${Math.round(KUNAI_ODDS*100)}% of throws come out as an <b>Explosive Kunai</b> instead: ${KUNAI_DMG} damage dead centre fading to ${Math.round(KUNAI_MIN*100)}% at the rim of the blast and nothing beyond it, plus <b>Burning</b> ${KUNAI_BURN_DPS/RT} dmg/s for ${rts(KUNAI_BURN_T)}s · it also blows up on a wall, so anyone standing near it still takes the blast`,'<b>2</b> Kage Bunshin 60 dmg — homing clone, exhausts foe −25% move &amp; cast','<b>3</b> Sexy no Jutsu',`<b>Mini Rasengan</b> pinned in melee for ${rts(KONO_MINI_T)}s without landing a hit ⇒ he spins a small one loose: ${KONO_MINI_DMG} damage and ${Math.round(KONO_MINI_KB*100)}% of the arena in knockback to <b>everyone</b> crowding him · every ${rts(KONO_MINI_CD)}s`,'<b>Rage 20</b> Rasengan Dash'],
+    init(f){ f.cds={s1:cm(1),s2:cm(3),s3:cm(2)}; f.rage=0; f.miniPress=0; f.miniCd=0; },
     think(f,e,d,auto){
       if(f.dash)return;
       if(f.cds.s1<=0&&(auto?d<460:keys['j'])){ f.cds.s1=cm(1.35); shuriken(f,e); }
@@ -644,7 +674,7 @@ const CHARS={
   chichi:{
     name:'ChiChi', short:'ChiChi', tag:'Housewife · Melee', emoji:'🍳', color:'#FF4D6D', alt:'#FF93A8',
     role:'melee', speed:106, dodge:.55, male:false,
-    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in, guaranteed crit, CC immune &amp; −30% dmg while dashing`,'<b>Passive</b> every 5 hits +5% crit','<b>Below 20% HP</b> calls Goku / Gohan'],
+    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in, guaranteed crit, CC immune &amp; −30% dmg while dashing`,'<b>Passive</b> every 5 hits +5% crit',`<b>Below 20% HP</b> calls Goku / Gohan — Goku's Kamehameha ${KAME_DMG} dmg, stun ${rts(KAME_STUN)}s then −${Math.round((1-KAME_SLOW_MOVE)*100)}% move / −${Math.round((1-KAME_SLOW_CAST)*100)}% cast for ${rts(KAME_SLOW_T)}s · Gohan's Masenko ${MASENKO_DMG} dmg a wave, each wave stacking −${Math.round(MASENKO_STACK_MOVE*100)}% move / −${Math.round(MASENKO_STACK_CAST*100)}% cast for ${rts(MASENKO_STACK_T)}s`],
     init(f){ f.cds={s1:0,s2:cm(3)}; f.dashCd=CHICHI_DASH_CD; f.hits=0; f.critBonus=0; },
     think(f,e,d,auto){
       if(f.cds.s1<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
@@ -1870,6 +1900,8 @@ function mk(o){
     moveMul:1, castMul:1, dmgOut:1, gnOut:1, dmgTake:1, ccTake:1, gnCcRes:0,
     gnSelfCut:1, gnCcCut:1, missOdds:0, aimOff:0, gnBodyProj:false,
     gnDaze:0, gnRage:0, gnTired:0, gnSlow:0, gnSlowAfter:0, gnBeamHits:0,
+    /* viện binh của ChiChi dán lên NGƯỜI KHÁC nên khai chung ở đây */
+    kameSlow:0, kameAfter:0, msSlow:0, msStack:0,
     gnEntry:null, gnAura:0, gnState:null, gnStateT:0, gnFlash:null, gnChange:null,
     gnChangeDone:false, gnProbeDone:false, gnPanic:false, gnPanicMul:1, swapAs:null, gnSoul:null,
     /* Doraemon: Disoriented và Shrunk là thứ anh dán lên NGƯỜI KHÁC, nên khai chung ở đây */
@@ -1877,6 +1909,7 @@ function mk(o){
     copter:0, copCd:0, copAcDone:false, drNoHit:0, edCd:0, edT:0, edMoved:false, edSpeed:0, edFrom:null, edTo:null,
     fk:0,
     drEntry:null, drAim:null, drCombo:null, drCone:null, drHide:false, tm:null, tmDone:false,
+    miniPress:0, miniCd:0,             // Konohamaru: đồng hồ bị vây và hồi chiêu Mini Rasengan
     /* Superman: Frozen / Chilled / làm chậm của vùng chấn động và trần khống chế cứng
        là thứ anh dán lên NGƯỜI KHÁC, nên khai chung ở đây với giá trị trung tính. */
     frozen:0, frozenDmg:0, chill:0, chillAfter:0, hvSlowT:0, supSlow:0, supQuake:0,
@@ -2106,6 +2139,8 @@ function hurt(t,amt,src,crit,kind,tint,raw){
 function counters(src,tgt){
   // Take-copter chỉ bật khi suốt copIdle giây không đánh trúng ai: trúng phát nào là reset
   if(src&&src.key==='dora'&&!src.summon) src.drNoHit=0;
+  // Mini Rasengan chỉ mở khi bị dí sát mà KHÔNG gây được sát thương: chạm được ai là reset
+  if(src&&src.key==='kono'&&!src.summon) src.miniPress=0;
   for(const f of [src,tgt]){
     if(!f||f.summon)continue;
     if(f.key==='kono'&&f.rage<20){ f.rage++; if(f.rage===20) say('Nộ khí đầy — RASENGAN sẵn sàng!','g'); }
@@ -2165,19 +2200,37 @@ function throwNow(k,e){
   let sp=both?rnd(-.14,.14):rnd(-.035,.035);
   if(both&&chance(.3)) sp+=(chance(.5)?1:-1)*rnd(.16,.26);
   const a=Math.atan2(e.y-k.y,e.x-k.x)+sp;
-  if(chance(.15)){
+  if(chance(KUNAI_ODDS)){
     G.proj.push({type:'kunai',team:k.team,owner:k,x:k.x+Math.cos(a)*24,y:k.y+Math.sin(a)*24,
-      vx:Math.cos(a)*250,vy:Math.sin(a)*250,r:11,dmg:45,life:3,ang:a,wob:0});
+      vx:Math.cos(a)*250,vy:Math.sin(a)*250,r:11,dmg:KUNAI_DMG,life:3,ang:a,wob:0});
     say('Kunai gắn bùa nổ đang bay tới!','k');
   }else{
     G.proj.push({type:'shuriken',team:k.team,owner:k,x:k.x+Math.cos(a)*24,y:k.y+Math.sin(a)*24,
-      vx:Math.cos(a)*285,vy:Math.sin(a)*285,r:9,dmg:20,life:2.6,spin:0});
+      vx:Math.cos(a)*285,vy:Math.sin(a)*285,r:9,dmg:SHURIKEN_DMG,life:2.6,spin:0});
   }
 }
+/* Phần sát thương ăn được theo MỨC ĐỘ đứng gần tâm vụ nổ. `d` đo từ tâm nổ tới MÉP
+   model (`dist − r`) chứ không phải tới tâm người — cùng lối `supQuakeShare()`. */
+function kunaiShare(d){
+  if(d<=KUNAI_CORE)return 1;
+  if(d>=KUNAI_R)return 0;
+  return 1-(1-KUNAI_MIN)*(d-KUNAI_CORE)/(KUNAI_R-KUNAI_CORE);
+}
+/* Lửa của bùa nổ KHÔNG cộng dồn: quả thứ hai chỉ làm mới đồng hồ, đúng lối Burning
+   của Superman. Lượng cháy giữ nguyên dù đứng giữa hay đứng rìa — phần nhạt dần chỉ
+   ăn vào cú nổ, đó là chỗ tôi tự chốt (xem CLAUDE.md). */
+function kunaiBurn(t,src){
+  if(!t||t.summon)return;
+  for(let i=t.dots.length-1;i>=0;i--) if(t.dots[i]&&t.dots[i].kunai) t.dots.splice(i,1);
+  t.dots.push({dps:KUNAI_BURN_DPS,left:KUNAI_BURN_T,acc:0,src,tint:'red',kunai:true});
+  G.floats.push({x:t.x,y:t.y-118,txt:`BURNING ${KUNAI_BURN_DPS/RT} DMG/s ${rts(KUNAI_BURN_T)}s`,
+    color:'#FF8A4A',life:1.5,ml:1.5,banner:true,gold:true,sc:.8,tilt:rnd(-.05,.05)});
+}
 function explode(p){
-  const R=82;
+  const R=KUNAI_R;
   ring(p.x,p.y,R+34,'#FFB03A',.5);
   ring(p.x,p.y,R,'#FFF2B0',.34);
+  ring(p.x,p.y,KUNAI_CORE,'#FFFFFF',.22);      // vòng đặc bên trong là phần ăn đủ dmg
   for(let i=0;i<12;i++){
     const a=i*.52;
     G.fx.push({type:'dust',x:p.x+Math.cos(a)*14,y:p.y+Math.sin(a)*14,r:6,life:.45,ml:.45});
@@ -2186,12 +2239,14 @@ function explode(p){
   let landed=false;
   for(const f of G.fighters){
     if(f.team===p.team||!f.alive||f.summon)continue;
-    if(dist(f,p)<R+f.r){
-      // né được thì cả choáng lẫn sát thương đều trượt, nên phải xem hurt() trả về gì
-      if(hurt(f,p.dmg,p.owner,'BOOM!',null,'red')){      // dính đòn nổ: đỏ
-        landed=true;
-        if(f.invuln<=0) stunFx(f,.5,'spark');
-      }
+    const sh=kunaiShare(Math.max(0,dist(f,p)-f.r));
+    if(sh<=0)continue;
+    const core=sh>=1;
+    // né được thì cả choáng, cháy lẫn sát thương đều trượt, nên phải xem hurt() trả về gì
+    if(hurt(f,Math.round(p.dmg*sh),p.owner,core?'BOOM!':'BOOM · EDGE',null,'red')){
+      landed=true;
+      if(f.invuln<=0) stunFx(f,.5,'spark');
+      kunaiBurn(f,p.owner);
     }
   }
   sfx('boom');
@@ -2244,6 +2299,50 @@ function sexy(k,e){
     else say(`${f.name} là nữ — không choáng, chỉ tức nổ máu.`,'c');
   }
 }
+/* ---- Mini Rasengan: cửa thoát khi bị vây cận chiến ---- */
+/* Bị người ta đứng dí sát suốt KONO_MINI_T giây mà mình không gây nổi một điểm sát
+   thương nào thì xoáy một quả nhỏ đẩy bật cả đám ra. Đếm trong konoTick() chứ không
+   đếm trong think(): lúc bị quây cậu hay dính choáng, mà think() không chạy khi choáng. */
+function konoPressed(f){
+  let near=null, nd=1e9;
+  for(const o of G.fighters){
+    if(!o||o===f||o.team===f.team||!o.alive||o.leaving>0||offField(o))continue;
+    const d=dist(f,o)-o.r;
+    if(d<nd){ nd=d; near=o; }
+  }
+  if(!near)return null;
+  return nd<=f.r+MELEE_REACH+KONO_MINI_PAD?near:null;
+}
+function konoTick(f,dt){
+  if(f.miniCd>0) f.miniCd=Math.max(0,f.miniCd-dt);
+  if(f.dash||G.over||G.freeze>0){ return; }
+  const e=konoPressed(f);
+  if(!e){ f.miniPress=0; return; }
+  f.miniPress+=dt;
+  if(f.miniPress>=KONO_MINI_T&&f.miniCd<=0) miniRasengan(f,e);
+}
+/* Đẩy MỌI người đang đứng sát ra chứ không riêng một người — cậu đang gỡ vòng vây,
+   không phải đang chọn mục tiêu. Dáng dùng lại đúng dáng Rasengan ('ulti'). */
+function miniRasengan(f,e){
+  f.miniCd=KONO_MINI_CD; f.miniPress=0;
+  setPose(f,'ulti',cm(.6)); aim(f,e,1.4); sfx('rasengan');
+  ring(f.x,f.y,64,'#63B4FF',.5);
+  G.flashScreen=Math.max(G.flashScreen,.08);
+  G.floats.push({x:f.x,y:f.y-104,txt:'MINI RASENGAN!',color:f.color,life:1.4,ml:1.4,
+    banner:true,bubble:true,gold:true,tilt:rnd(-.06,.06)});
+  let n=0;
+  for(const o of G.fighters){
+    if(!o||o===f||o.team===f.team||!o.alive||o.leaving>0||offField(o))continue;
+    if(dist(f,o)-o.r>f.r+MELEE_REACH+KONO_MINI_PAD)continue;
+    if(!hurt(o,KONO_MINI_DMG,f,'MINI RASENGAN!','big'))continue;
+    knock(o,o.x-f.x,o.y-f.y,W*KONO_MINI_KB*6);   // lực đẩy tắt dần exp(-6t): quãng đi = power/6
+    ring(o.x,o.y,96,'#63B4FF',.4);
+    n++;
+  }
+  say(n?`Bị dí sát quá lâu — Konohamaru xoáy Mini Rasengan ${KONO_MINI_DMG} dmg, hất bật ${n===1?'đối thủ':'cả đám'} ra.`
+       :'Konohamaru xoáy Mini Rasengan gỡ vây — nhưng không chạm được ai.','g');
+}
+
 function rasengan(k,e){
   k.rage=0; k.dash={t:1.9,hit:false,tgt:e}; setPose(k,'ulti',2); if(e) aim(k,e,1.6); sfx('rasengan');
   G.floats.push({x:k.x,y:k.y-104,txt:'RASENGAN!',color:k.color,life:1.6,ml:1.6,banner:true,bubble:true,gold:true,big:true,focus:true,tilt:rnd(-.07,.07)});
@@ -2881,15 +2980,52 @@ function summonHelp(c,force){
     say(`${name} bước ra từ khói — trận đấu tiếp tục!`,'g');
   },true);
 }
+/* ---- hiệu ứng ăn theo của hai chiêu viện binh ---- */
+/* Kamehameha: choáng trước, HẾT choáng mới tới quãng ghì chân — xếp hàng qua f.kameAfter
+   rồi summonStatus() mở ra đúng lúc `stun<=0`, cùng lối với luồng sáng của Ginyu.
+   Gọi hàm này SAU khi hurt() trả về true: né được thì không dính choáng ăn theo. */
+function kameHit(t){
+  if(!t||t.summon)return;
+  stunFx(t,KAME_STUN,'spark');
+  t.kameAfter=Math.max(t.kameAfter||0,KAME_SLOW_T);
+  G.floats.push({x:t.x,y:t.y-118,
+    txt:`KAMEHAMEHA · STUN ${rts(KAME_STUN)}s → −${Math.round((1-KAME_SLOW_MOVE)*100)}% MOVE / −${Math.round((1-KAME_SLOW_CAST)*100)}% CAST ${rts(KAME_SLOW_T)}s`,
+    color:'#FFD98A',life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  say(`Tia khí quật ${t.name} choáng ${rts(KAME_STUN)} giây, hết choáng còn lảo đảo thêm ${rts(KAME_SLOW_T)} giây.`,'g');
+}
+/* Masenko: mỗi đợt trúng chồng thêm một lớp ghì chân, và làm mới đồng hồ của cả chồng. */
+function masenkoHit(t){
+  if(!t||t.summon)return;
+  t.msStack=Math.min(MASENKO_STACK_MAX,(t.msStack||0)+1);
+  t.msSlow=MASENKO_STACK_T;
+  const n=t.msStack;
+  G.floats.push({x:t.x,y:t.y-112,
+    txt:`MASENKO ×${n} · −${Math.round(MASENKO_STACK_MOVE*n*100)}% MOVE / −${Math.round(MASENKO_STACK_CAST*n*100)}% CAST`,
+    color:'#E0C0FF',life:1.4,ml:1.4,banner:true,gold:true,sc:.8,tilt:rnd(-.05,.05)});
+  say(`Đợt Masenko thứ ${n} ghim vào ${t.name} — chậm thêm một lớp nữa.`,'g');
+}
+/* Hiệu ứng do viện binh của ChiChi để lại. Chạy SAU gnStatus (hàm đó GÁN đè hệ số) và
+   TRƯỚC drStatus, để cú nới hiệu ứng làm chậm của Take-copter còn đọc được phần này. */
+function summonStatus(f,dt){
+  if(f.kameSlow>0) f.kameSlow=Math.max(0,f.kameSlow-dt);
+  if(f.msSlow>0){ f.msSlow=Math.max(0,f.msSlow-dt); if(f.msSlow<=0) f.msStack=0; }
+  if(f.kameAfter>0&&f.stun<=0){ f.kameSlow=Math.max(f.kameSlow,f.kameAfter); f.kameAfter=0; }
+  if(f.kameSlow>0){ f.moveMul*=KAME_SLOW_MOVE; f.castMul*=KAME_SLOW_CAST; }
+  const n=Math.min(f.msStack||0,MASENKO_STACK_MAX);
+  if(n>0&&f.msSlow>0){
+    f.moveMul*=Math.max(.05,1-MASENKO_STACK_MOVE*n);
+    f.castMul*=Math.max(.05,1-MASENKO_STACK_CAST*n);
+  }
+}
 function summonFire(s,e){
   setPose(s,'atk1',3); aim(s,e,1.4);
   const a=Math.atan2(e.y-s.y,e.x-s.x);
   if(s.key==='goku'){
     G.proj.push({type:'kame',team:s.team,owner:s,x:s.x+Math.cos(a)*32,y:s.y+Math.sin(a)*32,
-      vx:Math.cos(a)*520,vy:Math.sin(a)*520,r:26,dmg:300,life:7,ang:a,bounce:0});
-    say('KA-ME-HA-ME-HAAA! Tia 300 dmg, nảy tường và yếu dần 10% mỗi lần.','g');
+      vx:Math.cos(a)*520,vy:Math.sin(a)*520,r:26,dmg:KAME_DMG,life:7,ang:a,bounce:0});
+    say(`KA-ME-HA-ME-HAAA! Tia ${KAME_DMG} dmg, choáng ${rts(KAME_STUN)} giây rồi ghì chân, nảy tường và yếu dần 10% mỗi lần.`,'g');
   }else{
-    say('MASENKO! 5 đợt, mỗi đợt 100 dmg.','g');
+    say(`MASENKO! 5 đợt, mỗi đợt ${MASENKO_DMG} dmg và một lớp ghì chân cộng dồn.`,'g');
     for(let i=0;i<5;i++) later(i*cm(.36),()=>{
       if(G.over)return;
       // ngắm đón đầu: chấm nơi địch sẽ tới sau quãng thời gian đạn bay
@@ -2904,7 +3040,7 @@ function summonFire(s,e){
       if(Math.abs(Math.cos(aa))>.12) s.face=Math.cos(aa)>=0?1:-1;
       s.ax=Math.cos(aa); s.ay=Math.sin(aa); s.lunge=Math.max(s.lunge,.6);
       G.proj.push({type:'masenko',team:s.team,owner:s,x:s.x+Math.cos(a2)*30,y:s.y+Math.sin(a2)*30,
-        vx:Math.cos(a2)*MASENKO_SPD,vy:Math.sin(a2)*MASENKO_SPD,r:20,dmg:100,life:3.4,ang:a2,wob:rnd(0,9)});
+        vx:Math.cos(a2)*MASENKO_SPD,vy:Math.sin(a2)*MASENKO_SPD,r:20,dmg:MASENKO_DMG,life:3.4,ang:a2,wob:rnd(0,9)});
       ring(s.x+Math.cos(a2)*26,s.y+Math.sin(a2)*26,46,'#FFF3B0',.26);
       G.fx.push({type:'bolt',x:s.x+Math.cos(a2)*26,y:s.y+Math.sin(a2)*26,ang:a2,life:.22,ml:.22,seed:rnd(0,9)});
       G.flashScreen=Math.max(G.flashScreen,.05);
@@ -3898,7 +4034,7 @@ const drCanTime=f=>!!f&&f.key==='dora'&&!f.summon&&!f.swapAs&&!f.tmDone&&!f.tm;
 /* Dựng lại toàn bộ hệ số nhân của một người. gnStatus() GÁN, drStatus() và supStatus()
    NHÂN CHỒNG lên — nên ba hàm đó phải đi liền nhau và đúng thứ tự này. Gọi lẻ một mình
    là hệ số cộng dồn qua từng nhịp; vì vậy chỉ có đúng một cửa vào là hàm này. */
-function statusTick(f,dt){ gnStatus(f,dt); drStatus(f,dt); supStatus(f,dt); }
+function statusTick(f,dt){ gnStatus(f,dt); summonStatus(f,dt); drStatus(f,dt); supStatus(f,dt); }
 function drStatus(f,dt){
   for(const k of ['dis','shrunk','copter','fk','edSpeed']) if(f[k]>0) f[k]=Math.max(0,f[k]-dt);
   if(f.copCd>0) f.copCd=Math.max(0,f.copCd-dt);
@@ -4088,6 +4224,7 @@ function drEscapeTick(f,dt){
     /* Xoá HIỆU ỨNG LÀM CHẬM, giữ nguyên choáng / cháy / độc và mọi debuff khác — kể cả
        Shrunk, vì đó là một lần biến hình chứ không phải một lớp làm chậm. */
     f.dis=0; f.gnSlow=0; f.gnSlowAfter=0; f.gnDaze=0; f.gnTired=0; f.exhaust=0;
+    f.kameSlow=0; f.kameAfter=0; f.msSlow=0; f.msStack=0;
     f.edSpeed=DORA.edSpeedT;
     sfx('dora_escape');
     ring(f.x,f.y,90,'#FF9AD5',.4);
@@ -4402,6 +4539,7 @@ function drTimeBack(f){
   // xoá sạch debuff đang mang trên người anh — chỉ trên anh thôi
   f.stun=0; f.dis=0; f.shrunk=0; f.dots.length=0;
   f.gnDaze=0; f.gnRage=0; f.gnTired=0; f.gnSlow=0; f.gnSlowAfter=0;
+  f.kameSlow=0; f.kameAfter=0; f.msSlow=0; f.msStack=0;
   f.exhaust=0; f.vuln=0; f.outCut=0; f.lock=0; f.kbx=0; f.kby=0;
   f.hitMul=1; f.reachMul=1; f.kbTake=1;
   if(f.r0!==undefined){ f.r=f.r0; f.r0=undefined; }
@@ -5321,6 +5459,7 @@ function step(dt){
     /* Chạy cho cả ba trường hợp: chính Ginyu, thân xác Ginyu do địch điều khiển, và
        thân xác địch đang có hồn Ginyu — chiêu 3 của anh cần được đếm nhịp ở cả hai chỗ. */
     if(!f.summon&&f.alive&&(f.key==='ginyu'||f.swapAs)) ginyuTick(f,dt);
+    if(f.key==='kono'&&!f.summon&&f.alive&&!f.swapAs) konoTick(f,dt);
     if(f.key==='dora'&&!f.summon&&f.alive&&!f.swapAs) doraTick(f,dt);
     if(f.key==='superman'&&!f.summon&&f.alive&&!f.swapAs) supermanTick(f,dt);
     // người khiêu khích rời sàn thì đối thủ nhắm lại vào mục tiêu thật
@@ -5766,7 +5905,8 @@ function step(dt){
           sfx('stun');
           say(`Phân thân đấm trúng — 60 dmg, choáng ${rts(.5)} giây và kiệt sức ${rts(EXHAUST_T)} giây.`,'k');
         }
-        if(p.type==='kame'){say(`Kamehameha xuyên trúng — ${Math.round(p.dmg)} dmg!`,'g');G.flashScreen=.2;}
+        if(p.type==='kame'){ kameHit(f); say(`Kamehameha xuyên trúng — ${Math.round(p.dmg)} dmg!`,'g'); G.flashScreen=.2; }
+        if(p.type==='masenko') masenkoHit(f);
         dead=true;break;
       }
     }

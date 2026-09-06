@@ -82,7 +82,47 @@ Bảy người đầu **1000 máu**, riêng **Superman 800 máu** (`HP`). Bảng
 màn chọn nhân vật — nhớ cập nhật khi đổi số).
 
 ### Konohamaru (`kono`)
-- Chiêu 1: Shuriken / Explosive Kunai.
+- Chiêu 1: **Shuriken 25 dmg** (cũ 20) hoặc **Explosive Kunai** — **30%** số lượt ném ra kunai
+  (cũ 15%, `KUNAI_ODDS`). Hằng số khai ngay dưới `EXHAUST_MUL`, viết thẳng bằng **giây trong
+  trận** theo đúng lối nhân vật cũ (`gs()` khai mãi dưới khối Shikamaru — viết `gs()` ở đó là
+  dính TDZ).
+- **Kunai nổ là một cú AoE thật**, ăn theo mức độ đứng gần tâm — `kunaiShare(d)` nội suy tuyến
+  tính, `d` đo từ tâm nổ tới **mép model** (`dist − r`), cùng lối `supQuakeShare()` của Superman:
+
+  | Quãng cách tới tâm nổ | Ăn bao nhiêu |
+  |---|---|
+  | trong lõi `KUNAI_CORE = 34` | **100%** — đủ 45 dmg |
+  | từ lõi ra tới `KUNAI_R = 82` | **nhạt dần 100% → 40%** (`KUNAI_MIN`) |
+  | quá `KUNAI_R` | **không dính một điểm nào** |
+
+  Băng-rôn đổi chữ theo: trong lõi là `BOOM!`, ngoài rìa là `BOOM · EDGE`, và `explode()` vẽ
+  thêm một vòng trắng đúng bằng lõi cho nhìn ra chỗ ăn đủ dmg.
+- Ai dính vụ nổ cũng **bén lửa 5 dmg mỗi giây người chơi trong 3 giây** (`KUNAI_BURN_DPS`
+  = `5*RT` vì `dots[].dps` tính theo giây trong trận, `KUNAI_BURN_T`). **Không cộng dồn** —
+  quả thứ hai chỉ làm mới đồng hồ (`kunaiBurn()` xoá dot cũ có cờ `kunai` rồi mới đẩy dot mới),
+  đúng lối Burning của Superman.
+- **Nổ vào tường cũng lan ra**: nhánh trong vòng duyệt đạn vốn đã gọi `explode()` khi kunai
+  chạm mép sàn, nên ai đứng cạnh tường vẫn ăn đủ phần của mình. Đo được: đứng sát mép, kunai
+  nổ vào tường, mất đúng 45 dmg và bén lửa.
+
+  > **Chỗ tự quyết:** phần nhạt dần chỉ ăn vào **cú nổ**, còn **lửa thì giữ nguyên** dù đứng
+  > giữa hay đứng rìa — bản mô tả chỉ nói "đứng xa trúng đòn dính ít dmg hơn". Tỉ lệ ra kunai
+  > cũng không nêu số mới, tôi nhân đôi 15% → **30%**. Muốn khác thì sửa `KUNAI_MIN` /
+  > `KUNAI_ODDS`.
+
+- **Mini Rasengan — cửa thoát khi bị vây cận chiến.** Bị người khác đứng dí sát (trong
+  `r + MELEE_REACH + KONO_MINI_PAD`) suốt **2.5 giây người chơi** (`KONO_MINI_T`) mà **không
+  gây nổi một điểm sát thương nào** thì cậu xoáy một quả nhỏ: **40 dmg** (`KONO_MINI_DMG`) và
+  **hất lùi 30% chiều dài sàn** (`KONO_MINI_KB`, cũ 18% — người dùng nâng lên:
+    *"Mini rasengan bay khoảng 30% sàn"*), hồi chiêu **12 giây người chơi**
+  (`KONO_MINI_CD`). Dáng dùng lại **đúng dáng Rasengan** (`setPose(f,'ulti',…)`).
+  - **Đếm trong `konoTick()` chứ không đếm trong `think()`**: lúc bị quây cậu hay dính choáng,
+    mà `think()` không chạy khi đang choáng — đếm ở đó thì cửa thoát không bao giờ mở.
+  - **Đẩy MỌI người đang đứng sát**, không riêng một người: cậu đang gỡ vòng vây chứ không
+    chọn mục tiêu. *(Chỗ này tôi tự chốt từ chữ "thoát khỏi vòng quây".)*
+  - `counters()` đặt `src.miniPress=0` mỗi lần cậu gây được sát thương, đúng cái cửa mà
+    `drNoHit` của Doraemon dùng.
+  - Kiểm bằng `node tools/t_kono.js`.
 - Chiêu 2: **Kage Bunshin** 60 dmg, phân thân đuổi theo, gây **Kiệt sức** — giảm
   **25%** tốc chạy và tốc ra chiêu (`EXHAUST_MUL = .75`, `EXHAUST_T = 4`).
   Hiệu ứng nhìn: **bọt khí kiểu trúng độc** bay lên, ánh xanh lá **rất nhạt**.
@@ -100,6 +140,34 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
   thương (`CHICHI_DASH_RES`).
 - Nội tại: cứ 5 đòn +5% chí mạng.
 - Dưới 20% máu: gọi **Goku / Gohan**. Có phân cảnh đóng băng (`G.freeze`) + zoom camera.
+
+**Hai chiêu viện binh — đã buff.** Hằng số khai ngay dưới `CHICHI_DASH_CD`, và vì ChiChi là
+nhân vật **cũ** nên chúng viết thẳng bằng **giây trong trận** (nhân đôi ra giây người chơi) —
+`gs()` khai mãi dưới khối Shikamaru, viết `gs()` ở đó là dính TDZ.
+
+| | Cũ | Mới |
+|---|---|---|
+| **Kamehameha** (Goku) | 300 dmg, không hiệu ứng ăn theo | **400 dmg** (`KAME_DMG`) + **choáng 2 giây người chơi** (`KAME_STUN`) rồi **−60% tốc chạy / −30% tốc ra chiêu trong 4 giây** (`KAME_SLOW_*`) |
+| **Masenko** (Gohan) | 5 đợt × 100 dmg | vẫn **100 dmg mỗi đợt**, nhưng **mỗi đợt trúng chồng thêm −10% tốc chạy / −7% tốc ra chiêu** (`MASENKO_STACK_*`), trần 5 lớp |
+
+- **Ghì chân của Kamehameha chỉ bắt đầu SAU khi hết choáng**, xếp hàng qua `t.kameAfter` rồi
+  `summonStatus()` mở ra đúng lúc `stun<=0` — cùng lối với luồng sáng của Ginyu, đừng cộng
+  thẳng vào lúc trúng đòn.
+- **`kameHit()` / `masenkoHit()` gọi SAU khi `hurt()` trả về true** (mục 6): né được thì không
+  dính choáng lẫn ghì chân ăn theo. Tia vẫn là `kind='ult'` nên Shikamaru né được mà không
+  cộng dồn tỉ lệ, còn cửa thần kỳ của Doraemon chỉ né được 30%.
+- **`summonStatus(f,dt)` chạy trong `statusTick` giữa `gnStatus` và `drStatus`**: `gnStatus`
+  GÁN đè hệ số nên phải nằm sau nó, còn phải nằm trước `drStatus` để cú nới hiệu ứng làm chậm
+  của Take-copter đọc được phần này.
+- Chồng lớp Masenko **làm mới đồng hồ chung** mỗi lần trúng (`MASENKO_STACK_T` = 4 giây người
+  chơi); hết giờ là rơi sạch cả chồng chứ không rơi từng lớp.
+- Cả hai đều là **hiệu ứng làm chậm** nên Emergency Door của Doraemon xoá được, và Time
+  Machine cũng xoá khi anh tua ngược.
+
+> **Chỗ tự quyết:** bản yêu cầu không nêu **thời lượng** của chồng lớp Masenko, chỉ nêu mức
+> cộng dồn. Tôi lấy **4 giây người chơi**, đúng bằng quãng ghì chân của Kamehameha, và trần
+> **5 lớp** đúng bằng số đợt của một lượt Masenko (đủ 5 đợt = −50% tốc chạy / −35% tốc ra
+> chiêu). Muốn khác thì sửa `MASENKO_STACK_T` / `MASENKO_STACK_MAX`.
 
 ### Ozora Tsubasa (`tsubasa`)
 - Chiêu 1 Basic Shot 25 (10% ra Overhead Kick 40 + choáng), chiêu 2 Drive Shot 80 + cháy 5×3.
@@ -684,19 +752,20 @@ kỳ đủ để làm chậm, giữ khoảng cách, chạy thoát và lật ngư
 Suốt cả 1.5 giây, `drEntryTick()` đặt `lock` cho mọi đối thủ mỗi nhịp — họ đứng chờ, không
 di chuyển cũng không đánh. Trận chỉ thật sự bắt đầu khi cửa biến mất hẳn.
 
-**Nội tại 1 — Take-copter.** Địch xa hơn **35% chiều dài sàn** (`copFar`) VÀ suốt `copIdle`
-(**1.2 giây người chơi**) không đánh trúng ai (`f.drNoHit`, `counters()` đặt lại về 0 mỗi lần
+**Nội tại 1 — Take-copter.** Địch xa hơn **40% chiều dài sàn** (`copFar`) VÀ suốt `copIdle`
+(**2 giây người chơi**) không đánh trúng ai (`f.drNoHit`, `counters()` đặt lại về 0 mỗi lần
 anh gây được sát thương) thì chong chóng lên đầu: **+150% tốc chạy** (`copMove = 2.50`), hiệu
 ứng làm chậm **chỉ còn 60% hiệu lực**, **+20% né đạn** (`dodgeVec` nhân thêm), tối đa **4
 giây**, **hết sớm ngay khi vào đủ tầm vung tay**. Hồi chiêu 15 giây. Bay là là
 (`DORA.copHover`), không bao giờ rời sàn.
 
-> **Hai cửa vào đã nới hẳn** *(người dùng: "chong chóng tre dùng để tăng 150% tốc độ di
-> chuyển và điều kiện dùng chong chóng tre bớt khắt nghiệt lại")*: `copFar` **55% → 35%**
-> chiều dài sàn, `copIdle` **2.5 → 1.2 giây người chơi**, tốc chạy **+70% → +150%**. Hai cửa
-> cũ chặn nhau nên cả trận anh hiếm khi bay nổi một lượt. **Hồi chiêu vẫn 15 giây** — người
-> dùng chỉ nêu "điều kiện", mà hồi chiêu là chuyện khác; muốn xả dày hơn nữa thì sửa
-> `DORA.copCd`.
+> **Hai cửa vào đã nới** *(người dùng: "chong chóng tre dùng để tăng 150% tốc độ di chuyển
+> và điều kiện dùng chong chóng tre bớt khắt nghiệt lại")*, rồi **siết lại một nấc** ngay sau
+> đó *("quãng không đánh trúng ai lên lại 2s, khoảng cách sàn lên 40% sàn")*:
+> `copFar` **55% → 35% → 40%** chiều dài sàn, `copIdle` **2.5 → 1.2 → 2 giây người chơi**,
+> tốc chạy **+70% → +150%**. Hai cửa gốc chặn nhau nên cả trận anh hiếm khi bay nổi một lượt.
+> **Hồi chiêu vẫn 15 giây** — người dùng chỉ nêu "điều kiện", mà hồi chiêu là chuyện khác;
+> muốn xả dày hơn nữa thì sửa `DORA.copCd`.
 - **Bay tới đâu nã một phát Air Cannon tới đó** — bay được `copAcAt` (0.6 giây người chơi)
   thì rút ống ra bắn, **ĐÚNG MỘT phát mỗi lượt bay** (cờ `f.copAcDone`, đặt lại trong
   `drCopterOn()`). Vừa bay vừa ôm cái ống thì phải trả giá: **chỉ còn 70% sát thương**
@@ -904,7 +973,7 @@ Horikita và Ginyu — đừng dựng ô mới.
 > xuyên hơn") và choáng **3 → 1.75 → 2.5 giây** (buff lại một nấc) · Small Light hồi chiêu
 > **18 → 16 giây** ("xả đạn thường xuyên hơn tí") · cửa thoát hiểm hồi chiêu **8 → 6 giây**,
 > và tỉ lệ né tách làm hai mức 60% / 30% · Take-copter **+70% → +150%** tốc chạy, hai cửa vào
-> nới từ 55% sàn / 2.5 giây xuống **35% sàn / 1.2 giây**.
+> nới từ 55% sàn / 2.5 giây xuống 35% / 1.2 giây rồi chốt ở **40% sàn / 2 giây**.
 
 > **`t_dora.js` đo phần cắt hồi chiêu của Time Machine bằng cách gọi thẳng `drTimeBack()`**,
 > không đọc qua vòng poll nữa. Đọc qua poll thì trận đã chạy tiếp và hồi chiêu trôi thêm một
@@ -1513,6 +1582,11 @@ Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 node tools/t_reg.js     # 36 cặp đấu, chạy theo đợt, bắt lỗi trang, xem cơ chế lớn có nổ không
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
+node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ nổ là AoE nhạt dần
+                        # 100%->40% rồi tắt hẳn + bén lửa 5 dmg/s trong 3s (nổ vào tường cũng
+                        # lan ra), và Mini Rasengan gỡ vây 40 dmg + hất 30% sàn, hồi chiêu 12s
+node tools/t_chichi.js  # viện binh của ChiChi: Kamehameha 400 dmg + choáng 2s rồi ghì chân 4s
+                        # (hết choáng mới tới), Masenko 100 dmg mỗi đợt + chồng lớp −10%/−7%
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
@@ -1534,7 +1608,7 @@ node tools/t_dora.js    # Doraemon: Anywhere Door đúng 1.5s bốn pha và đ�
                         # rộng hơn Freeze Breath, giữa nón 35 / rìa nón 20, model 55% mà
                         # hitbox 85%, không cộng dồn, phình lại đúng 0.4s), Emergency
                         # Door (miễn thương, chỉ xoá slow, đáp trong sàn), Take-copter
-                        # (+150% tốc chạy, hai cửa vào đã nới còn 35% sàn / 1.2 giây),
+                        # (+150% tốc chạy, hai cửa vào chốt ở 40% sàn / 2 giây),
                         # Time Machine (2.2s, trần hồi máu 20%, cắt 40% hồi chiêu), và chữ
                         # hiển thị đều bằng tiếng Anh
 node tools/t_superman.js # Superman: màn xuất hiện 1.5s bốn pha (bóng người trên cao, tiếp đất
