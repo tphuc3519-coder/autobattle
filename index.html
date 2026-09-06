@@ -531,14 +531,22 @@ const DORA_HI='Hello! Leave it to me!';
    đấm nặng, đuổi được bằng cách bay, lì đòn, và mang theo cả một bộ khống chế — đổi
    lại chiêu nào cũng có quãng chuẩn bị nhìn thấy rõ để đối phương kịp né hoặc ngắt.
    MỌI chữ hiện ra trong game của nhân vật này là tiếng Anh, kể cả tên trạng thái.
-   Cân theo thanh máu 800: đòn mạnh nhất chỉ 123 (137 khi địch đang Frozen), không
+   Cân theo thanh máu 800: đòn mạnh nhất chỉ 132 (147 khi địch đang Frozen), không
    chiêu nào chạm mốc 200 trong một lần dùng, và không có chí mạng ngẫu nhiên.
 
-   ĐỢT HẠ SÁT THƯƠNG (người dùng chốt): TOÀN BỘ sát thương của anh hạ xuống còn ~70%
-   so với bản đầu — 34/34/50 -> 24/24/35, tia nhiệt 22 -> 15, cháy 5 -> 3.5 dmg mỗi
-   giây người chơi, hơi lạnh 45 -> 32 (rìa nón 25 -> 18), Meteor Strike 145 -> 102,
-   chấn động 30 -> 21, Shatter Damage 20 -> 14. Mấy con số KHÔNG phải sát thương
-   (lực đẩy, thời gian khống chế, mốc 100 dmg làm vỡ băng) giữ nguyên. */
+   SÁT THƯƠNG ĐÃ CHỈNH, chốt ở mức 75% BẢN ĐẦU (người dùng đi qua ba lượt: hạ xuống
+   70%, nhích thêm 5%, rồi chốt hẳn "lên 75%"). Luật áp cho MỌI con số là một dòng
+   duy nhất, không bốc tay từng chỗ:
+
+       số mới = Math.round(số bản đầu × 0.75)
+
+   Bảng cuối: 34/34/50 -> 26/26/38 (combo 90) · tia nhiệt 22 -> 17 (×4 = 68) · cháy
+   5 -> 3.75 dmg mỗi giây người chơi (tổng 15) · hơi lạnh 45 -> 34, rìa nón 25 -> 19 ·
+   Meteor Strike 145 -> 109 · chấn động 30 -> 23 · Shatter Damage 20 -> 15.
+   Mấy chỗ bản đầu là số lẻ .5 thì làm tròn LÊN, nên vài con số nhỉnh hơn 75% một
+   chút (cao nhất là tia nhiệt 77.3%) — đó là cái giá của việc giữ đúng một luật.
+   Mấy con số KHÔNG phải sát thương (lực đẩy, thời gian khống chế, hồi chiêu, độ
+   chính xác, mốc 100 dmg làm vỡ băng) giữ nguyên qua cả ba lượt. */
 const SUP={
   /* Màn xuất hiện — đúng 1.5 giây người chơi, bốn pha: bóng người trên cao · hạ độ
      cao · tiếp đất bằng một chân · đứng thẳng nắm hai tay. */
@@ -559,14 +567,14 @@ const SUP={
   lsrHp:.25, lsrT:gs(8),
   lsrMove:1.30, lsrCast:1.25, lsrRes:.10, lsrKb:.25, lsrCdCut:gs(2),
   fatT:gs(4), fatMove:.80, fatCast:.85,      // Solar Fatigue ngay sau đó
-  /* 1 — Basic Attack: combo ba đòn 34 / 34 / 50 = 118 */
-  hit:[24,24,35], hitGap:gs(.55), hitCd:gs(.8),   // combo trọn vẹn 83 dmg
+  /* 1 — Basic Attack: combo ba đòn 26 / 26 / 38 = 90 */
+  hit:[26,26,38], hitGap:gs(.55), hitCd:gs(.8),   // combo trọn vẹn 90 dmg
   jabKb:70,                  // đòn một đẩy lùi một quãng rất ngắn
   upKb:.12,                  // đòn ba đẩy lùi 12% chiều dài sàn
   upStun:gs(.55), hitBreak:.10,
-  /* 2 — Heat Vision: gồng 0.65s rồi chiếu 1.2s, bốn nhịp 22 dmg */
-  hvCd:gs(8.5), hvAim:gs(.65), hvT:gs(1.2), hvN:4, hvDmg:15,
-  hvBurnT:gs(4), hvBurnDps:3.5*RT,           // Burning: 3.5 dmg mỗi giây người chơi
+  /* 2 — Heat Vision: gồng 0.65s rồi chiếu 1.2s, bốn nhịp 17 dmg */
+  hvCd:gs(8.5), hvAim:gs(.65), hvT:gs(1.2), hvN:4, hvDmg:17,
+  hvBurnT:gs(4), hvBurnDps:3.75*RT,          // Burning: 3.75 dmg mỗi giây người chơi (tổng 15)
   hvSlow:.75, hvSlowT:gs(.45),               // đang bị chiếu thì mất 25% tốc chạy
   hvTrack:gs(.3),            // chỉnh hướng trong 0.3 giây đầu, sau đó KHOÁ
   hvBreak:gs(.4), hvBreakCut:.50,
@@ -575,17 +583,22 @@ const SUP={
   /* 3 — Freeze Breath: hít vào 0.9s rồi thổi một luồng hơi hình NÓN */
   fbCd:gs(11.5), fbAim:gs(.9), fbT:gs(.55),
   fbRange:210, fbCone:.42, fbCore:.16, fbMax:3,
-  fbDmg:32, fbFreeze:gs(2.2), fbChill:gs(4), fbChillMove:.50, fbChillCast:.75,
-  fbEdgeDmg:18, fbEdgeFreeze:gs(1), fbEdgeChill:gs(2.5),
+  fbDmg:34, fbFreeze:gs(2.2), fbChill:gs(4), fbChillMove:.50, fbChillCast:.75,
+  fbEdgeDmg:19, fbEdgeFreeze:gs(1), fbEdgeChill:gs(2.5),
   fbShatter:100,             // ăn đủ bấy nhiêu dmg lúc đang Frozen thì băng vỡ ngay
                              // (mốc sát thương NHẬN VÀO, không phải sát thương anh gây ra — giữ nguyên)
   fbBreak:gs(.5), fbBreakCut:.60,
   /* 4 — Meteor Strike: bay lên 0.65s, treo 0.55s khoá hướng, rồi lao thẳng xuống */
   msCd:gs(17), msRise:gs(.65), msHold:gs(.55), msSpd:820, msH:170,
   msRange:430, msSafe:280,   // dưới 25% máu thì không tung từ khoảng cách xa nhất
-  msDmg:102, msDown:gs(1.5), msKb:.20, msHitR:36,
-  msQuakeDmg:21, msQuakeR:104, msQuakeSlow:.65, msQuakeT:gs(2),
-  msShatter:14,              // địch đang Frozen: vỡ băng, cộng đúng chừng này một lần
+  msDmg:109, msDown:gs(1.5), msKb:.20, msHitR:36,
+  /* Vùng chấn động là một cú AoE thật, chỉ có ý nghĩa khi trên sàn có từ ba người CÓ
+     THANH MÁU trở lên (đấu thủ chính + đồng minh như Ayanokouji; viện binh thuần kiểu
+     Goku / Gohan / phân thân không có thanh máu nên không tính). Trong bán kính lõi thì
+     ăn đủ, ra tới mép ngoài thì nhẹ dần còn msQuakeMin, quá mép ngoài thì không dính gì. */
+  msQuakeDmg:23, msQuakeR:104, msQuakeFar:196, msQuakeMin:.35,
+  msQuakeSlow:.65, msQuakeT:gs(2),
+  msShatter:15,              // địch đang Frozen: vỡ băng, cộng đúng chừng này một lần
   msMissT:gs(1.3), msCancelCut:.70,
   msAcc:[[0,.80],[300,.60],[620,.50]],
   msLog:gs(6),               // ba người trở lên: nhắm ai đánh anh đau nhất 6 giây qua
@@ -800,7 +813,7 @@ const CHARS={
       `<b>1 · Basic Attack</b> a three-blow combo ${SUP.hit[0]} / ${SUP.hit[1]} / ${SUP.hit[2]} = ${SUP.hit[0]+SUP.hit[1]+SUP.hit[2]} damage, ${rts(SUP.hitGap)}s apart, ${rts(SUP.hitCd)}s to reset afterwards — right straight, spinning left, then an uppercut that knocks the foe back ${Math.round(SUP.upKb*100)}% of the arena and stuns ${rts(SUP.upStun)}s · every blow has a ${Math.round(SUP.hitBreak*100)}% chance to cut a skill that is still winding up, and no blow but the third stuns · knocked out of reach, he runs or flies back in — he never teleports`,
       `<b>2 · Heat Vision</b> every ${rts(SUP.hvCd)}s — ${rts(SUP.hvAim)}s of his eyes glowing red, then two beams straight from the eyes for ${rts(SUP.hvT)}s: ${SUP.hvN} ticks of ${SUP.hvDmg} = ${SUP.hvN*SUP.hvDmg} damage, −${Math.round((1-SUP.hvSlow)*100)}% move while it burns them, no stun, no knockback · all ${SUP.hvN} ticks land ⇒ <b>Burning</b> ${SUP.hvBurnDps/RT} damage/s for ${rts(SUP.hvBurnT)}s (${SUP.hvN*SUP.hvDmg+SUP.hvBurnDps/RT*SUP.hvBurnT*RT} total, burn never stacks) · he may steer for ${rts(SUP.hvTrack)}s and then the aim is locked, so stepping aside works · accuracy ${Math.round(SUP.hvAcc[0][1]*100)}% close, ${Math.round(SUP.hvAcc[1][1]*100)}% mid, ${Math.round(SUP.hvAcc[2][1]*100)}% far, −${Math.round(SUP.flyAccCut*100)}% while flying · a hit inside the first ${rts(SUP.hvBreak)}s of the wind-up cancels it for half the cooldown; once the beams are out only a stun or a knockdown stops them · with three or more fighters it damages one body, and anyone standing in the way eats it instead`,
       `<b>3 · Freeze Breath</b> every ${rts(SUP.fbCd)}s — ${rts(SUP.fbAim)}s of drawing breath, then a white-blue cone of frost: ${SUP.fbDmg} damage and <b>Frozen</b> for ${rts(SUP.fbFreeze)}s on the fighter dead centre, then <b>Chilled</b> ${rts(SUP.fbChill)}s (−${Math.round((1-SUP.fbChillMove)*100)}% move, −${Math.round((1-SUP.fbChillCast)*100)}% cast) · Frozen cannot move or act but still takes damage, and ${SUP.fbShatter} damage cracks the ice early — the stun ends there and turns into Chilled for whatever was left · anyone at the edge of the cone only takes ${SUP.fbEdgeDmg}, Frozen ${rts(SUP.fbEdgeFreeze)}s, Chilled ${rts(SUP.fbEdgeChill)}s, up to ${SUP.fbMax} fighters at once · a foe already Frozen is not re-frozen, only damaged and re-Chilled · a hit inside the first ${rts(SUP.fbBreak)}s cancels it for ${Math.round(SUP.fbBreakCut*100)}% of the cooldown · never usable in flight`,
-      `<b>4 · Meteor Strike</b> every ${rts(SUP.msCd)}s — he drifts back, rises for ${rts(SUP.msRise)}s and hangs there ${rts(SUP.msHold)}s to lock his line, then drops fist-first in a <b>straight line</b>: no steering, no homing, and he can miss outright · a clean hit is ${SUP.msDmg} damage, knockdown ${rts(SUP.msDown)}s and ${Math.round(SUP.msKb*100)}% of the arena in knockback, plus a small shockwave for ${SUP.msQuakeDmg} and −${Math.round((1-SUP.msQuakeSlow)*100)}% move for ${rts(SUP.msQuakeT)}s — ${SUP.msDmg+SUP.msQuakeDmg} damage in all · against a <b>Frozen</b> body the fist shatters the ice for ${SUP.msShatter} <b>Shatter Damage</b> once, and no more: ${SUP.msDmg+SUP.msQuakeDmg+SUP.msShatter} is the ceiling · accuracy ${Math.round(SUP.msAcc[0][1]*100)}% close, ${Math.round(SUP.msAcc[1][1]*100)}% mid, ${Math.round(SUP.msAcc[2][1]*100)}% far · <b>Super Armor</b> on the way down — light hits cannot break it, though he still takes the damage; a stun during the ${rts(SUP.msRise+SUP.msHold)}s wind-up cancels it for ${Math.round(SUP.msCancelCut*100)}% of the cooldown · a miss leaves him face down for ${rts(SUP.msMissT)}s with Man of Steel down to ${Math.round(SUP.steelDown*100)}%`,
+      `<b>4 · Meteor Strike</b> every ${rts(SUP.msCd)}s — he drifts back, rises for ${rts(SUP.msRise)}s and hangs there ${rts(SUP.msHold)}s to lock his line, then drops fist-first in a <b>straight line</b>: no steering, no homing, and he can miss outright · a clean hit is ${SUP.msDmg} damage, knockdown ${rts(SUP.msDown)}s and ${Math.round(SUP.msKb*100)}% of the arena in knockback, plus a shockwave for ${SUP.msQuakeDmg} and −${Math.round((1-SUP.msQuakeSlow)*100)}% move for ${rts(SUP.msQuakeT)}s — ${SUP.msDmg+SUP.msQuakeDmg} damage in all · the shockwave is a real <b>area hit</b>: anyone else with an HP bar standing near the crater takes it too, in full inside the core and fading to ${Math.round(SUP.msQuakeMin*100)}% out at the rim, nothing at all beyond it — but only one body ever takes the ${SUP.msDmg} fist · against a <b>Frozen</b> body the fist shatters the ice for ${SUP.msShatter} <b>Shatter Damage</b> once, and no more: ${SUP.msDmg+SUP.msQuakeDmg+SUP.msShatter} is the ceiling · accuracy ${Math.round(SUP.msAcc[0][1]*100)}% close, ${Math.round(SUP.msAcc[1][1]*100)}% mid, ${Math.round(SUP.msAcc[2][1]*100)}% far · <b>Super Armor</b> on the way down — light hits cannot break it, though he still takes the damage; a stun during the ${rts(SUP.msRise+SUP.msHold)}s wind-up cancels it for ${Math.round(SUP.msCancelCut*100)}% of the cooldown · a miss leaves him face down for ${rts(SUP.msMissT)}s with Man of Steel down to ${Math.round(SUP.steelDown*100)}%`,
       `<b>Crowd control limit</b> unbroken hard crowd control from Superman alone never runs past ${rts(SUP.ccCap)}s — Frozen, stun and knockdown all count. Whatever is over the line turns into −${Math.round((1-SUP.ccSlow)*100)}% move for exactly as long: freeze for ${rts(SUP.fbFreeze)}s and Meteor Strike right after only knocks down for ${rts(SUP.ccCap-SUP.fbFreeze)}s, not the full ${rts(SUP.msDown)}s`],
     init(f){
       f.cds={s1:0,s2:SUP.hvCd*.5,s3:SUP.fbCd*.5,s4:SUP.msCd*.6};
@@ -4854,6 +4867,16 @@ function supFbFire(f,B){
 }
 
 /* ---- chiêu 4: Meteor Strike ---- */
+/* Vùng chấn động là AoE thật, ăn theo MỨC ĐỘ đứng gần điểm rơi: trong lõi msQuakeR thì
+   đủ 100%, ra tới mép ngoài msQuakeFar thì nhạt dần còn msQuakeMin, quá mép là không
+   dính gì. Cả lượng sát thương lẫn thời gian làm chậm đều nhân hệ số này (mức làm chậm
+   thì giữ nguyên 35%). Tách hẳn ra hàm cho test đo được. */
+function supQuakeShare(d){
+  if(d<=SUP.msQuakeR)return 1;
+  if(d>=SUP.msQuakeFar)return 0;
+  const q=(d-SUP.msQuakeR)/(SUP.msQuakeFar-SUP.msQuakeR);
+  return 1+(SUP.msQuakeMin-1)*q;
+}
 function supMsOdds(d,f){
   const T=SUP.msAcc;
   let p=T[T.length-1][1];
@@ -4958,7 +4981,9 @@ function supMsLand(f){
   const M=f.supMs;
   f.supMs=null; f.supAir=0; f.lock=0;
   sfx('sup_impact');
-  ring(f.x,f.y,150,'#FFD9A0',.55);
+  // hai vòng: vòng đặc là lõi ăn đủ, vòng mờ ngoài là mép AoE nhạt dần
+  ring(f.x,f.y,SUP.msQuakeR,'#FFD9A0',.55);
+  ring(f.x,f.y,SUP.msQuakeFar,'#E8C89A',.42);
   G.flashScreen=Math.max(G.flashScreen,.12);
   for(let i=0;i<12;i++) G.fx.push({type:'dust',x:f.x+rnd(-26,26),y:f.y+rnd(-6,18),r:6,life:.5,ml:.5});
   const prime=M?M.e:null;
@@ -4995,16 +5020,24 @@ function supMsLand(f){
       say(`Meteor Strike nện trúng — ${SUP.msDmg} dmg${froz?` + ${SUP.msShatter} Shatter Damage`:''}, quật ngã và hất lùi ${Math.round(SUP.msKb*100)}% chiều dài sàn.`,'g');
     }
   }
-  /* Vùng chấn động quanh điểm va chạm: 30 dmg và làm chậm, KHÔNG quật ngã thêm ai.
-     Mục tiêu chính ăn cả cú đấm lẫn chấn động, ai đứng gần chỉ ăn chấn động. */
+  /* Vùng chấn động quanh điểm va chạm — một cú AoE thật, KHÔNG quật ngã thêm ai.
+     Mục tiêu chính ăn cả cú đấm lẫn chấn động; ai đứng quanh đó chỉ ăn chấn động, và
+     ăn THEO MỨC ĐỘ đứng gần: trong lõi thì đủ, càng ra rìa càng nhẹ, quá mép ngoài là
+     không dính gì. Chỗ này chỉ có ý nghĩa khi trên sàn có từ ba người CÓ THANH MÁU trở
+     lên — viện binh thuần (Goku / Gohan / phân thân) không có thanh máu nên bị loại
+     bằng đúng cờ summon && !ally mà drawBars() dùng. */
   for(const o of G.fighters){
     if(o===f||o.team===f.team||!o.alive||o.leaving>0||(o.summon&&!o.ally))continue;
-    if(dist(f,o)>SUP.msQuakeR+o.r)continue;
-    if(hurt(o,SUP.msQuakeDmg,f,false,'big')){
-      o.supQuake=Math.max(o.supQuake||0,SUP.msQuakeT);
+    const share=supQuakeShare(Math.max(0,dist(f,o)-o.r));
+    if(share<=0)continue;
+    const dmg=Math.round(SUP.msQuakeDmg*share), slowT=SUP.msQuakeT*share;
+    if(dmg<=0)continue;
+    if(hurt(o,dmg,f,false,'big')){
+      o.supQuake=Math.max(o.supQuake||0,slowT);
       G.floats.push({x:o.x,y:o.y-112,
-        txt:`SHOCKWAVE −${Math.round((1-SUP.msQuakeSlow)*100)}% MOVE ${rts(SUP.msQuakeT)}s`,
-        color:'#FFD9A0',life:1.5,ml:1.5,banner:true,sc:.62});
+        txt:(share>=1?'SHOCKWAVE':'SHOCKWAVE · EDGE')+
+            ` −${Math.round((1-SUP.msQuakeSlow)*100)}% MOVE ${rts(slowT)}s`,
+        color:share>=1?'#FFD9A0':'#E8C89A',life:1.5,ml:1.5,banner:true,sc:.62});
     }
   }
   if(!direct){

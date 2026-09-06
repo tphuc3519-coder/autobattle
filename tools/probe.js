@@ -60,7 +60,7 @@ window.__SUP=SUP; window.__supermanEnter=supermanEnter; window.__supResolve=supR
 window.__supFlyOn=supFlyOn; window.__supFlyOff=supFlyOff; window.__supCombo=supCombo;
 window.__supermanHeat=supermanHeat; window.__supermanFreeze=supermanFreeze;
 window.__supermanMeteor=supermanMeteor; window.__supMsLand=supMsLand; window.__supMsTarget=supMsTarget;
-window.__supHvOdds=supHvOdds; window.__supMsOdds=supMsOdds; window.__supResist=supResist;
+window.__supHvOdds=supHvOdds; window.__supMsOdds=supMsOdds; window.__supQuakeShare=supQuakeShare; window.__supResist=supResist;
 window.__supKbTake=supKbTake; window.__supCC=supCC; window.__supFreezeOn=supFreezeOn;
 window.__supChill=supChill; window.__supIceBreak=supIceBreak; window.__supBurn=supBurn;
 window.__supInterrupt=supInterrupt; window.__supermanTick=supermanTick; window.__supVector=supVector;
