@@ -549,7 +549,11 @@ cái người dùng muốn: **thân xác A mà chữ B trên thanh máu**, và n
 | object cũ của đối thủ | của họ | `Captain Ginyu` | `'ginyu'` | beam + flash của Ginyu (dmg ×`.35`, hiệu ứng ×`.30`) và **đòn tay mượn** của thân xác đó |
 
 - Máu: **cả hai thân xác cùng về 20% máu tối đa của chính nó** (`GN.changeHp`) — ngang
-  nhau, bất kể trước đó ai đang bao nhiêu máu.
+  nhau, bất kể trước đó ai đang bao nhiêu máu. **Phải `Math.floor`, không được `Math.round`**:
+  mốc bật cờ tơi tả trong `step()` là `f.hp <= f.maxHp*.20`, mà làm tròn LÊN thì với máu
+  tối đa lẻ con số rơi cao hơn mốc đúng một chút và **model tơi tả không hiện** — ví dụ 999
+  máu, `round` ra 200 > 199.8 còn `floor` ra 199 thì đúng dưới mốc. Ô máu người chơi chỉnh
+  được từ 100 tới 9999 nên số lẻ là chuyện thường; `t_ginyu.js` thử cả 1000 lẫn 999.
   *(Bản đầu để lệch: 15% cho thân xác Ginyu, còn thân xác cướp được thì CỘNG THÊM 20% vào
   lượng máu đang có — nên cướp đúng lúc địch còn nhiều máu là ăn đứt. Người dùng bác: "cân
   bằng Ginyu là khi change thì cả 2 thân xác có lượng máu ngang nhau (20%) chứ đừng lệch
@@ -599,6 +603,10 @@ nhịp** và **dựng lại từ đầu** (đừng cộng trừ dần — hiệu
 > cả hai về đúng 20% máu tối đa, chạm đúng mốc `f.hp<=f.maxHp*.20` trong `step()` — và dấu
 > vết **vẫn được vẽ**. Hỏng ở chỗ nó quá mờ: bản cũ chỉ có **hai vệt xước con con cộng một
 > mảnh rách, đo ra 113 điểm ảnh**, đứng ở cỡ trong trận thì chẳng thấy gì.
+>
+> *(Lúc viết test cho chỗ này thì lòi thêm một lỗi thật nữa: `ginyuPossess()` dùng
+> `Math.round` nên với máu tối đa lẻ, máu sau khi hoán đổi rơi cao hơn mốc 20% đúng một
+> chút và cờ tơi tả KHÔNG bật. Đã đổi sang `Math.floor` — xem mục CHANGE!!! ở trên.)*
 >
 > Cách sửa là đánh vào mấy mảng **lớn và dễ nhận** chứ đừng thêm nét mảnh: **giáp ngực sứt
 > một góc lộ đồ bên trong**, **scouter nứt và mất một mảnh kính** (đó là mảng xanh lá sáng
@@ -1482,6 +1490,9 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Model bị thu nhỏ phình lại quá nhanh | nhịp bước tính bằng `dt/growT` — đó là phần của cả dải 0→1, trong khi quãng đi thật chỉ là `1 − shrunkSize` = 0.45 dải | nhân thêm đúng quãng đó: `span*dt/growT`; đo lại ra đúng 0.4 giây người chơi |
 | Hệ số nhân cộng dồn khi gọi lẻ `drStatus()` | `gnStatus()` GÁN còn `drStatus()` NHÂN CHỒNG, nên gọi `drStatus()` một mình là nhân dồn qua từng nhịp | gộp thành một cửa duy nhất `statusTick(f,dt)`; test cũng phải gọi qua đó |
 | `t_bubble.js` đổ oan ở nhánh "đảo thứ tự" | mốc `trang > .5` nằm đúng chỗ phép đo dao động 49~51% tuỳ lần bốc vị trí — đổ chừng hai trên ba lần, và đổ y hệt trên `origin/main` | hạ mốc xuống `.45`; bằng chứng thật rằng bong bóng nằm trên vẫn là dòng "viền vàng 0%" ngay dưới, còn lúc bị đè thì nền trắng tụt hẳn dưới 40% |
+| Model tơi tả của Ginyu nhìn không ra | dấu vết chỉ là hai vệt xước mảnh, đo ra 113 điểm ảnh | đánh vào mảng lớn: giáp sứt, scouter vỡ, đệm vai gãy, bầm tím — lên 464 điểm ảnh, test đòi tối thiểu 300 |
+| CHANGE xong mà không hiện model tơi tả khi máu tối đa là số lẻ | `ginyuPossess()` dùng `Math.round(maxHp*.20)`, làm tròn LÊN thì vượt mốc `hp <= maxHp*.20` | đổi sang `Math.floor`; test thử cả máu chẵn 1000 lẫn máu lẻ 999 |
+| `t_ginyu.js` đo choáng Ginyu Flash ra 1.68 trên mốc 1.75 | đọc `e.stun` qua vòng poll 15ms, máy bận thì lượt đọc rơi trễ cả chục khung | gọi thẳng `gnFlashHit()` rồi đọc ngay, bỏ hẳn phép đo theo thời gian ở chỗ đó |
 | Meteor Strike hất lùi 0px khi lao trúng giữa người | hướng đẩy tính bằng `prime.x-f.x`, mà lao trúng thì hai chỗ đứng trùng nhau nên ra vector 0 | rơi vào trường hợp đó thì lấy luôn hướng lao (`f.ax/f.ay`) làm hướng đẩy |
 | Khuôn mặt Superman chìm nghỉm trong tóc | vạt tóc `fillRect` phủ xuống tận hàng mắt | kéo vạt tóc lên cao hơn và hạ hàng mắt xuống một nhịp |
 | Cú xoay người đấm tay trái nhìn như chưa đánh | tay xa chỉ dài 17 nên nắm đấm dừng ngay giữa ngực | riêng dáng `punch2` nới tay dẫn lên 26 và vẽ **đè lên thân** |

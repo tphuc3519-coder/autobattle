@@ -275,9 +275,25 @@ async function waitGame(page, fnBody, limit) {
     ok('Ginyu Flash gồng đủ 1.75 giây người chơi rồi mới bắn',
       flash.fired > 0 && Math.abs(flash.fired - flash.GN.charge) < .15,
       `bắn ở giây ${flash.fired} trong trận (chuẩn ${flash.GN.charge})`);
+    /* Choáng đo THẲNG bằng cách gọi gnFlashHit() chứ không đọc qua vòng poll: máy bận thì
+       lượt đọc rơi trễ cả chục khung, đo ra 1.68 trên mốc 1.75 và đổ oan — đã dính hai lần
+       nên thôi bỏ hẳn phép đo theo thời gian ở chỗ này. */
+    const fstun = await page.evaluate(() => {
+      const G = window.__G();
+      const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f !== g);
+      g.gnState = null; g.gnStateT = 0; g.gnSelfCut = 1; g.gnCcCut = 1;
+      window.__gnStatus(g, 0);
+      e.stun = 0; e.evade = 0; e.dmgRes = 0; e.ccRes = 0; e.prewing = false; e.eagle = false;
+      e.hp = e.maxHp; e.gnSlowAfter = 0;
+      window.__gnStatus(e, 0);
+      window.__gnFlashHit(g, e);
+      const r = { stun: +e.stun.toFixed(3), pend: +(e.gnSlowAfter || 0).toFixed(3) };
+      e.stun = 0; e.gnSlowAfter = 0; e.hp = e.maxHp;
+      return r;
+    });
     ok('Ginyu Flash gây 100 dmg và choáng 3.5 giây người chơi',
-      flash.dmg === flash.GN.dmg && Math.abs(flash.stun - flash.GN.stun) < .05,
-      `${flash.dmg} dmg · choáng ${flash.stun}s trong trận`);
+      flash.dmg === flash.GN.dmg && Math.abs(fstun.stun - flash.GN.stun) < .01,
+      `${flash.dmg} dmg · choáng ${fstun.stun}s trong trận (chuẩn ${flash.GN.stun})`);
     ok('quãng ghì chân chỉ bắt đầu SAU khi hết choáng',
       flash.pend > 0 && Math.abs(flash.slow - flash.GN.slowT) < .2,
       `xếp hàng ${flash.pend}s, chạy ${flash.slow}s sau khi hết choáng`);
@@ -625,15 +641,22 @@ async function waitGame(page, fnBody, limit) {
     const toi = await page.evaluate(() => {
       const G = window.__G(), GN = window.__GN;
       const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f !== g);
-      g.gnEntry = null; g.gnChange = null; g.gnChangeDone = false; g.swapAs = null;
-      e.swapAs = null; e.hp = e.maxHp; g.hp = g.maxHp;
-      g.injured = false; e.injured = false;
-      window.__ginyuPossess(g, e);
-      // cờ tơi tả do step() bật theo ngưỡng máu; ở đây soi thẳng mốc cho khỏi phải chờ
-      const moc = [g, e].map(f => ({
-        key: f.key, ten: f.name, hp: Math.round(f.hp), max: f.maxHp,
-        duoiMoc: f.hp <= f.maxHp * .20
-      }));
+      /* Thử với hai cỡ máu tối đa: một số chẵn và một số LẺ. Số lẻ là chỗ Math.round()
+         từng đẩy máu lên cao hơn mốc 20% đúng một chút và model tơi tả không hiện —
+         mà ô máu thì người chơi chỉnh được từ 100 tới 9999 nên số lẻ là chuyện thường. */
+      const thu = max => {
+        g.gnEntry = null; g.gnChange = null; g.gnChangeDone = false;
+        g.swapAs = null; e.swapAs = null; g.gnSoul = null; e.gnSoul = null;
+        g.maxHp = max; e.maxHp = max; g.hp = max; e.hp = max;
+        g.injured = false; e.injured = false;
+        window.__ginyuPossess(g, e);
+        // cờ tơi tả do step() bật theo ngưỡng máu; ở đây soi thẳng mốc cho khỏi phải chờ
+        return [g, e].map(f => ({
+          key: f.key, hp: Math.round(f.hp), max: f.maxHp,
+          duoiMoc: f.hp <= f.maxHp * .20
+        }));
+      };
+      const moc = thu(1000).concat(thu(999));
       // đếm điểm ảnh của dấu vết tơi tả, soi cả bốn kênh RGBA
       const dem = key => {
         const ve = inj => {
@@ -654,9 +677,9 @@ async function waitGame(page, fnBody, limit) {
       };
       return { moc, px: dem('ginyu'), pxFoe: dem(e.key), foeKey: e.key, changeHp: GN.changeHp };
     });
-    ok('CHANGE xong thì cả hai thân xác cùng nằm dưới mốc tơi tả 20% máu',
+    ok('CHANGE xong thì cả hai thân xác cùng nằm dưới mốc tơi tả 20% máu, kể cả khi máu tối đa là số lẻ',
       toi.moc.every(m => m.duoiMoc),
-      toi.moc.map(m => `${m.key} ${m.hp}/${m.max}`).join(' · '));
+      toi.moc.map(m => `${m.key} ${m.hp}/${m.max}${m.duoiMoc ? '' : ' HONG'}`).join(' · '));
     /* Bản cũ chỉ có hai vệt xước con con, đo ra 113 điểm ảnh — đứng ở cỡ trong trận thì
        chẳng thấy gì. Đòi hẳn 300 để không ai lỡ tay rút gọn lại. */
     ok('dấu vết tơi tả của Ginyu đủ đậm để nhìn ra ở cỡ trong trận',
