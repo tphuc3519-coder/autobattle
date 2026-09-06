@@ -749,34 +749,39 @@ chuẩn bị nhìn thấy rõ** để đối phương kịp né hoặc ngắt.
 > bốn cái tên người dùng liệt kê.
 
 > **Anh là người DUY NHẤT không có 1000 máu: `HP.superman = 800`.** Cả bộ chiêu cân theo đúng
-> con số đó — đòn mạnh nhất **123** (137 khi địch đang Frozen), tức 15.375% thanh máu. **Không
+> con số đó — đòn mạnh nhất **129** (144 khi địch đang Frozen), tức 16.125% thanh máu. **Không
 > chiêu nào được phép chạm mốc 200 trong một lần dùng**, và **không có chí mạng ngẫu nhiên**
 > (nhãn `METEOR STRIKE!` truyền vào `hurt()` chỉ là băng-rôn tên chiêu, đúng lối `RASENGAN!`
 > / `AIR CANNON!` — nó không nhân sát thương).
 
-> **Đã hạ TOÀN BỘ sát thương xuống còn ~70% so với bản đầu** (người dùng chốt sau khi xem
-> bản đầu chạy):
+> **Sát thương đã chỉnh HAI ĐỢT, đi liền nhau** (người dùng chốt sau khi xem bản đầu chạy):
+> đợt 1 hạ toàn bộ xuống còn ~70% bản đầu, đợt 2 nhích tất cả lên thêm 5% nữa. Chốt lại là
+> **~74% bản đầu**:
 >
-> | | bản đầu | giờ |
-> |---|---|---|
-> | combo tay | 34 / 34 / 50 = 118 | **24 / 24 / 35 = 83** |
-> | Heat Vision, mỗi nhịp | 22 (×4 = 88) | **15 (×4 = 60)** |
-> | Burning, mỗi giây người chơi | 5 (tổng 20) | **3.5 (tổng 14)** |
-> | Freeze Breath giữa nón | 45 | **32** |
-> | Freeze Breath rìa nón | 25 | **18** |
-> | Meteor Strike, cú đấm | 145 | **102** |
-> | vùng chấn động | 30 | **21** |
-> | Shatter Damage | 20 | **14** |
+> | | bản đầu | đợt 1 (70%) | **giờ (+5%)** |
+> |---|---|---|---|
+> | combo tay | 34 / 34 / 50 = 118 | 24 / 24 / 35 = 83 | **25 / 25 / 37 = 87** |
+> | Heat Vision, mỗi nhịp | 22 (×4 = 88) | 15 (×4 = 60) | **16 (×4 = 64)** |
+> | Burning, mỗi giây người chơi | 5 (tổng 20) | 3.5 (tổng 14) | **3.75 (tổng 15)** |
+> | Freeze Breath giữa nón | 45 | 32 | **34** |
+> | Freeze Breath rìa nón | 25 | 18 | **19** |
+> | Meteor Strike, cú đấm | 145 | 102 | **107** |
+> | vùng chấn động | 30 | 21 | **22** |
+> | Shatter Damage | 20 | 14 | **15** |
 >
-> Mấy con số **không phải sát thương giữ nguyên hết**: lực đẩy, thời gian khống chế, hồi
-> chiêu, độ chính xác, và **mốc 100 dmg làm vỡ băng** (đó là sát thương NHẬN VÀO, không phải
-> sát thương anh gây ra). `t_superman.js` có riêng một mục chấm tỉ lệ của cả tám con số, đòi
-> nằm trong khoảng 66~73% — sửa số nào lệch ra khỏi khoảng đó là test đổ.
+> Mấy con số **không phải sát thương giữ nguyên hết qua cả hai đợt**: lực đẩy, thời gian
+> khống chế, hồi chiêu, độ chính xác, và **mốc 100 dmg làm vỡ băng** (đó là sát thương NHẬN
+> VÀO từ bất kỳ ai, không phải sát thương anh gây ra). `t_superman.js` có riêng một mục chấm
+> tỉ lệ của cả tám con số, đòi nằm trong khoảng **70~77%** — sửa số nào lệch ra khỏi khoảng
+> đó là test đổ.
 >
-> **Kéo theo một chỗ phải sửa thật:** cú đấm Meteor Strike giờ chỉ còn 102, mà địch có lớp
-> giảm sát thương nào là tụt xuống dưới mốc 100 và lớp băng **không vỡ**. Bản mô tả nói thẳng
-> "cú đấm làm lớp băng vỡ", nên `supMsLand()` gọi `supIceBreak()` hẳn ra chứ không trông chờ
-> vào mốc 100 nữa.
+> *"Tăng thêm 5%" ở đợt 2 tôi hiểu là **nhân 1.05 lên con số đang có**, không phải nâng tỉ lệ
+> từ 70% lên 75%. Hai cách đọc chênh nhau chừng 2%; muốn cách kia thì nhân lại từ số bản đầu.*
+>
+> **Kéo theo một chỗ phải sửa thật:** đợt 1 kéo cú đấm Meteor Strike xuống 102, sát mốc 100
+> làm vỡ băng — địch có lớp giảm sát thương nào là tụt xuống dưới mốc và lớp băng **không vỡ**.
+> Bản mô tả nói thẳng "cú đấm làm lớp băng vỡ", nên `supMsLand()` gọi `supIceBreak()` hẳn ra
+> chứ không trông chờ vào mốc 100 nữa. Giữ nguyên cách đó dù giờ đã lên lại 107.
 
 > **Model phải giữ đúng hình tượng quen thuộc**: đồ xanh, biểu tượng chữ **S** đỏ trên nền
 > vàng giữa ngực, áo choàng đỏ, giày đỏ, tóc đen kèm lọn xoăn trước trán. Chữ **S** vẽ bằng
@@ -845,8 +850,8 @@ gây một điểm sát thương nào.
   trên 25% rồi tụt xuống lại cũng không gọi lần hai.
 
 **Chiêu 1 — Basic Attack.** Combo **ba đòn**, mỗi đòn cách nhau **0.55 giây người chơi**:
-đấm thẳng tay phải 24 → **xoay người** đấm tay trái 24 → uppercut 35. Tổng **83** =
-10.375% thanh máu 800. Xong combo chờ **0.8 giây** mới đánh tiếp.
+đấm thẳng tay phải 25 → **xoay người** đấm tay trái 25 → uppercut 37. Tổng **87** =
+10.875% thanh máu 800. Xong combo chờ **0.8 giây** mới đánh tiếp.
 - Đòn ba đẩy lùi **12% chiều dài sàn** và choáng **0.55 giây** (đi qua trần khống chế).
 - Mỗi đòn **10%** cắt một chiêu **đang trong giai đoạn chuẩn bị** (`supInterrupt()`) — và chỉ
   thế, **không kèm choáng** ngoài hiệu ứng của đòn ba.
@@ -862,8 +867,8 @@ gây một điểm sát thương nào.
 **hai tia từ ĐÚNG hai con mắt** trong **1.2 giây**.
 - Chiều cao mắt đọc qua `supEyeY(f)` = 84% chiều cao model, **không phải trán, không phải
   miệng**. `drawSupHeat()` vẽ hai tia tách nhau ở gốc rồi **chụm dần vào nhau** khi bay xa.
-- **4 nhịp × 15 = 60 dmg**; trúng đủ cả bốn nhịp lên **cùng một người** thì dính **Burning**
-  3.5 dmg/giây trong 4 giây (**tổng tối đa 74**). Burning **không cộng dồn** — lần sau chỉ làm
+- **4 nhịp × 16 = 64 dmg**; trúng đủ cả bốn nhịp lên **cùng một người** thì dính **Burning**
+  3.75 dmg/giây trong 4 giây (**tổng tối đa 79**). Burning **không cộng dồn** — lần sau chỉ làm
   mới đồng hồ (`supBurn()` xoá dot cũ có cờ `sup` rồi mới đẩy dot mới vào).
 - Đang bị chiếu: **−25% tốc chạy**, **không choáng**, **không đẩy lùi**.
 - **Chỉ được chỉnh hướng trong 0.3 giây đầu** (`SUP.hvTrack`), sau đó `A.ang` **khoá cứng** —
@@ -878,14 +883,14 @@ gây một điểm sát thương nào.
 **Chiêu 3 — Freeze Breath.** Mỗi **11.5 giây**: hít sâu **0.9 giây** rồi thổi một luồng hơi
 **hình NÓN** trắng xanh kèm tinh thể băng (`drawSupFreeze()`). **Không bao giờ vẽ thành một
 tia laser mảnh.**
-- Trúng **giữa nón** (lệch góc ≤ `fbCore`): **32 dmg** + **Frozen 2.2 giây**, hết Frozen thì
+- Trúng **giữa nón** (lệch góc ≤ `fbCore`): **34 dmg** + **Frozen 2.2 giây**, hết Frozen thì
   **Chilled 4 giây** (−50% tốc chạy, −25% tốc ra chiêu).
 - **Frozen**: không đi được, không ra chiêu được (`supStatus` đặt `lock` mỗi nhịp), **nhưng
   vẫn ăn đòn bình thường**. **Ăn đủ 100 dmg là lớp băng vỡ ngay** (`supIceBreak()`): choáng
   kết thúc và đổi thành **Chilled đúng phần thời gian băng còn lại**.
 - **Đã Frozen thì không đóng băng lại**: lần Freeze Breath sau chỉ gây dmg và làm mới Chilled
   (tối đa 4 giây).
-- **Đứng ở rìa nón**: 18 dmg / Frozen 1 giây / Chilled 2.5 giây. Ba người trở lên thì trúng
+- **Đứng ở rìa nón**: 19 dmg / Frozen 1 giây / Chilled 2.5 giây. Ba người trở lên thì trúng
   tối đa **ba người**, chỉ người nằm sát trục nón ăn đủ hiệu ứng (`o.chillAfter` nhớ giúp mỗi
   người nhận đúng quãng Chilled của mình).
 - Bị đánh trong **0.5 giây đầu** ⇒ đứt chiêu, hồi chiêu còn **60%**. **Không dùng được khi
@@ -896,11 +901,31 @@ tia laser mảnh.**
   **1.2 giây** chuẩn bị, đủ rõ để địch kịp né.
 - Lao xuống theo **đường thẳng**: không bẻ hướng, không bám theo ai, không teleport. Điểm rơi
   `M.tx/M.ty` chốt ở cuối pha `hold` và **không đổi nữa**, kể cả khi có ba người trên sàn.
-- Trúng: **102 dmg** + knockdown **1.5 giây** + hất lùi **20% chiều dài sàn**, kèm **vùng chấn
-  động** 21 dmg và −35% tốc chạy trong 2 giây ⇒ mục tiêu chính ăn **123**.
+- Trúng: **107 dmg** + knockdown **1.5 giây** + hất lùi **20% chiều dài sàn**, kèm **vùng chấn
+  động** 22 dmg và −35% tốc chạy trong 2 giây ⇒ mục tiêu chính ăn **129**.
 - Địch đang **Frozen**: cú đấm **luôn** làm vỡ băng (`supMsLand()` gọi thẳng `supIceBreak()`,
-  không trông chờ vào mốc 100 nữa), rồi cộng thêm **14 Shatter Damage** đúng **một lần** ⇒
-  **137 và không hơn**.
+  không trông chờ vào mốc 100 nữa), rồi cộng thêm **15 Shatter Damage** đúng **một lần** ⇒
+  **144 và không hơn**.
+
+> **Vùng chấn động là một cú AoE THẬT, ăn theo MỨC ĐỘ đứng gần điểm rơi** — người dùng chốt
+> riêng chỗ này. `supQuakeShare(d)` nội suy tuyến tính, `d` đo từ điểm rơi tới **mép model**
+> (`dist − o.r`) chứ không phải tới tâm:
+>
+> | Quãng cách tới điểm rơi | Ăn bao nhiêu |
+> |---|---|
+> | trong lõi `msQuakeR = 104` | **100%** — đủ 22 dmg, làm chậm đủ 2 giây |
+> | từ lõi ra tới `msQuakeFar = 196` | **nhạt dần 100% → 35%** (`msQuakeMin`) |
+> | quá `msQuakeFar` | **không dính một điểm nào** |
+>
+> Hệ số nhân vào **cả sát thương lẫn thời gian làm chậm**; riêng **mức làm chậm giữ nguyên
+> 35%** cho dễ đọc. Đo được: đứng giữa hai vòng ăn 19/22 dmg và chậm 1.72 trên 2 giây.
+> Băng-rôn đổi chữ theo: trong lõi là `SHOCKWAVE`, ngoài rìa là `SHOCKWAVE · EDGE`.
+> `supMsLand()` vẽ **hai vòng** lúc nổ — vòng đặc là lõi, vòng mờ ngoài là mép AoE.
+>
+> Chỗ này **chỉ có ý nghĩa khi trên sàn có từ ba người CÓ THANH MÁU trở lên**: đấu thủ chính
+> cộng đồng minh kiểu Ayanokouji. **Viện binh thuần** (Goku / Gohan / phân thân) không có
+> thanh máu nên bị loại bằng đúng cờ `summon && !ally` mà `drawBars()` dùng — cùng một luật
+> với lãnh địa Nara. Cú đấm 107 thì **vẫn chỉ MỘT người ăn**, dù đứng bao nhiêu người quanh đó.
 - Độ chính xác `SUP.msAcc`: **80% gần · 60% trung bình · 50% xa nhất**. Trượt thì điểm rơi
   lệch hẳn 48~88px.
 - **Đánh trượt** ⇒ đập xuống đất, nằm **1.3 giây** không đánh được, và **Man of Steel tạm tụt
@@ -1313,12 +1338,13 @@ node tools/t_dora.js    # Doraemon: Anywhere Door đúng 1.5s bốn pha và đ�
 node tools/t_superman.js # Superman: màn xuất hiện 1.5s bốn pha (bóng người trên cao, tiếp đất
                         # không gây dmg), Man of Steel (100 raw -> 80, burn ăn đủ, trần 60%,
                         # đòn dưới 25 không làm ngã, choáng −15%, lực đẩy −35%),
-                        # combo 24/24/35 cách nhau 0.55s, Heat Vision (4×15 + Burning = 74,
+                        # combo 25/25/37 cách nhau 0.55s, Heat Vision (4×16 + Burning = 79,
                         # khoá hướng sau 0.3s, đứt trong 0.4s đầu), Freeze Breath (Frozen 2.2s,
                         # Chilled 4s, vỡ băng ở 100 dmg, không thổi khi đang bay),
-                        # Meteor Strike (chuẩn bị 1.2s, 102+21=123, 137 khi địch Frozen,
+                        # Meteor Strike (chuẩn bị 1.2s, 107+22=129, 144 khi địch Frozen,
+                        # vùng chấn động là AoE nhạt dần 100%->35% rồi tắt hẳn,
                         # trượt thì nằm 1.3s và Man of Steel còn 10%), trần khống chế cứng
-                        # 3.5s, Kryptonian Flight, toàn bộ dmg đúng cỡ 70% của bản đầu,
+                        # 3.5s, Kryptonian Flight, toàn bộ dmg đúng cỡ 74% của bản đầu,
                         # và chữ hiển thị đều bằng tiếng Anh
 ```
 
