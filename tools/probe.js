@@ -63,6 +63,7 @@ window.__ginyuChangeMiss=ginyuChangeMiss; window.__gnChangeTarget=gnChangeTarget
 window.__ginyuBeam=ginyuBeam; window.__ginyuFlash=ginyuFlash; window.__ginyuStrike=ginyuStrike;
 window.__gnChangeOdds=gnChangeOdds; window.__gnChangeFire=gnChangeFire;
 window.__gnCanChange=gnCanChange; window.__gnCrowd=gnCrowd; window.__gnDmg=gnDmg;
+window.__gnSoulThink=gnSoulThink; window.__gnSoulTick=gnSoulTick; window.__gnSoulCds=gnSoulCds; window.__gnCc=gnCc; window.__statusTick=statusTick;
 window.__ginyuTick=ginyuTick; window.__gnAuraDraw=gnAuraDraw; window.__GN_AURA=GN_AURA; window.__gnStatus=gnStatus; window.__gnBeamHit=gnBeamHit; window.__gnFlashHit=gnFlashHit; window.__GN_PROJ=GN_PROJ_BODY; window.__knock=knock;
 window.__SUP=SUP; window.__supermanEnter=supermanEnter; window.__supResolve=supResolve;
 window.__supFlyOn=supFlyOn; window.__supFlyOff=supFlyOff; window.__supCombo=supCombo;

@@ -637,10 +637,33 @@ thân xác Ginyu do địch điều khiển (`swapAs==='foe'`) thì chết là c
 tới `key`, `spriteH`, `color`, vị trí — chỉ đổi **`name`** và cờ điều khiển. Nhờ vậy ra đúng
 cái người dùng muốn: **thân xác A mà chữ B trên thanh máu**, và ngược lại.
 
-| | thân xác | `name` hiện ra | `swapAs` | còn dùng được gì |
-|---|---|---|---|---|
-| object cũ của Ginyu | Ginyu | tên đối thủ | `'foe'` | **chỉ** đấm đá của Ginyu, dmg ×`GN.swapHost` = 50% |
-| object cũ của đối thủ | của họ | `Captain Ginyu` | `'ginyu'` | beam + flash của Ginyu (dmg ×`.35`, hiệu ứng ×`.30`) và **đòn tay mượn** của thân xác đó |
+> **Luật chia bộ chiêu — đối xứng, nhớ đúng một câu: CHIÊU theo HỒN, ĐÒN TAY theo THÂN
+> XÁC.** Ai vào thân xác nào cũng mang theo bộ chiêu của chính mình, còn cú đấm thì đổi
+> cho nhau. Người dùng chốt: *"đối thủ Ginyu khi bị change vẫn có thể dùng skill bản thân
+> — nhưng cả Ginyu và cả đối phương đều bị giảm 75% dmg + 75% hiệu ứng, và cả 2 trao đổi
+> basic attack với nhau là đc — basic atk cũng giảm 75% dmg vs cả 2"*.
+> *(Bản trước đối thủ kẹt trong thân xác Ginyu mất sạch bộ chiêu, chỉ còn đấm đá.)*
+
+| | thân xác | `name` hiện ra | `swapAs` | `gnSoul` | còn dùng được gì |
+|---|---|---|---|---|---|
+| object cũ của Ginyu | Ginyu | tên đối thủ | `'foe'` | key của đối thủ | **bộ chiêu của chính đối thủ** (`gnSoulThink`) + **đấm đá của Ginyu** |
+| object cũ của đối thủ | của họ | `Captain Ginyu` | `'ginyu'` | `'ginyu'` | **beam + flash của Ginyu** + **đòn tay mượn** của thân xác đó (`gnBorrowBasic`) |
+
+**Một mức cắt duy nhất cho cả hai bên và cho mọi thứ họ tung ra**: `GN.swapCut = .25` sát
+thương, `GN.swapCcCut = .25` thời lượng hiệu ứng — đòn tay tính luôn vào đó. Hai con số này
+đi vào ba chỗ, đừng để chúng chồng lên nhau:
+
+| Đường đi | Ăn ở đâu |
+|---|---|
+| chiêu do CHÍNH Ginyu viết (beam / flash / đấm đá, gọi `hurt(...,raw=true)`) | `f.gnSelfCut` qua `gnDmg(f)` |
+| mọi chiêu còn lại — chiêu riêng của hồn và đòn tay mượn | `f.dmgOut` trong `hurt()`, `gnStatus()` đặt `out*(f.swapAs?GN.swapCut:1)` |
+| thời lượng khống chế / debuff | `gnCc(src,dur)` bọc ngay tại chỗ gây hiệu ứng |
+
+> **Sát thương duy trì (`dots`) chỉ bị cắt DMG, không bị cắt thời lượng.** Cháy và chảy máu
+> vốn đã đi qua `dmgOut` rồi; cắt cả thời lượng nữa là nhân hai lần, còn 6.25%. `gnCc()` chỉ
+> bọc mấy thứ *khống chế và debuff*: choáng, kiệt sức, Disoriented, Shrunk, Chilled, Worn
+> Out, làm chậm của vùng chấn động. Toàn bộ khống chế của Superman đi qua đúng một cửa
+> `supCC()` nên chỉ cần bọc ở đó.
 
 - Máu: **cả hai thân xác cùng về 20% máu tối đa của chính nó** (`GN.changeHp`) — ngang
   nhau, bất kể trước đó ai đang bao nhiêu máu. **Phải `Math.floor`, không được `Math.round`**:
@@ -653,12 +676,44 @@ cái người dùng muốn: **thân xác A mà chữ B trên thanh máu**, và n
   bằng Ginyu là khi change thì cả 2 thân xác có lượng máu ngang nhau (20%) chứ đừng lệch
   máu". Hai hằng `changeKeep` / `changeGain` gộp thành một `changeHp`.)*
 - **Đòn tay mượn** gọi thẳng chiêu 1 gốc của thân xác đó (`gnBorrowBasic`). Thân xác **hệ
-  ném / sút** (`GN_PROJ_BODY` = kono / tsubasa / shika) **giữ nguyên sát thương** nhưng ngắm
-  hỏng bét: `f.aimOff` làm đạn vẹo đi tới ±1.05 rad ngay khi rời tay và **mất luôn khả năng
-  dò tìm** (`p.noHome`). Thân xác cận chiến thì `f.missOdds = .55`, `hurt()` in chữ `MISS`.
+  ném / sút** (`GN_PROJ_BODY` = kono / tsubasa / shika) thì ngắm hỏng bét: `f.aimOff` làm đạn
+  vẹo đi tới ±1.05 rad ngay khi rời tay và **mất luôn khả năng dò tìm** (`p.noHome`). Thân
+  xác cận chiến thì `f.missOdds = .55`, `hurt()` in chữ `MISS`. `GN_PROJ_BODY` giờ **chỉ còn
+  quyết định KIỂU ngắm hỏng**, không còn miễn trừ phần cắt sát thương nữa — mức cắt là một
+  con số chung. Hai lớp ngắm hỏng này **chỉ áp cho Ginyu**: hồn đối thủ dùng chiêu của chính
+  mình nên `g.missOdds = g.aimOff = 0`.
+- **Bộ chiêu của hồn đối thủ — `gnSoulThink()` / `gnSoulTick()` / `gnSoulEquip()`.** Ba ranh
+  giới, đừng nới ra:
+  1. **chỉ chiêu bấm tay** (chiêu 2 / 3 / cú lao), không nội tại, không ultimate theo ngưỡng
+     máu — mấy thứ đó bám vào thân xác chứ không bám vào hồn;
+  2. **chiêu ăn theo thanh tiến trình cũng bỏ** (Rasengan cần 20 nộ khí, Twin Shot cần 5 bàn
+     thắng): thanh phụ lúc này đọc bảng của Ginyu nên người chơi không thấy nó đầy tới đâu,
+     mà máy tích thanh đó thì đã tắt;
+  3. **đòn tay vẫn là đấm đá của Ginyu**.
+  - `gnSoulEquip(g,t)` chép phần **tiến trình** của hồn sang thân xác mới (`GN_SOUL_CARRY`:
+    form và điểm lớp của Horikita, chakra của Shikamaru, bàn thắng của Tsubasa…) rồi nạp
+    một lượt hồi chiêu qua `gnSoulCds(key)`. **Đừng gọi `CHARS[key].init()`** — nó dựng lại
+    từ đầu, xoá sạch tiến trình, và Doraemon / Superman còn bị đẩy ra ngoài sàn thêm một
+    màn ra mắt nữa.
+  - `gnSoulTick(f,dt)` chạy trong `step()` ngay sau `ginyuTick`, và **chỉ nhặt đúng phần chạy
+    chiêu**: `bindTick` (dải bóng), `drAimTick` + đồng hồ vùng nón (bảo bối), `supHvTick` /
+    `supFbTick` / `supMsTick` + đồng hồ vùng nón (ba chiêu Superman). **Không** nhặt chakra,
+    chong chóng, cửa thần kỳ, Kryptonian Flight hay Last Son's Resolve — nội tại vẫn tắt.
+  - Ba chỗ cắt ngang phải đọc **TRẠNG THÁI chứ không đọc `f.key`**, nếu không chiêu của hồn
+    thành bất khả xâm phạm: `stunFx()` gọi `shikaInterrupt` khi `f.bind || dash.kind==='stab'`,
+    `drOnHurt()` gác ở `t.drAim`, `supOnHurt()` gác ở `t.supHv || t.supFb`. Mấy hàm
+    `drInterrupt` / `supInterrupt` thì vốn đã đọc trạng thái sẵn.
+  - Mọi chỗ vẽ ăn theo (dải bóng, vùng nón, hai tia mắt, độ cao `supAir`) đều duyệt
+    `G.fighters` theo **trạng thái**, nên thân xác Ginyu tự động vẽ đúng — không phải sửa gì.
 - Nội tại của thân xác bị cướp **tắt hết**: vòng duyệt nội tại theo ngưỡng máu `continue`
   khi `f.swapAs`, `shikaPassive`/`suzPassive`/`eagleTick` cũng thế, và `suzCp()` trả về ngay.
   Thanh phụ đọc `CHARS['ginyu'].gauge` chứ không đọc thanh của thân xác.
+  - **Mấy nội tại ĐÃ BẬT SẴN trước lúc bị cướp phải xoá CỜ, không chỉ ngừng tick.** Mấy tick
+    nuôi chúng gác ở `!swapAs` nên chỉ ngừng chạy, còn `hurt()` / `tryEvade()` thì đọc thẳng
+    cờ — để nguyên là thân xác cướp được vẫn miễn 70% sát thương kiểu Wings of the Eagle hay
+    vẫn lách đòn kiểu Shikamaru. `ginyuPossess()` vì vậy đặt `t.eagle=false`,
+    `t.prewing=false`, `t.evade=0`, và `drTryEscape()` gác thêm `t.swapAs` để cửa thần kỳ
+    của thân xác Doraemon cũng tắt theo.
 
 **Trượt — `ginyuChangeMiss(f)`.** Máu về **1**, `gnPanic=true`, chạy nhanh **2.5~3 lần**
 (`GN.panicMove`, bốc một lần rồi giữ trong `f.gnPanicMul`), dáng riêng `panic` (mắt trắng
@@ -1734,6 +1789,10 @@ node tools/t_ginyu.js   # Captain Ginyu: bay vào sân đúng 1.5s và địch b
                         # hai thế đứng nhân đúng hệ số, 6 luồng khí + mốc mệt mỏi, flash gồng
                         # rồi mới bắn và ghì chân sau khi hết choáng, CHANGE bắn từ miệng,
                         # đứng nguyên chỗ ngã, đổi hồn giữ nguyên thân xác (thân A chữ B),
+                        # sau CHANGE thì chiêu theo hồn / đòn tay theo thân xác và cả hai
+                        # bên cùng một mức cắt 25% dmg + 25% hiệu ứng (hồn đối thủ tung
+                        # được cả chiêu 2 lẫn chiêu 3 của chính mình, phân thân bay ra thật
+                        # từ thân xác Ginyu, đấm đá Ginyu ăn đúng 5.5 dmg trên mốc 22),
                         # bắn trượt thì 1 máu + hoảng loạn, luật ba người thì luôn thăm dò
 node tools/t_dora.js    # Doraemon: Anywhere Door đúng 1.5s bốn pha và địch chỉ đứng chờ,
                         # cửa thần kỳ né được cả tia CHANGE cướp xác của Ginyu (trận 4),
@@ -1856,6 +1915,14 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
   đòn tay 35→**25**, flash `gs(14)`→`gs(17)`, aura `gs(12)`→`gs(18)` và không cộng dồn với
   thế đứng. **Flash vẫn 100 dmg** — người dùng chưa nêu số mới cho chỗ đó nên tôi không tự
   đặt; muốn hạ tiếp thì sửa `GN.flashDmg`.
+- **Phần sau CHANGE gộp làm một mức**: bốn hằng `swapSelf` / `swapSelfCc` / `swapBody` /
+  `swapHost` (35/30/40/50%) gộp thành `GN.swapCut` = `GN.swapCcCut` = **25%**, áp cho cả hai
+  bên và cho mọi thứ họ tung ra, đòn tay tính luôn. Đổi lại, **hồn đối thủ giữ được bộ chiêu
+  của chính mình** thay vì chỉ còn đấm đá. Đây là chỗ tự quyết duy nhất còn lại: người dùng
+  không nêu **những chiêu nào** đi theo hồn, tôi chốt là **chiêu bấm tay thôi** — nội tại,
+  ultimate theo ngưỡng máu và chiêu ăn theo thanh tiến trình (Rasengan, Twin Shot) đều bỏ,
+  vì chúng bám vào thân xác chứ không bám vào hồn. Muốn mở thêm thì sửa `gnSoulThink()` và
+  nhớ mở kèm nhánh tương ứng trong `gnSoulTick()`.
 - Mười ba ô tiếng của Superman cũng mới chỉ có tiếng tự tạo trong `synth()` — nhân vật này
   **không có ô giọng nào** vì bản mô tả không nêu câu thoại nào cho anh. Quãng xuất hiện cố ý
   để đúng **1.5 giây thật ở thanh tốc độ gốc** để người dùng canh tiếng; đổi thanh tốc độ thì

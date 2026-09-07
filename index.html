@@ -543,17 +543,19 @@ const GN={
      nhau, không bên nào lợi hơn. Bản đầu để lệch (15% cho thân xác Ginyu, còn thân xác
      cướp được thì CỘNG THÊM 20% vào máu đang có) nên ai đang nhiều máu là ăn đứt. */
   changeHp:.20,
-  swapSelf:.35,              // vào thân xác người khác: beam / flash chỉ còn 35% dmg
-  swapSelfCc:.30,            // ... và hiệu ứng chỉ còn 30%
-  swapBody:.40,              // mượn chiêu tay của thân xác đó: còn 40% dmg
-  swapHost:.50,              // đối thủ trong thân xác Ginyu: đấm đá còn 50% dmg
-  aimOff:1.05,               // ... và đạn mượn thân xác lệch tới hơn 60 độ
+  /* Hồn nào ngồi trong thân xác lạ cũng chỉ dùng được 25% sức: MỘT con số duy nhất cho
+     CẢ HAI bên và cho MỌI chiêu — chiêu riêng của mỗi hồn lẫn cú đấm mượn của thân xác.
+     Bản trước chia làm bốn mức lệch nhau (35/30/40/50) nên bên nào cũng phải nhớ mình
+     đang ở nhánh nào; giờ chỉ còn một cặp hằng. */
+  swapCut:.25,               // sát thương của cả hai bên còn 25%
+  swapCcCut:.25,             // ... thời lượng hiệu ứng cũng còn 25%
+  aimOff:1.05,               // Ginyu trong thân xác lạ: đạn mượn lệch tới hơn 60 độ
   panicMove:[2.5,3.0],       // bắn trượt: máu về 1, chạy nhanh gấp 2.5~3 lần
   panicCut:.30               // ... đổi lại dmg và hiệu ứng chỉ còn 30%
 };
-/* Thân xác nào cầm chiêu ném / sút thì Ginyu mượn được nguyên sát thương, chỉ mất
-   độ chính xác (người dùng: "chỉ không giảm dmg nếu đối phương là người hệ dùng
-   shuriken hay kunai nổ hay bóng đá"). */
+/* Thân xác hệ ném / sút: Ginyu mượn tay người ta thì đạn vẹo hẳn đi (aimOff) thay vì
+   đấm hụt (missOdds). Chỉ còn dùng để chọn KIỂU ngắm hỏng — phần cắt sát thương giờ là
+   một con số chung GN.swapCut cho mọi thân xác, không còn miễn trừ cho hệ ném nữa. */
 const GN_PROJ_BODY=new Set(['kono','tsubasa','shika']);
 /* Câu thoại và tuổi thọ bong bóng của chúng. Khai TRƯỚC SFX_MAXLEN vì trần độ dài
    của ô giọng bám theo đúng mấy con số này — tiếng không được sống lâu hơn hình. */
@@ -835,7 +837,7 @@ const CHARS={
       `<b>2</b> Ginyu Beam — every ${rts(GN.beamCd)}s, ${GN.beamN} purple ki bolts sprayed wide, ${GN.beamDmg} dmg each, knocks far back and ${Math.round(GN.beamStunOdds*100)}% to stun ${rts(GN.beamStun)}s · faster than Masenko and it strays badly, worse the further out he is · <b>${GN.tiredHits}+ bolts</b> land ⇒ Worn Out: −${Math.round((1-GN.tiredMove)*100)}% move, −${Math.round((1-GN.tiredCast)*100)}% cast, −${Math.round((1-GN.tiredDmg)*100)}% damage for ${rts(GN.tiredT)}s`,
       `<b>3</b> Ginyu Flash — he plants his feet and charges ${rts(GN.flashCharge)}s, then one unbroken purple pillar locks onto the foe: ${GN.flashDmg} dmg, stun ${rts(GN.flashStun)}s, then −${Math.round((1-GN.flashMove)*100)}% move and −${Math.round((1-GN.flashCast)*100)}% cast for ${rts(GN.flashSlowT)}s`,
       `<b>4 · CHANGE!!!</b> At 0 HP he does not die — he stops where he fell and fires a body-change beam from his mouth. It strays badly: only ${Math.round(GN.changeLo*100)}% to connect across the arena, up to ${Math.round(GN.changeHi*100)}% point blank, never certain · with three or more fighters he aims at the highest HP one and possesses whoever the beam touches first`,
-      `<b>4 · hit</b> souls swap — <b>both bodies land on ${Math.round(GN.changeHp*100)}% of their own max HP</b>, dead even, whatever they were on before. In the foe's body he keeps his own beam and flash at −${Math.round((1-GN.swapSelf)*100)}% damage and −${Math.round((1-GN.swapSelfCc)*100)}% effect, and borrows their basic attack at −${Math.round((1-GN.swapBody)*100)}% (no cut for shuriken / explosive kunai / football bodies, but his aim in a stolen body is wretched). The foe, stuck in Ginyu's body, is left with Ginyu's punch and kick at −${Math.round((1-GN.swapHost)*100)}%`,
+      `<b>4 · hit</b> souls swap — <b>both bodies land on ${Math.round(GN.changeHp*100)}% of their own max HP</b>, dead even, whatever they were on before. <b>Skills follow the soul, the basic attack follows the body</b>: Ginyu keeps his own beam and flash inside the stolen body, the foe keeps their own skills inside Ginyu's, and the two simply trade punches. Everything either of them throws lands for <b>−${Math.round((1-GN.swapCut)*100)}% damage and −${Math.round((1-GN.swapCcCut)*100)}% effect</b>, basic attacks included · passives and HP-threshold ultimates stay switched off on both sides, and Ginyu's aim in a stolen body is wretched`,
       `<b>4 · miss</b> he is left on 1 HP, bolts around the arena at ${GN.panicMove[0]}–${GN.panicMove[1]}× his own speed in a blind panic, and everything he does lands for only ${Math.round(GN.panicCut*100)}%`],
     init(f){
       f.cds={s1:cm(GN.atkCd),s2:GN.beamCd,s3:GN.flashCd};
@@ -2206,14 +2208,16 @@ function stunFx(f,dur,kind){
      bao giờ là miễn nhiễm — băng của Freeze Breath (kind 'ice') thì không dính luật này. */
   if(f.key==='superman'&&!f.swapAs&&kind!=='ice') dur*=(1-SUP.steelStun);
   if(f.ccTake&&f.ccTake!==1) dur*=f.ccTake;      // Ginyu đang hưng phấn: dính khống chế lâu hơn
-  if(f.key==='shika'&&f.bind&&f.bind.guard){     // lần bù: đứng vững, không cắt được
+  if(f.bind&&f.bind.guard){                      // lần bù: đứng vững, không cắt được
     G.floats.push({x:f.x,y:f.y-104,txt:'UNBREAKABLE',color:'#CFC6FF',
       life:.9,ml:.9,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
     return false;
   }
   if(dur>=f.stun||!f.stunKind) f.stunKind=kind||null;
   f.stun=Math.max(f.stun,dur);
-  if(f.key==='shika') shikaInterrupt(f);
+  /* Đọc TRẠNG THÁI chứ không đọc f.key: hồn Shikamaru ngồi trong thân xác Ginyu vẫn
+     kết ấn được dải bóng, nên cú cắt ngang cũng phải với tới được nó. */
+  if(f.bind||(f.dash&&f.dash.kind==='stab')) shikaInterrupt(f);
   return true;
 }
 function aim(f,e,power){
@@ -2541,7 +2545,7 @@ function sexy(k,e){
     // mà nội tại né đòn của Shikamaru không ăn.
     f.dots.push({dps:SEXY_DPS,left:2,acc:0,src:k,tint:'pink'});
     if(f.male){
-      if(stunFx(f,SEXY_STUN,'heart')){ sfx('charm'); say(`${f.name} đứng hình ${rts(SEXY_STUN)} giây.`,'g'); }
+      if(stunFx(f,gnCc(k,SEXY_STUN),'heart')){ sfx('charm'); say(`${f.name} đứng hình ${rts(SEXY_STUN)} giây.`,'g'); }
       else say(`${f.name} miễn nhiễm khống chế — không hề đứng hình.`,'g');
     }
     else say(`${f.name} là nữ — không choáng, chỉ tức nổ máu.`,'c');
@@ -2646,7 +2650,7 @@ function shikaStabHit(k,e){
   const landed=hurt(e,SHIKA.stabDmg*(k.weak?SHIKA.weakMul:1),k,'SHADOW STAB!','big');
   if(!landed){ say('Đối thủ né được cú đâm sau lưng.','s'); return; }
   bleedOn(e,k);
-  const st=stunFx(e,SHIKA.stabStun,'spark');
+  const st=stunFx(e,gnCc(k,SHIKA.stabStun),'spark');
   sfx('shika_stab_hit');
   say(st?`Đâm sau lưng — ${Math.round(SHIKA.stabDmg*(k.weak?SHIKA.weakMul:1))} dmg, chảy máu và choáng ${rts(SHIKA.stabStun)} giây.`
        :`Đâm sau lưng — ${Math.round(SHIKA.stabDmg*(k.weak?SHIKA.weakMul:1))} dmg, nhưng đối thủ miễn khống chế.`,'s');
@@ -2714,7 +2718,7 @@ function bindTick(k,dt){
   }else{
     B.len-=SHIKA.bindSpd*1.6*dt;                     // rút bóng về chân Shikamaru
     if(B.len<=6){
-      const st=stunFx(e,SHIKA.bindStun,'spin');
+      const st=stunFx(e,gnCc(k,SHIKA.bindStun),'spin');
       ring(k.x,k.y,120,'#8E7BFF',.5);
       say(st?`Bóng rút về — đối thủ đứng hình ${rts(SHIKA.bindStun)} giây.`
             :'Bóng rút về — nhưng đối thủ miễn khống chế.','s');
@@ -3125,7 +3129,7 @@ function ballHit(p,f){
     ring(f.x,f.y,170,'#FFF3C4',.6);
     const twinHit=hurt(f,p.dmg,o,'TWIN SHOT!','ult');
     if(twinHit&&f.alive&&f.invuln<=0){
-      const st=stunFx(f,2,'shock'); if(st) sfx('shock');  // choáng Twin Shot: điện giật
+      const st=stunFx(f,gnCc(o,2),'shock'); if(st) sfx('shock');  // choáng Twin Shot: điện giật
       f.vuln=Math.max(f.vuln,3);
       knock(f,p.vx,p.vy,260);
       G.floats.push({x:f.x,y:f.y-118,txt:st?`STUNNED ${rts(2)}s · +50% DMG TAKEN ${rts(3)}s`:`+50% DMG TAKEN ${rts(3)}s`,color:'#FFF3C4',
@@ -3145,7 +3149,7 @@ function ballHit(p,f){
     const kickHit=hurt(f,p.dmg,o,p.bic?'OVERHEAD KICK!':false);
     sfx('hit');
     if(kickHit&&f.alive&&f.invuln<=0){
-      if(p.bic) stunFx(f,.25,'spark');          // chỉ overhead kick mới gây choáng
+      if(p.bic) stunFx(f,gnCc(o,.25),'spark');  // chỉ overhead kick mới gây choáng
       knock(f,p.vx,p.vy,p.kb||180);
     }
     ring(p.x,p.y,p.bic?70:46,p.bic?'#FFB03A':'#FFFFFF',.3);
@@ -3856,8 +3860,10 @@ function gnCrowd(){
 /* Hệ số sát thương cho mấy chiêu do CHÍNH Ginyu viết ra. Chúng gọi hurt() với raw=true
    nên không đi qua src.dmgOut — nhân ở đây một lần, đừng nhân hai lần. */
 const gnDmg=f=>(f.gnOut===undefined?1:f.gnOut)*(f.gnSelfCut||1);
-/* Hệ số thời lượng hiệu ứng: vào thân xác người khác thì choáng/mệt chỉ còn 30%. */
-const gnCc=(f,dur)=>dur*(f.gnCcCut||1);
+/* Hệ số thời lượng hiệu ứng: hồn ngồi trong thân xác lạ thì choáng / cháy / làm chậm
+   do mình gây ra chỉ còn GN.swapCcCut. Chịu được f rỗng, vì có chỗ gọi (dot, debuff)
+   không phải lúc nào cũng biết ai là người gây ra. */
+const gnCc=(f,dur)=>dur*((f&&f.gnCcCut)||1);
 
 /* Dựng lại toàn bộ hệ số nhân của MỘT người mỗi nhịp. Chạy cho mọi nhân vật chứ không
    riêng Ginyu: aura của anh bám vào người khác, nên ai cũng có thể đang ngơ ngác,
@@ -3877,10 +3883,11 @@ function gnStatus(f,dt){
   if(f.gnPanic){ mv*=(f.gnPanicMul||GN.panicMove[0]); out*=GN.panicCut; }
   f.moveMul=mv; f.castMul=ct; f.dmgTake=take; f.ccTake=cc; f.gnCcRes=ccr;
   f.gnOut=out;
-  /* dmgOut chỉ ăn vào chiêu MƯỢN của thân xác vừa cướp được (những hàm có sẵn của
-     nhân vật kia, không với tay vào trong được). Chiêu của chính Ginyu đi đường
-     gnDmg() nên phải để dmgOut sạch phần cắt này. */
-  f.dmgOut=out*((f.swapAs==='ginyu'&&!f.gnBodyProj)?GN.swapBody:1);
+  /* dmgOut ăn vào mọi chiêu KHÔNG do chính Ginyu viết ra — chiêu riêng của hồn đang
+     ngồi trong thân xác lạ lẫn cú đấm mượn của thân xác đó. Cả hai bên cùng một mức
+     cắt, nên chỉ cần xét "có đang hoán đổi hay không". Chiêu của chính Ginyu đi đường
+     gnDmg() (raw=true) nên phải để dmgOut sạch phần cắt này, kẻo nhân hai lần. */
+  f.dmgOut=out*(f.swapAs?GN.swapCut:1);
 }
 
 /* ---- màn chào sân: bay vào rồi nhảy ba dáng ---- */
@@ -4191,22 +4198,37 @@ function ginyuPossess(g,t){
      Ví dụ 999 máu: round ra 200 > 199.8, còn floor ra 199 thì đúng dưới mốc. */
   g.hp=Math.max(1,Math.floor(g.maxHp*GN.changeHp));
   t.hp=Math.max(1,Math.floor(t.maxHp*GN.changeHp));
-  /* Đối thủ kẹt trong thân xác Ginyu: chỉ còn đúng đấm đá của Ginyu, dmg còn một nửa. */
-  g.gnSelfCut=GN.swapHost; g.gnCcCut=1; g.missOdds=0; g.aimOff=0;
-  g.cds={s1:cm(GN.atkCd)};
+  /* LUẬT CHUNG SAU KHI HOÁN ĐỔI — đối xứng, một mức cắt duy nhất cho cả hai bên:
+       · CHIÊU thì theo HỒN — ai vào thân xác nào cũng mang theo bộ chiêu của chính mình;
+       · ĐÒN TAY thì theo THÂN XÁC — hai người đổi luôn cú đấm cho nhau;
+       · và cả hai thứ đó, của cả hai bên, đều chỉ còn GN.swapCut sát thương với
+         GN.swapCcCut thời lượng hiệu ứng.
+     Bản trước bên nào cũng một mức khác nhau, và đối thủ kẹt trong thân xác Ginyu thì
+     mất sạch bộ chiêu của mình — người dùng bác chỗ đó. */
+  /* Đối thủ kẹt trong thân xác Ginyu: bộ chiêu của CHÍNH HỌ vẫn dùng được, còn đòn tay
+     thì là đấm đá của Ginyu. Ngắm thì không hỏng — tay chân lạ chỉ làm khó Ginyu, người
+     đang mượn hẳn một bộ chiêu không phải của mình. */
+  g.gnSelfCut=GN.swapCut; g.gnCcCut=GN.swapCcCut; g.missOdds=0; g.aimOff=0;
+  g.gnBodyProj=false;
   g.gnState=null; g.gnStateT=0; g.gnAura=Infinity; g.gnFlash=null; g.gnPanic=false;
   g.bind=null; g.domain=null; g.decT=0; g.eagle=false;
+  gnSoulEquip(g,t);
   /* Ginyu trong thân xác địch: beam và flash của anh vẫn dùng được nhưng yếu hẳn, còn
-     đòn tay thì mượn của thân xác đó — thân xác hệ ném/sút giữ nguyên sát thương nhưng
-     ngắm thì hỏng bét, thân xác cận chiến thì đấm hụt liên tục. */
+     đòn tay thì mượn của thân xác đó — thân xác hệ ném/sút thì đạn vẹo hẳn đi, thân xác
+     cận chiến thì đấm hụt liên tục. Phần cắt sát thương thì như nhau cả. */
   const projBody=GN_PROJ_BODY.has(t.key);
   t.gnBodyProj=projBody;
-  t.gnSelfCut=GN.swapSelf; t.gnCcCut=GN.swapSelfCc;
+  t.gnSelfCut=GN.swapCut; t.gnCcCut=GN.swapCcCut;
   t.missOdds=projBody?0:.55;
   t.aimOff=projBody?GN.aimOff:0;
   t.cds={s1:0,s2:GN.beamCd,s3:GN.flashCd};
   t.gnState=null; t.gnStateT=0; t.gnAura=Infinity; t.gnFlash=null; t.gnPanic=false;
   t.bind=null; t.domain=null; t.decT=0; t.lock=0;
+  /* Nội tại của thân xác bị cướp phải TẮT HẲN, kể cả mấy cái đã bật sẵn từ trước khi bị
+     cướp: mấy tick nuôi chúng đều gác ở !swapAs nên chỉ ngừng chạy chứ CỜ vẫn còn bật,
+     mà hurt()/tryEvade() thì đọc thẳng cờ. Để nguyên là thân xác cướp được vẫn né 70%
+     như Wings of the Eagle hay lách đòn như Shikamaru. */
+  t.eagle=false; t.prewing=false; t.evade=0;
   /* Thân xác Superman bị cướp: mấy chiêu đang gồng dở của anh phải dọn sạch, vì
      supermanTick() không chạy nữa khi swapAs đã bật — để lại là chúng treo mãi. */
   for(const o of [g,t]){
@@ -4220,6 +4242,7 @@ function ginyuPossess(g,t){
   ring(g.x,g.y,168,'#FFF3C4',.6); ring(t.x,t.y,168,'#A05CFF',.6);
   say(`Tia hoán đổi trúng ${tname} — hai linh hồn đổi chỗ cho nhau!`,'m');
   say(`${gname} giờ ngồi trong thân xác ${tname}; thân xác cũ của anh do ${tname} điều khiển. Cả hai thân xác cùng về ${Math.round(GN.changeHp*100)}% máu tối đa, ngang nhau.`,'m');
+  say(`Chiêu thì đi theo hồn — ai cũng giữ bộ chiêu của chính mình; đòn tay thì đi theo thân xác, hai người đổi cú đấm cho nhau. Tay lạ chân lạ nên cả hai chỉ còn ${Math.round(GN.swapCut*100)}% sát thương và ${Math.round(GN.swapCcCut*100)}% thời lượng hiệu ứng.`,'m');
   later(.6,()=>{ if(!G.over&&t.alive) talk(t.x,t.y-124,'This body will do nicely.',SUZ_BUBBLE,true); },true);
 }
 function ginyuChangeMiss(f){
@@ -4237,15 +4260,122 @@ function ginyuChangeMiss(f){
 }
 
 /* ---- điều khiển sau khi hoán đổi thân xác ---- */
+/* Hai bên soi gương nhau: hồn nào cũng giữ bộ CHIÊU của mình và mượn ĐÒN TAY của thân
+   xác đang ngồi. Ginyu đi nhánh dưới (beam + flash của anh, đòn tay của thân xác cướp
+   được); đối thủ đi gnSoulThink (bộ chiêu của chính họ, đòn tay là đấm đá của Ginyu). */
 function ginyuSwapThink(f,e,d,auto){
-  if(f.swapAs==='foe'){
-    // kẹt trong thân xác Ginyu: chỉ còn đúng đấm đá của Ginyu
-    if(f.cds.s1<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])){ f.cds.s1=cm(GN.atkCd); ginyuStrike(f,e); }
-    return;
-  }
+  if(f.swapAs==='foe') return gnSoulThink(f,e,d,auto);
   if(f.cds.s3<=0&&(auto?d<520:keys['l'])){ f.cds.s3=GN.flashCd+GN.flashCharge; ginyuFlash(f,e); return; }
   if(f.cds.s2<=0&&(auto?d<GN.beamFar:keys['k'])){ f.cds.s2=GN.beamCd; ginyuBeam(f,e); return; }
   if(f.cds.s1<=0&&(auto||keys['j'])) gnBorrowBasic(f,e,d);
+}
+
+/* ================= hồn đối thủ ngồi trong thân xác Ginyu ================= */
+/* Người dùng chốt: "đối thủ Ginyu khi bị change vẫn có thể dùng skill bản thân". Bộ
+   chiêu đi theo HỒN chứ không theo thân xác, nên mấy hàm dưới đây chạy đúng mấy chiêu
+   gốc của nhân vật đó — trên một cái thân xác mang key 'ginyu'.
+   Ba ranh giới, đừng nới ra:
+     1. chỉ CHIÊU BẤM TAY (chiêu 2 / 3 / cú lao), không có nội tại và không có ultimate
+        theo ngưỡng máu — mấy thứ đó bám vào cái thân xác chứ không bám vào hồn, và
+        vòng "nội tại kích hoạt theo ngưỡng máu" trong step() vốn đã bỏ qua f.swapAs;
+     2. chiêu ăn theo một thanh tiến trình (Rasengan cần đủ 20 nộ khí, Twin Shot cần đủ
+        5 bàn thắng) cũng bỏ — thanh phụ lúc này đọc bảng của Ginyu, người chơi không
+        thấy nó đầy tới đâu, mà máy tích thanh đó thì đã tắt;
+     3. đòn tay vẫn là đấm đá của Ginyu — hai người đổi đòn tay cho nhau, đúng câu
+        "cả 2 trao đổi basic attack với nhau là đc". */
+
+/* Hồn mang theo phần tiến trình của chính mình sang thân xác mới (form và điểm lớp của
+   Horikita, chakra của Shikamaru, bàn thắng của Tsubasa...). Chép đúng mấy trường đó
+   chứ ĐỪNG gọi CHARS[key].init(): init() dựng lại từ đầu, xoá sạch tiến trình, và mấy
+   người có màn ra mắt (Doraemon, Superman) còn bị đẩy ra ngoài sàn lần nữa. */
+const GN_SOUL_CARRY=['form','cp','stacks','goals','rage','hits','critBonus','chakra','weak'];
+function gnSoulEquip(g,t){
+  for(const k of GN_SOUL_CARRY) if(t[k]!==undefined) g[k]=t[k];
+  g.quota={drive:0,bic:0};
+  g.cds=gnSoulCds(g.gnSoul);
+  g.dashCd=gnSoulDashCd(g.gnSoul);
+}
+/* Hồi chiêu lúc mới nhập xác: nạp đầy một lượt chứ không cho bấm ngay. s1 luôn là đấm
+   đá của Ginyu nên để 0. */
+function gnSoulCds(key){
+  switch(key){
+    case 'kono':     return {s1:0,s2:cm(6.5),s3:cm(5)};
+    case 'chichi':   return {s1:0,s2:cm(7)};
+    case 'tsubasa':  return {s1:0,s2:cm(6.5)};
+    case 'shika':    return {s1:0,s2:cm(SHIKA.bindCd*RT)};
+    case 'suzune':   return {s1:0,s2:SUZ.decThink+SUZ.decCd};
+    case 'dora':     return {s1:0,s2:DORA.acCd,s3:DORA.slCd};
+    case 'superman': return {s1:0,s2:SUP.hvCd,s3:SUP.fbCd,s4:SUP.msCd};
+    default:         return {s1:0};
+  }
+}
+const gnSoulDashCd=key=>key==='chichi'?CHICHI_DASH_CD:key==='shika'?SHIKA.stabCd:0;
+
+/* Bộ chiêu của hồn, rồi mới tới đòn tay của thân xác. Mỗi nhánh là đúng mấy dòng chiêu
+   2 / 3 trong CHARS[key].think, bỏ chiêu 1 và bỏ mấy chiêu ăn theo thanh tiến trình. */
+function gnSoulThink(f,e,d,auto){
+  if(f.dash||f.bind||f.drAim||f.supHv||f.supFb||f.supMs||f.supMsDown>0||f.decT>0)return;
+  switch(f.gnSoul){
+    case 'kono':
+      if(f.cds.s2<=0&&(auto?d<420:keys['k'])){ f.cds.s2=cm(6.5); bunshin(f,e); return; }
+      if(f.cds.s3<=0&&(auto?true:keys['l'])){ f.cds.s3=cm(5); sexy(f,e); return; }
+      break;
+    case 'chichi':
+      if(f.cds.s2<=0&&(auto?d<460:keys['k'])){ f.cds.s2=cm(7); scold(f,e); return; }
+      if(f.dashCd<=0&&(auto||keys['l'])){ f.dashCd=CHICHI_DASH_CD; chichiCharge(f,e); return; }
+      break;
+    case 'tsubasa':
+      if(f.cds.s2<=0&&(auto?d<560:keys['k'])){ f.cds.s2=cm(6.5); driveShot(f,e); return; }
+      break;
+    case 'shika':
+      if(f.dashCd<=0&&d<SHIKA.stabRange&&(auto||keys['u'])){ f.dashCd=SHIKA.stabCd; shikaStab(f,e); return; }
+      if(f.cds.s2<=0&&(auto?d<520:keys['k'])){ f.cds.s2=cm(SHIKA.bindCd*RT); shadowBind(f,e); return; }
+      break;
+    case 'suzune':
+      // Decision Making là chiêu của người dám ra quyết định — form 1 chưa có nó
+      if(f.form>=2&&f.cds.s2<=0&&(auto||keys['k'])){ f.cds.s2=SUZ.decThink+SUZ.decCd; suzThink(f,e); return; }
+      break;
+    case 'dora':
+      if(f.cds.s3<=0&&(auto?d<DORA.slRange*.9:keys['l'])){ f.cds.s3=DORA.slCd; doraSmallLight(f,e); return; }
+      if(f.cds.s2<=0&&(auto?d<540:keys['k'])){ f.cds.s2=DORA.acCd; doraAirCannon(f,e); return; }
+      break;
+    case 'superman':
+      if(f.cds.s4<=0&&d<SUP.msRange&&(auto||keys['u'])){ f.cds.s4=SUP.msCd; supermanMeteor(f,e); return; }
+      if(f.cds.s3<=0&&d<SUP.fbRange*.9&&(auto||keys['l'])){ f.cds.s3=SUP.fbCd; supermanFreeze(f,e); return; }
+      if(f.cds.s2<=0&&d<SUP.hvRange&&(auto||keys['k'])){ f.cds.s2=SUP.hvCd; supermanHeat(f,e); return; }
+      break;
+  }
+  // đòn tay thì theo thân xác: đấm đá của Ginyu
+  if(f.cds.s1<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])){ f.cds.s1=cm(GN.atkCd); ginyuStrike(f,e); }
+}
+
+/* Mấy chiêu trên có phần chạy theo từng nhịp (dải bóng bò tới, quãng ngắm bảo bối, ba
+   pha của Meteor Strike). Bình thường chúng nằm trong shikaPassive/doraTick/supermanTick
+   — mà mấy hàm đó gác ở f.key và tắt hẳn khi swapAs bật. Nên chỉ nhặt ĐÚNG phần chạy
+   chiêu ra chạy lại ở đây, KHÔNG nhặt phần nội tại (chakra, chong chóng, cửa thần kỳ,
+   Kryptonian Flight, Last Son's Resolve): nội tại vẫn tắt như cũ. */
+function gnSoulTick(f,dt){
+  switch(f.gnSoul){
+    case 'shika':
+      bindTick(f,dt);
+      break;
+    case 'suzune':
+      /* Quãng đứng suy nghĩ đếm giờ ở đây. Thiếu chỗ này thì hồn Horikita bấm Decision
+         Making xong là đứng hình vĩnh viễn: f.lock treo suốt mà không ai hạ decT xuống. */
+      if(f.decT>0){ f.decT-=dt; if(f.decT<=0){ f.decT=0; suzDecide(f,aimTarget(f)); } }
+      break;
+    case 'dora':
+      if(f.drCone){ f.drCone.t-=dt; if(f.drCone.t<=0) f.drCone=null; }
+      drAimTick(f,dt);
+      break;
+    case 'superman':
+      if(f.supCone){ f.supCone.t-=dt; if(f.supCone.t<=0) f.supCone=null; }
+      if(f.supMs){ supMsTick(f,dt); return; }
+      if(f.supMsDown>0){ f.lock=Math.max(f.lock,.2); f.pose='hurt'; f.poseT=0; return; }
+      supHvTick(f,dt);
+      supFbTick(f,dt);
+      break;
+  }
 }
 /* Đòn tay mượn của thân xác vừa cướp được: gọi thẳng chiêu 1 gốc của nhân vật đó, để
    sát thương và dáng vẫn là của họ. Phần yếu đi nằm ở f.dmgOut (gnStatus dựng), phần
@@ -4410,7 +4540,8 @@ function drCopterOff(f,why){
    Rasengan, tia CHANGE) thì tỉ lệ tụt mạnh xuống edOddsUlt. Người dùng chốt riêng con số
    này: đòn thường 60%, ultimate 30%. */
 function drTryEscape(t,kind){
-  if(!t||t.key!=='dora'||t.summon||!t.alive)return false;
+  // t.swapAs: thân xác Doraemon bị Ginyu cướp thì cửa thần kỳ tắt như mọi nội tại khác
+  if(!t||t.key!=='dora'||t.summon||t.swapAs||!t.alive)return false;
   /* Sát thương duy trì và lãnh địa KHÔNG né được — đó là phần dư của một đòn đã trúng
      rồi, không phải một cú đánh đang bay tới. Cùng luật với tryEvade() của Shikamaru.
      Để né được thì mỗi nhịp cháy 2 dmg cũng nuốt mất một lần mở cửa. */
@@ -4514,18 +4645,18 @@ function drBlow(f,e,i){
   if(last){
     knock(e,e.x-f.x,e.y-f.y,DORA.slamKb);
     ring(e.x,e.y,86,f.color,.35);
-    if(stunFx(e,DORA.slamStun,'spark')){
+    if(stunFx(e,gnCc(f,DORA.slamStun),'spark')){
       sfx('stun');
       G.floats.push({x:e.x,y:e.y-104,txt:`STUNNED ${rts(DORA.slamStun)}s`,color:'#7FD0FF',
         life:1.2,ml:1.2,banner:true,sc:.6});
     }
     say(`Doraemon lao bụng — ${DORA.hit[2]} dmg, hất địch lùi và choáng ${rts(DORA.slamStun)} giây.`,'m');
   }
-  if(chance(DORA.disOdds)) drDisorient(e);
+  if(chance(DORA.disOdds)) drDisorient(e,f);
 }
-function drDisorient(t){
+function drDisorient(t,src){
   if(!t||t.summon)return;
-  t.dis=Math.max(t.dis,DORA.disT);
+  t.dis=Math.max(t.dis,gnCc(src,DORA.disT));
   G.floats.push({x:t.x,y:t.y-118,
     txt:`DISORIENTED −${Math.round((1-DORA.disMove)*100)}% MOVE / −${Math.round((1-DORA.disCast)*100)}% CAST ${rts(DORA.disT)}s`,
     color:'#BFE4FF',life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
@@ -4553,7 +4684,9 @@ function drAimTick(f,dt){
 /* Bị đánh giữa lúc đang lấy bảo bối. Air Cannon đứt hẳn nếu còn trong acBreak giây đầu
    (bù lại chỉ chờ nửa hồi chiêu); Small Light thì không đứt, chỉ lệch hướng bắn. */
 function drOnHurt(t,amt){
-  if(!t||t.key!=='dora'||t.summon)return;
+  /* Gác ở TRẠNG THÁI chứ không ở f.key: hồn Doraemon ngồi trong thân xác Ginyu vẫn rút
+     được bảo bối, nên quãng ngắm đó cũng phải đứt được như thường. */
+  if(!t||t.summon||!t.drAim)return;
   const A=t.drAim;
   if(A&&A.kind==='ac'&&A.age<=DORA.acBreak){
     t.drAim=null; t.lock=0; setPose(t,'hurt',.25);
@@ -4620,7 +4753,7 @@ function drAcHit(p,t){
   if(landed){
     knock(t,p.vx,p.vy,W*DORA.acKbDist*6);
     drInterrupt(t);
-    if(stunFx(t,DORA.acStun*mul,'spark')){
+    if(stunFx(t,gnCc(p.owner,DORA.acStun*mul),'spark')){
       sfx('stun');
       G.floats.push({x:t.x,y:t.y-104,txt:`STUNNED ${rts(DORA.acStun*mul)}s`,color:'#D6F2FF',
         life:1.3,ml:1.3,banner:true,sc:.6});
@@ -4690,7 +4823,7 @@ function drSlFire(f,e,A){
     const core=(i===0&&it.da<=DORA.slCore), o=it.o;
     const landed=hurt(o,core?DORA.slDmg:DORA.slEdgeDmg,f,false,'big');
     if(!landed)return;
-    drShrink(o,core?DORA.shrunkT:DORA.slEdgeT);
+    drShrink(o,gnCc(f,core?DORA.shrunkT:DORA.slEdgeT));
   });
   const main=list[0];
   say(main.da<=DORA.slCore
@@ -4929,6 +5062,7 @@ function supStatus(f,dt){
    Phần thừa không biến mất mà đổi thành làm chậm 40% đúng bấy nhiêu giây. */
 function supCC(f,e,dur,kind){
   if(!e)return {hard:0,rest:0,landed:false};
+  dur=gnCc(f,dur);                                // hồn ngồi trong thân xác lạ: hiệu ứng còn 25%
   const left=Math.max(0,SUP.ccCap-(e.supCcAcc||0));
   const hard=Math.min(dur,left), rest=dur-hard;
   let landed=false;
@@ -5168,7 +5302,9 @@ function supInterrupt(e){
    Freeze Breath đứt trong 0.5 giây đầu (chờ 60%). Tia đã bắn ra rồi thì chỉ choáng /
    knockdown mới cắt được — chỗ đó xử trong supHvTick. */
 function supOnHurt(t){
-  if(!t||t.key!=='superman'||t.summon||t.swapAs)return;
+  /* Gác ở TRẠNG THÁI chứ không ở f.key: hồn Superman ngồi trong thân xác Ginyu vẫn gồng
+     được Heat Vision / Freeze Breath, nên chúng cũng phải đứt được như thường. */
+  if(!t||t.summon||!(t.supHv||t.supFb))return;
   const A=t.supHv;
   if(A&&A.ph==='aim'&&A.age<=SUP.hvBreak){
     t.supHv=null; t.lock=0; setPose(t,'hurt',.25);
@@ -5350,10 +5486,10 @@ function supFbFire(f,B){
     ring(o.x,o.y,86,'#D6F2FF',.35);
     if(froz){
       // đã Frozen rồi thì không đóng băng lại, chỉ làm mới Chilled
-      supChill(o,core?SUP.fbChill:SUP.fbEdgeChill);
+      supChill(o,gnCc(f,core?SUP.fbChill:SUP.fbEdgeChill));
       return;
     }
-    o.chillAfter=core?SUP.fbChill:SUP.fbEdgeChill;
+    o.chillAfter=gnCc(f,core?SUP.fbChill:SUP.fbEdgeChill);
     supCC(f,o,core?SUP.fbFreeze:SUP.fbEdgeFreeze,'freeze');
   });
   const main=take[0];
@@ -5526,7 +5662,7 @@ function supMsLand(f){
     if(o===f||o.team===f.team||!o.alive||o.leaving>0||(o.summon&&!o.ally))continue;
     const share=supQuakeShare(Math.max(0,dist(f,o)-o.r));
     if(share<=0)continue;
-    const dmg=Math.round(SUP.msQuakeDmg*share), slowT=SUP.msQuakeT*share;
+    const dmg=Math.round(SUP.msQuakeDmg*share), slowT=gnCc(f,SUP.msQuakeT*share);
     if(dmg<=0)continue;
     if(hurt(o,dmg,f,false,'big')){
       o.supQuake=Math.max(o.supQuake||0,slowT);
@@ -5725,6 +5861,9 @@ function step(dt){
     /* Chạy cho cả ba trường hợp: chính Ginyu, thân xác Ginyu do địch điều khiển, và
        thân xác địch đang có hồn Ginyu — chiêu 3 của anh cần được đếm nhịp ở cả hai chỗ. */
     if(!f.summon&&f.alive&&(f.key==='ginyu'||f.swapAs)) ginyuTick(f,dt);
+    /* Hồn đối thủ ngồi trong thân xác Ginyu: mấy chiêu của CHÍNH HỌ có phần chạy theo
+       từng nhịp, mà mấy tick gốc ở trên đều gác ở f.key và tắt khi swapAs bật. */
+    if(!f.summon&&f.alive&&f.swapAs==='foe') gnSoulTick(f,dt);
     if(f.key==='kono'&&!f.summon&&f.alive&&!f.swapAs) konoTick(f,dt);
     if(f.key==='dora'&&!f.summon&&f.alive&&!f.swapAs) doraTick(f,dt);
     if(f.key==='superman'&&!f.summon&&f.alive&&!f.swapAs) supermanTick(f,dt);
@@ -5869,7 +6008,7 @@ function step(dt){
         G.flashScreen=Math.max(G.flashScreen,.1);
         // né được thì cả choáng cũng trượt, nên phải xem melee() -> hurt() trả về gì
         const kicked=melee(f,e,'FLYING KICK!',CHICHI_KICK_DMG);
-        const kst=kicked&&stunFx(e,CHICHI_KICK_STUN,'spin');
+        const kst=kicked&&stunFx(e,gnCc(f,CHICHI_KICK_STUN),'spin');
         if(kst) G.floats.push({x:e.x,y:e.y-104,txt:`STUNNED ${rts(CHICHI_KICK_STUN)}s`,
           color:'#7FD0FF',life:1.2,ml:1.2,banner:true,sc:.6});
         say(kicked
@@ -5999,7 +6138,7 @@ function step(dt){
       if(dist(f,w)<w.r+f.r){
         w.hit.push(f);
         if(f.invuln>0){ hurt(f,w.dmg,w.owner,w.crit); continue; }
-        if(hurt(f,w.dmg,w.owner,w.crit)){ stunFx(f,.5,'spark'); sfx('stun'); }
+        if(hurt(f,w.dmg,w.owner,w.crit)){ stunFx(f,gnCc(w.owner,.5),'spark'); sfx('stun'); }
       }
     }
     for(const p of G.proj){
@@ -6169,8 +6308,8 @@ function step(dt){
         sfx('hit');
         if(p.type==='clone'){
           if(f.invuln<=0){
-            stunFx(f,.5,'spark');
-            f.exhaust=Math.max(f.exhaust,EXHAUST_T);   // kiệt sức: chậm chân và chậm chiêu
+            stunFx(f,gnCc(p.owner,.5),'spark');
+            f.exhaust=Math.max(f.exhaust,gnCc(p.owner,EXHAUST_T));   // kiệt sức: chậm chân và chậm chiêu
             G.floats.push({x:f.x,y:f.y-118,txt:`EXHAUSTED −25% MOVE / CAST ${rts(EXHAUST_T)}s`,
               color:'#BFD4FF',life:1.5,ml:1.5,banner:true,gold:true,tilt:rnd(-.05,.05)});
             ring(f.x,f.y,120,'#7F9FD8',.45);

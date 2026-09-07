@@ -426,7 +426,8 @@ async function waitGame(page, fnBody, limit) {
         eBody: e.key, eShows: e.name, eHp: e.hp, eWant: Math.round(e.maxHp * GN.changeHp), eAs: e.swapAs,
         eHp0,
         eProj: e.gnBodyProj, eMiss: e.missOdds, eAim: e.aimOff, eCut: e.gnSelfCut, eCc: e.gnCcCut,
-        gCut: g.gnSelfCut
+        gCut: g.gnSelfCut, gCc: g.gnCcCut, gSoul: g.gnSoul, gCds: Object.keys(g.cds).sort().join(','),
+        cut: GN.swapCut, ccCut: GN.swapCcCut
       };
     });
     ok('thân xác Ginyu vẫn là Ginyu nhưng chữ trên thanh máu là tên đối thủ',
@@ -443,13 +444,21 @@ async function waitGame(page, fnBody, limit) {
     ok('không bên nào lệch máu so với bên kia',
       swap.gHp === swap.eHp && swap.eHp !== swap.eHp0,
       `${swap.gHp} vs ${swap.eHp} (trước khi đổi thân xác địch đang ${swap.eHp0})`);
-    ok('đối thủ kẹt trong thân xác Ginyu chỉ còn 50% dmg', Math.abs(swap.gCut - .5) < .001, `${swap.gCut}`);
-    ok('thân xác hệ ném (Konohamaru): không giảm dmg nhưng ngắm hỏng hẳn',
+    /* Cân bằng mới: MỘT mức cắt duy nhất cho cả hai bên và cho mọi chiêu — 25% dmg,
+       25% thời lượng hiệu ứng. Bản trước chia làm bốn mức lệch nhau (35/30/40/50). */
+    ok('cả hai bên cùng một mức cắt: 25% dmg và 25% thời lượng hiệu ứng',
+      Math.abs(swap.gCut - swap.cut) < .001 && Math.abs(swap.gCc - swap.ccCut) < .001 &&
+      Math.abs(swap.eCut - swap.cut) < .001 && Math.abs(swap.eCc - swap.ccCut) < .001,
+      `Ginyu-body ${swap.gCut}/${swap.gCc} · thân xác cướp được ${swap.eCut}/${swap.eCc}`);
+    ok('mức cắt đúng bằng 25%', Math.abs(swap.cut - .25) < .001 && Math.abs(swap.ccCut - .25) < .001,
+      `${swap.cut} / ${swap.ccCut}`);
+    ok('thân xác hệ ném (Konohamaru): ngắm hỏng hẳn thay vì đấm hụt',
       swap.eProj === true && swap.eMiss === 0 && swap.eAim > 1,
-      `dmg mượn nguyên, độ lệch ±${swap.eAim} rad`);
-    ok('chiêu của chính Ginyu trong thân xác người khác: −65% dmg, −70% hiệu ứng',
-      Math.abs(swap.eCut - .35) < .001 && Math.abs(swap.eCc - .3) < .001,
-      `dmg ${swap.eCut} · hiệu ứng ${swap.eCc}`);
+      `độ lệch ±${swap.eAim} rad`);
+    /* Người dùng chốt: "đối thủ Ginyu khi bị change vẫn có thể dùng skill bản thân". */
+    ok('hồn đối thủ nhớ mình là ai và mang theo bộ chiêu của chính mình',
+      swap.gSoul === 'kono' && swap.gCds === 's1,s2,s3',
+      `hồn ${swap.gSoul} · ô chiêu ${swap.gCds}`);
 
     // nội tại của thân xác bị cướp phải tắt, và bảng chiêu đọc theo Ginyu
     const after = await waitGame(page, 'true', .5);
@@ -460,6 +469,72 @@ async function waitGame(page, fnBody, limit) {
     });
     ok('cướp xác xong thì nội tại của thân xác tắt, chỉ còn bộ chiêu của Ginyu',
       cross.cds === 's1,s2,s3' && cross.aura, JSON.stringify(cross));
+
+    /* ---- hồn đối thủ trong thân xác Ginyu vẫn bấm được chiêu của CHÍNH MÌNH ----
+       Người dùng chốt: "đối thủ Ginyu khi bị change vẫn có thể dùng skill bản thân".
+       Chiêu đi theo hồn, đòn tay đi theo thân xác, và cả hai đều bị cắt 75%. */
+    const kit = await page.evaluate(() => {
+      const G = window.__G();
+      const g = G.fighters.find(f => f.swapAs === 'foe');
+      const e = G.fighters.find(f => f.swapAs === 'ginyu');
+      // dọn sạch mọi thứ có thể xen vào: hiệu ứng, choáng, khoá, đạn đang bay
+      for (const f of [g, e]) { f.stun = 0; f.lock = 0; f.dots.length = 0; f.gnDaze = f.gnRage = f.gnTired = f.gnSlow = 0; f.gnState = null; f.evade = 0; f.invuln = 0; }
+      G.proj.length = 0;
+      window.__statusTick(g, 0); window.__statusTick(e, 0);
+      const dmgOut = g.dmgOut, ccOne = window.__gnCc(g, 1);
+
+      // Chiêu 2 của Konohamaru (Kage Bunshin) — đứng ở 300px, ngoài tầm tay
+      g.x = e.x - 300; g.y = e.y;
+      g.cds.s1 = g.cds.s2 = g.cds.s3 = 0;
+      g.pose = 'idle';
+      window.__gnSoulThink(g, e, 300, true);
+      const bun = { s2: g.cds.s2, pose: g.pose };
+
+      // Chiêu 3 (Sexy no Jutsu) — chiêu 2 vừa vào hồi chiêu nên lần này rơi xuống s3
+      g.pose = 'idle';
+      window.__gnSoulThink(g, e, 300, true);
+      const sexy = { s3: g.cds.s3, pose: g.pose };
+
+      // Đòn tay thì theo THÂN XÁC: đấm đá của Ginyu, và cũng chỉ còn 25% dmg
+      e.hp = e.maxHp; g.cds.s1 = 0;
+      g.x = e.x - 40; g.y = e.y;
+      window.__gnSoulThink(g, e, 40, true);
+      const punchDrop = e.maxHp - e.hp;
+      return { dmgOut, ccOne, bun, sexy, punchDrop, s1: g.cds.s1,
+               want: window.__GN.hitDmg * window.__GN.swapCut };
+    });
+    ok('hồn đối thủ tung được CHIÊU 2 của chính mình trong thân xác Ginyu',
+      kit.bun.s2 > 0 && kit.bun.pose === 'atk2', JSON.stringify(kit.bun));
+    ok('và cả CHIÊU 3 của chính mình',
+      kit.sexy.s3 > 0 && kit.sexy.pose === 'skill', JSON.stringify(kit.sexy));
+    ok('đòn tay thì mượn của thân xác: đấm đá Ginyu, đúng 25% sát thương',
+      kit.s1 > 0 && Math.abs(kit.punchDrop - kit.want) < .6,
+      `mất ${kit.punchDrop} máu, mốc ${kit.want}`);
+    ok('mọi chiêu KHÔNG phải của Ginyu cũng đi qua đúng mức cắt 25%',
+      Math.abs(kit.dmgOut - .25) < .001, `dmgOut ${kit.dmgOut}`);
+    ok('thời lượng hiệu ứng của hồn đó cũng còn 25%',
+      Math.abs(kit.ccOne - .25) < .001, `1 giây -> ${kit.ccOne}`);
+
+    /* Chạy thật một quãng: phân thân phải bay ra khỏi thân xác Ginyu. Đây là bằng
+       chứng cuối cùng rằng chiêu của hồn chạy trọn vẹn chứ không chỉ trừ hồi chiêu.
+       Phải chờ hết phân cảnh CHANGE trước: hẹn giờ của bunshin tự huỷ khi G.freeze>0. */
+    await waitGame(page, 'G.freeze <= 0', 4);
+    const cloneOut = await page.evaluate(() => {
+      const G = window.__G();
+      const g = G.fighters.find(f => f.swapAs === 'foe');
+      const e = G.fighters.find(f => f.swapAs === 'ginyu');
+      G.proj.length = 0;
+      g.stun = 0; g.lock = 0; g.cds.s2 = 0;
+      // đứng xa ra: sát mặt thì phân thân chạm địch và tan ngay trong một khung hình,
+      // vòng poll 25ms không kịp thấy nó
+      g.x = e.x - 300; g.y = e.y;
+      window.__gnSoulThink(g, e, 300, true);
+      return { s2: g.cds.s2, pose: g.pose, freeze: G.freeze, over: !!G.over, alive: g.alive, hp: g.hp };
+    });
+    const clone = await waitGame(page, "G.proj.some(p => p.type === 'clone')", 3);
+    ok('phân thân bay ra thật từ thân xác Ginyu', clone.hit,
+      `sau ${clone.t}s trong trận · ${JSON.stringify(cloneOut)}`);
+
     ok('trận 2 không lỗi trang', errors.length === 0, errors.join(' | '));
     await browser.close();
   }
@@ -524,6 +599,47 @@ async function waitGame(page, fnBody, limit) {
       `hưng phấn ${crowd.seen.atk} / thăm dò ${crowd.seen.def}, có ${crowd.seen.daze} lần địch ngơ ngác`);
 
     ok('trận 3 không lỗi trang', errors.length === 0, errors.join(' | '));
+    await browser.close();
+  }
+
+  /* ---------- trận 4: bảy cái hồn, cái nào cũng phải chạy được trong thân xác Ginyu ----------
+     Mỗi hồn có một bộ chiêu riêng, và mấy chiêu nặng nề nhất (dải bóng, bảo bối, ba pha
+     Meteor Strike, quãng đứng suy nghĩ của Horikita) đều tự khoá chân người tung ra rồi
+     trông vào một hàm tick để mở khoá. Mấy tick đó gác ở f.key và tắt hẳn khi swapAs bật,
+     nên thiếu một nhánh trong gnSoulTick là hồn đó ĐỨNG HÌNH VĨNH VIỄN — đúng cái đã xảy
+     ra với Horikita (f.decT không ai đếm xuống). Vòng dưới đây bắt đúng lỗi đó: cướp xác,
+     chạy thật một quãng, rồi đòi thấy thân xác Ginyu có lúc rảnh tay. */
+  for (const soul of ['kono', 'chichi', 'tsubasa', 'shika', 'suzune', 'dora', 'superman']) {
+    const { browser, page, errors } = await openGame('ginyu', soul);
+    await page.selectOption('#speed', '1');
+    await page.evaluate(() => {
+      const G = window.__G();
+      const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f !== g);
+      g.gnEntry = null; g.lock = 0; e.lock = 0;
+      if (e.drEntry) { e.drEntry = null; e.drHide = false; }
+      if (e.supEntry) { e.supEntry = null; e.supHide = false; e.supAir = 0; }
+      window.__ginyuPossess(g, e);
+    });
+    await waitGame(page, 'G.freeze <= 0', 4);
+    const run = await page.evaluate(() => new Promise(res => {
+      const G = window.__G(), t0 = G.t;
+      const g = G.fighters.find(f => f.swapAs === 'foe');
+      let free = 0, acted = 0, poses = {};
+      const id = setInterval(() => {
+        if (!g) { clearInterval(id); res({ none: 1 }); return; }
+        if (g.lock <= 0 && g.stun <= 0) free++;
+        if (g.pose !== 'idle') { acted++; poses[g.pose] = 1; }
+        if (G.t - t0 > 6 || G.over) {
+          clearInterval(id);
+          res({ free, acted, poses: Object.keys(poses).join(','), over: !!G.over,
+                t: +(G.t - t0).toFixed(2), soul: g.gnSoul, hp: g.hp });
+        }
+      }, 25);
+      setTimeout(() => { clearInterval(id); res({ free, acted, timeout: 1 }); }, 90000);
+    }));
+    ok(`hồn ${soul} trong thân xác Ginyu không đứng hình vĩnh viễn`,
+      !run.none && !run.timeout && run.free > 0, JSON.stringify(run));
+    ok(`hồn ${soul}: trận chạy sạch lỗi trang`, errors.length === 0, errors.join(' | '));
     await browser.close();
   }
 
