@@ -34,7 +34,9 @@ def slot_keys():
     s = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
     i = s.index('const SFX_EVENTS=[')
     blk = s[i:s.index('\n];', i)]
-    return [k for k, _ in re.findall(r"\['(\w+)','([^']*)'", blk)]
+    # chỉ bắt TÊN KHOÁ, đừng đòi luôn cái nhãn phía sau: nhãn nào có dấu nháy đơn trong câu
+    # thì viết bằng nháy kép ("Last Son's Resolve…") và mẫu đòi ,' sẽ bỏ sót đúng ô đó.
+    return re.findall(r"\['(\w+)'", blk)
 
 
 def norm(name):
