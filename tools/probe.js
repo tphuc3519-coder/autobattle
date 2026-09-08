@@ -93,6 +93,15 @@ window.__ARCADE=()=>ARCADE; window.__groundShadows=groundShadows; window.__runni
 /* ba chế độ đấu */
 window.__PMODE=()=>PMODE; window.__ROSTERS=ROSTERS; window.__PICK=PICK;
 window.__TMP=()=>TMP;   // đội hình đang NHÁP trong màn chọn, chưa chốt vào ROSTERS
+/* giải đấu */
+window.__COMP=()=>COMP; window.__compNext=()=>compNextMatch(); window.__compDone=()=>compDone();
+window.__compPlayNext=()=>compPlayNext(); window.__compChampion=()=>compChampion();
+window.__lgOrder=()=>lgOrder(); window.__roundRobin=roundRobin; window.__compPaint=()=>compPaint();
+window.__compTotal=()=>compTotal(); window.__compPlayed=()=>compPlayed();
+window.__COMP_MAXT=COMP_MAXT; window.__compLive=()=>compLive;
+/* Ép trận đang đá kết thúc ngay với người thắng chỉ định — khỏi phải ngồi xem đủ mấy chục
+   giây mỗi trận khi test cả một giải. */
+window.__compWin=key=>{ const f=G.fighters.find(x=>!x.summon&&x.key===key); finish(f||G.k); };
 window.__buildRoster=buildRoster; window.__spawnSpots=spawnSpots; window.__newGame=newGame;
 window.__foeOf=foeOf; window.__nearestFoe=nearestFoe; window.__aliveMains=aliveMains;
 window.__aliveTeams=aliveTeams; window.__defeat=defeat; window.__finish=finish;
