@@ -1504,8 +1504,34 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
 
 - **Vỏ arcade nằm sẵn trong `index.html`** (`#arcTitle`, `#arcOver`, lưới `#stageList`) và
   tự tắt khi không có `window.ARCADE` — một chỗ để sửa giao diện, không phải hai.
-- **Chỉ TRANG CHƠI mới chia màn chọn làm hai trang** (nhân vật → màn). Xưởng giữ nguyên một
-  trang vì **mọi test hiện có bấm `#cselGo` một phát là vào trận** — đổi chỗ này là đổ cả bộ.
+- **Chỉ TRANG CHƠI mới chia màn chọn thành nhiều BƯỚC.** Xưởng giữ nguyên một trang
+  (`dataset.page='all'`) vì **mọi test hiện có bấm `#cselGo` một phát là vào trận** — đổi chỗ
+  này là đổ cả bộ. Các bước lấy từ `cselSteps()`:
+
+  | Chế độ | Các bước |
+  |---|---|
+  | đấu tay đôi | `p1` → `p2` → `stage` |
+  | hỗn chiến · đánh đội | `chars` (một khung đội hình) → `stage` |
+
+  Người dùng bác lối để hai cột cạnh nhau: *"màn chọn p1 xong r chọn p2 sau, để chung nhìn
+  rối"*. CSS giấu `#colB` ở bước `p1` và `#colA` ở bước `p2`, nên **mỗi bước chỉ có MỘT lưới
+  nhân vật và MỘT thẻ hồ sơ** — gọn hẳn trong một màn hình.
+  - `cselFix()` kéo bước về cho hợp lệ khi đổi chế độ giữa chừng (`p1` không có trong danh
+    sách bước của hỗn chiến).
+  - Dải **`#pickRow`** hiện từ bước `p2` trở đi: mặt + tên của cả hai bên kèm chữ `VS`, nên
+    lúc chọn P2 vẫn thấy P1 vừa chốt.
+  - **Dòng phụ phải vẽ trong `cselPaint()` chứ không chỉ trong `cselRefresh()`** — bấm "Tiếp"
+    chỉ gọi `cselPaint()`, nên để trong `cselRefresh()` thì chữ đứng nguyên ở bước cũ (đã
+    dính: sang bước P2 mà vẫn ghi "Chọn nhân vật cho Người chơi 1"). Cả hai đọc chung
+    `cselSubText()`.
+
+- **Mặt nhân vật lấy từ chính ảnh đã dán** (`avaSrc()` → ô `idle`, Horikita thì `scared`,
+  rồi `stand3`). Chưa dán thì vẫn là emoji, không bao giờ để trống. Ảnh **tới sau** (gói phát
+  hành nạp bằng `fetch`) nên `packLoad()` gọi `avaRefresh()` quét lại mấy thẻ đã dựng — thiếu
+  chỗ này thì mở trang xong thẻ vẫn là emoji cho tới lần dựng lại kế tiếp.
+- **Thẻ hồ sơ chia hai cột** (`.dexGrid`): trái là giới thiệu + bộ chiêu, phải là biểu đồ.
+  Chỉ bật ở bước `p1`/`p2` của trang chơi khi màn rộng hơn 820px; cột hẹp (xưởng, điện thoại)
+  thì lưới tự xếp dọc như cũ.
 - `el(id)` **trả về Ô GIẢ** (`NUL`) khi không tìm thấy: trang chơi bị cắt hàng chục id mà
   engine thì gán thẳng `el('hpK').value` / `el('play').textContent` ở khắp nơi. Vì vậy
   **chỗ nào cần biết ô có thật hay không thì phải hỏi thẳng `document.getElementById`** —
@@ -1521,6 +1547,19 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
 - Trang chơi: `packLoad()` `fetch` gói đó lúc mở. **Ô nào đã có nội dung thì gói không đè.**
 - **Thứ tự nạp**: trang chơi lấy **gói TRƯỚC** rồi mới tới kho của máy (kho đằng nào cũng
   trống mà đọc hơn 80 khoá IndexedDB thì chậm); xưởng thì ngược lại — file bạn tự nạp thắng.
+- **Mọi cú `fetch` vào `assets` phải đi qua `fetchAsset()`, đừng gọi thẳng `fetch`.** Thư mục
+  `assets` nằm ở **gốc site**; trang chơi cũng ở gốc nên `'assets/…'` đúng, nhưng **trang xưởng
+  trên Pages nằm trong `/studio/`** — đường dẫn tương đối lúc đó thành `/studio/assets/…` và ăn
+  **404 im lặng**. Hậu quả đo được: người dùng dán ảnh, xuất gói, commit `pack.json` lên repo,
+  mở trang xưởng vẫn thấy model vector và **không có một dòng lỗi nào**. `fetchAsset()` thử lần
+  lượt `''` → `'../'` → `'../../'` rồi **nhớ mức nào ăn**, các file sau đi thẳng mức đó (bộ giọng
+  mẫu nạp chín file nên không được dò lại từ đầu mỗi lần). `t_play.js` dựng hẳn bản giống Pages
+  (trang chơi ở gốc, xưởng trong `/studio/`, `assets` ở gốc) rồi kiểm cả hai trang.
+- **Gói nặng thì phải nói cho người chơi biết.** `pack.json` gói ảnh base64 nên vài chục MB là
+  bình thường (bản người dùng đang dùng: **24 MB, 89 ảnh, 46 tiếng**), trên mạng chậm nó tới sau
+  khi trang đã mở — không nói gì thì người chơi tưởng game hỏng. Màn tiêu đề vì vậy có dòng
+  `#arcLoad`: *Đang tải ảnh và tiếng…* rồi đổi thành *Đã nạp N ảnh · M tiếng*. Đo trên máy test:
+  xong sau **3 giây** với gói 24 MB đọc từ localhost.
 - **`const PACK_URL` phải khai TRƯỚC `sfxRestore()`.** Để nó ở dưới thì lúc `sfxRestore()`
   chạy (rất sớm), `PACK_URL` còn trong TDZ, `packLoad()` ném lỗi **ngay trong `try{}` và bị
   nuốt mất** — trang chơi im lặng không nạp gói, không một dòng lỗi nào. Mất một lượt dò mới ra.
@@ -2123,7 +2162,9 @@ node tools/t_stage.js   # sáu màn đấu: mỗi màn một tông màu riêng, 
                         # hình vector, thẻ chọn màn có ảnh vẽ thật, màn đã chọn được lưu,
                         # và sàn có bóng đổ dưới chân
 node tools/t_play.js    # hai trang: play.html đúng bằng bản dựng từ index.html, đã cắt sạch
-                        # bảng xưởng, luồng arcade ba bước (tiêu đề → nhân vật → màn → đánh),
+                        # bảng xưởng, luồng arcade từng bước (tiêu đề → P1 → P2 → màn → đánh,
+                        # mỗi bước chỉ hiện một cột, dải "đã chọn" giữ P1 lại, Quay lại về
+                        # đúng bước trước),
                         # gói phát hành được nạp, hết trận hiện dải nút, và xưởng vẫn vào
                         # trận bằng MỘT cú bấm #cselGo
 node tools/t_bulk.js    # nạp hàng loạt: bảng đoán tên file (thư mục thắng tên file, alias dài
@@ -2243,6 +2284,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Bấm nút đổi ngôn ngữ không được | nút chỉ nằm ở thanh công cụ, mà màn chọn nhân vật phủ kín trang | gắn `data-lang-toggle` cho cả nút trong màn chọn lẫn nút trên màn tiêu đề |
 | Đội hình hỗn chiến / đánh đội trắng trơn giữa chừng, `t_modes` đổ ở chỗ khác nhau mỗi lần | thêm một `await Store.get(...)` vào `loadSaved()` đẩy lượt `cselRefresh()` ở cuối hàm lùi lại một nhịp IndexedDB — rơi đúng vào lúc người dùng vừa bấm đổi chế độ, lượt vẽ muộn quét sạch khung đội hình vừa mở | đọc khoá phụ bằng `.then()` chứ đừng `await`; mọi thứ cần đọc trước `cselRefresh()` thì gom vào đúng chỗ cũ, đừng nối thêm |
 | Nhãn biểu đồ mạng nhện bị cắt cụt chữ đầu (`Ổn định` còn `định`) | `RADAR_PAD` chỉ chừa chỗ cho ĐIỂM NEO, mà nhãn hai bên canh mép nên chữ chạy tiếp ra ngoài | nới chỗ chừa; test đo `getBoundingClientRect()` của từng nhãn so với khung SVG |
+| Dán ảnh, xuất gói, commit `pack.json` lên repo mà trang XƯỞNG vẫn hiện model vector | `packLoad()` / `voicePack()` gọi thẳng `fetch('assets/…')`, mà trang xưởng trên Pages nằm trong `/studio/` ⇒ đường dẫn thành `/studio/assets/…` và **404 im lặng** (`try{}` nuốt lỗi) | mọi cú fetch vào assets đi qua `fetchAsset()`: thử `''` → `'../'` → `'../../'` rồi nhớ mức ăn. Test dựng hẳn bản giống Pages rồi kiểm cả hai trang |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---

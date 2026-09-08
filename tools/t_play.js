@@ -69,26 +69,56 @@ function wavUrl() {
   await page.click('#arcStart');
   await page.waitForTimeout(300);
   ok(await page.locator('#charSelect').isVisible(), 'bam START thi mo man chon nhan vat');
-  ok(await page.evaluate(() => document.getElementById('charSelect').dataset.page) === 'chars',
-     'dung o trang chon NHAN VAT truoc');
+  ok(await page.evaluate(() => document.getElementById('charSelect').dataset.page) === 'p1',
+     'dung o trang chon NGUOI CHOI 1 truoc');
   ok(!await page.locator('#stageList .sTile').first().isVisible(), 'trang nhan vat thi chua hien luoi man');
 
+  /* Chọn P1 xong mới tới P2 — người dùng bác lối để hai cột cạnh nhau.
+     Cột của bên kia phải ĐANG ẨN, không thì vẫn là màn hai cột như cũ. */
+  ok(!await page.locator('#colB').isVisible(), 'buoc P1 thi con cua P2 dang an');
+  ok(await page.evaluate(() => document.querySelectorAll('.pickChip').length) === 0,
+     'buoc P1 chua co dai "da chon"');
+  await page.click('#listA .cTile[data-key="ginyu"]');
+  await page.click('#cselGo');
+  await page.waitForTimeout(250);
+  const buoc2 = await page.evaluate(() => ({
+    page: document.getElementById('charSelect').dataset.page,
+    h2: document.querySelector('#charSelect h2').textContent,
+    chips: [...document.querySelectorAll('.pickChip b')].map(x => x.childNodes[0].textContent),
+    lui: !document.getElementById('cselBack').classList.contains('off')
+  }));
+  ok(buoc2.page === 'p2', `bam tiep thi sang buoc chon NGUOI CHOI 2 (${buoc2.page})`);
+  ok(/2/.test(buoc2.h2), `tieu de doi theo buoc (${buoc2.h2})`);
+  ok(buoc2.chips.length === 2, `hien dai "da chon" de van thay P1 (${buoc2.chips.join(' vs ')})`);
+  ok(buoc2.lui, 'co nut quay lai o buoc P2');
+  ok(!await page.locator('#colA').isVisible(), 'buoc P2 thi con cua P1 dang an');
+
+  await page.click('#listB .cTile[data-key="dora"]');
   await page.click('#cselGo');
   await page.waitForTimeout(250);
   const trang2 = await page.evaluate(() => ({
     page: document.getElementById('charSelect').dataset.page,
     chay: window.__running(), nhan: document.getElementById('cselGo').textContent
   }));
-  ok(trang2.page === 'stage', `bam tiep thi sang trang CHON MAN (${trang2.page})`);
+  ok(trang2.page === 'stage', `chon xong P2 thi sang trang CHON MAN (${trang2.page})`);
   ok(!trang2.chay, 'sang trang chon man thi tran VAN CHUA bat dau');
   ok(/VÀO TRẬN/.test(trang2.nhan), `nut doi chu thanh vao tran (${trang2.nhan})`);
   ok(await page.locator('#stageList .sTile[data-stage="space"]').isVisible(), 'luoi man hien ra');
 
+  await page.click('#cselBack');
+  await page.waitForTimeout(200);
+  ok(await page.evaluate(() => document.getElementById('charSelect').dataset.page) === 'p2',
+     'tu trang chon man bam Quay lai thi ve dung buoc P2');
+  await page.click('#cselGo');
+  await page.waitForTimeout(200);
+
   await page.click('#stageList .sTile[data-stage="space"]');
   await page.click('#cselGo');
   await page.waitForTimeout(900);
-  const vao = await page.evaluate(() => ({ stage: window.__STAGE(), chay: window.__running(), t: window.__G().t }));
+  const vao = await page.evaluate(() => ({ stage: window.__STAGE(), chay: window.__running(), t: window.__G().t,
+    cap: window.__G().fighters.filter(f => !f.summon).map(f => f.key).join(' vs ') }));
   ok(vao.stage === 'space', `vao tran dung man vua chon (${vao.stage})`);
+  ok(vao.cap === 'ginyu vs dora', `vao tran dung cap vua chon tung buoc (${vao.cap})`);
   ok(vao.chay, 'tran tu chay ngay, khong bat nguoi choi bam them nut');
   await page.waitForTimeout(600);
   const t2 = await page.evaluate(() => window.__G().t);
@@ -130,6 +160,44 @@ function wavUrl() {
   ok(!await p2.locator('#charSelect').isVisible(), 'xuong: mot cu bam #cselGo la vao tran (test cu van chay)');
   ok(e2.length === 0, `xuong khong co loi (${e2.slice(0, 2).join(' | ')})`);
   await b2.close();
+
+  /* ---------- 5. bản dựng GIỐNG GITHUB PAGES: xưởng nằm trong /studio/ ----------
+     Đây là chỗ đã hỏng thật: `assets` nằm ở gốc site, mà trang xưởng ở trong thư mục con
+     nên đường dẫn tương đối thành /studio/assets/… và ăn 404 IM LẶNG — người dùng dán
+     ảnh, xuất gói, đẩy lên repo mà mở trang xưởng vẫn thấy model vector. */
+  const site = fs.mkdtempSync(path.join(os.tmpdir(), 'site-'));
+  fs.mkdirSync(path.join(site, 'studio'), { recursive: true });
+  fs.mkdirSync(path.join(site, 'assets', 'pack'), { recursive: true });
+  fs.copyFileSync(buildPlay(), path.join(site, 'index.html'));       // trang chơi ở GỐC
+  fs.copyFileSync(build(), path.join(site, 'studio', 'index.html')); // xưởng trong THƯ MỤC CON
+  fs.writeFileSync(path.join(site, 'assets', 'pack', 'pack.json'), JSON.stringify({
+    v: 1, at: '2026-09-08', spr: { kono: { idle: [PNG] } }, sfx: { punch: wavUrl() }
+  }));
+  const sv2 = http.createServer((rq, rs) => {
+    const p = path.join(site, decodeURIComponent(rq.url.split('?')[0]).replace(/\/$/, '/index.html'));
+    if (!p.startsWith(site) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) { rs.statusCode = 404; rs.end(); return; }
+    rs.setHeader('content-type', mime(p)); rs.end(fs.readFileSync(p));
+  });
+  await new Promise(r => sv2.listen(0, '127.0.0.1', r));
+  const goc = `http://127.0.0.1:${sv2.address().port}`;
+
+  const b3 = await chromium.launch();
+  for (const [ten, u, cho] of [['trang choi', goc + '/', 3], ['xuong', goc + '/studio/', 3]]) {
+    const p3 = await b3.newPage({ viewport: { width: 820, height: 980 } });
+    await p3.route('**://fonts.*/**', r => r.abort());
+    const e3 = []; p3.on('pageerror', e => e3.push(e.message));
+    await p3.goto(u, { waitUntil: 'domcontentloaded' });
+    let n = 0;
+    for (let i = 0; i < cho * 4; i++) {
+      n = await p3.evaluate(() => ((window.__SPR.kono || {}).idle || []).length);
+      if (n) break;
+      await p3.waitForTimeout(250);
+    }
+    ok(n === 1, `${ten}: goi phat hanh o goc site van nap duoc (${n} anh)`);
+    ok(e3.length === 0, `${ten}: khong co loi trang (${e3.slice(0, 2).join(' | ')})`);
+    await p3.close();
+  }
+  await b3.close(); sv2.close();
 
   console.log(loi.length ? `\nHONG ${loi.length} muc` : '\nDAT het');
   process.exit(loi.length ? 1 : 0);

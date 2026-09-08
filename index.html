@@ -153,6 +153,8 @@
   .arcTag{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.22em;color:var(--mute);
     margin:14px 0 26px;text-transform:uppercase}
   .arcHint{font-size:12px;color:var(--mute);margin-top:16px}
+  .arcLoad{margin-top:9px;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.06em;
+    color:var(--gold);opacity:.9}
   /* Nhịp nháy chỉ đổi QUẦNG SÁNG, đừng đụng tới transform: nút mà nhúc nhích thì
      Playwright coi là "chưa đứng yên" và không bao giờ bấm được (test treo 30 giây). */
   #arcStart{font-size:17px;padding:14px 34px;animation:arcPulse 1.6s ease-in-out infinite}
@@ -176,6 +178,49 @@
   body.arcade #charSelect[data-page="stage"] #multiPane{display:none}
   body.arcade #charSelect[data-page="stage"] .sTiles{grid-template-columns:repeat(3,1fr)}
   body.arcade #charSelect[data-page="stage"] .sTile img{height:120px}
+
+  /* ---- TRANG CHƠI: chọn P1 xong mới tới P2 ----
+     Người dùng bác lối để hai cột cạnh nhau: "màn chọn p1 xong r chọn p2 sau, để chung
+     nhìn rối". Xưởng vẫn giữ hai cột (mọi test cũ bấm #cselGo một phát là vào trận). */
+  body.arcade #charSelect[data-page="p1"] #colB,
+  body.arcade #charSelect[data-page="p2"] #colA,
+  body.arcade #charSelect[data-page="p1"] #stageSub,
+  body.arcade #charSelect[data-page="p1"] #stageList,
+  body.arcade #charSelect[data-page="p2"] #stageSub,
+  body.arcade #charSelect[data-page="p2"] #stageList,
+  body.arcade #charSelect[data-page="p2"] .cselModes,
+  body.arcade #charSelect[data-page="stage"] #colA,
+  body.arcade #charSelect[data-page="stage"] #colB{display:none}
+  body.arcade #charSelect[data-page="p1"] .cselCols,
+  body.arcade #charSelect[data-page="p2"] .cselCols{grid-template-columns:1fr}
+  body.arcade #charSelect[data-page="p1"] .cTiles,
+  body.arcade #charSelect[data-page="p2"] .cTiles{grid-template-columns:repeat(4,1fr);gap:8px}
+  body.arcade #charSelect[data-page="p1"] .cselHead,
+  body.arcade #charSelect[data-page="p2"] .cselHead{display:none}
+  @media(min-width:760px){
+    body.arcade #charSelect[data-page="p1"] .cTiles,
+    body.arcade #charSelect[data-page="p2"] .cTiles{grid-template-columns:repeat(8,1fr)}
+    /* lưới ngang + thẻ hồ sơ nằm dưới: nhìn gọn một màn, không phải cuộn hai cột */
+  }
+
+  /* dải "đã chọn": lúc chọn P2 vẫn thấy P1 vừa chốt */
+  .pickRow{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin:6px 0 2px}
+  .pickChip{display:flex;align-items:center;gap:7px;padding:5px 11px 5px 5px;border-radius:11px;
+    background:#150F32;border:1px solid #3A3272}
+  .pickChip.now{border-color:var(--gold);box-shadow:0 0 0 1px rgba(255,214,102,.35) inset}
+  .pickChip img,.pickChip span.e{width:26px;height:26px;border-radius:7px;object-fit:cover;
+    background:#0C0920;display:flex;align-items:center;justify-content:center;font-size:15px}
+  .pickChip b{font-size:12.5px}
+  .pickChip i{font-style:normal;font-family:"Space Mono",monospace;font-size:9px;color:var(--mute);
+    letter-spacing:.1em;display:block;text-transform:uppercase}
+  .pickVs{font-family:"Space Mono",monospace;font-size:11px;color:var(--gold);letter-spacing:.14em}
+
+  /* mặt nhân vật: dán ảnh thì lấy chính ảnh thủ thế, chưa dán thì vẫn là emoji */
+  .cAva img,.dexAva img{width:100%;height:100%;object-fit:contain;display:block}
+  .cTile .cAva{overflow:hidden}
+  body.arcade #charSelect[data-page="p1"] .cAva,
+  body.arcade #charSelect[data-page="p2"] .cAva{width:52px;height:52px;flex:0 0 52px}
+  .dexAva{width:34px;height:34px;display:flex;align-items:center;justify-content:center;overflow:hidden}
   /* ---- hồ sơ nhân vật: chỉ số dạng thanh + thẻ chiêu ---- */
   .dexTop{display:flex;align-items:center;gap:9px;margin-bottom:7px}
   .dexAva{font-size:26px;line-height:1;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
@@ -231,6 +276,13 @@
   .dexHpIn:focus{outline:0;border-color:var(--gold)}
 
   /* ---- biểu đồ mạng nhện chín trục ---- */
+  .dexGrid{display:grid;grid-template-columns:1fr;gap:0 16px}
+  body.arcade #charSelect[data-page="p1"] .dexGrid,
+  body.arcade #charSelect[data-page="p2"] .dexGrid{grid-template-columns:1fr}
+  @media(min-width:820px){
+    body.arcade #charSelect[data-page="p1"] .dexGrid,
+    body.arcade #charSelect[data-page="p2"] .dexGrid{grid-template-columns:1.05fr .95fr}
+  }
   .radar{display:block;width:100%;max-width:400px;margin:2px auto 6px;overflow:visible}
   .radar .rGrade{font-family:"Space Mono",monospace;font-size:9.5px;fill:#8C82C8;text-anchor:middle}
   .radar .rLab{font-family:"Space Mono",monospace;font-size:9.5px;fill:#B9AFE4;letter-spacing:.02em}
@@ -438,6 +490,7 @@
     <button id="arcStart" class="primary" type="button">PRESS START</button>
     <div style="margin-top:14px"><button type="button" data-lang-toggle title="Vietnamese / English">🌐 English</button></div>
     <div class="arcHint" data-i18n="arcHint">Chọn nhân vật, chọn màn rồi ngồi xem máy đánh với máy</div>
+    <div class="arcLoad" id="arcLoad" style="display:none"></div>
   </div>
 </div>
 <div class="arcOver off" id="arcOver">
@@ -463,14 +516,15 @@
         <input type="number" id="hpAll" value="800" min="100" max="9999" step="50">
         <button id="hpStd" type="button" data-i18n="hpStd">Chuẩn 800</button></label>
     </div>
+    <div class="pickRow off" id="pickRow"></div>
     <div class="cselBody">
       <div class="cselCols" id="duelPane">
-        <div class="cselCol">
+        <div class="cselCol" id="colA">
           <div class="cselHead"><span data-i18n="sideL">Bên trái</span> <b id="pickNameA"></b></div>
           <div class="cTiles" id="listA"></div>
           <div class="cDetail" id="detailA"></div>
         </div>
-        <div class="cselCol">
+        <div class="cselCol" id="colB">
           <div class="cselHead"><span data-i18n="sideR">Bên phải</span> <b id="pickNameB"></b></div>
           <div class="cTiles" id="listB"></div>
           <div class="cDetail" id="detailB"></div>
@@ -562,9 +616,13 @@ const L={
     skills:'Bộ chiêu', more:'Số liệu thô', less:'Thu gọn',
     hp:'Máu', tagPassive:'Nội tại', tagUlt:'Tuyệt chiêu', tagP:'NT', tagU:'ULT',
     vSimple:'Xem skill đơn giản', vFull:'Xem skill chi tiết',
+    cselP1:'CHỌN <span>NGƯỜI CHƠI 1</span>', cselP2:'CHỌN <span>NGƯỜI CHƠI 2</span>',
+    goP2:'Tiếp ▸ Người chơi 2', p1:'Người chơi 1', p2:'Người chơi 2',
+    subPick:'Chọn nhân vật cho {who} · {n} nhân vật',
     pwChart:'Biểu đồ sức mạnh', pwTable:'Chấm điểm thang 100', pwAvg:'Trung bình',
     hpTip:'Máu khởi đầu của nhân vật này — chỉnh thoải mái',
-    hpAll:'Máu mọi nhân vật', hpStd:'Chuẩn '+HP_STD
+    hpAll:'Máu mọi nhân vật', hpStd:'Chuẩn '+HP_STD,
+    packLoading:'Đang tải ảnh và tiếng…', packDone:'Đã nạp {n} ảnh · {s} tiếng'
   },
   en:{
     tagline:'Cross-universe arena · 8 fighters · 6 stages',
@@ -591,9 +649,13 @@ const L={
     skills:'Move list', more:'Raw numbers', less:'Hide numbers',
     hp:'HP', tagPassive:'Passive', tagUlt:'Ultimate', tagP:'PAS', tagU:'ULT',
     vSimple:'Simple skill view', vFull:'Detailed skill view',
+    cselP1:'SELECT <span>PLAYER 1</span>', cselP2:'SELECT <span>PLAYER 2</span>',
+    goP2:'Next ▸ Player 2', p1:'Player 1', p2:'Player 2',
+    subPick:'Pick a fighter for {who} · {n} fighters',
     pwChart:'Power chart', pwTable:'Rated out of 100', pwAvg:'Average',
     hpTip:'Starting HP for this fighter — set it to whatever you like',
-    hpAll:'HP for everyone', hpStd:'Standard '+HP_STD
+    hpAll:'HP for everyone', hpStd:'Standard '+HP_STD,
+    packLoading:'Loading art and sound…', packDone:'Loaded {n} images · {s} sounds'
   }
 };
 const t=k=>{ const d=L[LANG]||L.vi; return d[k]!==undefined?d[k]:(L.vi[k]!==undefined?L.vi[k]:k); };
@@ -2238,6 +2300,19 @@ async function decodeInto(name,dataUrl){
    2. **Ô nào đã có nội dung thì gói KHÔNG đè** — trong xưởng, file bạn tự nạp luôn thắng.
    3. Gói đi qua đúng `setFrames()` / `decodeInto()` như lúc bấm tay, không dựng đường nạp
       thứ ba (đường thứ hai là nạp hàng loạt ở trên). */
+/* Thư mục `assets` nằm ở GỐC site. Trang chơi cũng ở gốc nên 'assets/…' là đúng, nhưng
+   trang xưởng trên GitHub Pages nằm trong `/studio/` — đường dẫn tương đối lúc đó thành
+   `/studio/assets/…` và ăn 404 IM LẶNG: gói phát hành lẫn bộ giọng mẫu đều không nạp mà
+   không có lấy một dòng lỗi. Vì vậy mọi cú `fetch` vào assets đi qua `fetchAsset()`: nó
+   thử lần lượt vài mức rồi NHỚ mức nào ăn, các file sau đi thẳng mức đó. */
+let ASSET_BASE=null;
+const ASSET_TRY=['','../','../../'];
+async function fetchAsset(rel,opt){
+  for(const b of (ASSET_BASE!==null?[ASSET_BASE]:ASSET_TRY)){
+    try{ const r=await fetch(b+rel,opt); if(r.ok){ ASSET_BASE=b; return r; } }catch(e){}
+  }
+  return null;
+}
 const PACK_URL='assets/pack/pack.json';
 function packBuild(){
   const out={v:1, at:new Date().toISOString().slice(0,10), spr:{}, sfx:{}, bgm:{}};
@@ -2253,10 +2328,20 @@ function packBuild(){
   for(const k in BGM.src) out.bgm[k]=BGM.src[k];    // nhạc nền đi cùng gói luôn
   return out;
 }
+/* Gói ảnh nặng vài chục MB nên trên đường mạng chậm nó tới sau khi trang đã mở. Không
+   nói gì thì người chơi tưởng game hỏng — nên màn tiêu đề có một dòng trạng thái riêng. */
+function packNote(msg){
+  const el=document.getElementById('arcLoad');
+  if(!el) return;
+  el.textContent=msg||'';
+  el.style.display=msg?'':'none';
+}
 async function packLoad(noi){
   let data=null;
-  try{ const r=await fetch(PACK_URL,{cache:'no-store'}); if(r.ok) data=await r.json(); }catch(e){}
+  packNote(t('packLoading'));
+  try{ const r=await fetchAsset(PACK_URL,{cache:'no-store'}); if(r) data=await r.json(); }catch(e){}
   if(!data||!data.spr&&!data.sfx){
+    packNote('');
     if(noi) status('Chưa có '+PACK_URL+' — mở trang bằng http, hoặc bấm "Xuất gói" rồi đẩy file đó lên repo.');
     return {img:0,sfx:0};
   }
@@ -2283,6 +2368,8 @@ async function packLoad(noi){
     BGM.src[key]=src; if(typeof bgmMark==='function') bgmMark(key,true); nhac++;
   }
   if(nhac&&MUSIC.on) musicStart();
+  packNote(img||snd?tf('packDone',{n:img,s:snd}):'');
+  if(img){ avaRefresh(); if(typeof cselRefresh==='function') paintDex(); }
   if(img||snd||noi){
     status(`Đã nạp gói phát hành: ${img} ảnh · ${snd} tiếng (bản ${data.at||'?'}).`);
     sfxStatus(`Đã nạp ${snd} tiếng từ gói phát hành.`);
@@ -2678,7 +2765,7 @@ async function bulkDropFiles(dt){
    còn lại. File người dùng tự nạp LUÔN THẮNG: chỗ này không bao giờ đè lên. */
 async function voicePack(noi){
   let man=null;
-  try{ const r=await fetch('assets/voice/manifest.json',{cache:'no-store'}); if(r.ok) man=await r.json(); }catch(e){}
+  try{ const r=await fetchAsset('assets/voice/manifest.json',{cache:'no-store'}); if(r) man=await r.json(); }catch(e){}
   if(!man||!man.slots){
     if(noi) sfxStatus('Không đọc được assets/voice — mở trang bằng http, hoặc kéo thẳng thư mục assets/voice thả vào bảng này.');
     return 0;
@@ -2687,7 +2774,7 @@ async function voicePack(noi){
   for(const nm in man.slots){
     if(SFXSRC[nm]){ bo++; continue; }
     try{
-      const r=await fetch('assets/voice/'+man.slots[nm].file,{cache:'no-store'});
+      const r=await fetchAsset('assets/voice/'+man.slots[nm].file,{cache:'no-store'});
       if(!r.ok)continue;
       const b=await r.blob();
       const src=await new Promise(res=>{ const rd=new FileReader(); rd.onload=()=>res(rd.result); rd.onerror=()=>res(null); rd.readAsDataURL(b); });
@@ -11395,11 +11482,35 @@ function modeGroups(m){
 }
 /* Tổng số người của đội hình đang nháp — dùng cho trần TEAM_TOTAL. */
 const tmpTotal=()=>modeGroups(TMP.mode).reduce((n,g)=>n+g.list().length,0);
+/* Mặt nhân vật cho thẻ chọn và thẻ hồ sơ. Dán ảnh rồi thì lấy CHÍNH ảnh thủ thế (ô `idle`,
+   Horikita thì `scared` vì form 1 là dáng mặc định của cô) — người dùng đòi "có cả ava nhân
+   vật". Chưa dán thì vẫn là emoji như cũ, không để trống.
+   Ảnh tới sau (gói phát hành nạp bằng fetch) nên `avaRefresh()` quét lại mấy thẻ đã dựng. */
+function avaSrc(key){
+  const set=SPR[key]||{};
+  for(const pk of ['idle','scared','stand3']){
+    const a=set[pk];
+    if(a&&a.length&&a[0]&&a[0].src) return a[0].src;
+  }
+  return '';
+}
+function avaHtml(key){
+  const C=CHARS[key], src=avaSrc(key);
+  return src?`<img alt="" src="${src}">`:C.emoji;
+}
+function avaRefresh(){
+  for(const el2 of document.querySelectorAll('.cTile[data-key] .cAva, .pickChip[data-key] .e')){
+    const key=el2.closest('[data-key]').dataset.key;
+    if(!CHARS[key]) continue;
+    const src=avaSrc(key);
+    if(src&&!el2.querySelector('img')) el2.innerHTML=`<img alt="" src="${src}">`;
+  }
+}
 function tile(key,onClick,on){
   const C=CHARS[key];
   const t=document.createElement('button');
   t.className='cTile'+(on?' on':''); t.dataset.key=key; t.type='button'; t.title=C.name;
-  t.innerHTML=`<span class="cAva" style="color:${C.color}">${C.emoji}</span>`+
+  t.innerHTML=`<span class="cAva" style="color:${C.color}">${avaHtml(key)}</span>`+
               `<span class="cName" style="color:${C.color}">${C.short||C.name}</span>`;
   t.addEventListener('click',onClick);
   return t;
@@ -11566,21 +11677,26 @@ function dexCard(key,view){
     `<div class="sk"><span class="skTag t${k.tag}" title="${dexTagFull(k.tag)}">${dexTag(k.tag)}</span>`+
     `<b style="color:${C.color}">${k.name}</b><p>${tr(k)}</p></div>`).join('');
   const avg=pwAvg(key);
-  return `<div class="dexTop"><span class="dexAva">${C.emoji}</span>`+
+  return `<div class="dexTop"><span class="dexAva">${avaHtml(key)}</span>`+
     `<span class="dexId"><b style="color:${C.color}">${C.name}</b><i>${tr(D.role)||C.tag}</i></span>`+
     `<span class="dexHp">${t('hp')}<label><input type="number" class="dexHpIn" data-hpkey="${key}" `+
       `value="${HP[key]||HP_STD}" min="${HP_MIN}" max="${HP_MAX}" step="50" title="${t('hpTip')}"></label></span></div>`+
+    /* Hai cột: trái là lời giới thiệu + bộ chiêu, phải là biểu đồ. Màn rộng thì thẻ gọn
+       lại một màn hình thay vì phải cuộn; cột hẹp (xưởng, điện thoại) thì lưới tự xếp dọc. */
+    `<div class="dexGrid"><div class="dexL">`+
     (tr(D.bio)?`<div class="dexBio">${tr(D.bio)}</div>`:'')+
+    (full?`<div class="dexHead">${t('stName')}</div><div class="dexStats">${
+      row(t('stPow'),st.pow)+row(t('stSpd'),st.spd)+row(t('stRng'),st.rng)+
+      row(t('stDef'),st.def)}</div>`:'')+
+    `<div class="dexHead">${t('skills')}</div><div class="dexSkills">${sk}</div>`+
+    (full?`<details class="dexRaw" open><summary>${t('more')}</summary>`+
+      `<span class="cSkills">${C.skills.map(x=>'<i>·</i> '+x).join('<br>')}</span></details>`:'')+
+    `</div><div class="dexR">`+
     `<div class="dexHead">${t('pwChart')}<em class="pwAvg">${t('pwAvg')} <b class="g${pwGrade(avg)}">${avg}</b> `+
       `<i class="g${pwGrade(avg)}">${pwGrade(avg)}</i></em></div>`+
     radarSvg(key)+
-    (full?`<div class="dexHead">${t('stName')}</div><div class="dexStats">${
-      row(t('stPow'),st.pow)+row(t('stSpd'),st.spd)+row(t('stRng'),st.rng)+
-      row(t('stDef'),st.def)}</div>`+
-      `<div class="dexHead">${t('pwTable')}</div>`+pwTable(key):'')+
-    `<div class="dexHead">${t('skills')}</div><div class="dexSkills">${sk}</div>`+
-    (full?`<details class="dexRaw" open><summary>${t('more')}</summary>`+
-      `<span class="cSkills">${C.skills.map(x=>'<i>·</i> '+x).join('<br>')}</span></details>`:'');
+    (full?`<div class="dexHead">${t('pwTable')}</div>`+pwTable(key):'')+
+    `</div></div>`;
 }
 function cselRefresh(){
   const duel=TMP.mode==='duel';
@@ -11604,7 +11720,7 @@ function cselRefresh(){
   const nm=key=>CHARS[key].short||CHARS[key].name;
   const sub=el('cselCount'), vs=el('cselVs'), go=el('cselGo');
   if(duel){
-    if(sub) sub.textContent=tf('subDuel',{n:CKEYS.length});
+    if(sub) sub.textContent=cselSubText();
     if(vs) vs.innerHTML=`<b>${CHARS[TMP.a].name}</b> vs <b>${CHARS[TMP.b].name}</b>`;
   }else if(TMP.mode==='ffa'){
     if(sub) sub.textContent=tf('subFfa',{lo:FFA_MIN,hi:FFA_MAX});
@@ -11685,15 +11801,53 @@ function startPicked(){
    Ở trang chơi màn chọn chia làm HAI TRANG như máy thùng: chọn nhân vật rồi mới chọn màn.
    Trang xưởng giữ nguyên một trang — mọi test hiện có bấm #cselGo một phát là vào trận. */
 const ARCADE=!!window.ARCADE;
-let cselPage='chars';
+/* Trang chơi đi từng bước một: ĐẤU TAY ĐÔI thì `p1` → `p2` → `stage`, hỗn chiến / đánh đội
+   thì `chars` (một khung đội hình) → `stage`. Người dùng bác lối để hai cột cạnh nhau:
+   *"màn chọn p1 xong r chọn p2 sau, để chung nhìn rối"*.
+   Xưởng KHÔNG chia bước (`dataset.page='all'`) — mọi test cũ bấm #cselGo một phát là vào trận. */
+let cselPage='p1';
+const cselDuel=()=>ARCADE&&TMP.mode==='duel';
+function cselSteps(){ return cselDuel()?['p1','p2','stage']:['chars','stage']; }
+function cselFix(){                       // đổi chế độ giữa chừng thì kéo bước về cho hợp lệ
+  const st=cselSteps();
+  if(st.indexOf(cselPage)<0) cselPage=st[0];
+}
+/* Dòng phụ dưới tiêu đề. Ở trang chơi nó nói thẳng đang chọn cho ai — và phải gọi được
+   từ `cselPaint()` nữa, không thì bấm "Tiếp" xong chữ vẫn đứng ở bước trước. */
+function cselSubText(){
+  if(ARCADE&&(cselPage==='p1'||cselPage==='p2'))
+    return tf('subPick',{who:cselPage==='p1'?t('p1'):t('p2'),n:CKEYS.length});
+  return tf('subDuel',{n:CKEYS.length});
+}
 function cselPaint(){
   const box=el('charSelect');
+  cselFix();
   box.dataset.page=ARCADE?cselPage:'all';
-  const stage=ARCADE&&cselPage==='stage';
+  const st=cselSteps(), i=st.indexOf(cselPage), last=i===st.length-1;
   const h2=box.querySelector&&box.querySelector('h2');
-  if(h2) h2.innerHTML=stage?t('cselStage'):t('cselChar');
-  el('cselGo').textContent=!ARCADE?t('go'):(stage?t('goFight'):t('goNext'));
-  el('cselBack').classList.toggle('off',!stage);
+  if(h2) h2.innerHTML=cselPage==='stage'?t('cselStage')
+                     :cselPage==='p1'?t('cselP1'):cselPage==='p2'?t('cselP2'):t('cselChar');
+  el('cselGo').textContent=!ARCADE?t('go'):(last?t('goFight')
+                     :cselPage==='p1'?t('goP2'):t('goNext'));
+  el('cselBack').classList.toggle('off',!ARCADE||i<=0);
+  const sub=el('cselCount');
+  if(sub&&TMP.mode==='duel') sub.textContent=cselSubText();
+  pickRowPaint();
+}
+/* Dải người đã chốt: lúc chọn P2 vẫn nhìn thấy P1, và ở bước chọn màn thì thấy cả hai. */
+function pickRowPaint(){
+  const row=document.getElementById('pickRow');
+  if(!row) return;
+  if(!ARCADE||!cselDuel()||cselPage==='p1'){ row.classList.add('off'); row.innerHTML=''; return; }
+  row.classList.remove('off');
+  row.innerHTML=['a','b'].map(slot=>{
+    const key=TMP[slot], C=CHARS[key];
+    const now=(cselPage==='p2'&&slot==='b');
+    const src=avaSrc(key);
+    return `<span class="pickChip${now?' now':''}" data-key="${key}">`+
+      (src?`<img alt="" src="${src}">`:`<span class="e" style="color:${C.color}">${C.emoji}</span>`)+
+      `<b style="color:${C.color}">${C.short||C.name}<i>${slot==='a'?t('p1'):t('p2')}</i></b></span>`;
+  }).join('<span class="pickVs">VS</span>');
 }
 function arcFight(){
   ac(); musicStart();
@@ -11703,11 +11857,17 @@ for(const b of document.querySelectorAll('[data-lang-toggle]'))
   b.addEventListener('click',()=>setLang(LANG==='vi'?'en':'vi'));
 el('pick').addEventListener('click',openCsel);
 el('cselGo').addEventListener('click',()=>{
-  if(ARCADE&&cselPage==='chars'){ if(!tmpReady())return; cselPage='stage'; cselPaint(); return; }
+  if(ARCADE){
+    const st=cselSteps(), i=st.indexOf(cselPage);
+    if(i<st.length-1){ if(!cselDuel()&&!tmpReady())return; cselPage=st[i+1]; cselPaint(); return; }
+  }
   startPicked();
-  if(ARCADE){ cselPage='chars'; cselPaint(); arcFight(); }
+  if(ARCADE){ cselPage=cselSteps()[0]; cselPaint(); arcFight(); }
 });
-el('cselBack').addEventListener('click',()=>{ cselPage='chars'; cselPaint(); });
+el('cselBack').addEventListener('click',()=>{
+  const st=cselSteps(), i=st.indexOf(cselPage);
+  cselPage=st[Math.max(0,i-1)]; cselPaint();
+});
 /* Hai nút lối xem skill. Đổi lối xem thì chỉ vẽ lại mấy thẻ hồ sơ, đừng gọi `cselRefresh()`
    nguyên bàn — nó dựng lại cả lưới chọn nhân vật, cuộn trang nhảy về đầu. */
 function dexView(v){
@@ -11769,10 +11929,10 @@ if(ARCADE){
   el('arcStart').addEventListener('click',()=>{
     ac();                                    // cú bấm đầu tiên mở đường cho âm thanh
     el('arcTitle').classList.add('off');
-    cselPage='chars'; openCsel();
+    cselPage=cselSteps()[0]; openCsel();
   });
   el('arcAgain').addEventListener('click',()=>{ newGame(); arcFight(); });
-  el('arcPick').addEventListener('click',()=>{ cselPage='chars'; openCsel(); });
+  el('arcPick').addEventListener('click',()=>{ cselPage=cselSteps()[0]; openCsel(); });
   /* Trận xong thì hiện dải nút chơi lại — kiểm mỗi khung hình cho khỏi phải cắm thêm
      móc vào finish(), vì finish() còn được gọi từ nhiều đường khác nhau. */
   setInterval(()=>{
