@@ -1593,6 +1593,10 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
   - **Mọi chuyển động ở đây dùng `background-position` / `opacity`, KHÔNG dùng `transform`**
     — Playwright coi phần tử đang biến đổi là "chưa đứng yên" và không bấm được nút nằm
     trong đó (mục 9). Nút `#bootSkip` nằm ngay trong màn này.
+  - **`#arcTitle` dùng CHUNG nền với `#arcBoot`** (cùng cặp `::before`/`::after`), nên hết
+    màn chờ sang màn tiêu đề là liền mạch chứ không giật sang một nền khác. Hai lớp phủ đó
+    **bắt buộc có `pointer-events:none`** — thiếu thì nút `PRESS START` nằm dưới không bấm
+    được, kể cả người lẫn Playwright.
 - **Dòng đếm MB phải hiện ở HAI chỗ**: `#arcLoad` trong màn tiêu đề, và `#loadChip` **đè lên
   sàn đấu**. Dòng trong màn tiêu đề biến mất ngay khi bấm PRESS START, mà gói thì còn tải cả
   chục giây nữa — người chơi vào trận thấy model vector và tưởng mất ảnh. Đo được trên mạng

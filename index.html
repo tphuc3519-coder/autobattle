@@ -166,17 +166,19 @@
      phần trăm to. Toàn bộ chuyển động dùng background-position / opacity — KHÔNG dùng
      transform, vì Playwright coi phần tử đang biến đổi là "chưa đứng yên" và không bấm
      được nút nằm trong đó (mục 9). */
-  #arcBoot{background:radial-gradient(circle at 50% 38%,#2E2168,#0A0820 68%)}
-  #arcBoot::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
+  #arcBoot,#arcTitle{background:radial-gradient(circle at 50% 38%,#2E2168,#0A0820 68%)}
+  /* pointer-events:none là BẮT BUỘC — hai lớp này phủ kín màn, thiếu nó thì nút
+     PRESS START nằm dưới không bấm được (kể cả người lẫn Playwright). */
+  #arcBoot::before,#arcTitle::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
     background-image:linear-gradient(rgba(124,106,214,.13) 1px,transparent 1px),
                      linear-gradient(90deg,rgba(124,106,214,.13) 1px,transparent 1px);
     background-size:44px 44px;animation:bootGrid 6s linear infinite}
   @keyframes bootGrid{from{background-position:0 0,0 0}to{background-position:0 44px,44px 0}}
-  #arcBoot::after{content:'';position:absolute;inset:0;pointer-events:none;
+  #arcBoot::after,#arcTitle::after{content:'';position:absolute;inset:0;pointer-events:none;
     background:radial-gradient(circle at 50% 38%,rgba(255,197,66,.16),transparent 46%);
     animation:bootGlow 3.4s ease-in-out infinite}
   @keyframes bootGlow{0%,100%{opacity:.35}50%{opacity:.9}}
-  .bootIn{position:relative;z-index:1}
+  .bootIn,#arcTitle>div{position:relative;z-index:1}
   .bootPct{margin-top:20px;font-family:"Space Mono",monospace;line-height:1;color:var(--gold)}
   .bootPct b{font-size:clamp(34px,11vw,58px);font-weight:700;letter-spacing:-.02em;
     text-shadow:0 0 26px rgba(255,197,66,.45)}
