@@ -49,8 +49,11 @@ thư mục `assets/` vào bảng tiếng bằng tay.)
 
 ### Cách 1 — GitHub Pages (miễn phí, tự động)
 
-1. Repo → **Settings → Pages → Build and deployment → Source = GitHub Actions**.
-2. Push lên `main`. Workflow `.github/workflows/pages.yml` tự dựng và đẩy lên.
+1. Push lên `main`. Workflow `.github/workflows/pages.yml` **tự bật Pages** (bước
+   `configure-pages` có `enablement: true`) rồi dựng và đẩy lên — không phải vào Settings
+   bấm gì. Muốn kiểm lại thì Settings → Pages phải hiện *Source = GitHub Actions*.
+2. Lần chạy nào lỡ hỏng ở bước đó (`Get Pages site failed … Not Found`) thì vào tab
+   **Actions → Pages → Re-run all jobs**.
 3. Xong:
    - trang chơi: `https://<tài-khoản>.github.io/autobattle/`
    - trang xưởng: `https://<tài-khoản>.github.io/autobattle/studio/`
