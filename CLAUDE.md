@@ -1514,8 +1514,10 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
   Muốn bỏ hẳn bước commit thì làm backend — hướng dẫn nằm trong `README.md`.
 
 **Đưa lên mạng**: `.github/workflows/pages.yml` dựng `site/` (trang chơi ở gốc, trang xưởng
-ở `/studio/`, kèm `assets/`) rồi đẩy lên GitHub Pages. Bật một lần ở Settings → Pages →
-Source = GitHub Actions. Pages **không có mật khẩu**: `/studio/` chỉ được giấu đường dẫn.
+ở `/studio/`, kèm `assets/`) rồi đẩy lên GitHub Pages. Bước `configure-pages` mang
+**`enablement: true`** để tự bật Pages qua API — thiếu nó thì lần chạy đầu chết ngay tại đó
+với `Get Pages site failed … Error: Not Found`, vì repo chưa bật Pages nên không có site nào
+để hỏi (đã dính đúng một lần). Pages **không có mật khẩu**: `/studio/` chỉ được giấu đường dẫn.
 
 Kiểm bằng `node tools/t_play.js`.
 

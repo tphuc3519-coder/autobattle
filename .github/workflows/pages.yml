@@ -1,7 +1,8 @@
 # Đưa game lên GitHub Pages. Đẩy lên nhánh main là trang tự cập nhật.
 #
-# BẬT MỘT LẦN: vào repo → Settings → Pages → Build and deployment → Source = "GitHub Actions".
-# Xong rồi thì:
+# Workflow TỰ BẬT Pages (bước configure-pages có enablement: true), không phải vào Settings
+# bấm tay. Muốn kiểm lại thì Settings → Pages phải hiện Source = "GitHub Actions".
+# Chạy xong thì:
 #   trang chơi   https://<tài-khoản>.github.io/autobattle/
 #   trang xưởng  https://<tài-khoản>.github.io/autobattle/studio/
 #
@@ -42,7 +43,12 @@ jobs:
           [ -d assets ] && cp -r assets site/assets || true
           echo "site/ có: $(ls site | tr '\n' ' ')"
 
+      # enablement: true = tự BẬT Pages qua API, khỏi phải vào Settings bấm tay.
+      # Thiếu nó thì lần chạy đầu chết ở đây: "Get Pages site failed … Error: Not Found",
+      # vì repo chưa bật Pages nên chẳng có site nào để hỏi.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
