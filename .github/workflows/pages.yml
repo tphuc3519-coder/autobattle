@@ -1,4 +1,4 @@
-# Đưa game lên GitHub Pages. Đẩy lên nhánh main là trang tự cập nhật.
+# Đưa Multiverse Battler lên GitHub Pages. Đẩy lên nhánh main là trang tự cập nhật.
 #
 # Workflow TỰ BẬT Pages (bước configure-pages có enablement: true), không phải vào Settings
 # bấm tay. Muốn kiểm lại thì Settings → Pages phải hiện Source = "GitHub Actions".

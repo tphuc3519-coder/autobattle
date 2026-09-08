@@ -10,33 +10,48 @@
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#0B0918; --panel:#161230; --panel2:#1F1943; --line:#332A5E;
-    --paper:#EFE9FF; --mute:#9A8FC4; --kono:#63B4FF; --chichi:#FF4D6D; --gold:#FFC542;
-    --tsubasa:#2ED573;
+    --ink:#07060F; --panel:#12102A; --panel2:#1B1740; --line:#2E2757;
+    --paper:#EFE9FF; --mute:#948AC0; --kono:#63B4FF; --chichi:#FF4D6D; --gold:#FFC542;
+    --tsubasa:#2ED573; --steel:#8A97C4; --hot:#FF3D7F;
   }
   *{box-sizing:border-box}
   body{
-    margin:0;padding:18px 12px 44px;
-    background:radial-gradient(900px 500px at 50% -10%, #241C52 0%, transparent 60%), var(--ink);
+    margin:0;padding:16px 12px 44px;
+    background:
+      radial-gradient(900px 520px at 50% -12%, #2A1F5E 0%, transparent 62%),
+      repeating-linear-gradient(180deg, rgba(255,255,255,.014) 0 1px, transparent 1px 3px),
+      var(--ink);
     color:var(--paper);font-family:"Be Vietnam Pro",system-ui,sans-serif;
   }
-  .wrap{max-width:620px;margin:0 auto}
-  header{margin-bottom:12px}
-  h1{font-weight:900;font-size:clamp(22px,6vw,32px);margin:0;letter-spacing:-.02em}
+  .wrap{max-width:680px;margin:0 auto}
+  /* Tiêu đề kiểu bảng hiệu thùng máy: chữ nghiêng, viền dày, gạch vàng dưới chân. */
+  header{margin-bottom:10px;border-bottom:2px solid var(--line);padding-bottom:9px;position:relative}
+  header::after{content:'';position:absolute;left:0;bottom:-2px;width:74px;height:2px;background:var(--gold)}
+  h1{font-weight:900;font-size:clamp(21px,5.6vw,30px);margin:0;letter-spacing:.01em;
+    font-style:italic;text-shadow:0 2px 0 #100C28,0 5px 18px rgba(0,0,0,.55)}
   h1 span{color:var(--gold)}
   .sub{font-family:"Space Mono",monospace;font-size:11px;color:var(--mute);letter-spacing:.14em;text-transform:uppercase;margin-top:5px}
 
   .bar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:12px 0}
-  button,select{font-family:inherit;font-weight:700;font-size:13px;background:var(--panel2);color:var(--paper);
-    border:1px solid var(--line);border-radius:9px;padding:8px 12px;cursor:pointer}
-  button:hover,select:hover{background:#2A2258}
-  button.primary{background:var(--gold);color:#2A1E00;border-color:var(--gold)}
+  button,select{font-family:inherit;font-weight:800;font-size:12.5px;letter-spacing:.02em;
+    background:linear-gradient(180deg,#241E4E,#1A1638);color:var(--paper);
+    border:1px solid var(--line);border-radius:8px;padding:8px 13px;cursor:pointer;transition:.14s}
+  button:hover,select:hover{background:linear-gradient(180deg,#2E2662,#221C48);border-color:#4A3F8C}
+  button:active{transform:translateY(1px)}
+  button.primary{background:linear-gradient(180deg,#FFD979,#F0A81E);color:#2A1E00;border-color:#FFD979;
+    box-shadow:0 3px 0 #9A6A00,0 8px 22px rgba(255,197,66,.22)}
+  button.primary:hover{background:linear-gradient(180deg,#FFE49A,#FFB92E)}
+  button.primary:active{box-shadow:0 1px 0 #9A6A00}
   label.chk{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--mute);cursor:pointer}
   input[type=color]{width:30px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer}
   input[type=number]{width:64px;font-family:"Space Mono",monospace;font-size:12.5px;background:#0C0920;color:var(--paper);
     border:1px solid var(--line);border-radius:7px;padding:5px 6px}
 
-  .stage{background:#0C0920;border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;justify-content:center}
+  .stage{background:linear-gradient(180deg,#151130,#0A0818);border:1px solid var(--line);
+    border-radius:16px;padding:13px;display:flex;justify-content:center;position:relative;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 50px rgba(0,0,0,.55)}
+  .stage::before{content:'';position:absolute;left:16%;right:16%;top:-1px;height:2px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.55}
   canvas{width:100%;max-width:520px;height:auto;display:block;touch-action:none;image-rendering:auto}
 
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-top:10px}
@@ -83,7 +98,7 @@
     display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);
     border-radius:16px;padding:15px 15px 13px;box-shadow:0 18px 60px rgba(0,0,0,.6)}
   .cselBody{flex:1;min-height:0;overflow:auto;padding-right:2px}
-  .cselBox h2{margin:0;font-size:clamp(17px,4.6vw,22px);font-weight:900;letter-spacing:-.01em}
+  .cselBox h2{margin:0;font-size:clamp(17px,4.6vw,22px);font-weight:900;letter-spacing:.01em;font-style:italic}
   .cselBox h2 span{color:var(--gold)}
   .cselSub{font-family:"Space Mono",monospace;font-size:10.5px;color:var(--mute);
     letter-spacing:.14em;text-transform:uppercase;margin:4px 0 12px}
@@ -100,8 +115,10 @@
   .cTiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   .cTile{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 3px;
     background:#191436;border:1px solid #2E2758;border-radius:10px;cursor:pointer;transition:.14s;font-weight:400}
-  .cTile:hover{background:#241D4C;border-color:#4A3F8C}
-  .cTile.on{border-color:var(--gold);background:#2A2149;box-shadow:0 0 0 1px var(--gold) inset}
+  .cTile{background:linear-gradient(180deg,#1D1842,#151130)}
+  .cTile:hover{background:linear-gradient(180deg,#282161,#1C1743);border-color:#4A3F8C}
+  .cTile.on{border-color:var(--gold);background:linear-gradient(180deg,#33285C,#241C48);
+    box-shadow:0 0 0 1px var(--gold) inset,0 6px 18px rgba(255,197,66,.16)}
   .cAva{width:34px;height:34px;flex:0 0 34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
     font-size:18px;background:#0C0920;border:2px solid currentColor}
   .cDetail{margin-top:8px;background:#120F28;border:1px solid #2A2450;border-radius:10px;padding:9px 10px}
@@ -118,7 +135,9 @@
   .mTab{flex:1 1 120px;padding:9px 10px;background:#191436;border:1px solid #2E2758;border-radius:10px;
     cursor:pointer;color:var(--paper);font-weight:800;font-size:12.5px;text-align:center;transition:.14s}
   .mTab:hover{background:#241D4C;border-color:#4A3F8C}
-  .mTab.on{border-color:var(--gold);background:#2A2149;box-shadow:0 0 0 1px var(--gold) inset;color:var(--gold)}
+  .mTab.on{border-color:var(--gold);background:linear-gradient(180deg,#33285C,#241C48);
+    box-shadow:0 0 0 1px var(--gold) inset,0 6px 18px rgba(255,197,66,.14);color:var(--gold)}
+  .mTab b{font-weight:800}
   .mTab i{display:block;font-style:normal;font-family:"Space Mono",monospace;font-size:9px;
     letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-top:2px}
   .off{display:none !important}
@@ -142,8 +161,10 @@
     50%{box-shadow:0 0 0 8px rgba(255,197,66,.16)}}
   .arcOver{position:fixed;left:0;right:0;bottom:18px;z-index:65;display:flex;gap:9px;justify-content:center}
   .arcOver.off{display:none}
-  /* trang chơi: giấu mấy ô chỉnh tay, chừa nút chọn nhân vật, nhịp trận và nhật ký */
-  body.arcade .bar .chk,body.arcade #cast,body.arcade .sub{display:none}
+  /* Trang chơi: chỉ giấu ô nhịp ra chiêu (đồ chỉnh cân bằng). Mấy ô .chk còn lại ở trang
+     chơi là "tự dùng chiêu", "nhạc nền" và âm lượng nhạc — người chơi cần đúng mấy cái đó,
+     giấu hết là họ không tắt bật nhạc được. */
+  body.arcade #cast{display:none}
   body.arcade header h1{font-size:clamp(17px,4vw,24px)}
   body.arcade header{margin-bottom:2px}
   body.arcade .bar{justify-content:center}
@@ -156,6 +177,39 @@
   body.arcade #charSelect[data-page="stage"] #multiPane{display:none}
   body.arcade #charSelect[data-page="stage"] .sTiles{grid-template-columns:repeat(3,1fr)}
   body.arcade #charSelect[data-page="stage"] .sTile img{height:120px}
+  /* ---- hồ sơ nhân vật: chỉ số dạng thanh + thẻ chiêu ---- */
+  .dexTop{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+  .dexAva{font-size:26px;line-height:1;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+  .dexId{display:flex;flex-direction:column;min-width:0}
+  .dexId b{font-size:14.5px;font-weight:900;letter-spacing:-.01em}
+  .dexId i{font-style:normal;font-family:"Space Mono",monospace;font-size:9.5px;color:var(--mute);
+    letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+  .dexHp{margin-left:auto;text-align:right;font-family:"Space Mono",monospace;font-size:9px;
+    color:var(--mute);letter-spacing:.1em;text-transform:uppercase}
+  .dexHp b{display:block;font-family:"Be Vietnam Pro",sans-serif;font-size:15px;color:var(--paper)}
+  .dexBio{font-size:11.5px;line-height:1.55;color:#C9BFEC;margin-bottom:8px}
+  .dexStats{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;margin-bottom:9px}
+  @media(max-width:520px){.dexStats{grid-template-columns:1fr}}
+  .dexRow{display:flex;align-items:center;gap:6px}
+  .dexRow i{font-style:normal;font-size:10px;color:var(--mute);width:64px;flex:none}
+  .pips{display:flex;gap:2px}
+  .pips b{width:11px;height:6px;border-radius:2px;background:#2A2258}
+  .pips b.on{background:var(--gold)}
+  .dexHead{font-family:"Space Mono",monospace;font-size:9.5px;letter-spacing:.16em;color:var(--mute);
+    text-transform:uppercase;border-top:1px solid var(--line);padding-top:7px;margin-bottom:6px}
+  .sk{display:grid;grid-template-columns:auto 1fr;gap:3px 8px;padding:6px 0;border-bottom:1px dashed #2A2350}
+  .sk:last-child{border-bottom:0}
+  .skTag{grid-row:span 2;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;
+    justify-content:center;font-family:"Space Mono",monospace;font-size:11px;font-weight:700;
+    background:#241D4C;color:var(--paper);border:1px solid var(--line)}
+  .skTag.tP{background:#1E3A2C;border-color:#2F6B4A;color:#8FE8B4;font-size:9px;letter-spacing:-.03em}
+  .skTag.tU{background:#3A2E00;border-color:var(--gold);color:var(--gold);font-size:9px;letter-spacing:-.03em}
+  .sk b{font-size:12.5px;align-self:center}
+  .sk p{grid-column:2;margin:0;font-size:11px;line-height:1.5;color:var(--mute)}
+  .dexRaw{margin-top:7px}
+  .dexRaw summary{font-size:10.5px;color:var(--mute);font-family:"Space Mono",monospace;letter-spacing:.06em}
+  .dexRaw .cSkills{display:block;margin-top:6px}
+
   /* lưới chọn màn đấu — ảnh trong thẻ là ảnh thu nhỏ VẼ THẬT từ chính sàn đấu */
   .sTiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
   @media(max-width:520px){.sTiles{grid-template-columns:repeat(2,1fr)}}
@@ -185,25 +239,28 @@
 <script>window.ARCADE=1;</script>
 <div class="wrap">
   <header>
-    <h1>ĐẤU TRƯỜNG <span>CHIBA</span></h1>
-    <div class="sub">Konohamaru vs ChiChi · 1000 HP</div>
+    <h1>MULTIVERSE <span>BATTLER</span></h1>
+    <div class="sub" data-i18n="tagline">Đấu trường đa vũ trụ · 8 đấu thủ · 6 màn</div>
   </header>
 
   <div class="bar">
-    <button id="pick">⚔ Chọn nhân vật</button>
+    <button id="langBtn" data-lang-toggle title="Vietnamese / English">🌐 English</button>
+    <label class="chk"><input type="checkbox" id="musicOn"> <span data-i18n="music">🎵 Nhạc nền</span></label>
+    <label class="chk"><span data-i18n="musicVol">Âm lượng nhạc</span> <input type="range" id="musicVol" min="0" max="1" step="0.05" value="0.3" style="width:92px"></label>
+    <button id="pick" data-i18n="pick">⚔ Chọn nhân vật</button>
     <select id="mode">
-      <option value="auto">Máy vs Máy</option>
-      <option value="p1" id="modeP1">Điều khiển bên trái</option>
-      <option value="p2" id="modeP2">Điều khiển bên phải</option>
+      <option value="auto" data-i18n="mAuto">Máy vs Máy</option>
+      <option value="p1" id="modeP1" data-i18n="mP1">Điều khiển bên trái</option>
+      <option value="p2" id="modeP2" data-i18n="mP2">Điều khiển bên phải</option>
     </select>
     <select id="speed">
       <!-- nhịp 0.5 cũ giờ là tốc độ gốc, các mốc khác quy đổi theo nó -->
-      <option value="0.35">Chậm 0.7x</option>
-      <option value="0.5" selected>Gốc 1x</option>
-      <option value="0.75">Nhanh 1.5x</option>
-      <option value="1">Nhanh 2x</option>
+      <option value="0.35" data-i18n="spSlow">Chậm 0.7x</option>
+      <option value="0.5" selected data-i18n="spNormal">Gốc 1x</option>
+      <option value="0.75" data-i18n="spFast">Nhanh 1.5x</option>
+      <option value="1" data-i18n="spFaster">Nhanh 2x</option>
     </select>
-    <label class="chk"><input type="checkbox" id="autoskill" checked> Tự dùng chiêu</label>
+    <label class="chk"><input type="checkbox" id="autoskill" checked> <span data-i18n="autoskill">Tự dùng chiêu</span></label>
     <select id="cast" title="Nhịp ra chiêu của cả hai bên">
       <option value="1">Ra chiêu nhanh</option>
       <option value="1.4">Ra chiêu vừa</option>
@@ -212,7 +269,7 @@
     </select>
     
     <button id="play" class="primary">Bắt đầu</button>
-    <button id="reset">Đánh lại</button>
+    <button id="reset" data-i18n="reset">Đánh lại</button>
     
     
   </div>
@@ -222,11 +279,11 @@
   
 
   <div class="card">
-    <h3>Diễn biến</h3>
+    <h3 data-i18n="log">Diễn biến</h3>
     <div id="log"></div>
   </div>
 
-  <div class="card help">
+  <div class="card help" data-i18n="keys">
     <kbd>W A S D</kbd> di chuyển · <kbd>J</kbd> chiêu 1 · <kbd>K</kbd> chiêu 2 · <kbd>L</kbd> chiêu 3 · <kbd>U</kbd> tuyệt chiêu · <kbd>Space</kbd> dừng · <kbd>R</kbd> đánh lại
   </div>
 </div>
@@ -234,35 +291,36 @@
 <!-- Vỏ arcade của trang chơi. Ở trang xưởng hai khối này nằm im (off) và không ai bật. -->
 <div class="arc off" id="arcTitle">
   <div>
-    <div class="arcLogo">ĐẤU TRƯỜNG<b>CHIBA</b></div>
-    <div class="arcTag">Auto Battle Arena · 8 fighters · 6 stages</div>
+    <div class="arcLogo">MULTIVERSE<b>BATTLER</b></div>
+    <div class="arcTag">8 fighters · 6 stages · auto battle</div>
     <button id="arcStart" class="primary" type="button">PRESS START</button>
-    <div class="arcHint">Chọn nhân vật, chọn màn rồi ngồi xem máy đánh với máy</div>
+    <div style="margin-top:14px"><button type="button" data-lang-toggle title="Vietnamese / English">🌐 English</button></div>
+    <div class="arcHint" data-i18n="arcHint">Chọn nhân vật, chọn màn rồi ngồi xem máy đánh với máy</div>
   </div>
 </div>
 <div class="arcOver off" id="arcOver">
-  <button id="arcAgain" class="primary" type="button">↻ Đánh lại</button>
-  <button id="arcPick" type="button">⚔ Đổi nhân vật / màn</button>
+  <button id="arcAgain" class="primary" type="button" data-i18n="again">↻ Đánh lại</button>
+  <button id="arcPick" type="button" data-i18n="repick">⚔ Đổi nhân vật / màn</button>
 </div>
 
 <div class="csel off" id="charSelect">
   <div class="cselBox">
     <h2>CHỌN <span>NHÂN VẬT</span></h2>
     <div class="cselModes">
-      <button class="mTab on" id="mTabDuel" data-mode="duel" type="button">⚔ Đấu tay đôi<i>1 vs 1</i></button>
-      <button class="mTab" id="mTabFfa" data-mode="ffa" type="button">🔥 Hỗn chiến<i>3–6 người · last man standing</i></button>
-      <button class="mTab" id="mTabTeam" data-mode="team" type="button">🛡 Đánh theo đội<i>2–4 đội · tối đa 8 người</i></button>
+      <button class="mTab on" id="mTabDuel" data-mode="duel" type="button"><b data-i18n="mDuel">⚔ Đấu tay đôi</b><i data-i18n="mDuelSub">1 vs 1</i></button>
+      <button class="mTab" id="mTabFfa" data-mode="ffa" type="button"><b data-i18n="mFfa">🔥 Hỗn chiến</b><i data-i18n="mFfaSub">3–6 người · last man standing</i></button>
+      <button class="mTab" id="mTabTeam" data-mode="team" type="button"><b data-i18n="mTeam">🛡 Đánh theo đội</b><i data-i18n="mTeamSub">2–4 đội · tối đa 8 người</i></button>
     </div>
     <div class="cselSub" id="cselCount">Chọn một nhân vật cho mỗi bên</div>
     <div class="cselBody">
       <div class="cselCols" id="duelPane">
         <div class="cselCol">
-          <div class="cselHead">Bên trái <b id="pickNameA"></b></div>
+          <div class="cselHead"><span data-i18n="sideL">Bên trái</span> <b id="pickNameA"></b></div>
           <div class="cTiles" id="listA"></div>
           <div class="cDetail" id="detailA"></div>
         </div>
         <div class="cselCol">
-          <div class="cselHead">Bên phải <b id="pickNameB"></b></div>
+          <div class="cselHead"><span data-i18n="sideR">Bên phải</span> <b id="pickNameB"></b></div>
           <div class="cTiles" id="listB"></div>
           <div class="cDetail" id="detailB"></div>
         </div>
@@ -273,9 +331,10 @@
       <div class="sTiles" id="stageList"></div>
     </div>
     <div class="cselBar">
-      <button id="cselBack" class="off" type="button">◂ Quay lại</button>
+      <button id="cselBack" class="off" type="button" data-i18n="back">◂ Quay lại</button>
       <button id="cselGo" class="primary">⚔ Vào trận</button>
-      <button id="cselCancel">Đóng</button>
+      <button id="cselCancel" data-i18n="close">Đóng</button>
+      <button type="button" data-lang-toggle title="Vietnamese / English">🌐 English</button>
       <div class="cselVs" id="cselVs"></div>
     </div>
   </div>
@@ -309,6 +368,93 @@ const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',
 const HP={kono:1000,chichi:1000,tsubasa:1000,shika:1000,suzune:1000,ginyu:1000,dora:1000,superman:800};
 const CAST={mul:1.8};
 const cm=v=>v*CAST.mul;
+/* ---------- ngôn ngữ ----------
+   Người dùng: *"chỉnh cho có ít nhất 2 ngôn ngữ Anh - Việt tùy chọn"*.
+
+   Ba luật:
+   1. **Mọi chữ NGƯỜI CHƠI thấy đều đi qua `t()` hoặc `tr()`** — nút, nhãn, màn chọn, bảng
+      thông số nhân vật, màn arcade. Bảng dán ảnh / dán tiếng của XƯỞNG thì giữ tiếng Việt:
+      đó là đồ nghề của chủ game, không phải chỗ người chơi vào.
+   2. **Chữ tĩnh trong HTML gắn `data-i18n="khoá"`** (hoặc `data-i18n-title`), `applyLang()`
+      quét một lượt là đổi hết — đừng đi tìm từng `el(...).textContent` mà gán tay.
+   3. **TÊN RIÊNG giữ nguyên**: tên nhân vật, tên chiêu, tên màn. Đó là danh từ riêng kiểu
+      arcade (Meteor Strike, DEEP SPACE), dịch ra là mất chất và lệch với tên file tiếng.
+
+   Nhật ký trận đấu (216 chỗ gọi `say()`) hiện vẫn chỉ có tiếng Việt — ghi ở mục 11. */
+let LANG='vi';
+const L={
+  vi:{
+    tagline:'Đấu trường đa vũ trụ · 8 đấu thủ · 6 màn',
+    pick:'⚔ Chọn nhân vật', play:'Bắt đầu', pause:'Tạm dừng', resume:'Tiếp tục', reset:'Đánh lại',
+    mAuto:'Máy vs Máy', mP1:'Điều khiển bên trái', mP2:'Điều khiển bên phải',
+    spSlow:'Chậm 0.7x', spNormal:'Gốc 1x', spFast:'Nhanh 1.5x', spFaster:'Nhanh 2x',
+    autoskill:'Tự dùng chiêu', log:'Diễn biến',
+    music:'🎵 Nhạc nền', musicVol:'Âm lượng nhạc', vol:'Âm lượng', mute:'Tắt tiếng đòn',
+    cselChar:'CHỌN <span>NHÂN VẬT</span>', cselStage:'CHỌN <span>MÀN ĐẤU</span>',
+    go:'⚔ Vào trận', goNext:'Tiếp ▸ Chọn màn', goFight:'⚔ VÀO TRẬN!', back:'◂ Quay lại', close:'Đóng',
+    mDuel:'⚔ Đấu tay đôi', mDuelSub:'1 vs 1',
+    mFfa:'🔥 Hỗn chiến', mFfaSub:'3–6 người · last man standing',
+    mTeam:'🛡 Đánh theo đội', mTeamSub:'2–4 đội · tối đa 8 người',
+    sideL:'Bên trái', sideR:'Bên phải', stagePick:'Chọn màn đấu',
+    again:'↻ Đánh lại', repick:'⚔ Đổi nhân vật / màn',
+    arcHint:'Chọn nhân vật, chọn màn rồi ngồi xem máy đánh với máy',
+    keys:'<kbd>W A S D</kbd> di chuyển · <kbd>J</kbd> chiêu 1 · <kbd>K</kbd> chiêu 2 · '+
+         '<kbd>L</kbd> chiêu 3 · <kbd>U</kbd> tuyệt chiêu · <kbd>Space</kbd> dừng · <kbd>R</kbd> đánh lại',
+    subDuel:'Chọn một nhân vật cho mỗi bên · {n} nhân vật',
+    subFfa:'Hỗn chiến — chọn {lo}–{hi} người, ai còn đứng cuối cùng thì thắng',
+    subTeam:'Đánh theo đội — {n} đội ({lo}–{hi}), mỗi đội {tlo}–{thi} người · {cur}/{max} người',
+    notEnough:'Chưa đủ người',
+    stName:'Chỉ số', stPow:'Sát thương', stSpd:'Tốc độ', stRng:'Tầm đánh', stDef:'Chống chịu', stTech:'Độ khó',
+    skills:'Bộ chiêu', more:'Xem chi tiết số liệu', less:'Thu gọn',
+    hp:'Máu', tagPassive:'Nội tại', tagUlt:'Tuyệt chiêu', tagP:'NT', tagU:'ULT'
+  },
+  en:{
+    tagline:'Cross-universe arena · 8 fighters · 6 stages',
+    pick:'⚔ Select fighter', play:'Start', pause:'Pause', resume:'Resume', reset:'Rematch',
+    mAuto:'CPU vs CPU', mP1:'Control left side', mP2:'Control right side',
+    spSlow:'Slow 0.7x', spNormal:'Normal 1x', spFast:'Fast 1.5x', spFaster:'Fast 2x',
+    autoskill:'Auto skills', log:'Battle log',
+    music:'🎵 Music', musicVol:'Music volume', vol:'Volume', mute:'Mute hits',
+    cselChar:'SELECT <span>FIGHTER</span>', cselStage:'SELECT <span>STAGE</span>',
+    go:'⚔ Fight', goNext:'Next ▸ Stage', goFight:'⚔ FIGHT!', back:'◂ Back', close:'Close',
+    mDuel:'⚔ Duel', mDuelSub:'1 vs 1',
+    mFfa:'🔥 Free-for-all', mFfaSub:'3–6 fighters · last one standing',
+    mTeam:'🛡 Team battle', mTeamSub:'2–4 teams · up to 8 fighters',
+    sideL:'Left side', sideR:'Right side', stagePick:'Select stage',
+    again:'↻ Rematch', repick:'⚔ Change fighter / stage',
+    arcHint:'Pick your fighter, pick a stage, then watch the CPUs go at it',
+    keys:'<kbd>W A S D</kbd> move · <kbd>J</kbd> skill 1 · <kbd>K</kbd> skill 2 · '+
+         '<kbd>L</kbd> skill 3 · <kbd>U</kbd> ultimate · <kbd>Space</kbd> pause · <kbd>R</kbd> rematch',
+    subDuel:'Pick one fighter for each side · {n} fighters',
+    subFfa:'Free-for-all — pick {lo}–{hi} fighters, last one standing wins',
+    subTeam:'Team battle — {n} teams ({lo}–{hi}), {tlo}–{thi} each · {cur}/{max} fighters',
+    notEnough:'Not enough fighters',
+    stName:'Stats', stPow:'Power', stSpd:'Speed', stRng:'Range', stDef:'Defence', stTech:'Difficulty',
+    skills:'Move list', more:'Show full numbers', less:'Hide numbers',
+    hp:'HP', tagPassive:'Passive', tagUlt:'Ultimate', tagP:'PAS', tagU:'ULT'
+  }
+};
+const t=k=>{ const d=L[LANG]||L.vi; return d[k]!==undefined?d[k]:(L.vi[k]!==undefined?L.vi[k]:k); };
+/* Chuỗi song ngữ dạng {vi,en} — dùng cho dữ liệu (mô tả chiêu, tên màn, tiểu sử). */
+const tr=o=>!o?'':(typeof o==='string'?o:(o[LANG]||o.vi||o.en||''));
+/* Câu có chỗ điền số: tf('subFfa',{lo:3,hi:6}) */
+const tf=(k,m)=>String(t(k)).replace(/\{(\w+)\}/g,(_,x)=>m[x]!==undefined?m[x]:'{'+x+'}');
+function applyLang(){
+  document.documentElement.lang=LANG;
+  for(const e of document.querySelectorAll('[data-i18n]')) e.innerHTML=t(e.dataset.i18n);
+  for(const e of document.querySelectorAll('[data-i18n-title]')) e.title=t(e.dataset.i18nTitle);
+  for(const b of document.querySelectorAll('[data-lang-toggle]'))
+    b.textContent=LANG==='vi'?'🌐 English':'🌐 Tiếng Việt';
+  const pl=document.getElementById('play');
+  if(pl&&pl.textContent) pl.textContent=running?t('pause'):(G&&G.t>0?t('resume'):t('play'));
+  if(typeof cselRefresh==='function'&&typeof TMP!=='undefined'){ buildStages(); cselRefresh(); }
+}
+function setLang(v){
+  LANG=(v==='en')?'en':'vi';
+  Store.set('cfg_lang',LANG).catch(()=>{});
+  applyLang();
+}
+
 /* ---------- màn đấu ----------
    Sáu sàn đấu vẽ bằng vector, mỗi màn một tông màu riêng. Mỗi màn CÒN CÓ một ô dán ảnh
    nền trong bảng ảnh (`SPR.stages[key]`) — dán ảnh vào thì ảnh thắng, chưa dán thì vẽ
@@ -318,12 +464,18 @@ const cm=v=>v*CAST.mul;
    Tên màn viết bằng TIẾNG ANH vì đây là chữ hiện trên màn chọn kiểu arcade; nhãn tiếng
    Việt nằm ở cột `vn` cho bảng dán ảnh. */
 const STAGES=[
-  {key:'dojo',    name:'DOJO',          vn:'Võ đường',      sky:'#2A1E18', far:'#4A3326', fog:'#F2D9A8'},
-  {key:'street',  name:'NIGHT STREET',  vn:'Phố đêm',       sky:'#0B0A1E', far:'#1A1740', fog:'#7FE0FF'},
-  {key:'stadium', name:'STADIUM',       vn:'Sân vận động',  sky:'#123A1E', far:'#1D5E2E', fog:'#EAF7C8'},
-  {key:'forest',  name:'NARA FOREST',   vn:'Rừng nhà Nara', sky:'#101A12', far:'#1E3322', fog:'#9BE8B0'},
-  {key:'space',   name:'DEEP SPACE',    vn:'Vũ trụ',        sky:'#05040F', far:'#140F2E', fog:'#C0A8FF'},
-  {key:'roof',    name:'SUNSET ROOF',   vn:'Mái nhà hoàng hôn', sky:'#2A1030', far:'#5B2340', fog:'#FFC07A'}
+  {key:'dojo',    name:'DOJO',          vn:'Võ đường',      sub:{vi:'Võ đường',en:'Training hall'},
+   sky:'#2A1E18', far:'#4A3326', fog:'#F2D9A8'},
+  {key:'street',  name:'NIGHT STREET',  vn:'Phố đêm',       sub:{vi:'Phố đêm',en:'Neon backstreet'},
+   sky:'#0B0A1E', far:'#1A1740', fog:'#7FE0FF'},
+  {key:'stadium', name:'STADIUM',       vn:'Sân vận động',  sub:{vi:'Sân vận động',en:'Floodlit pitch'},
+   sky:'#123A1E', far:'#1D5E2E', fog:'#EAF7C8'},
+  {key:'forest',  name:'NARA FOREST',   vn:'Rừng nhà Nara', sub:{vi:'Rừng nhà Nara',en:'Shadowed woods'},
+   sky:'#101A12', far:'#1E3322', fog:'#9BE8B0'},
+  {key:'space',   name:'DEEP SPACE',    vn:'Vũ trụ',        sub:{vi:'Vũ trụ',en:'Orbital platform'},
+   sky:'#05040F', far:'#140F2E', fog:'#C0A8FF'},
+  {key:'roof',    name:'SUNSET ROOF',   vn:'Mái nhà hoàng hôn', sub:{vi:'Mái nhà hoàng hôn',en:'Sunset rooftop'},
+   sky:'#2A1030', far:'#5B2340', fog:'#FFC07A'}
 ];
 const STAGE_KEYS=STAGES.map(s=>s.key);
 const stageOf=k=>STAGES.find(s=>s.key===(k||STAGE))||STAGES[0];
@@ -993,6 +1145,151 @@ const CHARS={
 };
 const CKEYS=Object.keys(CHARS);
 
+/* ---------- hồ sơ nhân vật ----------
+   Người dùng: *"các nhân vật sẽ xem được thông số và mô tả skill nhìn cho đẹp mắt vào"*.
+
+   `DEX` là lớp HIỂN THỊ: vai trò, một câu giới thiệu, năm thanh chỉ số và bộ chiêu viết
+   gọn — SONG NGỮ. Còn `CHARS[].skills` vẫn là bảng số liệu chi tiết, nằm trong phần
+   "xem chi tiết số liệu" của cùng khung đó. Hai thứ khác việc nhau, đừng gộp:
+   - `DEX` để người chơi hiểu nhân vật trong ba giây;
+   - `skills` để soi từng con số, và `t_dora.js` / `t_superman.js` quét đúng mảng đó.
+   Số trong DEX **đọc từ chính hằng số cân bằng** (`${KUNAI_DMG}`…), không gõ tay, nên
+   chỉnh cân bằng là hồ sơ đổi theo.
+
+   Năm thanh chỉ số chấm theo thang 1–5, đây là **cảm nhận khi chơi** chứ không phải phép
+   đo: pow sát thương · spd tốc độ · rng tầm đánh · def chống chịu · tech độ khó hiểu bài. */
+const DEX={
+  kono:{ role:{vi:'Ninja · Đánh xa',en:'Ninja · Ranged'}, st:{pow:3,spd:4,rng:5,def:2,tech:2},
+    bio:{vi:'Ném phi tiêu từ xa, thỉnh thoảng lại quăng ra một quả kunai nổ. Bị vây sát thì xoáy một quả Rasengan nhỏ để thoát.',
+         en:'Throws from range and mixes in explosive kunai. Pinned in melee, he spins a small Rasengan loose to break out.'},
+    skills:[
+      {tag:'1',name:'Shuriken / Explosive Kunai',
+       vi:`Phi tiêu ${SHURIKEN_DMG} dmg · ${Math.round(KUNAI_ODDS*100)}% số lượt ra kunai nổ: ${KUNAI_DMG} dmg ở lõi, nhạt dần ra rìa, ai dính cũng bén lửa ${KUNAI_BURN_DPS/RT} dmg/s trong ${rts(KUNAI_BURN_T)}s.`,
+       en:`Shuriken for ${SHURIKEN_DMG} · ${Math.round(KUNAI_ODDS*100)}% come out as an explosive kunai: ${KUNAI_DMG} dead centre, fading to the rim, and it sets the target burning for ${KUNAI_BURN_DPS/RT} dmg/s over ${rts(KUNAI_BURN_T)}s.`},
+      {tag:'2',name:'Kage Bunshin',
+       vi:'Phân thân đuổi theo địch, 60 dmg và gây Kiệt sức −25% tốc chạy lẫn tốc ra chiêu.',
+       en:'A homing clone for 60 damage that leaves the target exhausted: −25% move and cast speed.'},
+      {tag:'3',name:'Sexy no Jutsu',
+       vi:`Khói hồng 30 dmg, choáng đối thủ nam ${rts(SEXY_STUN)}s. Không né được.`,
+       en:`Pink smoke for 30 damage and a ${rts(SEXY_STUN)}s stun on male fighters. Cannot be dodged.`},
+      {tag:'P',name:'Mini Rasengan',
+       vi:`Bị dí sát ${rts(KONO_MINI_T)}s mà không gây nổi sát thương thì hất MỌI người quanh mình: ${KONO_MINI_DMG} dmg và ${Math.round(KONO_MINI_KB*100)}% chiều dài sàn.`,
+       en:`Pinned for ${rts(KONO_MINI_T)}s without landing a hit, he blasts EVERYONE crowding him: ${KONO_MINI_DMG} damage and ${Math.round(KONO_MINI_KB*100)}% of the arena in knockback.`},
+      {tag:'U',name:'Rasengan Dash',
+       vi:'Đủ 20 nộ khí thì lao thẳng vào địch với quả cầu xoáy.',
+       en:'At 20 rage he charges in with the spinning sphere.'}
+    ]},
+  chichi:{ role:{vi:'Nội trợ · Cận chiến',en:'Housewife · Melee'}, st:{pow:4,spd:4,rng:1,def:3,tech:2},
+    bio:{vi:'Đấm đá dồn dập, chửi bật cả đạn về, và khi dồn tới đường cùng thì gọi chồng con ra đánh hộ.',
+         en:'Relentless melee, a scolding that reflects projectiles, and when cornered she calls her family in.'},
+    skills:[
+      {tag:'1',name:'Punch & Kick',vi:'Đòn tay nhanh, cứ 5 đòn lại cộng thêm tỉ lệ chí mạng.',
+       en:'Fast hands; every 5 hits raise her crit chance.'},
+      {tag:'2',name:'Scolding',vi:'Năm đợt sóng xung kích, phản ngược shuriken, kunai và bóng về phía địch.',
+       en:'Five shockwaves that reflect shuriken, kunai and footballs back at the sender.'},
+      {tag:'3',name:'Flying Kick',
+       vi:`Mỗi ${rts(CHICHI_DASH_CD)}s lao tới: ${CHICHI_KICK_DMG} dmg + choáng ${rts(CHICHI_KICK_STUN)}s, lúc lao miễn khống chế và chỉ nhận 70% sát thương.`,
+       en:`Every ${rts(CHICHI_DASH_CD)}s she dashes in for ${CHICHI_KICK_DMG} damage and a ${rts(CHICHI_KICK_STUN)}s stun — CC immune and −30% damage taken while dashing.`},
+      {tag:'U',name:'Goku & Gohan',
+       vi:`Dưới 20% máu gọi viện binh: Kamehameha ${KAME_DMG} dmg rồi ghì chân, Masenko ${MASENKO_DMG} dmg mỗi đợt và chồng lớp làm chậm.`,
+       en:`Below 20% HP she calls for help: Kamehameha for ${KAME_DMG} then a heavy slow, Masenko for ${MASENKO_DMG} a wave with stacking slows.`}
+    ]},
+  tsubasa:{ role:{vi:'Tiền đạo · Sút xa',en:'Striker · Long shots'}, st:{pow:4,spd:3,rng:4,def:2,tech:3},
+    bio:{vi:'Sút bóng thay cho đánh nhau. Càng ghi bàn càng mạnh, và khi sắp gục thì đôi cánh đại bàng bùng lên.',
+         en:'He kicks footballs instead of fists. Goals make him stronger, and at the brink the eagle wings flare up.'},
+    skills:[
+      {tag:'1',name:'Basic Shot',vi:'Sút 25 dmg, 10% ra Overhead Kick 40 dmg kèm choáng.',
+       en:'A 25 damage shot; 10% come out as an Overhead Kick for 40 and a stun.'},
+      {tag:'2',name:'Drive Shot',vi:'Bóng vọt lên trời rồi bổ xuống: 80 dmg và cháy thêm 5 dmg/s trong 3s.',
+       en:'The ball arcs up and drops in: 80 damage plus 5 dmg/s burning for 3s.'},
+      {tag:'3',name:'Victory Twin Shot',vi:`Đủ ${GOAL_MAX} bàn thắng thì cùng đồng đội sút đôi: 150 dmg và choáng.`,
+       en:`At ${GOAL_MAX} goals he and a team-mate fire the twin shot: 150 damage and a stun.`},
+      {tag:'P',name:'Pre-Wings',vi:`Dưới ${Math.round(PREWING_HP*100)}% máu: −35% sát thương nhận, +50% tốc ra chiêu, kháng choáng 40%.`,
+       en:`Below ${Math.round(PREWING_HP*100)}% HP: −35% damage taken, +50% cast speed, 40% stun resist.`},
+      {tag:'U',name:'Wings of the Eagle',
+       vi:`Dưới ${Math.round(EAGLE_HP*100)}% máu: tốc đánh ×4, kháng 70%, miễn khống chế — nhưng cháy hết máu trong ${rts(EAGLE_BURN)}s.`,
+       en:`Below ${Math.round(EAGLE_HP*100)}% HP: 4× attack speed, 70% resist, CC immune — but it burns his last HP away in ${rts(EAGLE_BURN)}s.`}
+    ]},
+  shika:{ role:{vi:'Ninja · Bóng',en:'Ninja · Shadows'}, st:{pow:3,spd:2,rng:4,def:4,tech:5},
+    bio:{vi:'Ngồi lười tích chakra tới lúc bị đánh mới chịu đứng dậy. Né đòn giỏi dần lên, và cuối trận mở hẳn một lãnh địa.',
+         en:'He sits around banking chakra until someone hits him. His dodging sharpens as the fight drags, and he can open a whole domain.'},
+    skills:[
+      {tag:'1',name:'Shuriken',vi:`Hai phi tiêu, mỗi cái ${SHIKA.shurikenDmg} dmg kèm chảy máu ${SHIKA.bleedDps/RT} dmg/s.`,
+       en:`Two shuriken, ${SHIKA.shurikenDmg} each plus ${SHIKA.bleedDps/RT} dmg/s bleeding.`},
+      {tag:'2',name:'Shadow-Neck Bind',vi:`Trói cổ bằng bóng: ${SHIKA.bindDps/RT} dmg/s trong ${rts(SHIKA.bindT)}s rồi choáng ${rts(SHIKA.bindStun)}s.`,
+       en:`Shadow around the neck: ${SHIKA.bindDps/RT} dmg/s for ${rts(SHIKA.bindT)}s, then a ${rts(SHIKA.bindStun)}s stun.`},
+      {tag:'3',name:'Shadow Stab',vi:`Lao vòng ra sau lưng đâm ${SHIKA.stabDmg} dmg + choáng, mỗi ${rts(SHIKA.stabCd)}s.`,
+       en:`Slips behind for a ${SHIKA.stabDmg} damage stab and a stun, every ${rts(SHIKA.stabCd)}s.`},
+      {tag:'P',name:'Lazy Genius',
+       vi:`Ngồi lười tích chakra tới ${SHIKA.lazyCap}; né đòn từ ${Math.round(SHIKA.evadeBase*100)}% và cộng dần tới ${Math.round(SHIKA.evadeMax*100)}%.`,
+       en:`Idles to bank up to ${SHIKA.lazyCap} chakra; dodge starts at ${Math.round(SHIKA.evadeBase*100)}% and climbs to ${Math.round(SHIKA.evadeMax*100)}%.`},
+      {tag:'U',name:'Nara Clan Forest',
+       vi:`Dưới ${Math.round(SHIKA.domainHp*100)}% máu mở lãnh địa: địch kiệt sức, gây sát thương giảm nửa và ăn bom liên tục. Thời lượng = chakra ÷ 100.`,
+       en:`Below ${Math.round(SHIKA.domainHp*100)}% HP the domain opens: foes are exhausted, deal half damage and get shelled. Duration = chakra ÷ 100.`}
+    ]},
+  suzune:{ role:{vi:'Lớp trưởng · Cận chiến',en:'Class rep · Melee'}, st:{pow:3,spd:3,rng:1,def:3,tech:5},
+    bio:{vi:'Ba form: rụt rè, dám đánh, rồi tự đứng một mình. Ayanokouji bước ra đỡ đòn giúp cô ở bước ngoặt đầu tiên.',
+         en:'Three forms: timid, fighting back, then standing alone. Ayanokouji steps in to shield her at the first turning point.'},
+    skills:[
+      {tag:'1',name:'Punch / Kick',vi:'Đòn tay: form 1 chỉ 10 dmg, form 2 được 15, form 3 lên 20 và cộng điểm lớp.',
+       en:'Hands only: 10 damage in form 1, 15 in form 2, 20 in form 3 — and it banks class points.'},
+      {tag:'2',name:'Decision Making',
+       vi:`Đứng im ${rts(SUZ.decThink)}s để nghĩ rồi chốt: đúng thì câu trả lời bay thẳng vào mặt địch, sai thì tự trừ điểm lớp.`,
+       en:`She freezes for ${rts(SUZ.decThink)}s and commits: right, and the verdict flies straight at the foe; wrong, and it costs her class points.`},
+      {tag:'P',name:'Class Points',vi:`Đủ ${SUZ.cpMax} điểm ở form 2 thì Ayanokouji vào sân sát cánh; ở form 3 thì đổi thành một bậc cộng dồn.`,
+       en:`At ${SUZ.cpMax} points in form 2 Ayanokouji joins the fight; in form 3 each ${SUZ.cpMax} becomes a permanent stack.`},
+      {tag:'U',name:'Standing Alone',vi:'Ayanokouji rời sàn ⇒ form 3: mạnh hơn, hồi máu nhiều hơn, +10% miễn thương và kháng hiệu ứng.',
+       en:'When Ayanokouji leaves she reaches form 3: stronger hits, better healing, +10% damage reduction and CC resist.'}
+    ]},
+  ginyu:{ role:{vi:'Ginyu Force · Cận chiến',en:'Ginyu Force · Melee'}, st:{pow:4,spd:4,rng:3,def:3,tech:5},
+    bio:{vi:'Bay vào sân, nhảy ba dáng rồi mới đánh. Aura của anh xoay cả thế trận, và chết tới nơi thì cướp luôn thân xác đối thủ.',
+         en:'He flies in, poses three times, then fights. His aura swings the whole match — and at death he simply takes your body.'},
+    skills:[
+      {tag:'1',name:'Basic Attack',vi:`Đấm đá ${GN.hitDmg} dmg, 25% kèm choáng.`,
+       en:`Punches and kicks for ${GN.hitDmg}, 25% of them stun.`},
+      {tag:'2',name:"Ginyu's Beam",vi:`Sáu luồng khí tím, mỗi luồng ${GN.beamDmg} dmg và hất lùi mạnh — bắn từa lưa chứ không ngắm. Trúng đủ ba luồng thì địch kiệt sức.`,
+       en:`Six purple beams, ${GN.beamDmg} each with heavy knockback — sprayed, not aimed. Three hits leave the target worn out.`},
+      {tag:'3',name:"Ginyu's Flash",vi:`Gồng rồi nối một luồng sáng liền mạch: ${GN.flashDmg} dmg, choáng rồi ghì chân.`,
+       en:`He braces, then links a solid beam of light: ${GN.flashDmg} damage, a stun, then a heavy slow.`},
+      {tag:'P',name:"Ginyu's Aura",vi:'Aura phủ kín sàn: địch ngơ ngác hoặc sôi máu, còn anh vào thế hưng phấn hay thăm dò.',
+       en:'The aura floods the arena: foes end up dazed or enraged, while he shifts into an attacking or probing stance.'},
+      {tag:'U',name:'CHANGE!!!',vi:'Sắp chết thì bắn tia từ miệng để hoán đổi thân xác. Trúng thì hai bên đổi hồn, cùng về 20% máu; trượt thì anh còn 1 máu.',
+       en:'On the brink he fires from his mouth to swap bodies. On a hit both souls switch and drop to 20% HP; on a miss he is left on 1 HP.'}
+    ]},
+  dora:{ role:{vi:'Bảo bối · Khống chế',en:'Gadgets · Control'}, st:{pow:2,spd:4,rng:3,def:5,tech:4},
+    bio:{vi:'Đòn tay nhẹ hều, nhưng cái túi thần kỳ đủ để làm chậm, giữ khoảng cách, chui cửa chạy thoát và tua ngược cả cái chết.',
+         en:'His fists are light, but the pocket can slow you, keep you away, escape through a door and rewind his own death.'},
+    skills:[
+      {tag:'1',name:'Basic Attack',vi:'Combo ba đòn 15 / 15 / 20, đòn cuối húc bay địch và choáng.',
+       en:'A three-hit combo — 15 / 15 / 20 — the last one launches and stuns.'},
+      {tag:'2',name:'Air Cannon',vi:`Vòng khí nén ${DORA.acDmg} dmg, đẩy lùi ${Math.round(DORA.acKbDist*100)}% sàn, choáng và cắt ngang chiêu đang gồng.`,
+       en:`A pressure ring for ${DORA.acDmg}, ${Math.round(DORA.acKbDist*100)}% of the arena in knockback, a stun, and it interrupts channelled skills.`},
+      {tag:'3',name:'Small Light',vi:`Vùng nón ánh sáng: giữa nón ${DORA.slDmg} dmg và thu nhỏ địch ${rts(DORA.shrunkT)}s — nhỏ đi thì chậm, yếu và bị đẩy xa hơn.`,
+       en:`A cone of light: ${DORA.slDmg} at the centre and ${rts(DORA.shrunkT)}s of Shrunk — slower, weaker, far easier to knock around.`},
+      {tag:'P',name:'Take-copter & Emergency Door',
+       vi:`Địch đứng xa thì bay đuổi (+150% tốc chạy); sắp ăn đòn thì ${Math.round(DORA.edOdds*100)}% chui cửa thoát hiểm, ra khỏi cửa là sạch mọi hiệu ứng làm chậm.`,
+       en:`Far away foes get chased down (+150% move); about to be hit, he escapes through a door ${Math.round(DORA.edOdds*100)}% of the time and comes out free of every slow.`},
+      {tag:'U',name:'Time Machine',vi:'Máu về 0 một lần trong trận thì tua ngược thời gian, quay lại vị trí và máu của vài giây trước.',
+       en:'The first time he drops to 0 HP he rewinds time, returning to where he stood — and the HP he had — seconds ago.'}
+    ]},
+  superman:{ role:{vi:'Kryptonian · Bruiser',en:'Kryptonian · Bruiser'}, st:{pow:5,spd:4,rng:3,def:5,tech:2},
+    bio:{vi:'Đấm nặng, lì đòn, bay đuổi được và mang cả một bộ khống chế — đổi lại chiêu nào cũng có quãng chuẩn bị nhìn thấy rõ.',
+         en:'Heavy hits, thick skin, flight to close the gap and a full control kit — paid for with a clearly telegraphed wind-up on every skill.'},
+    skills:[
+      {tag:'1',name:'Basic Attack',vi:'Combo ba đòn 26 / 26 / 38, đòn cuối là uppercut đẩy lùi và choáng.',
+       en:'Three hits — 26 / 26 / 38 — finishing on an uppercut that launches and stuns.'},
+      {tag:'2',name:'Heat Vision',vi:`Hai tia từ mắt, bốn nhịp × ${SUP.hvDmg} dmg; trúng đủ bốn thì địch bốc cháy.`,
+       en:`Two eye beams, four ticks of ${SUP.hvDmg}; all four on one target sets them burning.`},
+      {tag:'3',name:'Freeze Breath',vi:`Luồng hơi hình nón: ${SUP.fbDmg} dmg giữa nón, đóng băng rồi làm chậm nặng.`,
+       en:`A cone of frozen breath: ${SUP.fbDmg} at the core, freezing solid then leaving them chilled.`},
+      {tag:'P',name:'Man of Steel',vi:`Giảm ${Math.round(SUP.steelRes*100)}% sát thương vật lý và ${Math.round(SUP.steelKb*100)}% lực đẩy — nhưng cháy, độc và sát thương theo phần trăm máu thì ăn đủ.`,
+       en:`−${Math.round(SUP.steelRes*100)}% physical damage and −${Math.round(SUP.steelKb*100)}% knockback — but burn, poison and %-HP damage still land in full.`},
+      {tag:'U',name:'Meteor Strike',vi:`Bay lên rồi lao thẳng xuống: ${SUP.msDmg} dmg vào mục tiêu chính, cộng vùng chấn động quanh điểm rơi.`,
+       en:`He rises, then drops straight down: ${SUP.msDmg} on the main target plus a shockwave around the impact.`}
+    ]}
+};
+
+
 /* lưu ảnh: dùng kho của Claude nếu có, không thì IndexedDB của trình duyệt */
 const Store=(()=>{
   if(typeof window!=='undefined' && window.storage){
@@ -1076,6 +1373,8 @@ async function loadSaved(){
       }
       if(PMODE==='ffa'&&ROSTERS.ffa.length<FFA_MIN) PMODE='duel';
     }
+    try{ const lg=await Store.get('cfg_lang'); if(lg==='en'||lg==='vi') LANG=lg; }catch(e){}
+    applyLang();
     const raw=await Store.get('cfg_colors');
     if(raw){ const c=JSON.parse(raw); for(const k of CKEYS) if(c[k])COLORS[k]=c[k]; }
     const rawCast=await Store.get('cfg_cast');
@@ -1720,7 +2019,7 @@ async function decodeInto(name,dataUrl){
       thứ ba (đường thứ hai là nạp hàng loạt ở trên). */
 const PACK_URL='assets/pack/pack.json';
 function packBuild(){
-  const out={v:1, at:new Date().toISOString().slice(0,10), spr:{}, sfx:{}};
+  const out={v:1, at:new Date().toISOString().slice(0,10), spr:{}, sfx:{}, bgm:{}};
   for(const set of SETS){
     const one={};
     for(const [pk] of set.poses){
@@ -1730,6 +2029,7 @@ function packBuild(){
     if(Object.keys(one).length) out.spr[set.key]=one;
   }
   for(const nm in SFXSRC) out.sfx[nm]=SFXSRC[nm];
+  for(const k in BGM.src) out.bgm[k]=BGM.src[k];    // nhạc nền đi cùng gói luôn
   return out;
 }
 async function packLoad(noi){
@@ -1755,6 +2055,13 @@ async function packLoad(noi){
     if(!src||SFXSRC[nm]) continue;
     if(await decodeInto(nm,src)){ sfxSet(nm,true); snd++; }
   }
+  let nhac=0;
+  for(const [key] of BGM_SLOTS){
+    const src=(data.bgm||{})[key];
+    if(!src||BGM.src[key]) continue;
+    BGM.src[key]=src; if(typeof bgmMark==='function') bgmMark(key,true); nhac++;
+  }
+  if(nhac&&MUSIC.on) musicStart();
   if(img||snd||noi){
     status(`Đã nạp gói phát hành: ${img} ảnh · ${snd} tiếng (bản ${data.at||'?'}).`);
     sfxStatus(`Đã nạp ${snd} tiếng từ gói phát hành.`);
@@ -2201,13 +2508,14 @@ function bulkZone(el,fn){
   const pe=document.getElementById('packExport');
   if(pe) pe.addEventListener('click',()=>{
     const pack=packBuild();
-    const n=Object.keys(pack.spr).length, m=Object.keys(pack.sfx).length;
-    if(!n&&!m){ status('Chưa có ảnh hay tiếng nào để xuất.'); return; }
+    const n=Object.keys(pack.spr).length, m=Object.keys(pack.sfx).length,
+          b=Object.keys(pack.bgm).length;
+    if(!n&&!m&&!b){ status('Chưa có ảnh, tiếng hay nhạc nào để xuất.'); return; }
     const blob=new Blob([JSON.stringify(pack)],{type:'application/json'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob); a.download='pack.json'; a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href),8000);
-    status(`Đã xuất gói: ${n} nhân vật có ảnh · ${m} ô tiếng (${(blob.size/1048576).toFixed(1)} MB). `+
+    status(`Đã xuất gói: ${n} nhân vật có ảnh · ${m} ô tiếng · ${b} bài nhạc (${(blob.size/1048576).toFixed(1)} MB). `+
            `Chép file này vào assets/pack/pack.json của repo rồi đẩy lên là trang chơi có ngay.`);
   });
   const pl=document.getElementById('packLoadBtn');
@@ -2215,7 +2523,7 @@ function bulkZone(el,fn){
 })();
 
 /* ---------- nhạc nền ---------- */
-const MUSIC={on:true, vol:.3, gain:null, filter:null, oscs:[], lfo:null, timer:null, next:0, step:0,
+const MUSIC={on:false, synth:false, vol:.3, gain:null, filter:null, oscs:[], lfo:null, timer:null, next:0, step:0,
              theme:'main'};
 const CHORDS=[
   [146.83,220.00,261.63], // Dm nhẹ
@@ -2313,24 +2621,135 @@ function setMusicVol(v){
     MUSIC.gain.gain.linearRampToValueAtTime(v*.5,AC.currentTime+.3);
   }
 }
+/* ---------- nhạc nền của bạn ----------
+   Người dùng: *"bỏ luôn nhạc nền hoặc đưa setup nhạc nền t tự chỉnh"*. Chốt: **nhạc TẮT
+   sẵn**, và mở ra một bảng để bạn tự nạp nhạc của mình.
+
+   - Mỗi màn đấu một ô nhạc riêng, cộng ô **nhạc màn chọn** và ô **nhạc mặc định khi đánh**
+     (dùng khi màn đó chưa có nhạc riêng). Khoá lưu là `bgm_<tên>` — cùng kho `Store` với
+     ảnh và tiếng.
+   - Nhạc chạy bằng thẻ `<audio loop>` chứ không đi qua đồ thị WebAudio: file nhạc dài,
+     `decodeAudioData` cả bài là ngốn bộ nhớ vô ích.
+   - **Nhạc tự sinh (synth) giờ là TUỲ CHỌN và mặc định TẮT** (`MUSIC.synth`): chỉ khi bạn
+     bật nó, và ô nhạc của màn đang đánh còn trống, thì mới có nhạc tự sinh.
+   - Đổi màn thì đổi nhạc: `musicStart()` gọi lại mỗi lần vào trận. */
+const BGM_SLOTS=[['bgm_menu',{vi:'Nhạc màn chọn nhân vật',en:'Menu theme'}],
+                 ['bgm_battle',{vi:'Nhạc chung khi đánh',en:'Default battle theme'}]]
+  .concat(STAGES.map(st=>['bgm_'+st.key,{vi:'Màn '+st.vn,en:'Stage · '+st.name}]));
+const BGM={src:{}, el:null, key:null};
+function bgmEl(){
+  if(!BGM.el){
+    BGM.el=document.createElement('audio');
+    BGM.el.loop=true; BGM.el.preload='auto';
+  }
+  BGM.el.volume=Math.max(0,Math.min(1,MUSIC.vol));
+  return BGM.el;
+}
+/* Bài nào hợp lúc này: đang đánh thì nhạc của MÀN, không có thì nhạc chung; còn đang ở
+   màn chọn thì nhạc menu. Trả về tên ô, không có gì thì null. */
+function bgmPick(){
+  const open=document.getElementById('charSelect');
+  const menu=open&&!open.classList.contains('off');
+  if(menu&&BGM.src.bgm_menu) return 'bgm_menu';
+  const st='bgm_'+STAGE;
+  if(BGM.src[st]) return st;
+  if(BGM.src.bgm_battle) return 'bgm_battle';
+  return menu?null:(BGM.src.bgm_menu?'bgm_menu':null);
+}
+function bgmStop(){ if(BGM.el){ try{ BGM.el.pause(); }catch(e){} } BGM.key=null; }
+function bgmPlay(){
+  const k=bgmPick();
+  if(!k){ bgmStop(); return false; }
+  const a=bgmEl();
+  if(BGM.key!==k){ BGM.key=k; a.src=BGM.src[k]; }
+  a.play().catch(()=>{});          // trình duyệt chặn tự phát thì thôi, bấm nút là chạy
+  return true;
+}
+function bgmSet(key,src){
+  if(src) BGM.src[key]=src; else delete BGM.src[key];
+  if(BGM.key===key){ bgmStop(); }
+  if(MUSIC.on) musicStart();
+}
+/* Một cửa duy nhất cho mọi chỗ muốn bật nhạc: có file của bạn thì phát file, không thì
+   mới xét tới nhạc tự sinh. Đừng gọi thẳng startMusic() nữa. */
+function musicStart(){
+  if(!MUSIC.on){ musicStop(); return; }
+  if(bgmPlay()){ stopMusic(); return; }
+  if(MUSIC.synth) startMusic(); else stopMusic();
+}
+function musicStop(){ bgmStop(); stopMusic(); }
+
+/* Bảng ô nhạc trong XƯỞNG. Dựng lại đúng lối bảng tiếng (ô `.slotwrap` + nút ✕), nhưng
+   lưu thẳng dataURL vào kho chứ không giải mã ra buffer — file nhạc dài, giải mã cả bài
+   là ngốn bộ nhớ mà chẳng để làm gì. */
+function bgmStatus(m){ const e=document.getElementById('bgmStatus'); if(e)e.textContent=m; }
+function bgmMark(key,on){
+  const r=BGMREFS[key]; if(!r)return;
+  r.el.classList.toggle('set',!!on); r.wrap.classList.toggle('set',!!on);
+  r.cap.textContent='♫ '+tr(r.label)+(on?' ✓':'');
+}
+let BGMREFS={};
+(function buildBgm(){
+  const area=document.getElementById('bgmArea');
+  if(area){
+    const refs={};
+    for(const [key,label] of BGM_SLOTS){
+      const wrap=document.createElement('div'); wrap.className='slotwrap';
+      const el2=document.createElement('label'); el2.className='slot';
+      const cap=document.createElement('span'); cap.textContent='♫ '+tr(label);
+      const inp=document.createElement('input'); inp.type='file'; inp.accept='audio/*';
+      inp.addEventListener('change',async ev=>{
+        const file=ev.target.files[0]; if(!file)return;
+        if(file.size>12*1024*1024){ bgmStatus('File nhạc quá nặng (>12MB) — nén lại hoặc cắt ngắn.'); return; }
+        const src=await new Promise(r=>{ const rd=new FileReader(); rd.onload=()=>r(rd.result); rd.readAsDataURL(file); });
+        bgmSet(key,src); bgmMark(key,true);
+        try{ await Store.set(key,src); bgmStatus(`Đã lưu nhạc "${tr(label)}" (${(file.size/1048576).toFixed(1)} MB).`); }
+        catch(e){ bgmStatus('Phát được nhưng không lưu được (file nặng quá).'); }
+      });
+      el2.appendChild(cap); el2.appendChild(inp);
+      const del=document.createElement('button');
+      del.type='button'; del.className='slotdel'; del.textContent='✕';
+      del.addEventListener('click',async ev=>{
+        ev.preventDefault(); ev.stopPropagation();
+        if(!BGM.src[key]){ bgmStatus('Ô này chưa có nhạc.'); return; }
+        bgmSet(key,null); bgmMark(key,false); inp.value='';
+        try{ await Store.del(key); }catch(e){}
+        bgmStatus(`Đã xoá nhạc ô "${tr(label)}".`);
+      });
+      wrap.appendChild(el2); wrap.appendChild(del); area.appendChild(wrap);
+      refs[key]={el:el2,wrap,cap,label,inp};
+    }
+    BGMREFS=refs;
+  }
+  /* Nạp lại nhạc đã lưu — chạy cả khi không có bảng, vì TRANG CHƠI cũng cần nhạc. */
+  (async()=>{
+    for(const [key] of BGM_SLOTS){
+      let src=null; try{ src=await Store.get(key); }catch(e){}
+      if(src){ BGM.src[key]=src; bgmMark(key,true); }
+    }
+    if(MUSIC.on) musicStart();
+  })();
+})();
+
 (function bindMusic(){
   const on=document.getElementById('musicOn'), vol=document.getElementById('musicVol');
   if(!on)return;
-  on.addEventListener('change',()=>{
-    MUSIC.on=on.checked;
-    if(MUSIC.on) startMusic(); else stopMusic();
-    Store.set('cfg_music',JSON.stringify({on:MUSIC.on,vol:MUSIC.vol})).catch(()=>{});
-  });
+  const saveCfg=()=>Store.set('cfg_music',JSON.stringify({on:MUSIC.on,vol:MUSIC.vol,synth:MUSIC.synth})).catch(()=>{});
+  on.addEventListener('change',()=>{ MUSIC.on=on.checked; musicStart(); saveCfg(); });
   vol.addEventListener('input',()=>{
     setMusicVol(parseFloat(vol.value));
-    Store.set('cfg_music',JSON.stringify({on:MUSIC.on,vol:MUSIC.vol})).catch(()=>{});
+    if(BGM.el) BGM.el.volume=Math.max(0,Math.min(1,MUSIC.vol));
+    saveCfg();
   });
+  const syn=document.getElementById('musicSynth');
+  if(syn) syn.addEventListener('change',()=>{ MUSIC.synth=syn.checked; musicStart(); saveCfg(); });
   (async()=>{
     try{
       const raw=await Store.get('cfg_music');
       if(raw){ const m=JSON.parse(raw);
         if(typeof m.on==='boolean'){ MUSIC.on=m.on; on.checked=m.on; }
         if(typeof m.vol==='number'){ MUSIC.vol=m.vol; vol.value=m.vol; }
+        if(typeof m.synth==='boolean'){ MUSIC.synth=m.synth; if(syn) syn.checked=m.synth; }
       }
     }catch(e){}
   })();
@@ -10471,7 +10890,7 @@ function recFallback(src,quiet){
    ở hàng chục chỗ. Trả về ô giả nên mọi phép gán rơi vào chỗ trống thay vì ném lỗi. */
 const NUL=document.createElement('div');
 const el=id=>document.getElementById(id)||NUL;
-el('play').addEventListener('click',()=>{ ac(); if(MUSIC.on) startMusic(); if(G.over)newGame(); running=!running; el('play').textContent=running?'Tạm dừng':'Tiếp tục'; });
+el('play').addEventListener('click',()=>{ ac(); musicStart(); if(G.over)newGame(); running=!running; el('play').textContent=running?'Tạm dừng':'Tiếp tục'; });
 el('reset').addEventListener('click',()=>{ newGame(); running=false; el('play').textContent='Bắt đầu'; });
 el('speed').addEventListener('change',e=>speedMul=parseFloat(e.target.value));
 el('mode').addEventListener('change',e=>{ mode=e.target.value; newGame(); running=false; el('play').textContent='Bắt đầu'; });
@@ -10549,7 +10968,7 @@ function testSummon(kind){
   if(G.over){ newGame(); }
   const c=findFighter('chichi');
   if(!c){ say('Cần có ChiChi trong trận mới thử được viện binh.','m'); return; }
-  ac(); if(MUSIC.on) startMusic();
+  ac(); musicStart();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
   c.summonDone=false;
   c.injured=true;
@@ -10561,7 +10980,7 @@ function testEagle(){
   const t=findFighter('tsubasa');
   if(!t){ say('Cần có Tsubasa trong trận mới thử được Wings of the Eagle.','m'); return; }
   if(t.eagleDone){ say('Tsubasa đã kích hoạt nội tại rồi.','m'); return; }
-  ac(); if(MUSIC.on) startMusic();
+  ac(); musicStart();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
   t.hp=Math.min(t.hp,Math.round(t.maxHp*.07));
   eagleAwaken(t);
@@ -10573,7 +10992,7 @@ function testForest(){
   if(!k){ say('Cần có Shikamaru trong trận mới thử được lãnh địa.','m'); return; }
   if(k.domain){ say('Khu rừng đang mở rồi.','m'); return; }
   if(k.domainDone){ say('Shikamaru đã mở lãnh địa một lần, chakra đã cạn.','m'); return; }
-  ac(); if(MUSIC.on) startMusic();
+  ac(); musicStart();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
   k.lazy=false; k.awake=true;
   // đầu trận chakra còn ít, lãnh địa sẽ chớp một cái là hết — nạp cho đủ xem
@@ -10587,7 +11006,7 @@ function testTwin(){
   const t=findFighter('tsubasa');
   if(!t){ say('Cần có Tsubasa trong trận mới thử được Twin Shot.','m'); return; }
   if(t.eagle){ say('Đang trong Wings of the Eagle — Twin Shot bị vô hiệu.','m'); return; }
-  ac(); if(MUSIC.on) startMusic();
+  ac(); musicStart();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
   t.goals=GOAL_MAX;
   say(`[Thử nghiệm] Nạp đủ ${GOAL_MAX} goal cho Tsubasa.`,'m');
@@ -10597,7 +11016,7 @@ function testSuz2(){
   const f=findFighter('suzune');
   if(!f){ say('Cần có Horikita trong trận mới thử được.','m'); return; }
   if(f.form>=2){ say('Horikita đã qua form 1 rồi.','m'); return; }
-  ac(); if(MUSIC.on) startMusic();
+  ac(); musicStart();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
   f.hp=Math.min(f.hp,Math.round(f.maxHp*SUZ.guardHp));
   ayaShield(f);
@@ -10608,7 +11027,7 @@ function testSuzAya(){
   const f=findFighter('suzune');
   if(!f){ say('Cần có Horikita trong trận mới thử được.','m'); return; }
   if(f.ayaDone){ say('Ayanokouji đã bước ra một lần rồi.','m'); return; }
-  ac(); if(MUSIC.on) startMusic();
+  ac(); musicStart();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
   if(f.form<2){ f.ayaG=null; f.ayaShieldDone=true; suzForm2(f); }
   f.cp=0; suzCp(f,SUZ.cpMax);
@@ -10619,7 +11038,7 @@ function testSuz3(){
   const f=findFighter('suzune');
   if(!f){ say('Cần có Horikita trong trận mới thử được.','m'); return; }
   if(f.form>=3){ say('Horikita đã ở form 3 rồi.','m'); return; }
-  ac(); if(MUSIC.on) startMusic();
+  ac(); musicStart();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
   if(f.ayaAlly){ f.ayaAlly.hp=0; say('[Thử nghiệm] Ép Ayanokouji rời sàn.','m'); return; }
   if(f.form<2){ f.ayaG=null; f.ayaShieldDone=true; suzForm2(f); }
@@ -10631,7 +11050,7 @@ function testGinyuAura(){
   if(G.over){ newGame(); }
   const f=findFighter('ginyu');
   if(!f){ say('Cần có Captain Ginyu trong trận mới thử được.','m'); return; }
-  ac(); if(MUSIC.on) startMusic();
+  ac(); musicStart();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
   if(f.gnEntry){ f.gnEntry=null; f.pose='idle'; }
   ginyuAura(f);
@@ -10642,7 +11061,7 @@ function testGinyuChange(){
   const f=findFighter('ginyu');
   if(!f){ say('Cần có Captain Ginyu trong trận mới thử được.','m'); return; }
   if(!gnCanChange(f)){ say('Ginyu đã dùng CHANGE một lần rồi.','m'); return; }
-  ac(); if(MUSIC.on) startMusic();
+  ac(); musicStart();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
   if(f.gnEntry){ f.gnEntry=null; f.pose='idle'; }
   f.hp=0;
@@ -10653,7 +11072,7 @@ function findDora(){
   const f=findFighter('dora');
   if(!f){ say('Cần có Doraemon trong trận mới thử được.','m'); return null; }
   if(G.over){ newGame(); return findFighter('dora'); }
-  ac(); if(MUSIC.on) startMusic();
+  ac(); musicStart();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
   if(f.drEntry){ f.drEntry=null; f.drHide=false; f.pose='idle'; }
   return f;
@@ -10681,7 +11100,7 @@ function findSuperman(){
   const f=findFighter('superman');
   if(!f){ say('Cần có Superman trong trận mới thử được.','m'); return null; }
   if(G.over){ newGame(); return findFighter('superman'); }
-  ac(); if(MUSIC.on) startMusic();
+  ac(); musicStart();
   if(!running){ running=true; el('play').textContent='Tạm dừng'; }
   if(f.supEntry){ f.supEntry=null; f.supHide=false; f.supAir=0; f.pose='idle'; f.lock=0; }
   return f;
@@ -10839,6 +11258,29 @@ function tmpReady(){
   if(TMP.mode==='team'&&tong>TEAM_TOTAL) return false;
   return true;
 }
+/* Một thẻ hồ sơ: mặt nhân vật, vai trò, máu, một câu giới thiệu, năm thanh chỉ số, bộ
+   chiêu viết gọn, và cuối cùng là phần "xem chi tiết số liệu" mở ra mảng `skills` cũ. */
+/* Ô nhãn chiêu chỉ rộng 26px nên nội tại / tuyệt chiêu phải viết TẮT, chữ đầy đủ đưa vào
+   tooltip — để nguyên "TUYỆT CHIÊU" thì nó xuống ba dòng, tràn ra khỏi ô. */
+function dexTag(tag){ return tag==='P'?t('tagP'):tag==='U'?t('tagU'):tag; }
+function dexTagFull(tag){ return tag==='P'?t('tagPassive'):tag==='U'?t('tagUlt'):t('skills')+' '+tag; }
+function dexCard(key){
+  const C=CHARS[key], D=DEX[key]||{}, st=D.st||{};
+  const row=(lab,v)=>`<div class="dexRow"><i>${lab}</i><span class="pips">`+
+    [1,2,3,4,5].map(n=>`<b class="${n<=(v||0)?'on':''}"></b>`).join('')+`</span></div>`;
+  const sk=(D.skills||[]).map(k=>
+    `<div class="sk"><span class="skTag t${k.tag}" title="${dexTagFull(k.tag)}">${dexTag(k.tag)}</span>`+
+    `<b style="color:${C.color}">${k.name}</b><p>${tr(k)}</p></div>`).join('');
+  return `<div class="dexTop"><span class="dexAva">${C.emoji}</span>`+
+    `<span class="dexId"><b style="color:${C.color}">${C.name}</b><i>${tr(D.role)||C.tag}</i></span>`+
+    `<span class="dexHp">${t('hp')}<b>${HP[key]||1000}</b></span></div>`+
+    (tr(D.bio)?`<div class="dexBio">${tr(D.bio)}</div>`:'')+
+    `<div class="dexStats">${row(t('stPow'),st.pow)+row(t('stSpd'),st.spd)+row(t('stRng'),st.rng)+
+      row(t('stDef'),st.def)+row(t('stTech'),st.tech)}</div>`+
+    `<div class="dexHead">${t('skills')}</div><div class="dexSkills">${sk}</div>`+
+    `<details class="dexRaw"><summary>${t('more')}</summary>`+
+    `<span class="cSkills">${C.skills.map(x=>'<i>·</i> '+x).join('<br>')}</span></details>`;
+}
 function cselRefresh(){
   const duel=TMP.mode==='duel';
   el('duelPane').classList.toggle('off',!duel);
@@ -10850,29 +11292,26 @@ function cselRefresh(){
     const list=el(slot==='a'?'listA':'listB');
     [...list.children].forEach(t=>t.classList.toggle('on',t.dataset.key===key));
     el(slot==='a'?'pickNameA':'pickNameB').textContent='· '+C.name;
-    el(slot==='a'?'detailA':'detailB').innerHTML=
-      `<span class="cName" style="color:${C.color}">${C.name}</span>`+
-      `<span class="cTag">${C.tag}</span>`+
-      `<span class="cSkills">${C.skills.map(x=>'<i>·</i> '+x).join('<br>')}</span>`;
+    el(slot==='a'?'detailA':'detailB').innerHTML=dexCard(key);
   }
   const groups=modeGroups(TMP.mode);
   for(let i=0;i<TEAM_MAX_N;i++) paintGroup(i,groups[i]);
   for(const t of document.querySelectorAll('.sTile')) t.classList.toggle('on',t.dataset.stage===TMP.stage);
   const ss=el('stageSub');
-  if(ss) ss.textContent='Chọn màn đấu · '+stageOf(TMP.stage).name+' ('+stageOf(TMP.stage).vn+')';
+  if(ss) ss.textContent=t('stagePick')+' · '+stageOf(TMP.stage).name;
 
   const nm=key=>CHARS[key].short||CHARS[key].name;
   const sub=el('cselCount'), vs=el('cselVs'), go=el('cselGo');
   if(duel){
-    if(sub) sub.textContent=`Chọn một nhân vật cho mỗi bên · ${CKEYS.length} nhân vật`;
+    if(sub) sub.textContent=tf('subDuel',{n:CKEYS.length});
     if(vs) vs.innerHTML=`<b>${CHARS[TMP.a].name}</b> vs <b>${CHARS[TMP.b].name}</b>`;
   }else if(TMP.mode==='ffa'){
-    if(sub) sub.textContent=`Hỗn chiến — chọn ${FFA_MIN}–${FFA_MAX} người, ai còn đứng cuối cùng thì thắng`;
+    if(sub) sub.textContent=tf('subFfa',{lo:FFA_MIN,hi:FFA_MAX});
     if(vs) vs.innerHTML=TMP.ffa.length?TMP.ffa.map(k=>`<b>${nm(k)}</b>`).join(' · ')
-      :`<b>Chưa đủ người</b>`;
+      :`<b>${t('notEnough')}</b>`;
   }else{
-    if(sub) sub.textContent=`Đánh theo đội — ${TMP.teams.length} đội (${TEAM_MIN_N}–${TEAM_MAX_N}), `+
-      `mỗi đội ${TEAM_MIN}–${TEAM_MAX} người, cả sàn tối đa ${TEAM_TOTAL} · ${tmpTotal()}/${TEAM_TOTAL} người`;
+    if(sub) sub.textContent=tf('subTeam',{n:TMP.teams.length,lo:TEAM_MIN_N,hi:TEAM_MAX_N,
+      tlo:TEAM_MIN,thi:TEAM_MAX,cur:tmpTotal(),max:TEAM_TOTAL});
     if(vs) vs.innerHTML=TMP.teams.map((side,t)=>
       `<b style="color:${teamTint(t)}">${side.map(nm).join(' + ')||'—'}</b>`).join(' vs ');
   }
@@ -10906,7 +11345,7 @@ function buildStages(){
   for(const st of STAGES){
     const t=document.createElement('button');
     t.type='button'; t.className='sTile'+(st.key===TMP.stage?' on':''); t.dataset.stage=st.key;
-    t.innerHTML=`<img alt="" src="${stageThumb(st.key)}"><b>${st.name}</b><i>${st.vn}</i>`;
+    t.innerHTML=`<img alt="" src="${stageThumb(st.key)}"><b>${st.name}</b><i>${tr(st.sub)||st.vn}</i>`;
     t.addEventListener('click',()=>{ TMP.stage=st.key; cselRefresh(); });
     box.appendChild(t);
   }
@@ -10949,16 +11388,18 @@ let cselPage='chars';
 function cselPaint(){
   const box=el('charSelect');
   box.dataset.page=ARCADE?cselPage:'all';
-  if(!ARCADE) return;
-  const stage=cselPage==='stage';
-  el('cselGo').textContent=stage?'⚔ VÀO TRẬN!':'Tiếp ▸ Chọn màn';
+  const stage=ARCADE&&cselPage==='stage';
+  const h2=box.querySelector&&box.querySelector('h2');
+  if(h2) h2.innerHTML=stage?t('cselStage'):t('cselChar');
+  el('cselGo').textContent=!ARCADE?t('go'):(stage?t('goFight'):t('goNext'));
   el('cselBack').classList.toggle('off',!stage);
-  el('charSelect').querySelector('h2').innerHTML=stage?'CHỌN <span>MÀN ĐẤU</span>':'CHỌN <span>NHÂN VẬT</span>';
 }
 function arcFight(){
-  ac(); if(MUSIC.on) startMusic();
+  ac(); musicStart();
   running=true; el('play').textContent='Tạm dừng';
 }
+for(const b of document.querySelectorAll('[data-lang-toggle]'))
+  b.addEventListener('click',()=>setLang(LANG==='vi'?'en':'vi'));
 el('pick').addEventListener('click',openCsel);
 el('cselGo').addEventListener('click',()=>{
   if(ARCADE&&cselPage==='chars'){ if(!tmpReady())return; cselPage='stage'; cselPaint(); return; }
