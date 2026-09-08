@@ -154,6 +154,8 @@
   .arcTag{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.22em;color:var(--mute);
     margin:14px 0 26px;text-transform:uppercase}
   .arcHint{font-size:12px;color:var(--mute);margin-top:16px}
+  .arcLoad{margin-top:9px;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.06em;
+    color:var(--gold);opacity:.9}
   /* Nhịp nháy chỉ đổi QUẦNG SÁNG, đừng đụng tới transform: nút mà nhúc nhích thì
      Playwright coi là "chưa đứng yên" và không bao giờ bấm được (test treo 30 giây). */
   #arcStart{font-size:17px;padding:14px 34px;animation:arcPulse 1.6s ease-in-out infinite}
@@ -339,6 +341,7 @@
     <button id="arcStart" class="primary" type="button">PRESS START</button>
     <div style="margin-top:14px"><button type="button" data-lang-toggle title="Vietnamese / English">🌐 English</button></div>
     <div class="arcHint" data-i18n="arcHint">Chọn nhân vật, chọn màn rồi ngồi xem máy đánh với máy</div>
+    <div class="arcLoad" id="arcLoad" style="display:none"></div>
   </div>
 </div>
 <div class="arcOver off" id="arcOver">
@@ -465,7 +468,8 @@ const L={
     vSimple:'Xem skill đơn giản', vFull:'Xem skill chi tiết',
     pwChart:'Biểu đồ sức mạnh', pwTable:'Chấm điểm thang 100', pwAvg:'Trung bình',
     hpTip:'Máu khởi đầu của nhân vật này — chỉnh thoải mái',
-    hpAll:'Máu mọi nhân vật', hpStd:'Chuẩn '+HP_STD
+    hpAll:'Máu mọi nhân vật', hpStd:'Chuẩn '+HP_STD,
+    packLoading:'Đang tải ảnh và tiếng…', packDone:'Đã nạp {n} ảnh · {s} tiếng'
   },
   en:{
     tagline:'Cross-universe arena · 8 fighters · 6 stages',
@@ -494,7 +498,8 @@ const L={
     vSimple:'Simple skill view', vFull:'Detailed skill view',
     pwChart:'Power chart', pwTable:'Rated out of 100', pwAvg:'Average',
     hpTip:'Starting HP for this fighter — set it to whatever you like',
-    hpAll:'HP for everyone', hpStd:'Standard '+HP_STD
+    hpAll:'HP for everyone', hpStd:'Standard '+HP_STD,
+    packLoading:'Loading art and sound…', packDone:'Loaded {n} images · {s} sounds'
   }
 };
 const t=k=>{ const d=L[LANG]||L.vi; return d[k]!==undefined?d[k]:(L.vi[k]!==undefined?L.vi[k]:k); };
@@ -2139,6 +2144,19 @@ async function decodeInto(name,dataUrl){
    2. **Ô nào đã có nội dung thì gói KHÔNG đè** — trong xưởng, file bạn tự nạp luôn thắng.
    3. Gói đi qua đúng `setFrames()` / `decodeInto()` như lúc bấm tay, không dựng đường nạp
       thứ ba (đường thứ hai là nạp hàng loạt ở trên). */
+/* Thư mục `assets` nằm ở GỐC site. Trang chơi cũng ở gốc nên 'assets/…' là đúng, nhưng
+   trang xưởng trên GitHub Pages nằm trong `/studio/` — đường dẫn tương đối lúc đó thành
+   `/studio/assets/…` và ăn 404 IM LẶNG: gói phát hành lẫn bộ giọng mẫu đều không nạp mà
+   không có lấy một dòng lỗi. Vì vậy mọi cú `fetch` vào assets đi qua `fetchAsset()`: nó
+   thử lần lượt vài mức rồi NHỚ mức nào ăn, các file sau đi thẳng mức đó. */
+let ASSET_BASE=null;
+const ASSET_TRY=['','../','../../'];
+async function fetchAsset(rel,opt){
+  for(const b of (ASSET_BASE!==null?[ASSET_BASE]:ASSET_TRY)){
+    try{ const r=await fetch(b+rel,opt); if(r.ok){ ASSET_BASE=b; return r; } }catch(e){}
+  }
+  return null;
+}
 const PACK_URL='assets/pack/pack.json';
 function packBuild(){
   const out={v:1, at:new Date().toISOString().slice(0,10), spr:{}, sfx:{}, bgm:{}};
@@ -2154,10 +2172,20 @@ function packBuild(){
   for(const k in BGM.src) out.bgm[k]=BGM.src[k];    // nhạc nền đi cùng gói luôn
   return out;
 }
+/* Gói ảnh nặng vài chục MB nên trên đường mạng chậm nó tới sau khi trang đã mở. Không
+   nói gì thì người chơi tưởng game hỏng — nên màn tiêu đề có một dòng trạng thái riêng. */
+function packNote(msg){
+  const el=document.getElementById('arcLoad');
+  if(!el) return;
+  el.textContent=msg||'';
+  el.style.display=msg?'':'none';
+}
 async function packLoad(noi){
   let data=null;
-  try{ const r=await fetch(PACK_URL,{cache:'no-store'}); if(r.ok) data=await r.json(); }catch(e){}
+  packNote(t('packLoading'));
+  try{ const r=await fetchAsset(PACK_URL,{cache:'no-store'}); if(r) data=await r.json(); }catch(e){}
   if(!data||!data.spr&&!data.sfx){
+    packNote('');
     if(noi) status('Chưa có '+PACK_URL+' — mở trang bằng http, hoặc bấm "Xuất gói" rồi đẩy file đó lên repo.');
     return {img:0,sfx:0};
   }
@@ -2184,6 +2212,7 @@ async function packLoad(noi){
     BGM.src[key]=src; if(typeof bgmMark==='function') bgmMark(key,true); nhac++;
   }
   if(nhac&&MUSIC.on) musicStart();
+  packNote(img||snd?tf('packDone',{n:img,s:snd}):'');
   if(img||snd||noi){
     status(`Đã nạp gói phát hành: ${img} ảnh · ${snd} tiếng (bản ${data.at||'?'}).`);
     sfxStatus(`Đã nạp ${snd} tiếng từ gói phát hành.`);
@@ -2579,7 +2608,7 @@ async function bulkDropFiles(dt){
    còn lại. File người dùng tự nạp LUÔN THẮNG: chỗ này không bao giờ đè lên. */
 async function voicePack(noi){
   let man=null;
-  try{ const r=await fetch('assets/voice/manifest.json',{cache:'no-store'}); if(r.ok) man=await r.json(); }catch(e){}
+  try{ const r=await fetchAsset('assets/voice/manifest.json',{cache:'no-store'}); if(r) man=await r.json(); }catch(e){}
   if(!man||!man.slots){
     if(noi) sfxStatus('Không đọc được assets/voice — mở trang bằng http, hoặc kéo thẳng thư mục assets/voice thả vào bảng này.');
     return 0;
@@ -2588,7 +2617,7 @@ async function voicePack(noi){
   for(const nm in man.slots){
     if(SFXSRC[nm]){ bo++; continue; }
     try{
-      const r=await fetch('assets/voice/'+man.slots[nm].file,{cache:'no-store'});
+      const r=await fetchAsset('assets/voice/'+man.slots[nm].file,{cache:'no-store'});
       if(!r.ok)continue;
       const b=await r.blob();
       const src=await new Promise(res=>{ const rd=new FileReader(); rd.onload=()=>res(rd.result); rd.onerror=()=>res(null); rd.readAsDataURL(b); });

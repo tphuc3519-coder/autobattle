@@ -131,6 +131,44 @@ function wavUrl() {
   ok(e2.length === 0, `xuong khong co loi (${e2.slice(0, 2).join(' | ')})`);
   await b2.close();
 
+  /* ---------- 5. bản dựng GIỐNG GITHUB PAGES: xưởng nằm trong /studio/ ----------
+     Đây là chỗ đã hỏng thật: `assets` nằm ở gốc site, mà trang xưởng ở trong thư mục con
+     nên đường dẫn tương đối thành /studio/assets/… và ăn 404 IM LẶNG — người dùng dán
+     ảnh, xuất gói, đẩy lên repo mà mở trang xưởng vẫn thấy model vector. */
+  const site = fs.mkdtempSync(path.join(os.tmpdir(), 'site-'));
+  fs.mkdirSync(path.join(site, 'studio'), { recursive: true });
+  fs.mkdirSync(path.join(site, 'assets', 'pack'), { recursive: true });
+  fs.copyFileSync(buildPlay(), path.join(site, 'index.html'));       // trang chơi ở GỐC
+  fs.copyFileSync(build(), path.join(site, 'studio', 'index.html')); // xưởng trong THƯ MỤC CON
+  fs.writeFileSync(path.join(site, 'assets', 'pack', 'pack.json'), JSON.stringify({
+    v: 1, at: '2026-09-08', spr: { kono: { idle: [PNG] } }, sfx: { punch: wavUrl() }
+  }));
+  const sv2 = http.createServer((rq, rs) => {
+    const p = path.join(site, decodeURIComponent(rq.url.split('?')[0]).replace(/\/$/, '/index.html'));
+    if (!p.startsWith(site) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) { rs.statusCode = 404; rs.end(); return; }
+    rs.setHeader('content-type', mime(p)); rs.end(fs.readFileSync(p));
+  });
+  await new Promise(r => sv2.listen(0, '127.0.0.1', r));
+  const goc = `http://127.0.0.1:${sv2.address().port}`;
+
+  const b3 = await chromium.launch();
+  for (const [ten, u, cho] of [['trang choi', goc + '/', 3], ['xuong', goc + '/studio/', 3]]) {
+    const p3 = await b3.newPage({ viewport: { width: 820, height: 980 } });
+    await p3.route('**://fonts.*/**', r => r.abort());
+    const e3 = []; p3.on('pageerror', e => e3.push(e.message));
+    await p3.goto(u, { waitUntil: 'domcontentloaded' });
+    let n = 0;
+    for (let i = 0; i < cho * 4; i++) {
+      n = await p3.evaluate(() => ((window.__SPR.kono || {}).idle || []).length);
+      if (n) break;
+      await p3.waitForTimeout(250);
+    }
+    ok(n === 1, `${ten}: goi phat hanh o goc site van nap duoc (${n} anh)`);
+    ok(e3.length === 0, `${ten}: khong co loi trang (${e3.slice(0, 2).join(' | ')})`);
+    await p3.close();
+  }
+  await b3.close(); sv2.close();
+
   console.log(loi.length ? `\nHONG ${loi.length} muc` : '\nDAT het');
   process.exit(loi.length ? 1 : 0);
 })();

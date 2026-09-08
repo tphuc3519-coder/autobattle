@@ -1521,6 +1521,19 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
 - Trang chơi: `packLoad()` `fetch` gói đó lúc mở. **Ô nào đã có nội dung thì gói không đè.**
 - **Thứ tự nạp**: trang chơi lấy **gói TRƯỚC** rồi mới tới kho của máy (kho đằng nào cũng
   trống mà đọc hơn 80 khoá IndexedDB thì chậm); xưởng thì ngược lại — file bạn tự nạp thắng.
+- **Mọi cú `fetch` vào `assets` phải đi qua `fetchAsset()`, đừng gọi thẳng `fetch`.** Thư mục
+  `assets` nằm ở **gốc site**; trang chơi cũng ở gốc nên `'assets/…'` đúng, nhưng **trang xưởng
+  trên Pages nằm trong `/studio/`** — đường dẫn tương đối lúc đó thành `/studio/assets/…` và ăn
+  **404 im lặng**. Hậu quả đo được: người dùng dán ảnh, xuất gói, commit `pack.json` lên repo,
+  mở trang xưởng vẫn thấy model vector và **không có một dòng lỗi nào**. `fetchAsset()` thử lần
+  lượt `''` → `'../'` → `'../../'` rồi **nhớ mức nào ăn**, các file sau đi thẳng mức đó (bộ giọng
+  mẫu nạp chín file nên không được dò lại từ đầu mỗi lần). `t_play.js` dựng hẳn bản giống Pages
+  (trang chơi ở gốc, xưởng trong `/studio/`, `assets` ở gốc) rồi kiểm cả hai trang.
+- **Gói nặng thì phải nói cho người chơi biết.** `pack.json` gói ảnh base64 nên vài chục MB là
+  bình thường (bản người dùng đang dùng: **24 MB, 89 ảnh, 46 tiếng**), trên mạng chậm nó tới sau
+  khi trang đã mở — không nói gì thì người chơi tưởng game hỏng. Màn tiêu đề vì vậy có dòng
+  `#arcLoad`: *Đang tải ảnh và tiếng…* rồi đổi thành *Đã nạp N ảnh · M tiếng*. Đo trên máy test:
+  xong sau **3 giây** với gói 24 MB đọc từ localhost.
 - **`const PACK_URL` phải khai TRƯỚC `sfxRestore()`.** Để nó ở dưới thì lúc `sfxRestore()`
   chạy (rất sớm), `PACK_URL` còn trong TDZ, `packLoad()` ném lỗi **ngay trong `try{}` và bị
   nuốt mất** — trang chơi im lặng không nạp gói, không một dòng lỗi nào. Mất một lượt dò mới ra.
@@ -2243,6 +2256,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Bấm nút đổi ngôn ngữ không được | nút chỉ nằm ở thanh công cụ, mà màn chọn nhân vật phủ kín trang | gắn `data-lang-toggle` cho cả nút trong màn chọn lẫn nút trên màn tiêu đề |
 | Đội hình hỗn chiến / đánh đội trắng trơn giữa chừng, `t_modes` đổ ở chỗ khác nhau mỗi lần | thêm một `await Store.get(...)` vào `loadSaved()` đẩy lượt `cselRefresh()` ở cuối hàm lùi lại một nhịp IndexedDB — rơi đúng vào lúc người dùng vừa bấm đổi chế độ, lượt vẽ muộn quét sạch khung đội hình vừa mở | đọc khoá phụ bằng `.then()` chứ đừng `await`; mọi thứ cần đọc trước `cselRefresh()` thì gom vào đúng chỗ cũ, đừng nối thêm |
 | Nhãn biểu đồ mạng nhện bị cắt cụt chữ đầu (`Ổn định` còn `định`) | `RADAR_PAD` chỉ chừa chỗ cho ĐIỂM NEO, mà nhãn hai bên canh mép nên chữ chạy tiếp ra ngoài | nới chỗ chừa; test đo `getBoundingClientRect()` của từng nhãn so với khung SVG |
+| Dán ảnh, xuất gói, commit `pack.json` lên repo mà trang XƯỞNG vẫn hiện model vector | `packLoad()` / `voicePack()` gọi thẳng `fetch('assets/…')`, mà trang xưởng trên Pages nằm trong `/studio/` ⇒ đường dẫn thành `/studio/assets/…` và **404 im lặng** (`try{}` nuốt lỗi) | mọi cú fetch vào assets đi qua `fetchAsset()`: thử `''` → `'../'` → `'../../'` rồi nhớ mức ăn. Test dựng hẳn bản giống Pages rồi kiểm cả hai trang |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---
