@@ -35,6 +35,8 @@ File dài ~7500 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên --
 | `AI` | `MELEE_MIN/MAX/BAND/GAP`, `orbWant()`, `aiVec()`, `dodgeVec()`, `playerVec()` |
 | `step` | một hàm to — toàn bộ mô phỏng một bước 1/120 giây |
 | `draw` | `vector()`, `sprite()`, `drawFighter()`, `drawGarden()`, `drawForestGrip()`, `bombAt()`, `tendril()`, phân cảnh, băng-rôn |
+| `màn đấu` | `STAGES`, `stageArt()`, `arenaFloor()` — sáu sàn đấu và ô dán ảnh nền |
+| `gói phát hành` | `packBuild()` / `packLoad()` — đường đưa ảnh, tiếng sang trang chơi |
 | `loop` / `ghi hình sàn đấu` / `màn chọn nhân vật` | vòng `requestAnimationFrame`, quay video (`recFrame()` dựng khung dọc 9:16), ba nút chế độ `.mTab`, dựng thẻ `.cTile` và dải đội hình `.cChip` |
 
 ---
@@ -1429,6 +1431,94 @@ thành một cụm — đo được: quãng xa nhất trong cùng một đội v
 
 Kiểm bằng `node tools/t_modes.js`.
 
+## 2d. Sáu màn đấu và sàn đấu đã tân trang
+
+Người dùng: *"thiết kế như game street fighter… có screen chọn màn với chọn nhân vật luôn"*
+và *"tân trang sàn đấu luôn"*. Hai thứ đó nằm chung một chỗ.
+
+**Bảng `STAGES`** (khai **TRƯỚC `SETS`** — `SETS` đọc nó ngay lúc khai, để dưới là dính TDZ):
+
+| key | Tên hiện ra | Có gì trong hình |
+|---|---|---|
+| `dojo` | DOJO | vách giấy shoji, xà gỗ, biểu ngữ đỏ, sàn ván |
+| `street` | NIGHT STREET | dãy nhà tối, cửa sổ sáng đèn, bảng neon hắt xuống mặt đường |
+| `stadium` | STADIUM | khán đài lốm đốm, hai giàn đèn, sân cỏ có vạch kẻ và vòng tròn giữa sân |
+| `forest` | NARA FOREST | thân cây, tán lá, sương là là mặt đất |
+| `space` | DEEP SPACE | sao, tinh vân, hành tinh, sàn kim loại kẻ ô |
+| `roof` | SUNSET ROOF | trời hoàng hôn, chân trời nhà cao tầng, mái ngói chạy về phía xa |
+
+- **Mỗi màn CÒN CÓ một ô dán ảnh nền**: nhóm `stages` nằm trong `SETS` như một "nhân vật",
+  nên nó đi chung cả bảng dán ảnh, nút ✕ xoá từng ô, nạp hàng loạt lẫn gói phát hành —
+  **đừng dựng đường riêng**. Dán ảnh vào ô nào thì `arenaFloor()` vẽ ảnh đó thay hình vector.
+- **Thẻ chọn màn là ảnh VẼ THẬT**: `stageThumb(key)` mượn `ctx` (khai bằng `let` chính vì
+  vậy), vẽ nguyên sàn ra canvas phụ rồi thu nhỏ. Nhờ vậy dán ảnh nền là thẻ đổi theo —
+  `setFrames()` / `clearFrames()` gọi `stageThumbClear(pk)` để xoá cache.
+- **Nhiễu phải CỐ ĐỊNH theo chỉ số** (`sr(i)`, băm từ `Math.sin`): sao, ô cửa sổ, khán giả
+  mà bốc bằng `Math.random()` thì mỗi khung hình chúng nhảy chỗ, nhìn như nhiễu TV. Đừng
+  dùng phép chia dư (`(i*37)%W`) thay cho nhiễu — nó ra **vân chéo moiré**, đo mắt thấy ngay
+  ở khán đài sân vận động.
+- Màn đang chọn nằm trong biến `STAGE`, lưu chung khoá `cfg_picks`.
+
+**Tân trang sàn** — ba thứ, nằm trong `arenaFrame()` / `groundShadows()`:
+1. **Khung kiểu thùng máy arcade**: viền đen dày, một nét sáng **theo tông màu của màn**
+   (`st.fog`), bốn ngoặc góc.
+2. **Lớp tối dồn ra rìa** (`vignette()`): dựng **một lần** rồi giữ lại — gradient phủ kín
+   màn mà tạo lại mỗi khung hình thì nặng (mục 7).
+3. **Bóng đổ dưới chân** (`groundShadows()`): vẽ thành một lượt RIÊNG trước khi vẽ người,
+   để bóng người này không đè lên thân người kia. Bay cao thì bóng nhạt đi.
+
+> **Lớp tối phải vẽ SAU thế giới nhưng TRƯỚC đám chữ nổi.** Để nó trong `arenaFrame()`
+> (chạy sau lượt vẽ float đầu) thì số sát thương, băng-rôn và bong bóng thoại bị dim theo —
+> đo được: nền trắng của bong bóng tụt từ ~58% xuống 44% và `t_bubble.js` đổ. Nó vẽ ở **hệ
+> toạ độ màn hình** (`setTransform` trước khi tô) để vệt tối đứng yên lúc camera zoom.
+
+Kiểm bằng `node tools/t_stage.js`.
+
+## 2e. Hai trang: XƯỞNG và TRANG CHƠI
+
+Người dùng: *"kiểu chia ra 2 web — 1 web tôi ở background add model, âm thanh, còn 1 web
+tôi để mọi người chơi"*.
+
+| Trang | File | Có gì |
+|---|---|---|
+| xưởng | `index.html` | đủ bảng dán ảnh / tiếng, nạp hàng loạt, nút thử chiêu, ghi hình, xuất gói |
+| chơi | `play.html` | màn tiêu đề → chọn nhân vật → chọn màn → đánh. Không có bảng dán |
+
+**`play.html` DỰNG RA từ `index.html`, đừng sửa tay** — `python3 tools/mk_play.py`. Script
+chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và chèn `window.ARCADE=1`.
+`t_play.js` dựng lại rồi **so từng byte**, nên sửa tay là test đổ ngay.
+
+- **Vỏ arcade nằm sẵn trong `index.html`** (`#arcTitle`, `#arcOver`, lưới `#stageList`) và
+  tự tắt khi không có `window.ARCADE` — một chỗ để sửa giao diện, không phải hai.
+- **Chỉ TRANG CHƠI mới chia màn chọn làm hai trang** (nhân vật → màn). Xưởng giữ nguyên một
+  trang vì **mọi test hiện có bấm `#cselGo` một phát là vào trận** — đổi chỗ này là đổ cả bộ.
+- `el(id)` **trả về Ô GIẢ** (`NUL`) khi không tìm thấy: trang chơi bị cắt hàng chục id mà
+  engine thì gán thẳng `el('hpK').value` / `el('play').textContent` ở khắp nơi. Vì vậy
+  **chỗ nào cần biết ô có thật hay không thì phải hỏi thẳng `document.getElementById`** —
+  `if(el('x'))` lúc nào cũng đúng. Đã dính đúng một lần ở `groupBox()`: khung đội hình
+  không bao giờ được dựng, cả chế độ hỗn chiến lẫn đánh đội trắng trơn.
+- `buildSlots()` và `buildSfx()` return sớm khi không có bảng, **nhưng vẫn phải gọi
+  `loadSaved()` / `sfxRestore()`** — không thì trang chơi mất sạch ảnh, tiếng và gói.
+
+**Gói phát hành `assets/pack/pack.json`** — đường duy nhất đưa ảnh/tiếng sang trang chơi:
+
+- Xưởng: nút **📦 Xuất gói lên web chơi** (`packBuild()`) gói cả `SPR` lẫn `SFXSRC` thành
+  một JSON; chép vào `assets/pack/pack.json` rồi commit.
+- Trang chơi: `packLoad()` `fetch` gói đó lúc mở. **Ô nào đã có nội dung thì gói không đè.**
+- **Thứ tự nạp**: trang chơi lấy **gói TRƯỚC** rồi mới tới kho của máy (kho đằng nào cũng
+  trống mà đọc hơn 80 khoá IndexedDB thì chậm); xưởng thì ngược lại — file bạn tự nạp thắng.
+- **`const PACK_URL` phải khai TRƯỚC `sfxRestore()`.** Để nó ở dưới thì lúc `sfxRestore()`
+  chạy (rất sớm), `PACK_URL` còn trong TDZ, `packLoad()` ném lỗi **ngay trong `try{}` và bị
+  nuốt mất** — trang chơi im lặng không nạp gói, không một dòng lỗi nào. Mất một lượt dò mới ra.
+- Gói là JSON chứa ảnh base64 nên **nặng hơn ảnh gốc ~33%**; GitHub chặn file trên 100 MB.
+  Muốn bỏ hẳn bước commit thì làm backend — hướng dẫn nằm trong `README.md`.
+
+**Đưa lên mạng**: `.github/workflows/pages.yml` dựng `site/` (trang chơi ở gốc, trang xưởng
+ở `/studio/`, kèm `assets/`) rồi đẩy lên GitHub Pages. Bật một lần ở Settings → Pages →
+Source = GitHub Actions. Pages **không có mật khẩu**: `/studio/` chỉ được giấu đường dẫn.
+
+Kiểm bằng `node tools/t_play.js`.
+
 ## 2b. Khoảng cách khi cận chiến — đừng dán vào nhau
 
 Người dùng bác bản cũ: hai người cận chiến đứng chồng hẳn lên nhau, nhìn chỉ thấy một
@@ -1862,6 +1952,13 @@ node tools/t_chichi.js  # ChiChi: Flying Kick 45 dmg + choáng 2s, và viện bi
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
+node tools/t_stage.js   # sáu màn đấu: mỗi màn một tông màu riêng, dán ảnh nền thì ảnh thắng
+                        # hình vector, thẻ chọn màn có ảnh vẽ thật, màn đã chọn được lưu,
+                        # và sàn có bóng đổ dưới chân
+node tools/t_play.js    # hai trang: play.html đúng bằng bản dựng từ index.html, đã cắt sạch
+                        # bảng xưởng, luồng arcade ba bước (tiêu đề → nhân vật → màn → đánh),
+                        # gói phát hành được nạp, hết trận hiện dải nút, và xưởng vẫn vào
+                        # trận bằng MỘT cú bấm #cselGo
 node tools/t_bulk.js    # nạp hàng loạt: bảng đoán tên file (thư mục thắng tên file, alias dài
                         # thắng alias ngắn, số đuôi là số khung), nạp thật qua ô chọn file,
                         # file đoán không ra được báo tên, danh sách tên file đủ mọi ô
@@ -1970,13 +2067,18 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Meteor Strike hất lùi 0px khi lao trúng giữa người | hướng đẩy tính bằng `prime.x-f.x`, mà lao trúng thì hai chỗ đứng trùng nhau nên ra vector 0 | rơi vào trường hợp đó thì lấy luôn hướng lao (`f.ax/f.ay`) làm hướng đẩy |
 | Khuôn mặt Superman chìm nghỉm trong tóc | vạt tóc `fillRect` phủ xuống tận hàng mắt | kéo vạt tóc lên cao hơn và hạ hàng mắt xuống một nhịp |
 | Cú xoay người đấm tay trái nhìn như chưa đánh | tay xa chỉ dài 17 nên nắm đấm dừng ngay giữa ngực | riêng dáng `punch2` nới tay dẫn lên 26 và vẽ **đè lên thân** |
+| Hỗn chiến và đánh đội trắng trơn, không có ô chọn nhân vật nào | `el()` đổi sang trả **ô giả** cho trang chơi, nên `let box=el('grpBox'+i); if(box) return box;` lúc nào cũng đúng và khung đội không bao giờ được dựng | chỗ nào cần biết ô CÓ THẬT hay không thì hỏi thẳng `document.getElementById` |
+| Trang chơi im lặng không nạp gói phát hành | `const PACK_URL` khai sau `sfxRestore()`, mà hàm đó chạy rất sớm ⇒ TDZ, lỗi ném ra **ngay trong `try{}`** của `packLoad()` và bị nuốt | dời cả khối gói lên trước `sfxRestore()` |
+| Bong bóng thoại nhạt hẳn đi, `t_bubble` đổ | lớp tối của sàn vẽ trong `arenaFrame()`, tức SAU lượt vẽ chữ nổi đầu tiên | vẽ lớp tối sau thế giới nhưng **trước** đám float, ở hệ toạ độ màn hình |
+| Test bấm `#arcStart` treo đúng 30 giây | nhịp nháy của nút dùng `transform:scale`, Playwright coi là "chưa đứng yên" nên không bao giờ bấm | nhịp nháy chỉ đổi `box-shadow`, đừng đụng `transform` |
+| Khán đài sân vận động ra vân chéo | chỗ ngồi bốc bằng phép chia dư `(i*37)%W` | bốc bằng hàm nhiễu cố định `sr(i)` |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---
 
 ## 10. Quy trình git
 
-- Nhánh làm việc: `claude/new-game-modes-t2o26k`. **Không đẩy sang nhánh khác.**
+- Nhánh làm việc: `claude/auto-add-model-voice-d3fq10`. **Không đẩy sang nhánh khác.**
 - `git push -u origin <nhánh>`; lỗi mạng thì thử lại 4 lần, giãn 2s/4s/8s/16s.
 - Người dùng thường merge rất nhanh rồi hỏi luôn "pr?" / "merge đâu" — làm xong một việc thì
   **mở PR ngay**. Nếu PR trước đã merge thì mở PR mới, đừng chồng lên nhánh đã merge.

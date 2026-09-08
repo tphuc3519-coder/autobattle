@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Đấu Trường — Konohamaru · ChiChi · Tsubasa</title>
+<!-- ĐỪNG SỬA TAY: dựng bằng tools/mk_play.py từ index.html -->
+<title>Đấu Trường Chiba — Auto Battle Arena</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -181,6 +182,7 @@
 </style>
 </head>
 <body>
+<script>window.ARCADE=1;</script>
 <div class="wrap">
   <header>
     <h1>ĐẤU TRƯỜNG <span>CHIBA</span></h1>
@@ -208,111 +210,16 @@
       <option value="1.8" selected>Ra chiêu chậm</option>
       <option value="2.4">Ra chiêu rất chậm</option>
     </select>
-    <!--STUDIO--><label class="chk" title="Máu khởi đầu của nhân vật bên trái">Máu <b id="hpNameA">K</b> <input type="number" id="hpK" value="1000" min="100" max="9999" step="50"></label>
-    <label class="chk" title="Máu khởi đầu của nhân vật bên phải">Máu <b id="hpNameB">C</b> <input type="number" id="hpC" value="1000" min="100" max="9999" step="50"></label>
-    <label class="chk" title="Màu tên và số damage bên trái"><b id="colNameA">K</b> <input type="color" id="colK" value="#63B4FF"></label>
-    <label class="chk" title="Màu tên và số damage bên phải"><b id="colNameB">C</b> <input type="color" id="colC" value="#FF4D6D"></label>
-<!--/STUDIO-->
+    
     <button id="play" class="primary">Bắt đầu</button>
     <button id="reset">Đánh lại</button>
-    <!--STUDIO--><button id="rec">⏺ Ghi hình sàn đấu</button>
-    <select id="rec916" title="Khung video lúc ghi hình. 1080p nét hơn nhưng máy yếu có thể rớt khung; 720p thì nhẹ hều.">
-      <option value="1080" selected>Video dọc 9:16 · 1080p</option>
-      <option value="720">Video dọc 9:16 · 720p</option>
-      <option value="0">Video khung nguyên bản</option>
-    </select><!--/STUDIO-->
-    <!--STUDIO--><button id="testGoku" title="Gọi Goku ngay để thử">🧪 Test Goku</button>
-    <button id="testGohan" title="Gọi Gohan ngay để thử">🧪 Test Gohan</button>
-    <button id="testTwin" title="Nạp đủ goal để xem Victory Twin Shot">🧪 Test Twin Shot</button>
-    <button id="testEagle" title="Ép Tsubasa vào trạng thái Wings of the Eagle">🧪 Test Eagle</button>
-    <button id="testForest" title="Ép Shikamaru mở khu rừng nhà Nara">🧪 Test lãnh địa</button>
-    <button id="testSuz2" title="Ép Ayanokouji nhảy vào đỡ đòn, sang form 2">🧪 Test Horikita F2</button>
-    <button id="testSuzAya" title="Nạp đủ 150 điểm lớp để Ayanokouji vào sân">🧪 Test Ayanokouji</button>
-    <button id="testSuz3" title="Ép Ayanokouji rời sàn để Horikita sang form 3">🧪 Test Horikita F3</button>
-    <button id="testGinyuAura" title="Ép aura Ginyu toả ra ngay">🧪 Test aura Ginyu</button>
-    <button id="testGinyuChange" title="Ép Ginyu tung CHANGE!!! ngay">🧪 Test CHANGE</button>
-    <button id="testDoraShrink" title="Ép Small Light thu nhỏ đối thủ ngay">🧪 Test Small Light</button>
-    <button id="testDoraDoor" title="Ép Doraemon chui Emergency Door ngay">🧪 Test Emergency Door</button>
-    <button id="testDoraTime" title="Ép Doraemon dùng Time Machine ngay">🧪 Test Time Machine</button>
-    <button id="testSupFly" title="Ép Superman cất cánh Kryptonian Flight">🧪 Test Flight</button>
-    <button id="testSupResolve" title="Ép Superman vào Last Son's Resolve">🧪 Test Resolve</button>
-    <button id="testSupFreeze" title="Ép Superman thổi Freeze Breath ngay">🧪 Test Freeze Breath</button>
-    <button id="testSupMeteor" title="Ép Superman tung Meteor Strike ngay">🧪 Test Meteor Strike</button><!--/STUDIO-->
+    
+    
   </div>
 
   <div class="stage"><canvas id="arena" width="620" height="620"></canvas></div>
 
-  <!--STUDIO-->
-  <div class="card">
-    <details open>
-      <summary>🖼️ Nạp ảnh nhân vật cho từng động tác (bấm vào ô để chọn ảnh PNG nền trong)</summary>
-      <div id="slotArea"></div>
-      <div class="bar" style="margin:10px 0 0">
-        <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
-          ⚡ Nạp cả thư mục ảnh<input type="file" id="sprBulkDir" accept="image/*" multiple webkitdirectory style="display:none">
-        </label>
-        <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
-          ⚡ Nạp nhiều ảnh<input type="file" id="sprBulk" accept="image/*" multiple style="display:none">
-        </label>
-        <button id="packExport" title="Gói cả ảnh lẫn tiếng thành một file pack.json cho trang chơi">📦 Xuất gói lên web chơi</button>
-        <button id="packLoadBtn" title="Nạp thử gói đang nằm trong assets/pack/pack.json">📥 Nạp thử gói</button>
-        <button id="sprNames">📋 Tải danh sách tên file</button>
-        <button id="sprExport">⬇ Xuất bộ ảnh</button>
-        <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
-          ⬆ Nhập bộ ảnh<input type="file" id="sprImportFile" accept="application/json" style="display:none">
-        </label>
-        <button id="sprClear">🗑 Xoá ảnh đã lưu</button>
-        <button id="sprUndo" style="display:none;background:#3A2E00;border-color:var(--gold);color:var(--gold)">↩ Hoàn tác xoá</button>
-      </div>
-      <div class="drop" id="sprDrop">⚡ <b>Kéo cả thư mục ảnh thả vào đây</b> — game tự chia ảnh về đúng ô theo tên file
-        (<kbd>kono_idle.png</kbd>, <kbd>suzune/punch3.png</kbd>, nhiều khung thì <kbd>kono_idle_1.png</kbd>).</div>
-      <div class="note" id="sprBulkNote"></div>
-      <div class="help" id="sprStatus">Ảnh bạn nạp sẽ được lưu lại, mở lại trang là có sẵn.</div>
-      <div class="help">Dán nhầm ảnh vào một ô thì bấm dấu <b>✕</b> ở góc trên bên phải của chính ô đó để xoá riêng nó — mấy ô khác giữ nguyên. Xoá xong còn nút <b>Hoàn tác</b> để lấy lại.</div>
-      <div class="help"><b>Hai trang, một game.</b> Trang này là <b>xưởng</b> — chỗ bạn dán ảnh, dán tiếng.
-        Bấm <b>📦 Xuất gói lên web chơi</b> để lấy <kbd>pack.json</kbd>, chép nó vào <kbd>assets/pack/pack.json</kbd>
-        của repo rồi đẩy lên; <kbd>play.html</kbd> (trang mọi người chơi) tự nạp gói đó lúc mở.</div>
-      <div class="help"><b>Chọn nhiều ảnh cùng lúc cho một ô</b> (Ctrl/Cmd + click) thì game sẽ chạy chúng thành hoạt ảnh — 2–4 khung mỗi động tác là đủ mượt. Ảnh được thu về cao 480px trước khi lưu — đủ nét mà không quá nặng.</div>
-    </details>
-  </div>
-
-  <div class="card">
-    <details>
-      <summary>🔊 Âm thanh — bấm ô để nạp file mp3/wav của riêng bạn</summary>
-      <div class="bar" style="margin:10px 0 0">
-        <label class="chk">Âm lượng <input type="range" id="vol" min="0" max="1" step="0.05" value="0.6" style="width:110px"></label>
-        <label class="chk"><input type="checkbox" id="mute"> Tắt tiếng đòn</label>
-        <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
-          ⚡ Nạp cả thư mục tiếng<input type="file" id="sfxBulkDir" accept="audio/*" multiple webkitdirectory style="display:none">
-        </label>
-        <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
-          ⚡ Nạp nhiều tiếng<input type="file" id="sfxBulk" accept="audio/*" multiple style="display:none">
-        </label>
-        <button id="sfxVoice" title="Nạp bộ giọng máy dựng sẵn trong assets/voice">🎙 Nạp bộ giọng mẫu</button>
-        <button id="sfxNames">📋 Tải danh sách tên file</button>
-        <button id="sfxExport">⬇ Sao lưu tiếng</button>
-        <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
-          ⬆ Nhập tiếng<input type="file" id="sfxImportFile" accept="application/json" style="display:none">
-        </label>
-        <button id="sfxClear">🗑 Xoá tiếng đã nạp</button>
-        <button id="sfxUndo" style="display:none;background:#3A2E00;border-color:var(--gold);color:var(--gold)">↩ Hoàn tác xoá</button>
-        <button id="sfxBalance">⚖ Cân âm lượng tự động</button>
-      </div>
-      <div class="bar" style="margin:6px 0 0">
-        <label class="chk"><input type="checkbox" id="musicOn" checked> 🎵 Nhạc nền</label>
-        <label class="chk">Âm lượng nhạc <input type="range" id="musicVol" min="0" max="1" step="0.05" value="0.3" style="width:110px"></label>
-      </div>
-      <div id="sfxArea" style="margin-top:8px"></div>
-      <div class="drop" id="sfxDrop">⚡ <b>Kéo cả thư mục tiếng thả vào đây</b> — game tự chia file về đúng ô theo tên
-        (<kbd>ginyu_force.mp3</kbd>, <kbd>shika/shika_stab_hit.wav</kbd>).</div>
-      <div class="note" id="sfxBulkNote"></div>
-      <div class="help" id="sfxStatus">Đang dùng tiếng tự tạo sẵn có. Nạp file để thay thế từng loại.</div>
-      <div class="help">Nạp nhầm file vào một ô thì bấm dấu <b>✕</b> ở góc trên bên phải của chính ô đó để xoá riêng nó — ô ấy quay về tiếng tự tạo, mấy ô khác giữ nguyên. Xoá xong còn nút <b>Hoàn tác xoá</b> để lấy lại.</div>
-      <div class="help">File dài (trên 2.6 giây) sẽ được đọc <b>nối tiếp từng đoạn ~2 giây</b>, lần sau nói tiếp chỗ cũ chứ không quay lại đầu — hợp cho một tràng ChiChi chửi dài. Riêng <b>Kamehameha, Masenko và Đôi cánh đại bàng phát từ đầu, dài tối đa 5 giây</b> (tia bắn ra ở giây thứ 2.8 và 2.2 ở tốc độ gốc). Tiếng kết thúc, nhạc thắng, hò reo và <b>tiếng mở khu rừng nhà Nara</b> thì phát trọn vẹn, dài bao nhiêu cũng được. Tiếng gọi Goku / Gohan và tiếng viện binh hiện ra thì phát từ đầu rồi <b>tắt đúng lúc hình tắt</b>, file dài hơn chỉ nghe được phần đầu. <b>Tiếng Shikamaru than thở</b> đọc nối tiếp từng đoạn dài bằng bong bóng thoại, còn <b>tiếng mắng của ChiChi</b> đọc theo đúng nhịp hét — chỉnh tốc ra chiêu thì độ dài đoạn đổi theo. Cả hai đều nói tiếp chỗ cũ, hết file thì quay lại đầu, nên một file thu nhiều câu là mỗi lần một câu khác chứ không lặp câu đầu. Ô nào có dấu <b>🎙 GIỌNG</b> là chỗ thu lời thoại: <b>Horikita</b> có ba ô (câu tự hỏi · quyết định đúng · quyết định sai), <b>Ayanokouji</b> có ba ô cho đúng ba câu anh nói — "Stand up and fight." lúc bước ra chắn đòn, câu lúc vào sân sát cánh lần cuối, và "This is where I take my leave." lúc rời sàn. Mỗi câu tự cắt đúng lúc bong bóng thoại tắt, thu dài hơn thì phần đuôi không nghe được.</div>
-    </details>
-  </div>
-
-  <!--/STUDIO-->
+  
 
   <div class="card">
     <h3>Diễn biến</h3>

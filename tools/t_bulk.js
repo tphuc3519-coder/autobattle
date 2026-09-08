@@ -67,6 +67,10 @@ function tieng(ten) {
   ]);
   await page.waitForFunction(() => window.__SPR.kono.idle && window.__SPR.superman.punch2,
     null, { timeout: 25000 });
+  /* Dòng tổng kết chỉ hiện SAU khi lưu xong vào kho, mà lưu là async — chờ hẳn nó
+     xuất hiện chứ đừng đọc ngay, không thì lúc máy chậm là đổ oan. */
+  await page.waitForFunction(() => /Đã nạp/.test(document.getElementById('sprBulkNote').textContent),
+    null, { timeout: 25000 }).catch(() => {});
   const sau = await doc(async () => {
     const kho = JSON.parse((await window.__Store.get('spr_kono')) || '{}');
     return {
