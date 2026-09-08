@@ -162,6 +162,10 @@
   .arcHint{font-size:12px;color:var(--mute);margin-top:16px}
   .arcLoad{margin-top:9px;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.06em;
     color:var(--gold);opacity:.9}
+  .arcBar{width:min(360px,72vw);height:9px;margin:24px auto 14px;border-radius:99px;
+    background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14);overflow:hidden}
+  .arcBar i{display:block;height:100%;width:0;border-radius:99px;background:var(--gold);
+    box-shadow:0 0 12px rgba(255,197,66,.55);transition:width .18s linear}
   /* Nhịp nháy chỉ đổi QUẦNG SÁNG, đừng đụng tới transform: nút mà nhúc nhích thì
      Playwright coi là "chưa đứng yên" và không bao giờ bấm được (test treo 30 giây). */
   #arcStart{font-size:17px;padding:14px 34px;animation:arcPulse 1.6s ease-in-out infinite}
@@ -494,6 +498,19 @@
 </div>
 
 <!-- Vỏ arcade của trang chơi. Ở trang xưởng hai khối này nằm im (off) và không ai bật. -->
+<!-- Màn chờ tải ảnh/tiếng, đứng TRƯỚC màn tiêu đề. Gói mấy chục MB mà thả người chơi
+     vào trận luôn thì họ thấy model vector và tưởng game hỏng (người dùng đã báo đúng
+     một lần). z-index cao hơn .arc để nó nằm đè lên màn tiêu đề. -->
+<div class="arc off" id="arcBoot" style="z-index:72">
+  <div>
+    <div class="arcLogo">MULTIVERSE<b>BATTLER</b></div>
+    <div class="arcBar"><i id="bootBar"></i></div>
+    <div class="arcLoad" id="bootTxt"></div>
+    <div class="arcHint" data-i18n="bootHint">Tải xong là vào chơi được ngay</div>
+    <div style="margin-top:18px"><button id="bootSkip" type="button" style="display:none"
+      data-i18n="bootSkip">Vào luôn, khỏi chờ</button></div>
+  </div>
+</div>
 <div class="arc off" id="arcTitle">
   <div>
     <div class="arcLogo">MULTIVERSE<b>BATTLER</b></div>
@@ -635,6 +652,8 @@ const L={
     hpAll:'Máu mọi nhân vật', hpStd:'Chuẩn '+HP_STD,
     packLoading:'Đang tải ảnh và tiếng…', packDone:'Đã nạp {n} ảnh · {s} tiếng',
     packBytes:'Đang tải ảnh và tiếng… {a} / {b} MB', packDecode:'Đang mở gói…',
+    packOpen:'Đang mở gói… {n} / {t}', bootHint:'Tải xong là vào chơi được ngay',
+    bootSkip:'Vào luôn, khỏi chờ', bootWait:'Đang chuẩn bị…',
     musicNone:'Chưa có file nhạc nền nào nên đang dùng nhạc tự tạo. Muốn nhạc của bạn thì nạp file vào ô nhạc ở trang xưởng rồi xuất gói.'
   },
   en:{
@@ -670,6 +689,8 @@ const L={
     hpAll:'HP for everyone', hpStd:'Standard '+HP_STD,
     packLoading:'Loading art and sound…', packDone:'Loaded {n} images · {s} sounds',
     packBytes:'Loading art and sound… {a} / {b} MB', packDecode:'Unpacking…',
+    packOpen:'Unpacking… {n} / {t}', bootHint:'The fight starts as soon as this finishes',
+    bootSkip:'Skip and play now', bootWait:'Getting ready…',
     musicNone:'No music file loaded yet, so the built-in track is playing. Drop your own music into the studio slots and export the pack.'
   }
 };
@@ -2346,6 +2367,37 @@ function packBuild(){
 /* Gói ảnh nặng vài chục MB nên trên đường mạng chậm nó tới sau khi trang đã mở. Không
    nói gì thì người chơi tưởng game hỏng — nên màn tiêu đề có một dòng trạng thái riêng. */
 let packChipT=0;
+/* ---- màn chờ tải ảnh/tiếng (chỉ trang chơi) ----
+   packNote() lo phần CHỮ (chip trên sàn + dòng trong màn tiêu đề), packProg() lo phần
+   THANH của màn chờ. Tách hai hàm vì có lúc chỉ cần một trong hai. */
+let bootOff=false;
+function bootShow(){
+  if(!window.ARCADE) return;
+  const b=document.getElementById('arcBoot'); if(!b) return;
+  b.classList.remove('off');
+  const txt=document.getElementById('bootTxt');
+  if(txt&&!txt.textContent) txt.textContent=t('bootWait');
+  /* Đừng bao giờ NHỐT người chơi trong màn chờ: mạng chết giữa chừng thì packLoad() treo
+     mãi mà không ai thoát ra được. Sau 10 giây hiện nút vào luôn — bấm là chơi ngay, ảnh
+     về sau thì tự hiện, đúng như cách cũ. */
+  const s=document.getElementById('bootSkip');
+  if(s){ s.onclick=bootHide; setTimeout(()=>{ if(!bootOff) s.style.display=''; },10000); }
+}
+function bootHide(){
+  bootOff=true;
+  const b=document.getElementById('arcBoot'); if(b) b.classList.add('off');
+}
+function packProg(pha,lam,tong){
+  const bar=document.getElementById('bootBar'); if(!bar) return;
+  const p=tong?Math.max(0,Math.min(1,lam/tong)):0;
+  /* Hai pha chia đôi thanh: TẢI file chiếm 0→70%, MỞ GÓI chiếm 70→100%. Đo được ở 8 Mbps
+     là 25 giây tải và 3 giây mở, nên chia vậy cho thanh chạy đều mắt. */
+  bar.style.width=((pha==='tai'?p*.7:.7+p*.3)*100).toFixed(1)+'%';
+  const txt=document.getElementById('bootTxt');
+  if(txt) txt.textContent=pha==='tai'
+    ? tf('packBytes',{a:(lam/1048576).toFixed(1),b:(tong/1048576).toFixed(1)})
+    : tf('packOpen',{n:lam,t:tong});
+}
 function packNote(msg,xong){
   /* Hai chỗ, không phải một: #arcLoad nằm trong màn tiêu đề (mất khi vào trận),
      #loadChip đè lên sàn đấu (còn suốt lúc đang tải). Cùng một câu chữ.
@@ -2375,6 +2427,7 @@ async function packRead(r){
     if(done) break;
     parts.push(value); got+=value.length;
     packNote(tf('packBytes',{a:(got/1048576).toFixed(1),b:(all/1048576).toFixed(1)}));
+    packProg('tai',got,all);
   }
   const buf=new Uint8Array(got); let at=0;
   for(const p of parts){ buf.set(p,at); at+=p.length; }
@@ -2395,6 +2448,18 @@ async function packLoad(noi){
     return {img:0,sfx:0};
   }
   let img=0, snd=0;
+  /* Đếm TRƯỚC tổng số việc phải làm rồi mới chạy: thanh tiến độ mà cộng dồn theo kiểu
+     "xong bao nhiêu thì biết bấy nhiêu" là nó nhảy cóc, nhìn như bị treo. */
+  let tong=0, lam=0;
+  for(const set of SETS){
+    const one=(data.spr||{})[set.key]; if(!one)continue;
+    for(const [pk] of set.poses){
+      const arr=one[pk];
+      if(arr&&arr.length&&!(SPR[set.key][pk]&&SPR[set.key][pk].length)) tong+=arr.length;
+    }
+  }
+  for(const [nm] of SFX_EVENTS) if((data.sfx||{})[nm]&&!SFXSRC[nm]) tong++;
+  packProg('mo',0,tong);
   for(const set of SETS){
     const one=(data.spr||{})[set.key]; if(!one)continue;
     for(const [pk,label] of set.poses){
@@ -2403,12 +2468,14 @@ async function packLoad(noi){
       if(SPR[set.key][pk]&&SPR[set.key][pk].length) continue;   // ô đã có thì gói không đè
       const imgs=(await Promise.all(arr.map(loadImg))).filter(Boolean);
       if(imgs.length){ setFrames(set.key,pk,imgs,label); img+=imgs.length; }
+      lam+=arr.length; packProg('mo',lam,tong);
     }
   }
   for(const [nm] of SFX_EVENTS){
     const src=(data.sfx||{})[nm];
     if(!src||SFXSRC[nm]) continue;
     if(await decodeInto(nm,src)){ sfxSet(nm,true); snd++; }
+    lam++; packProg('mo',lam,tong);
   }
   let nhac=0;
   for(const [key] of BGM_SLOTS){
@@ -2432,7 +2499,7 @@ async function sfxRestore(){
      dán), mà lượt khôi phục kho đọc hơn 80 khoá IndexedDB nên xếp gói sau nó thì người
      chơi phải nhìn model vector mất mấy giây đầu trận. Trang xưởng thì ngược lại — file
      bạn tự nạp phải thắng, nên gói chạy sau. */
-  if(window.ARCADE) await packLoad(false);
+  if(window.ARCADE){ bootShow(); await packLoad(false); bootHide(); }
 
     try{ const v=await Store.get('cfg_vol'); if(v!==null&&v!==undefined){ volume=parseFloat(v); document.getElementById('vol').value=volume; } }catch(e){}
     try{

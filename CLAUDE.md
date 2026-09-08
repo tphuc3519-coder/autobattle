@@ -1555,6 +1555,22 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
   lượt `''` → `'../'` → `'../../'` rồi **nhớ mức nào ăn**, các file sau đi thẳng mức đó (bộ giọng
   mẫu nạp chín file nên không được dò lại từ đầu mỗi lần). `t_play.js` dựng hẳn bản giống Pages
   (trang chơi ở gốc, xưởng trong `/studio/`, `assets` ở gốc) rồi kiểm cả hai trang.
+- **Trang chơi có MÀN CHỜ đứng TRƯỚC màn tiêu đề** (`#arcBoot`, z-index 72 nên đè lên
+  `#arcTitle`). Người dùng chốt: *"làm màn loading cái ảnh và tiếng trước màn vào game đi,
+  chứ để thẳng vậy rồi bảo người chơi chờ thì không được"*. `sfxRestore()` gọi
+  `bootShow()` → `await packLoad()` → `bootHide()`, nên **nút PRESS START chỉ bấm được khi
+  ảnh và tiếng đã về đủ**. Đo ở 8 Mbps: màn chờ đứng 28.7 giây rồi mới cho vào, lúc đó đã có
+  đủ 89 ảnh · 46 tiếng.
+  - **Thanh tiến độ chia hai pha**, `packProg(pha,lam,tong)`: `'tai'` (tải file) chiếm
+    **0→70%**, `'mo'` (mở gói) chiếm **70→100%** — đo được 25 giây tải và 3 giây mở nên chia
+    vậy thì thanh chạy đều mắt.
+  - **Đếm TRƯỚC tổng số việc rồi mới chạy** (`tong` trong `packLoad`). Cộng dồn kiểu "xong
+    bao nhiêu biết bấy nhiêu" thì thanh nhảy cóc, nhìn như treo.
+  - **Không bao giờ được NHỐT người chơi trong màn chờ.** Mạng chết giữa chừng thì
+    `packLoad()` treo mãi, nên sau **10 giây** hiện nút `#bootSkip` *Vào luôn, khỏi chờ* —
+    bấm là chơi ngay, ảnh về sau thì tự hiện (đúng cách cũ). Đừng bỏ nút này đi.
+  - Màn chờ **chỉ có ở trang chơi** (`window.ARCADE`). Xưởng thì file mình tự nạp phải
+    thắng nên gói chạy sau, không chặn gì cả.
 - **Dòng đếm MB phải hiện ở HAI chỗ**: `#arcLoad` trong màn tiêu đề, và `#loadChip` **đè lên
   sàn đấu**. Dòng trong màn tiêu đề biến mất ngay khi bấm PRESS START, mà gói thì còn tải cả
   chục giây nữa — người chơi vào trận thấy model vector và tưởng mất ảnh. Đo được trên mạng
