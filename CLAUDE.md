@@ -1629,8 +1629,19 @@ thẻ chiêu, rồi `<details>` "xem chi tiết số liệu" mở ra **mảng `C
   đúng tên ô.
 - Nhạc chạy bằng thẻ `<audio loop>`, **không** đi qua `decodeAudioData` — file nhạc dài,
   giải mã cả bài ra buffer là ngốn bộ nhớ mà chẳng để làm gì.
-- **Mọi chỗ bật nhạc gọi `musicStart()`**, đừng gọi thẳng `startMusic()` nữa: hàm đó xét theo
-  thứ tự **nhạc của màn → nhạc chung → nhạc tự sinh (nếu bạn bật) → im lặng**.
+- **Mọi chỗ bật nhạc gọi `musicStart()`**, đừng gọi thẳng `startMusic()` nữa. Ba nấc:
+
+  | Tình huống | Chạy gì |
+  |---|---|
+  | có file cho màn này (hoặc ô chung) | **file đó** |
+  | không có file cho màn NÀY nhưng có file ở ô khác | theo ô **🎹 Nhạc tự tạo** của xưởng |
+  | **không có file nào cả** (`!bgmAny()`) | **nhạc tự tạo**, kèm một dòng nhật ký nói vì sao |
+
+  > **Bật nhạc mà im lặng là vô lý** — người chơi vừa tự tay bấm bật. Nấc cuối trước đây rơi
+  > thẳng vào `stopMusic()`: gói phát hành chưa có ô nhạc nào (`pack.bgm` rỗng) nên bấm bật
+  > nhạc xong chẳng nghe gì, cũng chẳng có dòng nào giải thích — người dùng nhắn "và có âm
+  > thanh" (ý là không có). Dòng `musicNone` chỉ nói **một lần** mỗi lượt mở trang
+  > (`musicSaidEmpty`), đừng để nó lặp mỗi lần đổi màn.
 - Ô bật nhạc và thanh âm lượng nhạc nằm ở **thanh công cụ chính**, không nằm trong bảng
   tiếng: cả bảng tiếng bị cắt khỏi `play.html`, để trong đó thì người chơi không tắt bật được.
 - Gói phát hành mang theo cả nhạc (`pack.bgm`) — nhớ là nhạc nặng, xem cảnh báo dung lượng ở

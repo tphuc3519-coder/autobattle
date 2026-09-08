@@ -107,6 +107,19 @@ function fileNhac() {
   ok(m0.synth === false, 'nhac tu tao cung mac dinh tat');
   ok(m0.slots === 8, `co du 8 o nhac: menu + chung + sau man (${m0.slots})`);
 
+  /* Bật nhạc lúc CHƯA có file nào: phải chạy nhạc tự tạo chứ không im ru.
+     Trước đây rơi thẳng vào `stopMusic()` — gói phát hành chưa có ô nhạc nào nên người chơi
+     bấm bật nhạc xong chẳng nghe gì, cũng chẳng có dòng nào giải thích. */
+  const rong = await doc(async () => {
+    document.getElementById('musicOn').click();
+    await new Promise(r => setTimeout(r, 400));
+    return { on: window.__MUSIC.on, chay: !!window.__MUSIC.gain,
+             noi: [...document.querySelectorAll('#log div')].some(d => /nhạc tự tạo/i.test(d.textContent)) };
+  });
+  ok(rong.on && rong.chay, 'chua co file nhac nao ma bat nhac thi chay nhac tu tao');
+  ok(rong.noi, 'va noi ra mot dong cho biet vi sao');
+  await doc(async () => { document.getElementById('musicOn').click(); await new Promise(r => setTimeout(r, 200)); });
+
   const oNhac = page.locator('#bgmArea .slotwrap').filter({ hasText: 'Màn Vũ trụ' }).first();
   await oNhac.locator('input[type=file]').setInputFiles(fileNhac());
   await page.waitForFunction(() => !!window.__BGM.src.bgm_space, null, { timeout: 20000 });

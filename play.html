@@ -524,7 +524,8 @@ const L={
     hpTip:'Máu khởi đầu của nhân vật này — chỉnh thoải mái',
     hpAll:'Máu mọi nhân vật', hpStd:'Chuẩn '+HP_STD,
     packLoading:'Đang tải ảnh và tiếng…', packDone:'Đã nạp {n} ảnh · {s} tiếng',
-    packBytes:'Đang tải ảnh và tiếng… {a} / {b} MB', packDecode:'Đang mở gói…'
+    packBytes:'Đang tải ảnh và tiếng… {a} / {b} MB', packDecode:'Đang mở gói…',
+    musicNone:'Chưa có file nhạc nền nào nên đang dùng nhạc tự tạo. Muốn nhạc của bạn thì nạp file vào ô nhạc ở trang xưởng rồi xuất gói.'
   },
   en:{
     tagline:'Cross-universe arena · 8 fighters · 6 stages',
@@ -558,7 +559,8 @@ const L={
     hpTip:'Starting HP for this fighter — set it to whatever you like',
     hpAll:'HP for everyone', hpStd:'Standard '+HP_STD,
     packLoading:'Loading art and sound…', packDone:'Loaded {n} images · {s} sounds',
-    packBytes:'Loading art and sound… {a} / {b} MB', packDecode:'Unpacking…'
+    packBytes:'Loading art and sound… {a} / {b} MB', packDecode:'Unpacking…',
+    musicNone:'No music file loaded yet, so the built-in track is playing. Drop your own music into the studio slots and export the pack.'
   }
 };
 const t=k=>{ const d=L[LANG]||L.vi; return d[k]!==undefined?d[k]:(L.vi[k]!==undefined?L.vi[k]:k); };
@@ -2908,10 +2910,23 @@ function bgmSet(key,src){
 }
 /* Một cửa duy nhất cho mọi chỗ muốn bật nhạc: có file của bạn thì phát file, không thì
    mới xét tới nhạc tự sinh. Đừng gọi thẳng startMusic() nữa. */
+/* Bật nhạc mà im lặng là VÔ LÝ — người chơi vừa tự tay bấm bật. Ba nấc:
+     có file cho màn này          -> chạy file
+     không có file cho màn NÀY,
+       nhưng có file ở ô khác     -> theo ô "Nhạc tự tạo" của xưởng (chủ game tự chọn)
+     KHÔNG có file nào cả         -> nhạc tự tạo, và nói ra một dòng cho biết vì sao
+   Trước đây nấc cuối rơi vào `stopMusic()`: gói phát hành chưa có ô nhạc nào (`pack.bgm`
+   rỗng) nên người chơi bấm bật nhạc xong chẳng nghe gì, cũng chẳng có dòng nào giải thích. */
+function bgmAny(){ for(const k in BGM.src) if(BGM.src[k]) return true; return false; }
+let musicSaidEmpty=false;
 function musicStart(){
   if(!MUSIC.on){ musicStop(); return; }
   if(bgmPlay()){ stopMusic(); return; }
-  if(MUSIC.synth) startMusic(); else stopMusic();
+  const trong=!bgmAny();
+  if(MUSIC.synth||trong){
+    startMusic();
+    if(trong&&!musicSaidEmpty){ musicSaidEmpty=true; say(t('musicNone'),'m'); }
+  }else stopMusic();
 }
 function musicStop(){ bgmStop(); stopMusic(); }
 
