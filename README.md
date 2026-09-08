@@ -56,6 +56,27 @@ thư mục `assets/` vào bảng tiếng bằng tay.)
 > thêm ~33%. GitHub chặn file trên 100 MB (và cảnh báo từ 50 MB), nên nếu bộ ảnh to thì
 > giảm số khung hoạt ảnh, hoặc chuyển sang backend (xem mục cuối).
 
+### Cách khác cho TIẾNG: thảy thẳng file vào repo
+
+Không muốn xuất lại cả gói chỉ vì đổi một tiếng thì để file rời trong `assets/voice` —
+game nạp được **mọi ô tiếng** từ đó, không riêng mấy ô giọng:
+
+```bash
+cp tieng-cua-ban/*.mp3 assets/voice/    # đặt tên ĐÚNG TÊN Ô: punch.mp3, ginyu_force.mp3…
+python3 tools/mk_manifest.py            # quét thư mục rồi ghi lại manifest.json
+git add assets/voice && git commit -m "them tieng"
+```
+
+- **Bắt buộc chạy `mk_manifest.py`**: trang web không liệt kê được thư mục, nó chỉ đọc danh
+  sách trong `manifest.json`. Quên chạy là game không thấy file nào.
+- Tên file phải đúng **tên ô**; lấy danh sách ở nút 📋 *Tải danh sách tên file* trong xưởng.
+  File nào không khớp thì script in tên ra để bạn đổi lại.
+- Ô nào đã nằm trong `pack.json` thì **gói thắng** (gói nạp trước) — đừng để một ô ở cả hai
+  chỗ, chọn một đường thôi.
+- Muốn giọng máy dựng sẵn cho mấy ô 🎙 thì chạy `python3 tools/mk_voice.py` (cần espeak-ng +
+  MBROLA); nó tự gọi `mk_manifest.py` ở bước cuối nên file bạn thảy vào không bị xoá khỏi
+  danh sách.
+
 ## Đưa lên mạng
 
 ### Cách 1 — GitHub Pages (miễn phí, tự động)

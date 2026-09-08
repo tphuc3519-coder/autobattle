@@ -1,29 +1,11 @@
 {
- "note": "Bo giong dung bang MBROLA + espeak-ng qua tools/mk_voice.py",
+ "note": "Danh sach o tieng co san trong assets/voice. Dung tools/mk_manifest.py de ghi lai.",
  "slots": {
-  "suz_think": {
-   "file": "suz_think.wav",
+  "aya_bye": {
+   "file": "aya_bye.wav",
    "lines": 1,
    "seg": null,
-   "sec": 2.33
-  },
-  "suz_decide": {
-   "file": "suz_decide.wav",
-   "lines": 15,
-   "seg": 3.8,
-   "sec": 57.0
-  },
-  "suz_wrong": {
-   "file": "suz_wrong.wav",
-   "lines": 6,
-   "seg": 3.8,
-   "sec": 22.8
-  },
-  "aya_stand": {
-   "file": "aya_stand.wav",
-   "lines": 1,
-   "seg": null,
-   "sec": 1.83
+   "sec": 2.22
   },
   "aya_join": {
    "file": "aya_join.wav",
@@ -31,17 +13,17 @@
    "seg": null,
    "sec": 4.67
   },
-  "aya_bye": {
-   "file": "aya_bye.wav",
+  "aya_stand": {
+   "file": "aya_stand.wav",
    "lines": 1,
    "seg": null,
-   "sec": 2.22
+   "sec": 1.83
   },
-  "ginyu_force": {
-   "file": "ginyu_force.wav",
+  "dora_hi": {
+   "file": "dora_hi.wav",
    "lines": 1,
    "seg": null,
-   "sec": 1.44
+   "sec": 1.84
   },
   "ginyu_change": {
    "file": "ginyu_change.wav",
@@ -49,11 +31,29 @@
    "seg": null,
    "sec": 3.84
   },
-  "dora_hi": {
-   "file": "dora_hi.wav",
+  "ginyu_force": {
+   "file": "ginyu_force.wav",
    "lines": 1,
    "seg": null,
-   "sec": 1.84
+   "sec": 1.44
+  },
+  "suz_decide": {
+   "file": "suz_decide.wav",
+   "lines": 15,
+   "seg": 3.8,
+   "sec": 57.0
+  },
+  "suz_think": {
+   "file": "suz_think.wav",
+   "lines": 1,
+   "seg": null,
+   "sec": 2.33
+  },
+  "suz_wrong": {
+   "file": "suz_wrong.wav",
+   "lines": 6,
+   "seg": 3.8,
+   "sec": 22.8
   }
  }
 }

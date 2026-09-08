@@ -6,7 +6,19 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const http = require('http');
+const { execFileSync } = require('child_process');
 const { build, playwright, ROOT, SRC } = require('./probe');
+
+// một file wav bé xíu để thử đường "thảy file vào repo"
+function fileWav() {
+  const sr = 16000, n = sr / 8, d = Buffer.alloc(44 + n * 2);
+  d.write('RIFF', 0); d.writeUInt32LE(36 + n * 2, 4); d.write('WAVE', 8);
+  d.write('fmt ', 12); d.writeUInt32LE(16, 16); d.writeUInt16LE(1, 20); d.writeUInt16LE(1, 22);
+  d.writeUInt32LE(sr, 24); d.writeUInt32LE(sr * 2, 28); d.writeUInt16LE(2, 32); d.writeUInt16LE(16, 34);
+  d.write('data', 36); d.writeUInt32LE(n * 2, 40);
+  for (let i = 0; i < n; i++) d.writeInt16LE(Math.round(Math.sin(i / 9) * 7000), 44 + i * 2);
+  return d;
+}
 
 let loi = [];
 const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if (!dk) loi.push(msg); };
@@ -89,6 +101,41 @@ for (const nm in khung) {
 
   ok(errors.length === 0, `khong co loi trang (${errors.slice(0, 2).join(' | ')})`);
   await browser.close(); sv.close();
+
+  /* ---------- thảy file thẳng vào repo: mọi ô tiếng, không riêng chín ô giọng ----------
+     `tools/mk_manifest.py` quét thư mục rồi ghi danh sách; `voicePack()` nạp mọi ô có tên
+     trong đó. Nhờ vậy đổi một tiếng không phải xuất lại cả gói mấy chục MB. */
+  const dir2 = path.dirname(build());
+  const vc = path.join(dir2, 'assets', 'voice');
+  fs.cpSync(VOICE, vc, { recursive: true });
+  fs.writeFileSync(path.join(vc, 'punch.wav'), fileWav());      // đúng tên ô -> phải vào ô punch
+  fs.writeFileSync(path.join(vc, 'tieng la.wav'), fileWav());   // sai tên -> phải bị báo ra
+  const ra = execFileSync('python3', [path.join(ROOT, 'tools', 'mk_manifest.py')],
+    { encoding: 'utf8', env: Object.assign({}, process.env, { VOICE_DIR: vc }) });
+  ok(/punch\s+<- punch\.wav/.test(ra), 'mk_manifest doan dung ten o cho file tha vao');
+  ok(/KHONG DOAN RA TEN O.*tieng la\.wav/.test(ra), 'file sai ten thi bao ra chu khong im lang');
+  const man2 = JSON.parse(fs.readFileSync(path.join(vc, 'manifest.json'), 'utf8')).slots;
+  ok(!!man2.punch && !!man2.suz_decide, 'manifest giu ca o giong may lan o moi tha vao');
+  ok(man2.suz_decide.lines === man.slots.suz_decide.lines, 'giu nguyen phan mo ta cua o cu');
+
+  const sv2 = http.createServer((rq, rs) => {
+    const p = path.join(dir2, decodeURIComponent(rq.url.split('?')[0]));
+    if (!p.startsWith(dir2) || !fs.existsSync(p)) { rs.statusCode = 404; rs.end(); return; }
+    rs.setHeader('content-type', mime(p)); rs.end(fs.readFileSync(p));
+  });
+  await new Promise(r => sv2.listen(0, '127.0.0.1', r));
+  const b2 = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
+  const p2 = await b2.newPage({ viewport: { width: 700, height: 980 } });
+  await p2.route('**://fonts.*/**', r => r.abort());
+  const e2 = []; p2.on('pageerror', e => e2.push(e.message));
+  await p2.goto(`http://127.0.0.1:${sv2.address().port}/probe.html`, { waitUntil: 'domcontentloaded' });
+  await p2.waitForFunction(() => window.__SFXSRC && Object.keys(window.__SFXSRC).length >= 10,
+    null, { timeout: 30000 }).catch(() => {});
+  const co = await p2.evaluate(() => Object.keys(window.__SFXSRC).sort());
+  ok(co.includes('punch'), `o tieng thuong tha vao repo cung nap duoc (${co.length} o)`);
+  ok(co.length === 10, `nap du ca 9 o giong lan o moi (${co.length})`);
+  ok(e2.length === 0, `khong co loi trang (${e2.slice(0, 2).join(' | ')})`);
+  await b2.close(); sv2.close();
   console.log(loi.length ? `\nHONG ${loi.length} muc` : '\nDAT het');
   process.exit(loi.length ? 1 : 0);
 })();

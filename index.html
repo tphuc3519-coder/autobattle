@@ -440,7 +440,7 @@
         <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
           ⚡ Nạp nhiều tiếng<input type="file" id="sfxBulk" accept="audio/*" multiple style="display:none">
         </label>
-        <button id="sfxVoice" title="Nạp bộ giọng máy dựng sẵn trong assets/voice">🎙 Nạp bộ giọng mẫu</button>
+        <button id="sfxVoice" title="Nạp mọi ô tiếng để sẵn trong thư mục assets/voice của repo">🎙 Nạp tiếng có sẵn trong repo</button>
         <button id="sfxNames">📋 Tải danh sách tên file</button>
         <button id="sfxExport">⬇ Sao lưu tiếng</button>
         <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
@@ -2759,7 +2759,10 @@ async function bulkDropFiles(dt){
   await Promise.all(ents.map(e=>walk(e,'')));
   return out;
 }
-/* Bộ giọng máy dựng sẵn trong `assets/voice` (xem `tools/mk_voice.py`). Mở trang bằng
+/* Tiếng để sẵn trong repo — thư mục `assets/voice` (xem `tools/mk_voice.py` dựng giọng máy,
+   và `tools/mk_manifest.py` ghi danh sách). Nạp được MỌI ô tiếng có tên trong `manifest.json`
+   chứ không riêng chín ô giọng: thảy file vào thư mục, chạy `mk_manifest.py`, commit là xong,
+   khỏi phải xuất lại cả gói. Mở trang bằng
    http thì tự nạp cho mấy ô 🎙 CÒN TRỐNG; mở bằng file:// thì trình duyệt chặn fetch —
    lúc đó kéo thẳng thư mục `assets/voice` thả vào bảng tiếng, bảng đoán tên lo phần
    còn lại. File người dùng tự nạp LUÔN THẮNG: chỗ này không bao giờ đè lên. */
@@ -2781,7 +2784,7 @@ async function voicePack(noi){
       if(src&&await decodeInto(nm,src)){ sfxSet(nm,true); n++; }
     }catch(e){}
   }
-  if(n||noi) sfxStatus(`Đã nạp ${n} ô giọng mẫu từ assets/voice${bo?` (bỏ qua ${bo} ô bạn đã tự nạp)`:''}.`);
+  if(n||noi) sfxStatus(`Đã nạp ${n} ô tiếng có sẵn trong assets/voice${bo?` (bỏ qua ${bo} ô bạn đã tự nạp)`:''}.`);
   return n;
 }
 function bulkZone(el,fn){

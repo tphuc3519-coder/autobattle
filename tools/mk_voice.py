@@ -147,5 +147,13 @@ for name, voice, limit, lines, seg in SLOTS:
           len(body) / 1024, '  (CO CAU TRAN KHUNG: ' + str(len(over)) + ')' if over else ''))
 json.dump(man, open(os.path.join(OUT, 'manifest.json'), 'w', encoding='utf-8'),
           ensure_ascii=False, indent=1)
+# Quét lại cả thư mục: file người dùng tự thảy vào (mọi ô tiếng, không riêng chín ô giọng)
+# phải còn nguyên trong manifest, không thì chạy script này là xoá mất danh sách của họ.
+try:
+    import subprocess
+    subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                    'mk_manifest.py')], check=False)
+except Exception as e:
+    print('khong goi duoc mk_manifest.py:', e)
 print('xong ->', OUT, '· giong', 'MBROLA' if MB else 'espeak (chua cai MBROLA)',
       ('· %d am bi nuot, doi giong khac!' % WARN) if WARN else '· khong am nao bi nuot')
