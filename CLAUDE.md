@@ -1876,6 +1876,34 @@ mẫu người thật thu sẵn nên nghe ra người hơn hẳn. Bốn nhân v�
   `ginyu_change` 3.8s trên 5.2s, `suz_think` 2.3s trên 2.4s.
 - File 16000 Hz mono 16-bit (đúng tần số của MBROLA), cả bộ ~3.1 MB.
 
+### Thảy thẳng file tiếng vào repo — `tools/mk_manifest.py`
+
+Người dùng hỏi *"h xuất file voice thảy qua repo?"*. Được, và **không riêng chín ô giọng**:
+`voicePack()` nạp **mọi ô có tên trong `manifest.json`**, nên `assets/voice` là chỗ để sẵn
+tiếng cho cả 82 ô. Ba bước:
+
+```bash
+cp tieng-cua-ban/*.mp3 assets/voice/     # đặt tên ĐÚNG TÊN Ô: punch.mp3, ginyu_force.mp3…
+python3 tools/mk_manifest.py             # quét thư mục rồi ghi lại manifest.json
+git add assets/voice && git commit       # commit cả file tiếng lẫn manifest
+```
+
+- **Phải chạy `mk_manifest.py`**: trang web mở qua http **không liệt kê được thư mục**, nó
+  chỉ đọc được đúng cái danh sách trong `manifest.json`. Thảy file vào mà quên chạy script
+  thì game không thấy gì cả.
+- Script **đọc tên ô thẳng từ `SFX_EVENTS` trong `index.html`**, khớp theo tên khoá (bỏ dấu,
+  hạ chữ thường, mọi ký tự lạ thành `_` — nên `Suz Think.MP3` vẫn vào ô `suz_think`). Tên
+  không khớp ô nào thì **in ra màn hình**, không im lặng bỏ qua. Danh sách tên đúng lấy ở nút
+  📋 *Tải danh sách tên file* trong xưởng.
+- Nhận `.wav .mp3 .m4a .aac .ogg .opus .flac .webm`.
+- **Giữ lại phần mô tả cũ** (`lines` / `seg` / `sec` của giọng máy) khi tên file không đổi, và
+  `mk_voice.py` **gọi lại script này ở bước cuối** — nếu không, dựng lại giọng máy là xoá sạch
+  danh sách file người dùng tự thảy vào. Đổi thư mục để test bằng `VOICE_DIR` hoặc tham số
+  dòng lệnh.
+- **So với gói phát hành**: gói là JSON base64 nên đổi một tiếng phải viết lại cả file mấy
+  chục MB; thảy file rời vào `assets/voice` thì git chỉ ghi đúng file đó. Ô đã có trong gói thì
+  gói thắng (gói nạp trước), nên **đừng để một ô ở cả hai chỗ** — chọn một đường.
+
 **`voicePack()` trong game tự nạp bộ này**, gọi ở cuối lượt khôi phục của `buildSfx()` nên
 **ô nào người dùng đã tự nạp thì bỏ qua, không bao giờ đè lên**. Nó đi bằng `fetch` nên:
 
@@ -2172,7 +2200,9 @@ node tools/t_bulk.js    # nạp hàng loạt: bảng đoán tên file (thư mụ
                         # file đoán không ra được báo tên, danh sách tên file đủ mọi ô
 node tools/t_voice.js   # bộ giọng máy: file khớp lời thoại trong index.html, hai ô đọc nối tiếp
                         # chia đúng từng đoạn 3.8s, mở bằng http thì tự nạp, ô người dùng đã tự
-                        # nạp thì không bị đè
+                        # nạp thì không bị đè, và đường "thảy file thẳng vào repo": mk_manifest
+                        # đoán đúng tên ô, file sai tên thì báo ra, ô tiếng thường (không phải
+                        # ô giọng) tha vào assets/voice cũng nạp được
 node tools/t_bubble.js  # bong bóng thoại nằm trên băng-rôn tên chiêu và băng-rôn giữa màn
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
                         # khiêu khích kéo địch ở mọi khoảng cách, anh miễn nhiễm Sexy no Jutsu,
