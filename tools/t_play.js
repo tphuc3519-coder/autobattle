@@ -69,26 +69,56 @@ function wavUrl() {
   await page.click('#arcStart');
   await page.waitForTimeout(300);
   ok(await page.locator('#charSelect').isVisible(), 'bam START thi mo man chon nhan vat');
-  ok(await page.evaluate(() => document.getElementById('charSelect').dataset.page) === 'chars',
-     'dung o trang chon NHAN VAT truoc');
+  ok(await page.evaluate(() => document.getElementById('charSelect').dataset.page) === 'p1',
+     'dung o trang chon NGUOI CHOI 1 truoc');
   ok(!await page.locator('#stageList .sTile').first().isVisible(), 'trang nhan vat thi chua hien luoi man');
 
+  /* Chọn P1 xong mới tới P2 — người dùng bác lối để hai cột cạnh nhau.
+     Cột của bên kia phải ĐANG ẨN, không thì vẫn là màn hai cột như cũ. */
+  ok(!await page.locator('#colB').isVisible(), 'buoc P1 thi con cua P2 dang an');
+  ok(await page.evaluate(() => document.querySelectorAll('.pickChip').length) === 0,
+     'buoc P1 chua co dai "da chon"');
+  await page.click('#listA .cTile[data-key="ginyu"]');
+  await page.click('#cselGo');
+  await page.waitForTimeout(250);
+  const buoc2 = await page.evaluate(() => ({
+    page: document.getElementById('charSelect').dataset.page,
+    h2: document.querySelector('#charSelect h2').textContent,
+    chips: [...document.querySelectorAll('.pickChip b')].map(x => x.childNodes[0].textContent),
+    lui: !document.getElementById('cselBack').classList.contains('off')
+  }));
+  ok(buoc2.page === 'p2', `bam tiep thi sang buoc chon NGUOI CHOI 2 (${buoc2.page})`);
+  ok(/2/.test(buoc2.h2), `tieu de doi theo buoc (${buoc2.h2})`);
+  ok(buoc2.chips.length === 2, `hien dai "da chon" de van thay P1 (${buoc2.chips.join(' vs ')})`);
+  ok(buoc2.lui, 'co nut quay lai o buoc P2');
+  ok(!await page.locator('#colA').isVisible(), 'buoc P2 thi con cua P1 dang an');
+
+  await page.click('#listB .cTile[data-key="dora"]');
   await page.click('#cselGo');
   await page.waitForTimeout(250);
   const trang2 = await page.evaluate(() => ({
     page: document.getElementById('charSelect').dataset.page,
     chay: window.__running(), nhan: document.getElementById('cselGo').textContent
   }));
-  ok(trang2.page === 'stage', `bam tiep thi sang trang CHON MAN (${trang2.page})`);
+  ok(trang2.page === 'stage', `chon xong P2 thi sang trang CHON MAN (${trang2.page})`);
   ok(!trang2.chay, 'sang trang chon man thi tran VAN CHUA bat dau');
   ok(/VÀO TRẬN/.test(trang2.nhan), `nut doi chu thanh vao tran (${trang2.nhan})`);
   ok(await page.locator('#stageList .sTile[data-stage="space"]').isVisible(), 'luoi man hien ra');
 
+  await page.click('#cselBack');
+  await page.waitForTimeout(200);
+  ok(await page.evaluate(() => document.getElementById('charSelect').dataset.page) === 'p2',
+     'tu trang chon man bam Quay lai thi ve dung buoc P2');
+  await page.click('#cselGo');
+  await page.waitForTimeout(200);
+
   await page.click('#stageList .sTile[data-stage="space"]');
   await page.click('#cselGo');
   await page.waitForTimeout(900);
-  const vao = await page.evaluate(() => ({ stage: window.__STAGE(), chay: window.__running(), t: window.__G().t }));
+  const vao = await page.evaluate(() => ({ stage: window.__STAGE(), chay: window.__running(), t: window.__G().t,
+    cap: window.__G().fighters.filter(f => !f.summon).map(f => f.key).join(' vs ') }));
   ok(vao.stage === 'space', `vao tran dung man vua chon (${vao.stage})`);
+  ok(vao.cap === 'ginyu vs dora', `vao tran dung cap vua chon tung buoc (${vao.cap})`);
   ok(vao.chay, 'tran tu chay ngay, khong bat nguoi choi bam them nut');
   await page.waitForTimeout(600);
   const t2 = await page.evaluate(() => window.__G().t);

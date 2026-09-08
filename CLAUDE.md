@@ -1504,8 +1504,34 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
 
 - **Vỏ arcade nằm sẵn trong `index.html`** (`#arcTitle`, `#arcOver`, lưới `#stageList`) và
   tự tắt khi không có `window.ARCADE` — một chỗ để sửa giao diện, không phải hai.
-- **Chỉ TRANG CHƠI mới chia màn chọn làm hai trang** (nhân vật → màn). Xưởng giữ nguyên một
-  trang vì **mọi test hiện có bấm `#cselGo` một phát là vào trận** — đổi chỗ này là đổ cả bộ.
+- **Chỉ TRANG CHƠI mới chia màn chọn thành nhiều BƯỚC.** Xưởng giữ nguyên một trang
+  (`dataset.page='all'`) vì **mọi test hiện có bấm `#cselGo` một phát là vào trận** — đổi chỗ
+  này là đổ cả bộ. Các bước lấy từ `cselSteps()`:
+
+  | Chế độ | Các bước |
+  |---|---|
+  | đấu tay đôi | `p1` → `p2` → `stage` |
+  | hỗn chiến · đánh đội | `chars` (một khung đội hình) → `stage` |
+
+  Người dùng bác lối để hai cột cạnh nhau: *"màn chọn p1 xong r chọn p2 sau, để chung nhìn
+  rối"*. CSS giấu `#colB` ở bước `p1` và `#colA` ở bước `p2`, nên **mỗi bước chỉ có MỘT lưới
+  nhân vật và MỘT thẻ hồ sơ** — gọn hẳn trong một màn hình.
+  - `cselFix()` kéo bước về cho hợp lệ khi đổi chế độ giữa chừng (`p1` không có trong danh
+    sách bước của hỗn chiến).
+  - Dải **`#pickRow`** hiện từ bước `p2` trở đi: mặt + tên của cả hai bên kèm chữ `VS`, nên
+    lúc chọn P2 vẫn thấy P1 vừa chốt.
+  - **Dòng phụ phải vẽ trong `cselPaint()` chứ không chỉ trong `cselRefresh()`** — bấm "Tiếp"
+    chỉ gọi `cselPaint()`, nên để trong `cselRefresh()` thì chữ đứng nguyên ở bước cũ (đã
+    dính: sang bước P2 mà vẫn ghi "Chọn nhân vật cho Người chơi 1"). Cả hai đọc chung
+    `cselSubText()`.
+
+- **Mặt nhân vật lấy từ chính ảnh đã dán** (`avaSrc()` → ô `idle`, Horikita thì `scared`,
+  rồi `stand3`). Chưa dán thì vẫn là emoji, không bao giờ để trống. Ảnh **tới sau** (gói phát
+  hành nạp bằng `fetch`) nên `packLoad()` gọi `avaRefresh()` quét lại mấy thẻ đã dựng — thiếu
+  chỗ này thì mở trang xong thẻ vẫn là emoji cho tới lần dựng lại kế tiếp.
+- **Thẻ hồ sơ chia hai cột** (`.dexGrid`): trái là giới thiệu + bộ chiêu, phải là biểu đồ.
+  Chỉ bật ở bước `p1`/`p2` của trang chơi khi màn rộng hơn 820px; cột hẹp (xưởng, điện thoại)
+  thì lưới tự xếp dọc như cũ.
 - `el(id)` **trả về Ô GIẢ** (`NUL`) khi không tìm thấy: trang chơi bị cắt hàng chục id mà
   engine thì gán thẳng `el('hpK').value` / `el('play').textContent` ở khắp nơi. Vì vậy
   **chỗ nào cần biết ô có thật hay không thì phải hỏi thẳng `document.getElementById`** —
@@ -2136,7 +2162,9 @@ node tools/t_stage.js   # sáu màn đấu: mỗi màn một tông màu riêng, 
                         # hình vector, thẻ chọn màn có ảnh vẽ thật, màn đã chọn được lưu,
                         # và sàn có bóng đổ dưới chân
 node tools/t_play.js    # hai trang: play.html đúng bằng bản dựng từ index.html, đã cắt sạch
-                        # bảng xưởng, luồng arcade ba bước (tiêu đề → nhân vật → màn → đánh),
+                        # bảng xưởng, luồng arcade từng bước (tiêu đề → P1 → P2 → màn → đánh,
+                        # mỗi bước chỉ hiện một cột, dải "đã chọn" giữ P1 lại, Quay lại về
+                        # đúng bước trước),
                         # gói phát hành được nạp, hết trận hiện dải nút, và xưởng vẫn vào
                         # trận bằng MỘT cú bấm #cselGo
 node tools/t_bulk.js    # nạp hàng loạt: bảng đoán tên file (thư mục thắng tên file, alias dài
