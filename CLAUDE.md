@@ -1,4 +1,7 @@
-# autobattle — ghi chú cho Claude
+# Multiverse Battler — ghi chú cho Claude
+
+**Tên game là `Multiverse Battler`** (người dùng đổi từ "Đấu Trường Chiba"). Tên repo vẫn
+là `autobattle` — đừng đổi, đổi là gãy link Pages lẫn mọi đường dẫn cũ.
 
 Game đối kháng tự động, vẽ bằng canvas 2D. **Toàn bộ game nằm trong một file duy nhất:
 `index.html`** (HTML + CSS + JS gói trong một IIFE `(() => { ... })();`). Không có bước
@@ -1521,6 +1524,63 @@ với `Get Pages site failed … Error: Not Found`, vì repo chưa bật Pages n
 
 Kiểm bằng `node tools/t_play.js`.
 
+## 2f. Hai ngôn ngữ, hồ sơ nhân vật, nhạc nền tự chỉnh
+
+Ba yêu cầu đi cùng một lượt: *"chỉnh cho có ít nhất 2 ngôn ngữ Anh - Việt tùy chọn"*,
+*"các nhân vật sẽ xem được thông số và mô tả skill nhìn cho đẹp mắt vào"*, và *"bỏ luôn
+nhạc nền hoặc đưa setup nhạc nền t tự chỉnh"*.
+
+### Ngôn ngữ — `LANG` / `t()` / `tr()`
+
+- `t('khoá')` cho chữ TĨNH (bảng `L.vi` / `L.en`), `tr({vi,en})` cho chữ nằm trong DỮ LIỆU
+  (mô tả chiêu, phụ đề màn, tiểu sử), `tf('khoá',{n:…})` cho câu có chỗ điền số.
+- **Chữ tĩnh trong HTML gắn `data-i18n="khoá"`**, `applyLang()` quét một lượt là đổi hết.
+  Đừng đi gán tay từng `el(...).textContent` — sót là chắc chắn.
+- **TÊN RIÊNG giữ nguyên ở cả hai ngôn ngữ**: tên nhân vật, tên chiêu (`Meteor Strike`),
+  tên màn (`DEEP SPACE`). Dịch mấy cái đó là mất chất arcade và lệch với tên ô dán tiếng.
+- **Nút đổi ngôn ngữ phải có mặt ở CẢ BA chỗ**: thanh công cụ, trong màn chọn nhân vật, và
+  trên màn tiêu đề của trang chơi — dùng chung thuộc tính `data-lang-toggle`. Lúc màn chọn
+  đang mở nó phủ kín thanh công cụ, chỉ để nút ở đó thì bấm không tới (đã dính).
+- Chỉ **XƯỞNG** mới giữ nguyên tiếng Việt (bảng dán ảnh, dán tiếng, ô nhạc, nút thử) — đó là
+  đồ nghề của chủ game. Mọi thứ NGƯỜI CHƠI thấy đều song ngữ.
+- **Nhật ký trận đấu vẫn chỉ có tiếng Việt** — 216 chỗ gọi `say()`, chưa dịch, ghi ở mục 11.
+
+### Hồ sơ nhân vật — `DEX`
+
+`DEX[key]` là lớp **hiển thị**: `role` · `bio` · `st{pow,spd,rng,def,tech}` (thang 1–5) ·
+`skills[{tag,name,vi,en}]`. `dexCard(key)` dựng thẻ: mặt nhân vật, máu, năm thanh chỉ số,
+thẻ chiêu, rồi `<details>` "xem chi tiết số liệu" mở ra **mảng `CHARS[].skills` cũ**.
+
+- Hai thứ **khác việc nhau, đừng gộp**: `DEX` để hiểu nhân vật trong ba giây, `skills` để
+  soi từng con số — và `t_dora.js` / `t_superman.js` quét đúng mảng `skills` đó.
+- **Số trong DEX đọc từ chính hằng số cân bằng** (`${KUNAI_DMG}`, `${SUP.msDmg}`…), không gõ
+  tay, nên chỉnh cân bằng là hồ sơ đổi theo — đừng chép số vào.
+- `tag` chỉ nhận `'1' '2' '3' 'P' 'U'`. Ô nhãn rộng 26px nên `dexTag()` **viết tắt** nội tại
+  / tuyệt chiêu (NT · ULT), chữ đầy đủ nằm ở tooltip — để nguyên "TUYỆT CHIÊU" thì nó xuống
+  ba dòng và tràn ra khỏi ô.
+
+### Nhạc nền — mặc định TẮT, nhạc là của bạn
+
+- `MUSIC.on = false` và `MUSIC.synth = false` ngay từ đầu: mở game lên là im lặng.
+- `BGM_SLOTS` = **8 ô**: `bgm_menu` · `bgm_battle` (dùng chung khi màn chưa có nhạc riêng) ·
+  sáu ô theo sáu màn. Nạp file ở bảng **🎵 Nhạc nền của bạn** trong xưởng, lưu vào kho theo
+  đúng tên ô.
+- Nhạc chạy bằng thẻ `<audio loop>`, **không** đi qua `decodeAudioData` — file nhạc dài,
+  giải mã cả bài ra buffer là ngốn bộ nhớ mà chẳng để làm gì.
+- **Mọi chỗ bật nhạc gọi `musicStart()`**, đừng gọi thẳng `startMusic()` nữa: hàm đó xét theo
+  thứ tự **nhạc của màn → nhạc chung → nhạc tự sinh (nếu bạn bật) → im lặng**.
+- Ô bật nhạc và thanh âm lượng nhạc nằm ở **thanh công cụ chính**, không nằm trong bảng
+  tiếng: cả bảng tiếng bị cắt khỏi `play.html`, để trong đó thì người chơi không tắt bật được.
+- Gói phát hành mang theo cả nhạc (`pack.bgm`) — nhớ là nhạc nặng, xem cảnh báo dung lượng ở
+  mục 2e.
+
+> **Đừng lồng cặp mốc `<!--STUDIO-->` vào trong một cặp khác.** `mk_play.py` cắt bằng regex
+> non-greedy nên cặp lồng bên trong làm khối ngoài **đóng sớm**, và cả bảng tiếng lọt sang
+> trang chơi — lúc đó `buildSfx()` chạy tiếp rồi ném `null.addEventListener`, trang chơi
+> trắng luôn màn tiêu đề. Đã dính đúng một lần khi thêm bảng ô nhạc.
+
+Kiểm bằng `node tools/t_ui.js`.
+
 ## 2b. Khoảng cách khi cận chiến — đừng dán vào nhau
 
 Người dùng bác bản cũ: hai người cận chiến đứng chồng hẳn lên nhau, nhìn chỉ thấy một
@@ -1954,6 +2014,9 @@ node tools/t_chichi.js  # ChiChi: Flying Kick 45 dmg + choáng 2s, và viện bi
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
+node tools/t_ui.js      # đổi tên game, hai ngôn ngữ (nút đổi ở cả ba chỗ, chữ và mô tả chiêu
+                        # đổi theo, nhớ lại lựa chọn), hồ sơ tám nhân vật đủ song ngữ + thẻ
+                        # chiêu vẽ ra thật, nhạc nền mặc định tắt và chạy theo ô nhạc tự nạp
 node tools/t_stage.js   # sáu màn đấu: mỗi màn một tông màu riêng, dán ảnh nền thì ảnh thắng
                         # hình vector, thẻ chọn màn có ảnh vẽ thật, màn đã chọn được lưu,
                         # và sàn có bóng đổ dưới chân
@@ -2074,6 +2137,8 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Bong bóng thoại nhạt hẳn đi, `t_bubble` đổ | lớp tối của sàn vẽ trong `arenaFrame()`, tức SAU lượt vẽ chữ nổi đầu tiên | vẽ lớp tối sau thế giới nhưng **trước** đám float, ở hệ toạ độ màn hình |
 | Test bấm `#arcStart` treo đúng 30 giây | nhịp nháy của nút dùng `transform:scale`, Playwright coi là "chưa đứng yên" nên không bao giờ bấm | nhịp nháy chỉ đổi `box-shadow`, đừng đụng `transform` |
 | Khán đài sân vận động ra vân chéo | chỗ ngồi bốc bằng phép chia dư `(i*37)%W` | bốc bằng hàm nhiễu cố định `sr(i)` |
+| Trang chơi trắng màn tiêu đề, `null.addEventListener` trong `buildSfx` | thêm bảng ô nhạc kèm một cặp mốc `<!--STUDIO-->` **lồng trong** cặp của cả thẻ; `mk_play.py` cắt theo cặp gần nhất nên khối ngoài đóng sớm | đừng lồng mốc; bảng nào đã nằm trong thẻ xưởng thì thôi |
+| Bấm nút đổi ngôn ngữ không được | nút chỉ nằm ở thanh công cụ, mà màn chọn nhân vật phủ kín trang | gắn `data-lang-toggle` cho cả nút trong màn chọn lẫn nút trên màn tiêu đề |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---

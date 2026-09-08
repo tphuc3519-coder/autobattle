@@ -1,7 +1,18 @@
-# Đấu Trường Chiba — auto battle arena
+# Multiverse Battler
 
 Game đối kháng tự động vẽ bằng canvas 2D, **không cần cài gì, không có bước build**.
-Tám nhân vật, sáu màn đấu, ba chế độ (1v1 · hỗn chiến · đánh theo đội).
+Tám đấu thủ từ tám vũ trụ, sáu màn đấu, ba chế độ (1v1 · hỗn chiến · đánh theo đội),
+giao diện **Việt / Anh** đổi được bằng một nút.
+
+## Có gì trong game
+
+| | |
+|---|---|
+| **8 đấu thủ** | mỗi người một hồ sơ: vai trò, năm thanh chỉ số, bộ chiêu mô tả gọn, và phần "xem chi tiết số liệu" cho ai muốn soi từng con số |
+| **6 màn đấu** | Dojo · Night Street · Stadium · Nara Forest · Deep Space · Sunset Roof — mỗi màn có một ô dán ảnh nền riêng |
+| **3 chế độ** | 1v1 · hỗn chiến 3–6 người · đánh đội 2–4 đội |
+| **2 ngôn ngữ** | Tiếng Việt / English, nút 🌐 ở thanh công cụ, trong màn chọn và trên màn tiêu đề |
+| **Nhạc nền của bạn** | mặc định **tắt**; nạp nhạc riêng cho từng màn ở trang xưởng rồi bật ở thanh công cụ |
 
 ## Hai trang, một engine
 
@@ -34,7 +45,7 @@ thư mục `assets/` vào bảng tiếng bằng tay.)
 
 ## Ảnh và tiếng đi từ xưởng sang trang chơi thế nào
 
-1. Mở **trang xưởng**, dán ảnh / tiếng vào các ô (hoặc kéo cả thư mục thả vào — xem
+1. Mở **trang xưởng**, dán ảnh / tiếng / nhạc vào các ô (hoặc kéo cả thư mục thả vào — xem
    *Nạp hàng loạt* trong `CLAUDE.md`).
 2. Bấm **📦 Xuất gói lên web chơi** → được file `pack.json`.
 3. Chép nó vào `assets/pack/pack.json` rồi commit + push.
@@ -107,6 +118,7 @@ Nhắn tôi khi bạn đã có tài khoản (Supabase hay Cloudflare) là tôi n
 node tools/t_reg.js      # 36 cặp đấu, bắt lỗi trang
 node tools/t_play.js     # hai trang: play.html khớp bản dựng, luồng arcade, gói phát hành
 node tools/t_stage.js    # sáu màn đấu, ảnh nền, bóng đổ
+node tools/t_ui.js       # tên game, hai ngôn ngữ, hồ sơ nhân vật, nhạc nền tự chỉnh
 node tools/t_bulk.js     # nạp hàng loạt theo tên file
 node tools/t_voice.js    # bộ giọng dựng sẵn
 ```
