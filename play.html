@@ -341,6 +341,25 @@
     padding:5px 7px;font-size:12px;font-family:"Be Vietnam Pro",sans-serif;text-align:center}
   .hpAll button{padding:5px 10px;font-size:10.5px}
 
+  /* ---- bảng thông số bật lên (chạm hai lần vào ô nhân vật) ----
+     z-index 68: trên màn chọn (.csel = 60) nhưng dưới vỏ arcade (.arc = 70). */
+  .dexPop{position:fixed;inset:0;z-index:68;display:flex;align-items:center;justify-content:center;
+    padding:14px;overflow:auto;background:rgba(6,4,18,.9)}
+  .dexPop.off{display:none}
+  .dexPopBox{width:min(820px,100%);max-height:calc(100vh - 28px);display:flex;flex-direction:column;
+    background:linear-gradient(180deg,#171238,#100C28);border:1px solid #3A3272;border-radius:16px;
+    box-shadow:0 26px 70px rgba(0,0,0,.6)}
+  .dexPopBar{display:flex;align-items:center;gap:9px;padding:11px 12px;border-bottom:1px solid #2A2450}
+  .dexPopX{margin-left:auto;padding:6px 12px;font-size:13px;line-height:1}
+  .dexPopBody{padding:12px;overflow:auto}
+  .dexPopBody .cDetail{margin-top:0}
+  /* Ô nhân vật: chạm hai lần KHÔNG được để trình duyệt hiểu thành phóng to trang. */
+  .cTile{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+  body.arcade #charSelect[data-step="stage"] #tapHint,
+  #charSelect[data-page="stage"] #tapHint{display:none}
+  .tapHint{font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--mute);text-align:center;margin:9px 0 2px;opacity:.75}
+
   /* ô máu ngay trong thẻ hồ sơ: người chơi chỉnh máu từng nhân vật mà không rời màn chọn */
   .dexHp label{display:block}
   .dexHpIn{width:72px;margin-top:2px;background:#0E0B24;color:var(--paper);border:1px solid #3A3272;
@@ -509,6 +528,7 @@
         <button id="hpStd" type="button" data-i18n="hpStd">Chuẩn 800</button></label>
     </div>
     <div class="pickRow off" id="pickRow"></div>
+    <div class="tapHint" id="tapHint" data-i18n="tapHint">Chạm hai lần vào nhân vật để xem thông số đầy đủ</div>
     <!-- Chọn SỐ ĐỘI. Chỉ hiện ở bước đội đầu tiên của trang chơi; xưởng vẫn dùng hai nút
          "+ Thêm đội" / "✕ Bỏ đội" trong đầu mỗi khung (probe.js bấm đúng hai nút đó). -->
     <div class="teamNum off" id="teamNum"></div>
@@ -537,6 +557,21 @@
       <button type="button" data-lang-toggle title="Vietnamese / English">🌐 English</button>
       <div class="cselVs" id="cselVs"></div>
     </div>
+  </div>
+</div>
+
+<!-- Bảng thông số bật lên khi chạm HAI LẦN vào một ô nhân vật. Nằm NGOÀI #charSelect và
+     z-index cao hơn nó, nếu không thì nó bị chính màn chọn phủ mất. -->
+<div class="dexPop off" id="dexPop">
+  <div class="dexPopBox">
+    <div class="dexPopBar">
+      <div class="vTabs">
+        <button class="vTab on" type="button" data-view="simple" data-i18n="vSimple">Xem skill đơn giản</button>
+        <button class="vTab" type="button" data-view="full" data-i18n="vFull">Xem skill chi tiết</button>
+      </div>
+      <button class="dexPopX" id="dexPopX" type="button" title="Đóng">✕</button>
+    </div>
+    <div class="dexPopBody" id="dexPopBody"></div>
   </div>
 </div>
 
@@ -618,6 +653,7 @@ const L={
     skills:'Bộ chiêu', more:'Số liệu thô', less:'Thu gọn',
     hp:'Máu', tagPassive:'Nội tại', tagUlt:'Tuyệt chiêu', tagP:'NT', tagU:'ULT',
     vSimple:'Xem skill đơn giản', vFull:'Xem skill chi tiết',
+    tapHint:'Chạm hai lần vào nhân vật để xem thông số đầy đủ',
     cselP1:'CHỌN <span>NGƯỜI CHƠI 1</span>', cselP2:'CHỌN <span>NGƯỜI CHƠI 2</span>',
     goP2:'Tiếp ▸ Người chơi 2', p1:'Người chơi 1', p2:'Người chơi 2',
     subPick:'Chọn nhân vật cho {who} · {n} nhân vật',
@@ -660,6 +696,7 @@ const L={
     skills:'Move list', more:'Raw numbers', less:'Hide numbers',
     hp:'HP', tagPassive:'Passive', tagUlt:'Ultimate', tagP:'PAS', tagU:'ULT',
     vSimple:'Simple skill view', vFull:'Detailed skill view',
+    tapHint:'Double-tap a fighter to see its full stat sheet',
     cselP1:'SELECT <span>PLAYER 1</span>', cselP2:'SELECT <span>PLAYER 2</span>',
     goP2:'Next ▸ Player 2', p1:'Player 1', p2:'Player 2',
     subPick:'Pick a fighter for {who} · {n} fighters',
@@ -11650,14 +11687,32 @@ function avaRefresh(){
     if(src&&!el2.querySelector('img')) el2.innerHTML=`<img alt="" src="${src}">`;
   }
 }
+/* Chạm HAI LẦN vào một ô nhân vật thì mở bảng thông số của người đó.
+   Tự đo nhịp bấm chứ KHÔNG dùng sự kiện `dblclick`: trên điện thoại cú chạm đôi hay bị
+   trình duyệt nuốt mất để phóng to trang, `dblclick` không bắn ra (CSS trên ô cũng đã đặt
+   `touch-action:manipulation` để chặn cú phóng to đó). */
+const DBL_TAP=380;
+let tapKey='', tapAt=0;
+function tapTwice(key){
+  const gio=Date.now(), hai=(key===tapKey&&gio-tapAt<DBL_TAP);
+  tapKey=key; tapAt=hai?0:gio;      // ăn rồi thì đặt lại, ba cú không thành hai lần mở
+  return hai;
+}
 function tile(key,onClick,on){
   const C=CHARS[key];
-  const t=document.createElement('button');
-  t.className='cTile'+(on?' on':''); t.dataset.key=key; t.type='button'; t.title=C.name;
-  t.innerHTML=`<span class="cAva" style="color:${C.color}">${avaHtml(key)}</span>`+
+  /* Lấy chữ dịch TRƯỚC, và đặt tên biến nút là `o` chứ đừng là `t` — `t` là hàm dịch. */
+  const nhac=t('tapHint');
+  const o=document.createElement('button');
+  o.className='cTile'+(on?' on':'');
+  o.dataset.key=key; o.type='button';
+  o.title=C.name+' — '+nhac;
+  o.innerHTML=`<span class="cAva" style="color:${C.color}">${avaHtml(key)}</span>`+
               `<span class="cName" style="color:${C.color}">${C.short||C.name}</span>`;
-  t.addEventListener('click',onClick);
-  return t;
+  o.addEventListener('click',e=>{
+    onClick(e);                      // cú bấm đầu vẫn CHỌN người đó như cũ
+    if(tapTwice(key)) dexPopOpen(key);
+  });
+  return o;
 }
 /* Khung của một nhóm đội hình. Số đội thay đổi được nên mấy khung này dựng bằng JS chứ
    không cắm sẵn trong HTML; id vẫn giữ nguyên lối grpBox0/grpSlots0/grpList0… */
@@ -12105,14 +12160,38 @@ function dexView(v){
   paintDex();
   Store.set('cfg_dexview',v).catch(()=>{});
 }
+/* Bảng thông số bật lên. Người dùng: "double tap vào icon nhân vật để hiện bảng thông số
+   nhân vật (2 nút xem skill sơ lược / chi tiết)" — nên hai nút đó nằm ngay trong bảng,
+   dùng chung `DEXVIEW` với cặp nút ngoài màn chọn, đổi bên nào bên kia theo. */
+let dexPopKey='';
+function dexPopOpen(key){
+  const box=document.getElementById('dexPop');
+  if(!box) return;                       // trang nào cắt mất bảng thì thôi, đừng nổ
+  dexPopKey=key;
+  box.classList.remove('off');
+  paintDex();
+}
+function dexPopClose(){
+  dexPopKey='';
+  const box=document.getElementById('dexPop');
+  if(box) box.classList.add('off');
+}
 function paintDex(){
   for(const slot of ['a','b']){
     const box=el(slot==='a'?'detailA':'detailB');
     if(box&&box.innerHTML!=='') box.innerHTML=dexCard(TMP[slot]);
   }
+  const pop=document.getElementById('dexPopBody');
+  if(pop&&dexPopKey) pop.innerHTML=dexCard(dexPopKey);
 }
 for(const b of document.querySelectorAll('.vTab'))
   b.addEventListener('click',()=>dexView(b.dataset.view));
+/* Đóng bảng thông số: nút ✕, bấm ra ngoài hộp, hoặc phím Esc. */
+if(document.getElementById('dexPopX'))
+  document.getElementById('dexPopX').addEventListener('click',dexPopClose);
+if(document.getElementById('dexPop'))
+  document.getElementById('dexPop').addEventListener('click',e=>{ if(e.target.id==='dexPop') dexPopClose(); });
+addEventListener('keydown',e=>{ if(e.key==='Escape'&&dexPopKey) dexPopClose(); });
 
 /* Máu chỉnh ngay trong màn chọn — người chơi trang công cộng không có thanh công cụ xưởng,
    nên đây là cửa duy nhất của họ. `hpSet()` gánh cả ba đường: ô trong thẻ hồ sơ, ô "mọi

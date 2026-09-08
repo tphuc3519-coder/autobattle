@@ -1769,6 +1769,21 @@ Cặp nút `.vTab` (`#vSimple` / `#vFull`) nằm ngay dưới dòng phụ của 
 | `full` | thêm bốn thanh chỉ số 1–5 · **bảng chấm điểm thang 100** (tên, mô tả, thanh, điểm, bậc) · toàn bộ số liệu thô của mảng `CHARS[].skills` |
 
 - **Biểu đồ có mặt ở CẢ HAI lối xem** — yêu cầu riêng của người dùng, đừng gỡ khỏi lối đơn giản.
+- **Chạm HAI LẦN vào ô nhân vật thì bật bảng thông số** (`#dexPop`) — người dùng: *"double
+  tap vào icon nhân vật để hiện bảng thông số nhân vật (2 nút xem skill sơ lược/chi tiết)"*.
+  Cặp nút xem skill nằm ngay trong bảng, **dùng chung `DEXVIEW`** với cặp ngoài màn chọn nên
+  đổi bên nào bên kia theo.
+  - **Bắt bằng NHỊP BẤM (`tapTwice`), đừng dùng sự kiện `dblclick`**: trên điện thoại cú chạm
+    đôi hay bị trình duyệt nuốt mất để phóng to trang nên `dblclick` không bắn ra. Ô `.cTile`
+    vì vậy cũng mang `touch-action:manipulation` để chặn cú phóng to đó. Mốc `DBL_TAP = 380ms`;
+    ăn rồi thì đặt lại đồng hồ, ba cú bấm liên tiếp không thành hai lần mở.
+  - **Cú bấm đầu vẫn CHỌN nhân vật như cũ** — chạm hai lần chỉ là mở thêm bảng, không thay
+    chức năng cũ.
+  - Bảng nằm **NGOÀI `#charSelect`** với `z-index:68` (trên `.csel` = 60, dưới `.arc` = 70);
+    để trong màn chọn thì nó bị chính màn chọn phủ mất. Đóng bằng ✕, bấm ra nền, hoặc Esc.
+  - `paintDex()` vẽ lại cả `#dexPopBody` chứ không chỉ hai ô `detailA` / `detailB`.
+  - **Đếm `.vTab` thì phải bám `.cselOpts .vTab`** — cả trang giờ có bốn nút, hai trong bảng.
+  - Trong `tile()` đừng đặt tên biến nút là `t`: `t` là hàm dịch, đặt trùng là che mất nó.
 - Đổi lối xem thì gọi `paintDex()` chứ **đừng gọi `cselRefresh()`**: hàm kia dựng lại cả lưới
   chọn nhân vật, trang cuộn nhảy về đầu.
 - Lựa chọn lưu ở khoá `cfg_dexview`.
@@ -2256,7 +2271,10 @@ node tools/t_ui.js      # đổi tên game, hai ngôn ngữ (MẶC ĐỊNH TIẾ
                         # chữ và mô tả chiêu đổi theo, nhớ lại lựa chọn), hồ sơ tám nhân vật
                         # đủ song ngữ + thẻ chiêu vẽ ra thật, nhạc nền mặc định tắt và chạy
                         # theo ô nhạc tự nạp
-node tools/t_dex.js     # biểu đồ sức mạnh chín trục (đủ tám nhân vật, thang 0-100, sáu bậc chữ cái,
+node tools/t_dex.js     # chạm hai lần vào ô nhân vật thì bật bảng thông số (đúng người vừa chạm,
+                        # hai nút xem skill nằm trong bảng và đi chung lựa chọn với cặp ngoài,
+                        # một cú bấm thì chỉ chọn, X / Esc đóng được, hai cú cách xa nhau
+                        # không tính), biểu đồ sức mạnh chín trục (đủ tám nhân vật, thang 0-100, sáu bậc chữ cái,
                         # nhãn không tràn khỏi khung), hai lối xem skill (đơn giản không kèm bảng
                         # chấm điểm, chi tiết thì có đủ chín dòng — biểu đồ có ở CẢ HAI), máu chuẩn
                         # 800 và ba đường chỉnh máu chạy được ngay trên trang chơi, màn rừng đã bỏ
