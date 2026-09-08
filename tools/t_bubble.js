@@ -57,18 +57,22 @@ function datCanh(page, themBanner) {
   ok(b.trang > .5, `bong bong nam tren ca bang-ron giua man (nen trang ${(b.trang * 100).toFixed(1)}%)`);
   ok(b.vang < .02, `bang-ron giua man khong de len cau thoai (${(b.vang * 100).toFixed(1)}%)`);
 
-  /* thứ tự ngược lại vẫn phải ra kết quả như nhau: chỗ đứng trong mảng không còn quyết định */
+  /* Thứ tự ngược lại vẫn phải ra kết quả như nhau: chỗ đứng trong mảng không còn quyết định.
+     Phải DỰNG LẠI CẢNH rồi mới đảo, đừng dùng lại hai float của lượt đo trước: chữ nổi trôi
+     lên 30px mỗi giây nên đo lại sau 250ms là khối chữ đã lệch khỏi ô đang soi, ra thấp hơn
+     lượt đầu hơn chục điểm phần trăm mà chẳng liên quan gì tới thứ tự vẽ. */
+  await datCanh(page, false);
   await page.evaluate(() => {
     const G = window.__G(); const [chat, chieu] = G.floats;
     G.floats.length = 0; G.floats.push(chieu, chat);
   });
   await page.waitForTimeout(250);
   const c = await dem(page);
-  /* Mốc 50% quá sát: chỗ chồng nhau đo ra 49~51% tuỳ lần bốc vị trí, nên nhánh này đổ oan
-     chừng hai trên ba lần — kể cả trên bản chưa đụng tới gì. Bằng chứng thật rằng bong bóng
-     nằm trên vẫn là dòng "viền vàng 0%" ngay dưới; nền trắng chỉ cần đủ cao để phân biệt
-     với lúc bị băng-rôn đè lên (lúc đó tụt hẳn xuống dưới 40%). */
-  ok(c.trang > .45, `dao thu tu trong mang van the (nen trang ${(c.trang * 100).toFixed(1)}%)`);
+  /* Đo cùng tuổi float với lượt đầu nên so THẲNG với nó được: lệch quá 6 điểm phần trăm là
+     thứ tự trong mảng có ảnh hưởng thật. Bằng chứng chắc nhất vẫn là viền vàng 0%. */
+  ok(Math.abs(c.trang - a.trang) < .06,
+     `dao thu tu trong mang van the (nen trang ${(c.trang * 100).toFixed(1)}% vs ${(a.trang * 100).toFixed(1)}%)`);
+  ok(c.vang < .02, `dao thu tu thi vien vang van khong de len cau thoai (${(c.vang * 100).toFixed(1)}%)`);
 
   /* không có câu thoại thì băng-rôn tên chiêu vẫn phải vẽ như cũ */
   await page.evaluate(() => {

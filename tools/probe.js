@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { execFileSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
 const SRC = path.join(ROOT, 'index.html');
@@ -79,6 +80,10 @@ window.__bulkSprMatch=bulkSprMatch; window.__bulkSfxMatch=bulkSfxMatch;
 window.__bulkSprites=bulkSprites; window.__bulkSfxFiles=bulkSfxFiles;
 window.__bulkNames=bulkNames; window.__bulkNorm=bulkNorm;
 window.__voicePack=voicePack;
+window.__STAGES=STAGES; window.__setStage=k=>{ STAGE=k; }; window.__stageOf=stageOf;
+window.__STAGE=()=>STAGE; window.__stageArt=stageArt; window.__arenaFloor=arenaFloor;
+window.__stageThumb=stageThumb; window.__packBuild=packBuild; window.__packLoad=packLoad;
+window.__ARCADE=()=>ARCADE; window.__groundShadows=groundShadows; window.__running=()=>running;
 /* ba chế độ đấu */
 window.__PMODE=()=>PMODE; window.__ROSTERS=ROSTERS; window.__PICK=PICK;
 window.__buildRoster=buildRoster; window.__spawnSpots=spawnSpots; window.__newGame=newGame;
@@ -98,6 +103,17 @@ function build() {
   const i = s.lastIndexOf('})();');
   if (i < 0) throw new Error('không tìm thấy dấu đóng IIFE trong index.html');
   const out = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'autobattle-')), 'probe.html');
+  fs.writeFileSync(out, s.slice(0, i) + HOOKS + s.slice(i));
+  return out;
+}
+
+/* Bản "có móc" của TRANG CHƠI: dựng lại play.html từ index.html rồi chèn hooks y hệt.
+   Dựng lại chứ không đọc file có sẵn — như vậy test luôn soi đúng index.html hiện tại. */
+function buildPlay() {
+  execFileSync('python3', [path.join(ROOT, 'tools', 'mk_play.py')], { stdio: 'pipe' });
+  const s = fs.readFileSync(path.join(ROOT, 'play.html'), 'utf8');
+  const i = s.lastIndexOf('})();');
+  const out = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'autobattle-play-')), 'play.html');
   fs.writeFileSync(out, s.slice(0, i) + HOOKS + s.slice(i));
   return out;
 }
@@ -168,4 +184,4 @@ async function openMulti(mode, picks, opt) {
   return { browser, page, errors };
 }
 
-module.exports = { build, openGame, openMulti, playwright, SRC, ROOT };
+module.exports = { build, buildPlay, openGame, openMulti, playwright, SRC, ROOT };

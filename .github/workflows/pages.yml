@@ -1,0 +1,58 @@
+# Đưa game lên GitHub Pages. Đẩy lên nhánh main là trang tự cập nhật.
+#
+# BẬT MỘT LẦN: vào repo → Settings → Pages → Build and deployment → Source = "GitHub Actions".
+# Xong rồi thì:
+#   trang chơi   https://<tài-khoản>.github.io/autobattle/
+#   trang xưởng  https://<tài-khoản>.github.io/autobattle/studio/
+#
+# Trang xưởng CHỈ được giấu đường dẫn chứ không khoá — GitHub Pages không có mật khẩu.
+# Ai mò đúng /studio/ vẫn mở được, nhưng họ chỉ sửa được bản trong máy họ: gói phát hành
+# nằm trong repo, muốn đổi thì phải commit.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dựng thư mục đem lên mạng
+        run: |
+          set -e
+          # play.html là bản dựng từ index.html — dựng lại ngay tại đây cho chắc là mới
+          python3 tools/mk_play.py
+          mkdir -p site/studio
+          cp play.html site/index.html          # trang chơi nằm ở gốc
+          cp index.html site/studio/index.html  # trang xưởng nằm trong /studio/
+          # ảnh, tiếng và gói phát hành: cả hai trang cùng đọc
+          [ -d assets ] && cp -r assets site/assets || true
+          echo "site/ có: $(ls site | tr '\n' ' ')"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
