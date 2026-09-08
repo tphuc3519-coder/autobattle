@@ -1515,6 +1515,89 @@ Decision Making) — đó là phần được miễn, không phải lỗi.
   Thùng rác chỉ giữ **lần xoá gần nhất** (`SPR_TRASH` / `SFX_TRASH`), mất khi tải lại trang.
   Nút xoá cả bộ ảnh giờ cũng hỏi lại và hoàn tác được, giống bên bảng tiếng.
 
+### Nạp hàng loạt theo tên file — khỏi bấm từng ô
+
+Người dùng bác lối bấm tay: *"cứ tự add tốn thời gian quá"* — hơn 120 ô ảnh và hơn 70 ô
+tiếng, mỗi ô một cú bấm. Cả hai bảng vì vậy có thêm **nạp hàng loạt**: chọn cả một thư mục
+(hoặc kéo thả cả thư mục vào bảng) rồi game **tự đoán file nào thuộc ô nào theo TÊN FILE**.
+
+| Nút / vùng | Làm gì |
+|---|---|
+| ⚡ Nạp cả thư mục ảnh / tiếng | `<input webkitdirectory>` — quét hết file bên trong |
+| ⚡ Nạp nhiều ảnh / tiếng | chọn một nắm file rời |
+| vùng `.drop` và cả `#slotArea` / `#sfxArea` | kéo thả; thả thư mục thì đi qua `webkitGetAsEntry()` để lấy hết file con |
+| 📋 Tải danh sách tên file | xuất `ten-file-anh.txt` / `ten-file-tieng.txt` liệt kê **đúng tên mong đợi của từng ô** kèm nhãn tiếng Việt — đưa cho ai vẽ ảnh / thu tiếng là họ đặt tên đúng ngay từ đầu |
+
+Cách đoán (`bulkSprMatch()` / `bulkSfxMatch()`), ba luật, đừng nới ra:
+1. **Chỉ ĐOÁN rồi gọi lại đúng `setFrames()` / `decodeInto()`** như lúc bấm tay — không có
+   đường nạp thứ hai, nên sửa cách lưu ở trên là chỗ này đi theo.
+2. **Tra theo TÊN KHOÁ** (`SETS[].poses[][0]`, `SFX_EVENTS[][0]`), đúng luật "khoá giữ
+   nguyên đời đời" ngay dưới. Nhãn tiếng Việt và bảng `BULK_CHAR` / `BULK_POSE` chỉ là alias
+   phụ — `bulkNorm()` bỏ dấu nên `Phi tiêu.PNG` vẫn vào ô `atk1`.
+3. **Khớp theo TỪ trước** (`kono idle`), không ra mới khớp dính liền (`konoidle`), và
+   **alias DÀI HƠN thắng** — nếu không thì `punch` nuốt mất `punch2`, `shika_stab` nuốt mất
+   `shika_stab_hit`.
+
+- **Tên thư mục thắng tên file** (+200 điểm): `suzune/idle.png` là của Horikita kể cả khi
+  trong tên file có chữ của người khác.
+- **Số ở đuôi sau dấu ngăn là SỐ KHUNG**, gom vào cùng một ô và xếp theo thứ tự:
+  `kono_idle_1.png` + `kono_idle_2.png` ⇒ một ô `idle` hai khung. Số **dính liền chữ** thì
+  là tên ô chứ không phải số khung (`punch2`, `dance1`) — đó là lý do regex đòi `(^|\s)`
+  trước con số.
+- **Đoán không ra thì in tên file ra màn hình** (`#sprBulkNote` / `#sfxBulkNote`), không im
+  lặng bỏ qua: người dùng đổi tên rồi thả lại là xong.
+- Đừng cho Shikamaru mượn alias `nara` — đó là khoá của ô con nai.
+
+Kiểm bằng `node tools/t_bulk.js`.
+
+### Bộ giọng máy dựng sẵn — `assets/voice` + `tools/mk_voice.py`
+
+Chín ô 🎙 không còn phải chờ người dùng tự thu: `python3 tools/mk_voice.py` đọc thẳng lời
+thoại **lấy từ `index.html`** (`SUZ_ASK`, `SUZ_DECISIONS`, `SUZ_WRONG`, `AYA_STAND`,
+`AYA_LAST`, `AYA_BYE`, `GN_SHOUT`, `GN_CHANGE_LINE`, `DORA_HI`) rồi ghi ra
+`assets/voice/*.wav` + `manifest.json`.
+
+```bash
+sudo apt-get install -y espeak-ng mbrola mbrola-us1 mbrola-us2 mbrola-en1
+```
+
+**Giọng lấy từ MBROLA**, không phải giọng tổng hợp thuần của espeak — đó là giọng ghép từ
+mẫu người thật thu sẵn nên nghe ra người hơn hẳn. Bốn nhân vật bốn giọng khác nhau:
+
+| Ai | Giọng | Cao độ |
+|---|---|---|
+| Horikita | `mb-us1` (nữ) | giữ nguyên |
+| Ayanokouji | `mb-us2` (nam) | ×0.96, trầm và phẳng |
+| Ginyu | `mb-en1` (nam Anh) | ×0.86, kéo trầm cho ra phản diện |
+| Doraemon | `mb-us1` | ×1.22, kéo cao cho ra mèo máy |
+
+- **Cao độ chỉnh bằng `shift()` chứ không bằng cờ `-p`**: giọng MBROLA có timbre cố định nên
+  `-p` gần như không ăn thua (đo bằng số lần đổi dấu: 253 với `p=50`, 244 với `p=90`).
+  `shift()` đổi bước đọc mẫu nên kéo hẳn cao độ, và `fit()` đo lại thời lượng SAU khi shift
+  vì phép đó co giãn cả độ dài.
+- **`mb-us3` thiếu diphone** — câu `AYA_LAST` ra 4 cảnh báo `unknown`, mà MBROLA thiếu thì
+  **thay bằng im lặng chứ không báo lỗi**, tức nuốt mất âm mà vẫn chạy tiếp. Vì vậy script
+  đếm số cảnh báo và in ra dòng cuối; thấy khác 0 thì đổi giọng. Hiện tại: **0**.
+- Máy chưa cài MBROLA thì tự lùi về giọng espeak (`VOICES[...][1]`) — vẫn chạy, chỉ nghe máy móc.
+- **Sửa câu thoại trong `index.html` thì chạy lại script**, đừng chép tay câu sang script.
+- **Hai ô đọc nối tiếp chia ĐÚNG từng đoạn `SUZ_BUBBLE*RT` = 3.8 giây**: game nhảy tới đoạn
+  thứ n bằng phép nhân, nên câu ngắn phải chèn im lặng cho đủ đoạn, và thứ tự câu phải y hệt
+  thứ tự trong mảng (mục 4, luật về tiếng số 2).
+- **Câu dài quá khung thì đọc NHANH hơn chứ không cắt** (`fit()` tăng dần tốc đọc) — luật
+  "tiếng không được sống lâu hơn hình đi kèm". Đo được: `aya_join` 4.7s trên khung 5.0s,
+  `ginyu_change` 3.8s trên 5.2s, `suz_think` 2.3s trên 2.4s.
+- File 16000 Hz mono 16-bit (đúng tần số của MBROLA), cả bộ ~3.1 MB.
+
+**`voicePack()` trong game tự nạp bộ này**, gọi ở cuối lượt khôi phục của `buildSfx()` nên
+**ô nào người dùng đã tự nạp thì bỏ qua, không bao giờ đè lên**. Nó đi bằng `fetch` nên:
+
+| Mở trang kiểu gì | Ra sao |
+|---|---|
+| `http://` (ví dụ `python3 -m http.server`) | tự nạp cả chín ô lúc mở trang |
+| `file://` | trình duyệt chặn fetch — kéo thẳng thư mục `assets/voice` thả vào bảng tiếng, hoặc bấm 🎙 **Nạp bộ giọng mẫu** để hiện đúng câu nhắc đó |
+
+Kiểm bằng `node tools/t_voice.js`.
+
 > **Khoá phải giữ nguyên đời đời.** Đổi tên khoá là xoá sạch ảnh và tiếng người dùng đã nạp.
 > Đổi tên một ô thì chỉ đổi **nhãn**, giữ nguyên tên khoá.
 
@@ -1779,6 +1862,12 @@ node tools/t_chichi.js  # ChiChi: Flying Kick 45 dmg + choáng 2s, và viện bi
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
+node tools/t_bulk.js    # nạp hàng loạt: bảng đoán tên file (thư mục thắng tên file, alias dài
+                        # thắng alias ngắn, số đuôi là số khung), nạp thật qua ô chọn file,
+                        # file đoán không ra được báo tên, danh sách tên file đủ mọi ô
+node tools/t_voice.js   # bộ giọng máy: file khớp lời thoại trong index.html, hai ô đọc nối tiếp
+                        # chia đúng từng đoạn 3.8s, mở bằng http thì tự nạp, ô người dùng đã tự
+                        # nạp thì không bị đè
 node tools/t_bubble.js  # bong bóng thoại nằm trên băng-rôn tên chiêu và băng-rôn giữa màn
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
                         # khiêu khích kéo địch ở mọi khoảng cách, anh miễn nhiễm Sexy no Jutsu,
@@ -1903,11 +1992,11 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 - Bộ ảnh thẻ nhân vật (dựng bằng script trong thư mục nháp, chụp bằng Playwright,
   `deviceScaleFactor: 2`, font **Liberation Sans** — DejaVu Sans Mono thiếu chữ tiếng Việt có dấu)
   đang cũ: chưa có Shikamaru lẫn Horikita, và chưa cập nhật vài con số của Tsubasa/ChiChi.
-- Ô tiếng của Doraemon cũng mới chỉ có tiếng tự tạo trong `synth()`; ô giọng `dora_hi` đang
-  chờ người dùng thu file (giọng Nhật cũng được — chỉ **chữ hiển thị** mới bắt buộc tiếng
+- Ô tiếng của Doraemon mới chỉ có tiếng tự tạo trong `synth()`; ô giọng `dora_hi` giờ đã có
+  **giọng MBROLA dựng sẵn** trong `assets/voice`, vẫn chờ người dùng thu file thật đè lên (giọng Nhật cũng được — chỉ **chữ hiển thị** mới bắt buộc tiếng
   Anh). Quãng ra mắt cố tình để đúng **1.5 giây thật ở thanh tốc độ gốc** để canh tiếng.
-- Ô tiếng của Captain Ginyu cũng mới chỉ có tiếng tự tạo trong `synth()`; hai ô giọng
-  (`ginyu_force`, `ginyu_change`) đang chờ người dùng thu file. Quãng bay vào sân cố tình
+- Ô tiếng của Captain Ginyu mới chỉ có tiếng tự tạo trong `synth()`; hai ô giọng
+  (`ginyu_force`, `ginyu_change`) đã có **giọng máy dựng sẵn**, vẫn chờ file thu thật. Quãng bay vào sân cố tình
   để đúng **1.5 giây thật ở thanh tốc độ gốc** để người dùng canh tiếng — đổi thanh tốc độ
   thì con số đó đổi theo, đây không phải lỗi.
 - **Đã hạ sát thương hai vòng theo yêu cầu**: hưng phấn +75%→+50% dmg (khống chế +30%→+40%),
@@ -1927,5 +2016,6 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
   **không có ô giọng nào** vì bản mô tả không nêu câu thoại nào cho anh. Quãng xuất hiện cố ý
   để đúng **1.5 giây thật ở thanh tốc độ gốc** để người dùng canh tiếng; đổi thanh tốc độ thì
   con số đó đổi theo, đây không phải lỗi.
-- Ô tiếng của Horikita/Ayanokouji mới chỉ có tiếng tự tạo trong `synth()`; hai ô đọc nối tiếp
-  (`suz_decide`, `suz_wrong`) đang chờ người dùng thu file TTS theo `SUZ_DECISIONS` / `SUZ_WRONG`.
+- Ô tiếng của Horikita/Ayanokouji mới chỉ có tiếng tự tạo trong `synth()`; sáu ô giọng của hai
+  người (kể cả hai ô đọc nối tiếp `suz_decide` / `suz_wrong`) đã có **giọng máy dựng sẵn** đúng
+  thứ tự `SUZ_DECISIONS` / `SUZ_WRONG`, vẫn chờ file thu thật đè lên.

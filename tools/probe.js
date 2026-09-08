@@ -74,6 +74,11 @@ window.__supKbTake=supKbTake; window.__supCC=supCC; window.__supFreezeOn=supFree
 window.__supChill=supChill; window.__supIceBreak=supIceBreak; window.__supBurn=supBurn;
 window.__supInterrupt=supInterrupt; window.__supermanTick=supermanTick; window.__supVector=supVector;
 window.__supEyeY=f=>supEyeY(f); window.__bindTick=bindTick; window.__supStatus=supStatus;
+/* nạp hàng loạt ảnh / tiếng */
+window.__bulkSprMatch=bulkSprMatch; window.__bulkSfxMatch=bulkSfxMatch;
+window.__bulkSprites=bulkSprites; window.__bulkSfxFiles=bulkSfxFiles;
+window.__bulkNames=bulkNames; window.__bulkNorm=bulkNorm;
+window.__voicePack=voicePack;
 /* ba chế độ đấu */
 window.__PMODE=()=>PMODE; window.__ROSTERS=ROSTERS; window.__PICK=PICK;
 window.__buildRoster=buildRoster; window.__spawnSpots=spawnSpots; window.__newGame=newGame;
