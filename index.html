@@ -59,6 +59,12 @@
     background:#4A1230;color:#FFC7DA;font-size:11px;line-height:1;padding:3px 5px;cursor:pointer}
   .slotwrap.set .slotdel{display:block}
   .slotdel:hover{background:#7A1B48;color:#fff}
+  /* vùng kéo thả cả thư mục ảnh / tiếng vào một lượt */
+  .drop{border:1px dashed #3B3170;border-radius:9px;padding:12px 10px;text-align:center;
+    font-size:12px;color:var(--mute);margin-top:10px;transition:.15s}
+  .drop.on{border-color:var(--gold);color:var(--paper);background:#171233}
+  .drop b{color:var(--paper)}
+  .note{font-size:12px;color:var(--gold);line-height:1.6;margin-top:6px}
   .who{font-weight:800;font-size:13px;margin:12px 0 6px}
   .who.first{margin-top:0}
   details summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--gold);list-style:none}
@@ -198,6 +204,13 @@
       <summary>🖼️ Nạp ảnh nhân vật cho từng động tác (bấm vào ô để chọn ảnh PNG nền trong)</summary>
       <div id="slotArea"></div>
       <div class="bar" style="margin:10px 0 0">
+        <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
+          ⚡ Nạp cả thư mục ảnh<input type="file" id="sprBulkDir" accept="image/*" multiple webkitdirectory style="display:none">
+        </label>
+        <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
+          ⚡ Nạp nhiều ảnh<input type="file" id="sprBulk" accept="image/*" multiple style="display:none">
+        </label>
+        <button id="sprNames">📋 Tải danh sách tên file</button>
         <button id="sprExport">⬇ Xuất bộ ảnh</button>
         <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
           ⬆ Nhập bộ ảnh<input type="file" id="sprImportFile" accept="application/json" style="display:none">
@@ -205,6 +218,9 @@
         <button id="sprClear">🗑 Xoá ảnh đã lưu</button>
         <button id="sprUndo" style="display:none;background:#3A2E00;border-color:var(--gold);color:var(--gold)">↩ Hoàn tác xoá</button>
       </div>
+      <div class="drop" id="sprDrop">⚡ <b>Kéo cả thư mục ảnh thả vào đây</b> — game tự chia ảnh về đúng ô theo tên file
+        (<kbd>kono_idle.png</kbd>, <kbd>suzune/punch3.png</kbd>, nhiều khung thì <kbd>kono_idle_1.png</kbd>).</div>
+      <div class="note" id="sprBulkNote"></div>
       <div class="help" id="sprStatus">Ảnh bạn nạp sẽ được lưu lại, mở lại trang là có sẵn.</div>
       <div class="help">Dán nhầm ảnh vào một ô thì bấm dấu <b>✕</b> ở góc trên bên phải của chính ô đó để xoá riêng nó — mấy ô khác giữ nguyên. Xoá xong còn nút <b>Hoàn tác</b> để lấy lại.</div>
       <div class="help"><b>Chọn nhiều ảnh cùng lúc cho một ô</b> (Ctrl/Cmd + click) thì game sẽ chạy chúng thành hoạt ảnh — 2–4 khung mỗi động tác là đủ mượt. Ảnh được thu về cao 480px trước khi lưu — đủ nét mà không quá nặng.</div>
@@ -217,6 +233,13 @@
       <div class="bar" style="margin:10px 0 0">
         <label class="chk">Âm lượng <input type="range" id="vol" min="0" max="1" step="0.05" value="0.6" style="width:110px"></label>
         <label class="chk"><input type="checkbox" id="mute"> Tắt tiếng đòn</label>
+        <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
+          ⚡ Nạp cả thư mục tiếng<input type="file" id="sfxBulkDir" accept="audio/*" multiple webkitdirectory style="display:none">
+        </label>
+        <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
+          ⚡ Nạp nhiều tiếng<input type="file" id="sfxBulk" accept="audio/*" multiple style="display:none">
+        </label>
+        <button id="sfxNames">📋 Tải danh sách tên file</button>
         <button id="sfxExport">⬇ Sao lưu tiếng</button>
         <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
           ⬆ Nhập tiếng<input type="file" id="sfxImportFile" accept="application/json" style="display:none">
@@ -230,6 +253,9 @@
         <label class="chk">Âm lượng nhạc <input type="range" id="musicVol" min="0" max="1" step="0.05" value="0.3" style="width:110px"></label>
       </div>
       <div id="sfxArea" style="margin-top:8px"></div>
+      <div class="drop" id="sfxDrop">⚡ <b>Kéo cả thư mục tiếng thả vào đây</b> — game tự chia file về đúng ô theo tên
+        (<kbd>ginyu_force.mp3</kbd>, <kbd>shika/shika_stab_hit.wav</kbd>).</div>
+      <div class="note" id="sfxBulkNote"></div>
       <div class="help" id="sfxStatus">Đang dùng tiếng tự tạo sẵn có. Nạp file để thay thế từng loại.</div>
       <div class="help">Nạp nhầm file vào một ô thì bấm dấu <b>✕</b> ở góc trên bên phải của chính ô đó để xoá riêng nó — ô ấy quay về tiếng tự tạo, mấy ô khác giữ nguyên. Xoá xong còn nút <b>Hoàn tác xoá</b> để lấy lại.</div>
       <div class="help">File dài (trên 2.6 giây) sẽ được đọc <b>nối tiếp từng đoạn ~2 giây</b>, lần sau nói tiếp chỗ cũ chứ không quay lại đầu — hợp cho một tràng ChiChi chửi dài. Riêng <b>Kamehameha, Masenko và Đôi cánh đại bàng phát từ đầu, dài tối đa 5 giây</b> (tia bắn ra ở giây thứ 2.8 và 2.2 ở tốc độ gốc). Tiếng kết thúc, nhạc thắng, hò reo và <b>tiếng mở khu rừng nhà Nara</b> thì phát trọn vẹn, dài bao nhiêu cũng được. Tiếng gọi Goku / Gohan và tiếng viện binh hiện ra thì phát từ đầu rồi <b>tắt đúng lúc hình tắt</b>, file dài hơn chỉ nghe được phần đầu. <b>Tiếng Shikamaru than thở</b> đọc nối tiếp từng đoạn dài bằng bong bóng thoại, còn <b>tiếng mắng của ChiChi</b> đọc theo đúng nhịp hét — chỉnh tốc ra chiêu thì độ dài đoạn đổi theo. Cả hai đều nói tiếp chỗ cũ, hết file thì quay lại đầu, nên một file thu nhiều câu là mỗi lần một câu khác chứ không lặp câu đầu. Ô nào có dấu <b>🎙 GIỌNG</b> là chỗ thu lời thoại: <b>Horikita</b> có ba ô (câu tự hỏi · quyết định đúng · quyết định sai), <b>Ayanokouji</b> có ba ô cho đúng ba câu anh nói — "Stand up and fight." lúc bước ra chắn đòn, câu lúc vào sân sát cánh lần cuối, và "This is where I take my leave." lúc rời sàn. Mỗi câu tự cắt đúng lúc bong bóng thoại tắt, thu dài hơn thì phần đuôi không nghe được.</div>
@@ -1829,6 +1855,251 @@ async function decodeInto(name,dataUrl){
     }catch(e){}
     if(n) sfxStatus(`Đã khôi phục ${n} tiếng đã nạp.`);
   })();
+})();
+
+/* ---------- nạp hàng loạt ảnh và tiếng ----------
+   Bấm từng ô một là chỗ ngốn thời gian nhất của cả trang: hơn 120 ô ảnh và hơn 70 ô
+   tiếng. Khu này nhận CẢ MỘT THƯ MỤC (chọn bằng nút, hoặc kéo thả vào bảng) rồi tự
+   đoán file nào thuộc ô nào theo TÊN FILE: `kono_idle.png`, `suzune/punch3.png`,
+   `ginyu_force.mp3`. Đoán không ra thì in tên file ra màn hình chứ không im lặng bỏ qua
+   — người dùng đổi tên rồi thả lại là xong.
+
+   Ba luật của khu này:
+   1. Chỉ ĐOÁN rồi gọi lại đúng `setFrames()` / `decodeInto()` như lúc bấm tay, không tự
+      viết đường nạp thứ hai — sửa cách lưu ở trên là chỗ này đi theo.
+   2. Tra theo TÊN KHOÁ (`SETS[].poses[][0]`, `SFX_EVENTS[][0]`), đúng luật "khoá giữ
+      nguyên đời đời" ở mục 4 của CLAUDE.md. Nhãn tiếng Việt chỉ là alias phụ.
+   3. Khớp theo TỪ trước (`kono idle`), không ra mới khớp dính liền (`konoidle`), và
+      alias DÀI HƠN thắng — nếu không thì `punch` nuốt mất `punch2`. */
+const bulkNorm=s=>String(s||'').toLowerCase().replace(/đ/g,'d')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+const bulkWord=(txt,a)=>(' '+txt+' ').includes(' '+a+' ');
+/* điểm của một alias: khớp theo từ thì cộng hẳn 50 để luôn thắng lối khớp dính liền */
+function bulkScore(txt,tight,a){
+  if(!a)return -1;
+  if(bulkWord(txt,a)) return a.length+50;
+  const t=a.replace(/ /g,'');
+  return t.length>=4&&tight.includes(t) ? a.length : -1;
+}
+/* Tên gọi khác của từng nhân vật. Đừng cho Shikamaru mượn chữ "nara" — đó là khoá của
+   ô con nai. */
+const BULK_CHAR={
+  kono:['konohamaru','kono','sarutobi'], chichi:['chichi','chi chi'],
+  tsubasa:['tsubasa','ozora'], shika:['shikamaru','shika'],
+  suzune:['horikita','suzune','suz'], ginyu:['ginyu','captain ginyu'],
+  dora:['doraemon','dora'], superman:['superman','clark','sup'],
+  ayanokouji:['ayanokouji','kiyotaka','aya'], nara:['nara','con nai','deer','nai'],
+  garden:['garden','khu rung','phong canh','background'],
+  goku:['goku'], gohan:['gohan'], hyuga:['hyuga'], misaki:['misaki'],
+  wakabayashi:['wakabayashi'], ishizaki:['ishizaki']
+};
+/* Tên gọi khác của từng động tác, dùng chung cho mọi nhân vật. Nhãn tiếng Việt trong
+   SETS tự thành alias nên ở đây chỉ cần thêm lối viết tiếng Anh hay gặp. */
+const BULK_POSE={
+  idle:['idle','stand','normal','thu the'], hurt:['hurt','damaged','trung don'],
+  injured:['injured','hurt bad','toi ta'], atk1:['atk1','attack1','skill1','basic'],
+  atk2:['atk2','attack2','skill2'], ulti:['ulti','ultimate','ult'],
+  skill:['skill','special'], punch:['punch','dam'], kick:['kick','da'],
+  win:['win','victory','an mung'], down:['down','defeat','nga'], ko:['ko','knockout'],
+  lazy:['lazy','sit','ngoi luoi'], fly:['fly','flying','bay'], land:['land','tiep dat'],
+  clone:['clone','bunshin','phan than'], beam:['beam'], flash:['flash'],
+  change:['change'], panic:['panic'], heat:['heat','heatvision'],
+  freeze:['freeze','freezebreath'], meteor:['meteor','meteorstrike'],
+  copter:['copter','takecopter','chong chong'], slam:['slam','tackle'],
+  aircannon:['aircannon','air cannon'], smalllight:['smalllight','small light'],
+  scared:['scared','so hai'], block:['block','guard','do don'],
+  think:['think','thinking'], stab:['stab'], wings:['wings','eagle'],
+  bicycle:['bicycle','overhead'], drive:['drive'], guard:['guard'],
+  strike:['strike'], leave:['leave'], call:['call'], wounded:['wounded','chan thuong']
+};
+function bulkPoseAlias(pk,label){
+  const a=[bulkNorm(pk)];
+  if(BULK_POSE[pk]) for(const x of BULK_POSE[pk]) a.push(bulkNorm(x));
+  const nh=bulkNorm(label); if(nh) a.push(nh);
+  return a.filter(Boolean);
+}
+/* Tách một đường dẫn thành: chữ của thư mục, chữ của tên file, và số khung ở đuôi
+   (`kono_idle_2.png` = khung thứ 2 của ô idle). Số dính liền chữ (`punch2`, `dance1`)
+   KHÔNG phải số khung — đó là tên ô. */
+function bulkParts(p){
+  const seg=String(p||'').split(/[\\/]/).filter(Boolean);
+  const file=(seg.pop()||'').replace(/\.[a-z0-9]+$/i,'');
+  let txt=bulkNorm(file), frame=0;
+  const m=txt.match(/(?:^|\s)(?:frame|khung|f)?\s*(\d{1,3})$/);
+  if(m&&m.index>0){ frame=+m[1]; txt=txt.slice(0,m.index).trim(); }
+  return {dirs:bulkNorm(seg.join(' ')), txt, frame};
+}
+/* Đoán một file ảnh thuộc ô nào. Trả {ck,pk,frame} hoặc null. */
+function bulkSprMatch(p){
+  const {dirs,txt,frame}=bulkParts(p);
+  const full=(dirs?dirs+' ':'')+txt, tight=full.replace(/ /g,''), tTxt=txt.replace(/ /g,'');
+  let ck=null,best=-1;
+  for(const s of SETS) for(const a of (BULK_CHAR[s.key]||[s.key]).map(bulkNorm)){
+    /* tên thư mục nói chắc hơn tên file: `suzune/idle.png` là của Horikita kể cả khi
+       trong tên file có chữ của người khác */
+    const d=bulkScore(dirs,dirs.replace(/ /g,''),a), t=bulkScore(txt,tTxt,a);
+    const pt=d>=0?d+200:t;
+    if(pt>best){ best=pt; ck=s.key; }
+  }
+  if(!ck)return null;
+  const set=SETS.find(s=>s.key===ck);
+  let pk=null,bp=-1;
+  for(const [k,label] of set.poses) for(const a of bulkPoseAlias(k,label)){
+    const pt=bulkScore(full,tight,a);
+    if(pt>bp){ bp=pt; pk=k; }
+  }
+  return pk?{ck,pk,frame}:null;
+}
+/* Đoán một file tiếng thuộc ô nào. Khoá tiếng vốn đã có tiền tố nhân vật
+   (`shika_stab_hit`) nên chỉ cần khớp khoá; alias dài hơn thắng, nhờ vậy
+   `shika_stab_hit.mp3` không rơi vào ô `shika_stab`. */
+function bulkSfxMatch(p){
+  const {dirs,txt}=bulkParts(p);
+  const full=(dirs?dirs+' ':'')+txt, tight=full.replace(/ /g,'');
+  let nm=null,best=-1;
+  for(const [k] of SFX_EVENTS){
+    const pt=bulkScore(full,tight,bulkNorm(k));
+    if(pt>best){ best=pt; nm=k; }
+  }
+  return nm;
+}
+const bulkRead=f=>new Promise(r=>{ const rd=new FileReader(); rd.onload=()=>r(rd.result); rd.onerror=()=>r(null); rd.readAsDataURL(f); });
+const bulkPath=f=>f.webkitRelativePath||f.bulkPath||f.name;
+function bulkNote(id,tit,miss){
+  const e=document.getElementById(id); if(!e)return;
+  e.innerHTML='';
+  const h=document.createElement('div'); h.innerHTML='<b>'+tit+'</b>'; e.appendChild(h);
+  if(miss.length){
+    const d=document.createElement('div');
+    d.textContent='Không đoán được ô cho '+miss.length+' file: '+miss.slice(0,12).join(', ')+(miss.length>12?'…':'')
+      +' — bấm "Tải danh sách tên file" để xem tên đúng rồi thả lại.';
+    e.appendChild(d);
+  }
+}
+/* Nạp một nắm file ảnh. Gom theo ô trước rồi mới nạp, nên nhiều khung của cùng một
+   động tác vào đúng một ô và xếp theo số khung. */
+async function bulkSprites(files){
+  const hit={}, miss=[];
+  for(const f of files){
+    if(!/\.(png|jpe?g|gif|webp|bmp|avif)$/i.test(f.name)){ continue; }
+    const m=bulkSprMatch(bulkPath(f));
+    if(!m){ miss.push(f.name); continue; }
+    const k=m.ck+'|'+m.pk; (hit[k]=hit[k]||[]).push({frame:m.frame,f});
+  }
+  const keys=Object.keys(hit);
+  if(!keys.length){
+    status('Không đoán được ô nào từ đám file vừa thả.');
+    bulkNote('sprBulkNote','Chưa nạp được ảnh nào.',miss);
+    return {n:0,slots:0,miss};
+  }
+  let n=0; const chars=new Set();
+  for(const k of keys){
+    const [ck,pk]=k.split('|');
+    const set=SETS.find(s=>s.key===ck), label=(set.poses.find(p=>p[0]===pk)||[])[1];
+    const list=hit[k].sort((a,b)=>a.frame-b.frame||a.f.name.localeCompare(b.f.name));
+    const imgs=[];
+    for(const it of list){
+      const src=await bulkRead(it.f); if(!src){ miss.push(it.f.name); continue; }
+      const raw=await loadImg(src); if(!raw){ miss.push(it.f.name); continue; }
+      const small=await loadImg(shrink(raw,480)); if(small)imgs.push(small);
+    }
+    if(!imgs.length)continue;
+    setFrames(ck,pk,imgs,label); n+=imgs.length; chars.add(ck);
+    status(`Đang nạp hàng loạt… ${n} ảnh`);
+  }
+  for(const ck of chars) await saveChar(ck);
+  const tit=`Đã nạp ${n} ảnh vào ${keys.length} ô của ${chars.size} nhân vật.`;
+  status(tit); bulkNote('sprBulkNote',tit,miss);
+  return {n,slots:keys.length,miss};
+}
+/* Nạp một nắm file tiếng. Trùng ô thì file sau đè lên file trước, đúng như bấm tay. */
+async function bulkSfxFiles(files){
+  const miss=[], done=[];
+  for(const f of files){
+    if(!/\.(mp3|wav|ogg|m4a|aac|webm|flac)$/i.test(f.name)) continue;
+    const nm=bulkSfxMatch(bulkPath(f));
+    if(!nm){ miss.push(f.name); continue; }
+    if(f.size>4*1024*1024){ miss.push(f.name+' (>4MB)'); continue; }
+    const src=await bulkRead(f); if(!src){ miss.push(f.name); continue; }
+    if(!(await decodeInto(nm,src))){ miss.push(f.name); continue; }
+    sfxSet(nm,true);
+    try{ await Store.set('sfx_'+nm,src); }catch(e){}
+    done.push(nm);
+    sfxStatus(`Đang nạp hàng loạt… ${done.length} file tiếng`);
+  }
+  const tit=done.length?`Đã nạp ${done.length} file tiếng.`:'Không đoán được ô nào từ đám file vừa thả.';
+  sfxStatus(tit); bulkNote('sfxBulkNote',tit,miss);
+  return {n:done.length,done,miss};
+}
+/* Danh sách tên file mong đợi — đưa cho ai vẽ ảnh / thu tiếng là họ đặt tên đúng ngay
+   từ đầu, khỏi phải sửa tay từng cái. */
+function bulkNames(kind){
+  const L=[];
+  if(kind==='spr'){
+    L.push('# TÊN FILE ẢNH — đặt tên đúng như cột đầu rồi kéo cả thư mục thả vào bảng ảnh.');
+    L.push('# Nhiều khung hoạt ảnh cho cùng một động tác: thêm _1 _2 _3 (kono_idle_1.png).');
+    L.push('# Để trong thư mục theo tên nhân vật cũng được: kono/idle.png');
+    for(const s of SETS){ L.push(''); L.push('# '+s.name);
+      for(const [pk,label] of s.poses) L.push(`${s.key}_${pk}.png   # ${label}`); }
+  }else{
+    L.push('# TÊN FILE TIẾNG — đặt tên đúng như cột đầu rồi kéo cả thư mục thả vào bảng âm thanh.');
+    L.push('# Đuôi gì cũng được: mp3 / wav / ogg / m4a. Ô có 🎙 là chỗ thu lời thoại.');
+    for(const [nm,label] of SFX_EVENTS) L.push(`${nm}.mp3   # ${label}`);
+  }
+  return L.join('\n');
+}
+function bulkDownload(name,txt){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
+  a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+/* Kéo thả: thả cả thư mục thì phải đi qua webkitGetAsEntry để lấy hết file bên trong;
+   trình duyệt nào không có thì lui về danh sách file phẳng. */
+async function bulkDropFiles(dt){
+  const ents=[...(dt.items||[])].map(i=>i.webkitGetAsEntry&&i.webkitGetAsEntry()).filter(Boolean);
+  if(!ents.length) return [...dt.files];
+  const out=[];
+  const walk=(ent,base)=>new Promise(res=>{
+    if(ent.isFile){ ent.file(f=>{ try{ f.bulkPath=base+ent.name; }catch(e){} out.push(f); res(); },()=>res()); return; }
+    if(!ent.isDirectory){ res(); return; }
+    const rd=ent.createReader(), all=[];
+    const step=()=>rd.readEntries(es=>{
+      if(!es.length){ Promise.all(all.map(e=>walk(e,base+ent.name+'/'))).then(res); return; }
+      all.push(...es); step();
+    },()=>res());
+    step();
+  });
+  await Promise.all(ents.map(e=>walk(e,'')));
+  return out;
+}
+function bulkZone(el,fn){
+  if(!el)return;
+  const on=v=>el.classList.toggle('on',v);
+  el.addEventListener('dragover',e=>{ e.preventDefault(); on(true); });
+  el.addEventListener('dragleave',()=>on(false));
+  el.addEventListener('drop',async e=>{
+    e.preventDefault(); on(false);
+    const files=await bulkDropFiles(e.dataTransfer);
+    if(files.length) fn(files);
+  });
+}
+(function wireBulk(){
+  const pick=(id,fn)=>{ const el=document.getElementById(id); if(el) el.addEventListener('change',async ev=>{
+    const files=[...ev.target.files]; ev.target.value='';
+    if(files.length) await fn(files);
+  }); };
+  pick('sprBulk',bulkSprites); pick('sprBulkDir',bulkSprites);
+  pick('sfxBulk',bulkSfxFiles); pick('sfxBulkDir',bulkSfxFiles);
+  bulkZone(document.getElementById('sprDrop'),bulkSprites);
+  bulkZone(document.getElementById('slotArea'),bulkSprites);
+  bulkZone(document.getElementById('sfxDrop'),bulkSfxFiles);
+  bulkZone(document.getElementById('sfxArea'),bulkSfxFiles);
+  const nb=(id,kind,file)=>{ const el=document.getElementById(id); if(el) el.addEventListener('click',()=>{
+    bulkDownload(file,bulkNames(kind));
+    (kind==='spr'?status:sfxStatus)('Đã tải danh sách tên file về máy.');
+  }); };
+  nb('sprNames','spr','ten-file-anh.txt'); nb('sfxNames','sfx','ten-file-tieng.txt');
 })();
 
 /* ---------- nhạc nền ---------- */

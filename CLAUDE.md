@@ -1515,6 +1515,41 @@ Decision Making) — đó là phần được miễn, không phải lỗi.
   Thùng rác chỉ giữ **lần xoá gần nhất** (`SPR_TRASH` / `SFX_TRASH`), mất khi tải lại trang.
   Nút xoá cả bộ ảnh giờ cũng hỏi lại và hoàn tác được, giống bên bảng tiếng.
 
+### Nạp hàng loạt theo tên file — khỏi bấm từng ô
+
+Người dùng bác lối bấm tay: *"cứ tự add tốn thời gian quá"* — hơn 120 ô ảnh và hơn 70 ô
+tiếng, mỗi ô một cú bấm. Cả hai bảng vì vậy có thêm **nạp hàng loạt**: chọn cả một thư mục
+(hoặc kéo thả cả thư mục vào bảng) rồi game **tự đoán file nào thuộc ô nào theo TÊN FILE**.
+
+| Nút / vùng | Làm gì |
+|---|---|
+| ⚡ Nạp cả thư mục ảnh / tiếng | `<input webkitdirectory>` — quét hết file bên trong |
+| ⚡ Nạp nhiều ảnh / tiếng | chọn một nắm file rời |
+| vùng `.drop` và cả `#slotArea` / `#sfxArea` | kéo thả; thả thư mục thì đi qua `webkitGetAsEntry()` để lấy hết file con |
+| 📋 Tải danh sách tên file | xuất `ten-file-anh.txt` / `ten-file-tieng.txt` liệt kê **đúng tên mong đợi của từng ô** kèm nhãn tiếng Việt — đưa cho ai vẽ ảnh / thu tiếng là họ đặt tên đúng ngay từ đầu |
+
+Cách đoán (`bulkSprMatch()` / `bulkSfxMatch()`), ba luật, đừng nới ra:
+1. **Chỉ ĐOÁN rồi gọi lại đúng `setFrames()` / `decodeInto()`** như lúc bấm tay — không có
+   đường nạp thứ hai, nên sửa cách lưu ở trên là chỗ này đi theo.
+2. **Tra theo TÊN KHOÁ** (`SETS[].poses[][0]`, `SFX_EVENTS[][0]`), đúng luật "khoá giữ
+   nguyên đời đời" ngay dưới. Nhãn tiếng Việt và bảng `BULK_CHAR` / `BULK_POSE` chỉ là alias
+   phụ — `bulkNorm()` bỏ dấu nên `Phi tiêu.PNG` vẫn vào ô `atk1`.
+3. **Khớp theo TỪ trước** (`kono idle`), không ra mới khớp dính liền (`konoidle`), và
+   **alias DÀI HƠN thắng** — nếu không thì `punch` nuốt mất `punch2`, `shika_stab` nuốt mất
+   `shika_stab_hit`.
+
+- **Tên thư mục thắng tên file** (+200 điểm): `suzune/idle.png` là của Horikita kể cả khi
+  trong tên file có chữ của người khác.
+- **Số ở đuôi sau dấu ngăn là SỐ KHUNG**, gom vào cùng một ô và xếp theo thứ tự:
+  `kono_idle_1.png` + `kono_idle_2.png` ⇒ một ô `idle` hai khung. Số **dính liền chữ** thì
+  là tên ô chứ không phải số khung (`punch2`, `dance1`) — đó là lý do regex đòi `(^|\s)`
+  trước con số.
+- **Đoán không ra thì in tên file ra màn hình** (`#sprBulkNote` / `#sfxBulkNote`), không im
+  lặng bỏ qua: người dùng đổi tên rồi thả lại là xong.
+- Đừng cho Shikamaru mượn alias `nara` — đó là khoá của ô con nai.
+
+Kiểm bằng `node tools/t_bulk.js`.
+
 > **Khoá phải giữ nguyên đời đời.** Đổi tên khoá là xoá sạch ảnh và tiếng người dùng đã nạp.
 > Đổi tên một ô thì chỉ đổi **nhãn**, giữ nguyên tên khoá.
 
@@ -1779,6 +1814,9 @@ node tools/t_chichi.js  # ChiChi: Flying Kick 45 dmg + choáng 2s, và viện bi
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
+node tools/t_bulk.js    # nạp hàng loạt: bảng đoán tên file (thư mục thắng tên file, alias dài
+                        # thắng alias ngắn, số đuôi là số khung), nạp thật qua ô chọn file,
+                        # file đoán không ra được báo tên, danh sách tên file đủ mọi ô
 node tools/t_bubble.js  # bong bóng thoại nằm trên băng-rôn tên chiêu và băng-rôn giữa màn
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
                         # khiêu khích kéo địch ở mọi khoảng cách, anh miễn nhiễm Sexy no Jutsu,
