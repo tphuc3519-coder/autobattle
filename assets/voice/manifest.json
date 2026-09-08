@@ -1,11 +1,11 @@
 {
- "note": "Bộ giọng máy dựng bằng espeak-ng qua tools/mk_voice.py",
+ "note": "Bo giong dung bang MBROLA + espeak-ng qua tools/mk_voice.py",
  "slots": {
   "suz_think": {
    "file": "suz_think.wav",
    "lines": 1,
    "seg": null,
-   "sec": 1.09
+   "sec": 2.33
   },
   "suz_decide": {
    "file": "suz_decide.wav",
@@ -23,37 +23,37 @@
    "file": "aya_stand.wav",
    "lines": 1,
    "seg": null,
-   "sec": 0.89
+   "sec": 1.83
   },
   "aya_join": {
    "file": "aya_join.wav",
    "lines": 1,
    "seg": null,
-   "sec": 2.36
+   "sec": 4.67
   },
   "aya_bye": {
    "file": "aya_bye.wav",
    "lines": 1,
    "seg": null,
-   "sec": 1.19
+   "sec": 2.22
   },
   "ginyu_force": {
    "file": "ginyu_force.wav",
    "lines": 1,
    "seg": null,
-   "sec": 0.7
+   "sec": 1.44
   },
   "ginyu_change": {
    "file": "ginyu_change.wav",
    "lines": 1,
    "seg": null,
-   "sec": 1.87
+   "sec": 3.84
   },
   "dora_hi": {
    "file": "dora_hi.wav",
    "lines": 1,
    "seg": null,
-   "sec": 1.08
+   "sec": 1.84
   }
  }
 }

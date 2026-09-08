@@ -1552,20 +1552,41 @@ Kiểm bằng `node tools/t_bulk.js`.
 
 ### Bộ giọng máy dựng sẵn — `assets/voice` + `tools/mk_voice.py`
 
-Chín ô 🎙 không còn phải chờ người dùng tự thu: `python3 tools/mk_voice.py` gọi **espeak-ng**
-đọc thẳng lời thoại **lấy từ `index.html`** (`SUZ_ASK`, `SUZ_DECISIONS`, `SUZ_WRONG`,
-`AYA_STAND`, `AYA_LAST`, `AYA_BYE`, `GN_SHOUT`, `GN_CHANGE_LINE`, `DORA_HI`) rồi ghi ra
-`assets/voice/*.wav` + `manifest.json`. Giọng máy, nghe ra robot, nhưng đúng câu và đúng
-nhịp — thu file thật đè lên lúc nào cũng được.
+Chín ô 🎙 không còn phải chờ người dùng tự thu: `python3 tools/mk_voice.py` đọc thẳng lời
+thoại **lấy từ `index.html`** (`SUZ_ASK`, `SUZ_DECISIONS`, `SUZ_WRONG`, `AYA_STAND`,
+`AYA_LAST`, `AYA_BYE`, `GN_SHOUT`, `GN_CHANGE_LINE`, `DORA_HI`) rồi ghi ra
+`assets/voice/*.wav` + `manifest.json`.
 
+```bash
+sudo apt-get install -y espeak-ng mbrola mbrola-us1 mbrola-us2 mbrola-en1
+```
+
+**Giọng lấy từ MBROLA**, không phải giọng tổng hợp thuần của espeak — đó là giọng ghép từ
+mẫu người thật thu sẵn nên nghe ra người hơn hẳn. Bốn nhân vật bốn giọng khác nhau:
+
+| Ai | Giọng | Cao độ |
+|---|---|---|
+| Horikita | `mb-us1` (nữ) | giữ nguyên |
+| Ayanokouji | `mb-us2` (nam) | ×0.96, trầm và phẳng |
+| Ginyu | `mb-en1` (nam Anh) | ×0.86, kéo trầm cho ra phản diện |
+| Doraemon | `mb-us1` | ×1.22, kéo cao cho ra mèo máy |
+
+- **Cao độ chỉnh bằng `shift()` chứ không bằng cờ `-p`**: giọng MBROLA có timbre cố định nên
+  `-p` gần như không ăn thua (đo bằng số lần đổi dấu: 253 với `p=50`, 244 với `p=90`).
+  `shift()` đổi bước đọc mẫu nên kéo hẳn cao độ, và `fit()` đo lại thời lượng SAU khi shift
+  vì phép đó co giãn cả độ dài.
+- **`mb-us3` thiếu diphone** — câu `AYA_LAST` ra 4 cảnh báo `unknown`, mà MBROLA thiếu thì
+  **thay bằng im lặng chứ không báo lỗi**, tức nuốt mất âm mà vẫn chạy tiếp. Vì vậy script
+  đếm số cảnh báo và in ra dòng cuối; thấy khác 0 thì đổi giọng. Hiện tại: **0**.
+- Máy chưa cài MBROLA thì tự lùi về giọng espeak (`VOICES[...][1]`) — vẫn chạy, chỉ nghe máy móc.
 - **Sửa câu thoại trong `index.html` thì chạy lại script**, đừng chép tay câu sang script.
 - **Hai ô đọc nối tiếp chia ĐÚNG từng đoạn `SUZ_BUBBLE*RT` = 3.8 giây**: game nhảy tới đoạn
   thứ n bằng phép nhân, nên câu ngắn phải chèn im lặng cho đủ đoạn, và thứ tự câu phải y hệt
   thứ tự trong mảng (mục 4, luật về tiếng số 2).
 - **Câu dài quá khung thì đọc NHANH hơn chứ không cắt** (`fit()` tăng dần tốc đọc) — luật
-  "tiếng không được sống lâu hơn hình đi kèm". Đo được: `aya_join` 2.4s trên khung 5.0s,
-  `ginyu_change` 1.9s trên 5.2s.
-- File 11025 Hz mono 16-bit, cả bộ ~1.9 MB.
+  "tiếng không được sống lâu hơn hình đi kèm". Đo được: `aya_join` 4.7s trên khung 5.0s,
+  `ginyu_change` 3.8s trên 5.2s, `suz_think` 2.3s trên 2.4s.
+- File 16000 Hz mono 16-bit (đúng tần số của MBROLA), cả bộ ~3.1 MB.
 
 **`voicePack()` trong game tự nạp bộ này**, gọi ở cuối lượt khôi phục của `buildSfx()` nên
 **ô nào người dùng đã tự nạp thì bỏ qua, không bao giờ đè lên**. Nó đi bằng `fetch` nên:
@@ -1972,7 +1993,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
   `deviceScaleFactor: 2`, font **Liberation Sans** — DejaVu Sans Mono thiếu chữ tiếng Việt có dấu)
   đang cũ: chưa có Shikamaru lẫn Horikita, và chưa cập nhật vài con số của Tsubasa/ChiChi.
 - Ô tiếng của Doraemon mới chỉ có tiếng tự tạo trong `synth()`; ô giọng `dora_hi` giờ đã có
-  **giọng máy dựng sẵn** trong `assets/voice`, vẫn chờ người dùng thu file thật đè lên (giọng Nhật cũng được — chỉ **chữ hiển thị** mới bắt buộc tiếng
+  **giọng MBROLA dựng sẵn** trong `assets/voice`, vẫn chờ người dùng thu file thật đè lên (giọng Nhật cũng được — chỉ **chữ hiển thị** mới bắt buộc tiếng
   Anh). Quãng ra mắt cố tình để đúng **1.5 giây thật ở thanh tốc độ gốc** để canh tiếng.
 - Ô tiếng của Captain Ginyu mới chỉ có tiếng tự tạo trong `synth()`; hai ô giọng
   (`ginyu_force`, `ginyu_change`) đã có **giọng máy dựng sẵn**, vẫn chờ file thu thật. Quãng bay vào sân cố tình
