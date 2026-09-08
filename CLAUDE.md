@@ -82,7 +82,10 @@ while (acc >= 1/120) { step(1/120); acc -= 1/120; }
 
 ## 2. Tám nhân vật và những con số đã chốt
 
-Bảy người đầu **1000 máu**, riêng **Superman 800 máu** (`HP`). Bảng `CHARS` là nơi khai tất cả: mỗi nhân vật có
+**Cả tám người cùng 800 máu** — `HP_STD = 800`, người dùng chốt: *"máu setting chuẩn là 800"*.
+Bảng `HP` chỉ là chỗ giữ con số của từng người để người chơi chỉnh lẻ; mọi chỗ cần một con số
+mặc định thì đọc `HP_STD` chứ đừng cắm cứng (xem mục 2g). *(Đường đi: bảy người 1000 + Superman
+800 → cả bảng 800.)* Bảng `CHARS` là nơi khai tất cả: mỗi nhân vật có
 `init(f)`, `think(f,e,d,auto)`, `gauge(f)` và mảng `skills` (chuỗi HTML hiển thị trong
 màn chọn nhân vật — nhớ cập nhật khi đổi số).
 
@@ -1072,7 +1075,8 @@ chuẩn bị nhìn thấy rõ** để đối phương kịp né hoặc ngắt.
 > `t_superman.js` quét cả mảng `skills` để chắc không lẫn một chữ có dấu nào, và soi đủ mười
 > bốn cái tên người dùng liệt kê.
 
-> **Anh là người DUY NHẤT không có 1000 máu: `HP.superman = 800`.** Cả bộ chiêu cân theo đúng
+> **Bộ chiêu của anh cân theo đúng 800 máu** (`HP_STD`; anh là người đầu tiên có con số này,
+> giờ cả bảng cùng 800). Cả bộ chiêu cân theo đúng
 > con số đó — đòn mạnh nhất **132** (147 khi địch đang Frozen), tức 16.5% thanh máu. **Không
 > chiêu nào được phép chạm mốc 200 trong một lần dùng**, và **không có chí mạng ngẫu nhiên**
 > (nhãn `METEOR STRIKE!` truyền vào `hurt()` chỉ là băng-rôn tên chiêu, đúng lối `RASENGAN!`
@@ -1446,9 +1450,16 @@ và *"tân trang sàn đấu luôn"*. Hai thứ đó nằm chung một chỗ.
 | `dojo` | DOJO | vách giấy shoji, xà gỗ, biểu ngữ đỏ, sàn ván |
 | `street` | NIGHT STREET | dãy nhà tối, cửa sổ sáng đèn, bảng neon hắt xuống mặt đường |
 | `stadium` | STADIUM | khán đài lốm đốm, hai giàn đèn, sân cỏ có vạch kẻ và vòng tròn giữa sân |
-| `forest` | NARA FOREST | thân cây, tán lá, sương là là mặt đất |
+| `forest` | FOREST | thân cây, tán lá, sương là là mặt đất |
 | `space` | DEEP SPACE | sao, tinh vân, hành tinh, sàn kim loại kẻ ô |
 | `roof` | SUNSET ROOF | trời hoàng hôn, chân trời nhà cao tầng, mái ngói chạy về phía xa |
+
+> **Màn rừng KHÔNG mang tên nhà Nara.** Người dùng chốt: *"bỏ chữ khu rừng nara mà thay
+> thành rừng bthg trong khi chọn sàn"* — đây là một sàn đấu bình thường, ai đánh cũng được,
+> không phải lãnh địa của Shikamaru. Tên hiện ra là `FOREST` / `Rừng rậm`. **Khoá vẫn là
+> `forest`** (khoá giữ nguyên đời đời — đổi là mất ảnh nền người dùng đã dán), và **tuyệt
+> chiêu `Nara Clan Forest` của Shikamaru thì giữ nguyên tên**: đó là tên chiêu, không phải
+> tên màn.
 
 - **Mỗi màn CÒN CÓ một ô dán ảnh nền**: nhóm `stages` nằm trong `SETS` như một "nhân vật",
   nên nó đi chung cả bảng dán ảnh, nút ✕ xoá từng ô, nạp hàng loạt lẫn gói phát hành —
@@ -1580,6 +1591,87 @@ thẻ chiêu, rồi `<details>` "xem chi tiết số liệu" mở ra **mảng `C
 > trắng luôn màn tiêu đề. Đã dính đúng một lần khi thêm bảng ô nhạc.
 
 Kiểm bằng `node tools/t_ui.js`.
+
+## 2g. Biểu đồ sức mạnh, hai lối xem skill, và máu chỉnh thoải mái
+
+Người dùng gửi ảnh một biểu đồ mạng nhện (vòng nét đứt, bậc chữ cái S→E) và chốt ba việc đi
+chung một lượt: *"lúc ấn chọn nhân vật có thêm nút (xem skill đơn giản - xem skill chi tiết)"*,
+*"thiết kế thêm biểu đồ dạng như ảnh tôi gửi thể hiện sức mạnh các nhân vật"*, và *"lượng máu
+khi ở trang cho mng chơi thay đổi thoải mái - máu setting chuẩn là 800"*.
+
+### Chín tiêu chí — `PW_AXES` + `DEX[key].pw`
+
+`PW_AXES` khai chín trục theo đúng thứ tự người dùng liệt kê; mỗi trục có **nhãn ngắn** (`s`,
+dùng quanh biểu đồ), **tên đầy đủ** (`n`, dùng trong bảng chấm điểm) và **một câu mô tả** (`d`),
+tất cả đều song ngữ:
+
+| Trục | Đo cái gì |
+|---|---|
+| Damage | tổng khả năng gây sát thương, burst + DPS |
+| Durability | máu, giáp, giảm sát thương, khiên, hồi phục |
+| Mobility | tốc chạy, dash, dịch chuyển, áp sát / thoát thân |
+| Attack Speed | tần suất ra đòn và tốc thi triển chiêu |
+| Range | đánh nhau ở khoảng cách xa và an toàn |
+| Crowd Control | choáng, làm chậm, hất lùi, trói, câm lặng |
+| Utility | buff, debuff, hồi máu, triệu hồi, phản đòn |
+| Consistency | phát huy đều tay tới đâu, ít phụ thuộc điều kiện / may rủi |
+| Comeback Potential | thấp máu thì biến hình / buff / ultimate mạnh tới đâu |
+
+- Điểm nằm trong `DEX[key].pw`, **thang 0–100**, và đây là **bảng chấm tay** chứ không phải
+  phép đo tự động từ hằng số cân bằng — khác hẳn phần số liệu của `DEX[].skills` (mục 2f) vốn
+  bắt buộc đọc từ hằng số. Lý do: một con số như "sát thương" phải gộp burst, DPS và cả tần
+  suất bắn trúng, không hằng số đơn lẻ nào nói lên được. **Sửa cân bằng nhiều thì nhớ chấm
+  lại tay**, `t_dex.js` chỉ kiểm khung (đủ chín trục, nằm trong 0–100, không ai copy số của ai)
+  chứ không kiểm gu.
+- `pwGrade(v)` quy ra **sáu bậc E · D · C · B · A · S**, mỗi bậc rộng `100/6` — đúng bằng sáu
+  vòng của biểu đồ, nên chạm vòng ngoài cùng là S. `pwAvg(key)` là điểm trung bình, hiện ở
+  góc phải dòng tiêu đề biểu đồ.
+
+### `radarSvg()` — vẽ bằng SVG, không phải canvas
+
+Thẻ hồ sơ là HTML nên SVG nhúng thẳng vào chuỗi được, tự co theo bề ngang cột và không vỡ nét.
+Mấy chỗ dễ sai:
+
+- **`RADAR_PAD` phải chừa chỗ cho cả DÒNG CHỮ nhãn**, không chỉ cho điểm neo: nhãn hai bên canh
+  mép (`text-anchor` start/end) nên chữ chạy tiếp ra ngoài điểm neo. Để hẹp là chữ đầu bị cắt
+  cụt — đã dính đúng một lần, `Ổn định 44` chỉ còn `định 44`. `t_dex.js` đo hẳn
+  `getBoundingClientRect()` của từng nhãn so với khung SVG.
+- Trục đầu tiên ở **12 giờ** (góc `-90°`) rồi quay theo chiều kim đồng hồ, đúng lối ảnh mẫu.
+- Bậc chữ cái ghi dọc **trục 12 giờ**, sáu cái cho sáu vòng.
+- Vùng tô lấy **màu của chính nhân vật** (`C.color`) với `fill-opacity .30`, nên hai cột trái
+  phải của màn chọn 1v1 nhìn ra ngay ai mạnh mảng nào.
+
+### Hai lối xem — `DEXVIEW` + `dexView()`
+
+Cặp nút `.vTab` (`#vSimple` / `#vFull`) nằm ngay dưới dòng phụ của màn chọn:
+
+| | Có gì |
+|---|---|
+| `simple` | mặt nhân vật · ô máu · một câu giới thiệu · **biểu đồ** · bộ chiêu viết gọn |
+| `full` | thêm năm thanh chỉ số 1–5 · **bảng chấm điểm thang 100** (tên, mô tả, thanh, điểm, bậc) · toàn bộ số liệu thô của mảng `CHARS[].skills` |
+
+- **Biểu đồ có mặt ở CẢ HAI lối xem** — yêu cầu riêng của người dùng, đừng gỡ khỏi lối đơn giản.
+- Đổi lối xem thì gọi `paintDex()` chứ **đừng gọi `cselRefresh()`**: hàm kia dựng lại cả lưới
+  chọn nhân vật, trang cuộn nhảy về đầu.
+- Lựa chọn lưu ở khoá `cfg_dexview`.
+
+### Máu — `HP_STD` và ba đường chỉnh
+
+`HP_STD = 800`, `HP_MIN = 100`, `HP_MAX = 9999`. Trang chơi bị cắt hết thanh công cụ xưởng nên
+**màn chọn nhân vật là cửa duy nhất của người chơi**, vì vậy có đủ ba đường, tất cả đi qua
+`hpSet()` / `hpSetAll()` → `hpSave()`:
+
+| Đường | Ở đâu |
+|---|---|
+| ô máu trong từng thẻ hồ sơ (`.dexHpIn`) | chỉnh riêng một nhân vật |
+| ô **Máu mọi nhân vật** (`#hpAll`) | ghi đè cả bảng |
+| nút **Chuẩn 800** (`#hpStd`) | kéo cả bảng về `HP_STD` |
+
+- Ô trong thẻ do `dexCard()` dựng lại liên tục ⇒ bắt sự kiện **theo uỷ quyền** ở `document`,
+  và **không vẽ lại thẻ ngay lúc gõ**, không thì con trỏ nhảy khỏi ô sau mỗi phím.
+- Hai ô máu cũ trên thanh công cụ xưởng (`#hpK` / `#hpC`) giữ nguyên, vẫn đi qua `onHp()`.
+
+Kiểm bằng `node tools/t_dex.js`.
 
 ## 2b. Khoảng cách khi cận chiến — đừng dán vào nhau
 
@@ -2017,6 +2109,11 @@ node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng
 node tools/t_ui.js      # đổi tên game, hai ngôn ngữ (nút đổi ở cả ba chỗ, chữ và mô tả chiêu
                         # đổi theo, nhớ lại lựa chọn), hồ sơ tám nhân vật đủ song ngữ + thẻ
                         # chiêu vẽ ra thật, nhạc nền mặc định tắt và chạy theo ô nhạc tự nạp
+node tools/t_dex.js     # biểu đồ sức mạnh chín trục (đủ tám nhân vật, thang 0-100, sáu bậc chữ cái,
+                        # nhãn không tràn khỏi khung), hai lối xem skill (đơn giản không kèm bảng
+                        # chấm điểm, chi tiết thì có đủ chín dòng — biểu đồ có ở CẢ HAI), máu chuẩn
+                        # 800 và ba đường chỉnh máu chạy được ngay trên trang chơi, màn rừng đã bỏ
+                        # chữ Nara mà tuyệt chiêu của Shikamaru thì vẫn giữ
 node tools/t_stage.js   # sáu màn đấu: mỗi màn một tông màu riêng, dán ảnh nền thì ảnh thắng
                         # hình vector, thẻ chọn màn có ảnh vẽ thật, màn đã chọn được lưu,
                         # và sàn có bóng đổ dưới chân
@@ -2139,6 +2236,8 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Khán đài sân vận động ra vân chéo | chỗ ngồi bốc bằng phép chia dư `(i*37)%W` | bốc bằng hàm nhiễu cố định `sr(i)` |
 | Trang chơi trắng màn tiêu đề, `null.addEventListener` trong `buildSfx` | thêm bảng ô nhạc kèm một cặp mốc `<!--STUDIO-->` **lồng trong** cặp của cả thẻ; `mk_play.py` cắt theo cặp gần nhất nên khối ngoài đóng sớm | đừng lồng mốc; bảng nào đã nằm trong thẻ xưởng thì thôi |
 | Bấm nút đổi ngôn ngữ không được | nút chỉ nằm ở thanh công cụ, mà màn chọn nhân vật phủ kín trang | gắn `data-lang-toggle` cho cả nút trong màn chọn lẫn nút trên màn tiêu đề |
+| Đội hình hỗn chiến / đánh đội trắng trơn giữa chừng, `t_modes` đổ ở chỗ khác nhau mỗi lần | thêm một `await Store.get(...)` vào `loadSaved()` đẩy lượt `cselRefresh()` ở cuối hàm lùi lại một nhịp IndexedDB — rơi đúng vào lúc người dùng vừa bấm đổi chế độ, lượt vẽ muộn quét sạch khung đội hình vừa mở | đọc khoá phụ bằng `.then()` chứ đừng `await`; mọi thứ cần đọc trước `cselRefresh()` thì gom vào đúng chỗ cũ, đừng nối thêm |
+| Nhãn biểu đồ mạng nhện bị cắt cụt chữ đầu (`Ổn định` còn `định`) | `RADAR_PAD` chỉ chừa chỗ cho ĐIỂM NEO, mà nhãn hai bên canh mép nên chữ chạy tiếp ra ngoài | nới chỗ chừa; test đo `getBoundingClientRect()` của từng nhãn so với khung SVG |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---

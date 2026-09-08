@@ -210,6 +210,49 @@
   .dexRaw summary{font-size:10.5px;color:var(--mute);font-family:"Space Mono",monospace;letter-spacing:.06em}
   .dexRaw .cSkills{display:block;margin-top:6px}
 
+  /* ---- dải tuỳ chọn trên đầu màn chọn: hai lối xem skill + ô máu ---- */
+  .cselOpts{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 14px;margin:8px 0 2px}
+  .vTabs{display:flex;gap:0;border:1px solid #3A3272;border-radius:11px;overflow:hidden;background:#150F32}
+  .vTab{border:0;border-radius:0;background:transparent;color:var(--mute);font-size:11.5px;font-weight:700;
+    padding:7px 14px;letter-spacing:.02em}
+  .vTab+.vTab{border-left:1px solid #3A3272}
+  .vTab.on{background:linear-gradient(180deg,#3A2E7A,#2A2158);color:var(--paper);
+    box-shadow:inset 0 0 0 1px rgba(255,214,102,.35)}
+  .hpAll{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--mute);
+    font-family:"Space Mono",monospace;letter-spacing:.06em;text-transform:uppercase}
+  .hpAll input{width:72px;background:#0E0B24;color:var(--paper);border:1px solid #3A3272;border-radius:8px;
+    padding:5px 7px;font-size:12px;font-family:"Be Vietnam Pro",sans-serif;text-align:center}
+  .hpAll button{padding:5px 10px;font-size:10.5px}
+
+  /* ô máu ngay trong thẻ hồ sơ: người chơi chỉnh máu từng nhân vật mà không rời màn chọn */
+  .dexHp label{display:block}
+  .dexHpIn{width:72px;margin-top:2px;background:#0E0B24;color:var(--paper);border:1px solid #3A3272;
+    border-radius:8px;padding:3px 5px;font-size:14px;font-weight:800;text-align:right;
+    font-family:"Be Vietnam Pro",sans-serif}
+  .dexHpIn:focus{outline:0;border-color:var(--gold)}
+
+  /* ---- biểu đồ mạng nhện chín trục ---- */
+  .radar{display:block;width:100%;max-width:400px;margin:2px auto 6px;overflow:visible}
+  .radar .rGrade{font-family:"Space Mono",monospace;font-size:9.5px;fill:#8C82C8;text-anchor:middle}
+  .radar .rLab{font-family:"Space Mono",monospace;font-size:9.5px;fill:#B9AFE4;letter-spacing:.02em}
+  .radar .rVal{font-weight:700}
+  .pwAvg{float:right;font-style:normal;font-family:"Space Mono",monospace;font-size:9.5px;letter-spacing:.08em}
+  .pwAvg b{font-size:11px}
+  .pwAvg i{font-style:normal;margin-left:3px}
+
+  /* ---- bảng chấm điểm thang 100 (chỉ ở lối xem chi tiết) ---- */
+  .pwTable{margin-bottom:9px}
+  .pwRow{display:grid;grid-template-columns:auto 1fr auto;gap:2px 8px;align-items:center;
+    padding:5px 0;border-bottom:1px dashed #2A2350}
+  .pwRow:last-child{border-bottom:0}
+  .pwRow b{font-size:11.5px}
+  .pwBar{height:7px;border-radius:4px;background:#241D4C;overflow:hidden}
+  .pwBar i{display:block;height:100%;border-radius:4px}
+  .pwNum{font-family:"Space Mono",monospace;font-size:11px;color:var(--paper);min-width:44px;text-align:right}
+  .pwNum em{font-style:normal;margin-left:4px;font-size:10px;font-weight:700}
+  .pwRow p{grid-column:1/-1;margin:1px 0 0;font-size:10.5px;line-height:1.45;color:var(--mute)}
+  .gS{color:#FFD666} .gA{color:#8FE8B4} .gB{color:#7FE0FF} .gC{color:#C9BFEC} .gD{color:#9C93C8} .gE{color:#7A719F}
+
   /* lưới chọn màn đấu — ảnh trong thẻ là ảnh thu nhỏ VẼ THẬT từ chính sàn đấu */
   .sTiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
   @media(max-width:520px){.sTiles{grid-template-columns:repeat(2,1fr)}}
@@ -312,6 +355,15 @@
       <button class="mTab" id="mTabTeam" data-mode="team" type="button"><b data-i18n="mTeam">🛡 Đánh theo đội</b><i data-i18n="mTeamSub">2–4 đội · tối đa 8 người</i></button>
     </div>
     <div class="cselSub" id="cselCount">Chọn một nhân vật cho mỗi bên</div>
+    <div class="cselOpts">
+      <div class="vTabs">
+        <button class="vTab on" id="vSimple" type="button" data-view="simple" data-i18n="vSimple">Xem skill đơn giản</button>
+        <button class="vTab" id="vFull" type="button" data-view="full" data-i18n="vFull">Xem skill chi tiết</button>
+      </div>
+      <label class="hpAll"><span data-i18n="hpAll">Máu mọi nhân vật</span>
+        <input type="number" id="hpAll" value="800" min="100" max="9999" step="50">
+        <button id="hpStd" type="button" data-i18n="hpStd">Chuẩn 800</button></label>
+    </div>
     <div class="cselBody">
       <div class="cselCols" id="duelPane">
         <div class="cselCol">
@@ -365,7 +417,10 @@ const keys={};
 const SPR={stages:{},kono:{},chichi:{},tsubasa:{},shika:{},suzune:{},ginyu:{},dora:{},superman:{},ayanokouji:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
 const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',suzune:'#7FC8FF',ginyu:'#A05CFF',dora:'#2B9BE8',superman:'#2E5BD8'};
 /* Superman đứng riêng ở 800 máu — cả bộ chiêu của anh cân theo đúng thanh máu đó. */
-const HP={kono:1000,chichi:1000,tsubasa:1000,shika:1000,suzune:1000,ginyu:1000,dora:1000,superman:800};
+/* Máu chuẩn của cả bảng. Người chơi chỉnh thoải mái ở màn chọn nhân vật (ô HP_MIN..HP_MAX),
+   nút "Chuẩn" đưa mọi người về đúng con số này. */
+const HP_STD=800, HP_MIN=100, HP_MAX=9999;
+const HP={kono:800,chichi:800,tsubasa:800,shika:800,suzune:800,ginyu:800,dora:800,superman:800};
 const CAST={mul:1.8};
 const cm=v=>v*CAST.mul;
 /* ---------- ngôn ngữ ----------
@@ -405,8 +460,12 @@ const L={
     subTeam:'Đánh theo đội — {n} đội ({lo}–{hi}), mỗi đội {tlo}–{thi} người · {cur}/{max} người',
     notEnough:'Chưa đủ người',
     stName:'Chỉ số', stPow:'Sát thương', stSpd:'Tốc độ', stRng:'Tầm đánh', stDef:'Chống chịu', stTech:'Độ khó',
-    skills:'Bộ chiêu', more:'Xem chi tiết số liệu', less:'Thu gọn',
-    hp:'Máu', tagPassive:'Nội tại', tagUlt:'Tuyệt chiêu', tagP:'NT', tagU:'ULT'
+    skills:'Bộ chiêu', more:'Số liệu thô', less:'Thu gọn',
+    hp:'Máu', tagPassive:'Nội tại', tagUlt:'Tuyệt chiêu', tagP:'NT', tagU:'ULT',
+    vSimple:'Xem skill đơn giản', vFull:'Xem skill chi tiết',
+    pwChart:'Biểu đồ sức mạnh', pwTable:'Chấm điểm thang 100', pwAvg:'Trung bình',
+    hpTip:'Máu khởi đầu của nhân vật này — chỉnh thoải mái',
+    hpAll:'Máu mọi nhân vật', hpStd:'Chuẩn '+HP_STD
   },
   en:{
     tagline:'Cross-universe arena · 8 fighters · 6 stages',
@@ -430,8 +489,12 @@ const L={
     subTeam:'Team battle — {n} teams ({lo}–{hi}), {tlo}–{thi} each · {cur}/{max} fighters',
     notEnough:'Not enough fighters',
     stName:'Stats', stPow:'Power', stSpd:'Speed', stRng:'Range', stDef:'Defence', stTech:'Difficulty',
-    skills:'Move list', more:'Show full numbers', less:'Hide numbers',
-    hp:'HP', tagPassive:'Passive', tagUlt:'Ultimate', tagP:'PAS', tagU:'ULT'
+    skills:'Move list', more:'Raw numbers', less:'Hide numbers',
+    hp:'HP', tagPassive:'Passive', tagUlt:'Ultimate', tagP:'PAS', tagU:'ULT',
+    vSimple:'Simple skill view', vFull:'Detailed skill view',
+    pwChart:'Power chart', pwTable:'Rated out of 100', pwAvg:'Average',
+    hpTip:'Starting HP for this fighter — set it to whatever you like',
+    hpAll:'HP for everyone', hpStd:'Standard '+HP_STD
   }
 };
 const t=k=>{ const d=L[LANG]||L.vi; return d[k]!==undefined?d[k]:(L.vi[k]!==undefined?L.vi[k]:k); };
@@ -470,7 +533,7 @@ const STAGES=[
    sky:'#0B0A1E', far:'#1A1740', fog:'#7FE0FF'},
   {key:'stadium', name:'STADIUM',       vn:'Sân vận động',  sub:{vi:'Sân vận động',en:'Floodlit pitch'},
    sky:'#123A1E', far:'#1D5E2E', fog:'#EAF7C8'},
-  {key:'forest',  name:'NARA FOREST',   vn:'Rừng nhà Nara', sub:{vi:'Rừng nhà Nara',en:'Shadowed woods'},
+  {key:'forest',  name:'FOREST',        vn:'Rừng rậm',      sub:{vi:'Rừng rậm',en:'Deep woods'},
    sky:'#101A12', far:'#1E3322', fog:'#9BE8B0'},
   {key:'space',   name:'DEEP SPACE',    vn:'Vũ trụ',        sub:{vi:'Vũ trụ',en:'Orbital platform'},
    sky:'#05040F', far:'#140F2E', fog:'#C0A8FF'},
@@ -1158,8 +1221,52 @@ const CKEYS=Object.keys(CHARS);
 
    Năm thanh chỉ số chấm theo thang 1–5, đây là **cảm nhận khi chơi** chứ không phải phép
    đo: pow sát thương · spd tốc độ · rng tầm đánh · def chống chịu · tech độ khó hiểu bài. */
+/* ---------- biểu đồ sức mạnh: chín tiêu chí trên thang 100 ----------
+   Người dùng gửi ảnh mẫu (biểu đồ mạng nhện có vòng nét đứt và bậc chữ cái) và chốt chín
+   tiêu chí dưới đây. Đây là **bảng chấm tay** — cảm nhận sức mạnh khi chơi — chứ không phải
+   phép đo tự động từ hằng số cân bằng: một con số như "sát thương" phải gộp cả burst lẫn
+   DPS lẫn tần suất bắn trúng, không hằng số đơn lẻ nào nói lên được.
+   Sửa cân bằng nhiều thì nhớ chấm lại ở đây, `t_dex.js` chỉ kiểm khung chứ không kiểm gu.
+
+   Thang 0–100, quy ra bậc chữ cái bằng `pwGrade()`: sáu bậc E · D · C · B · A · S, mỗi bậc
+   rộng 100/6 điểm — đúng sáu vòng của biểu đồ, nên vòng ngoài cùng là S. */
+const PW_AXES=[
+  {key:'dmg', s:{vi:'Sát thương',en:'Damage'},      n:{vi:'Damage',en:'Damage'},
+   d:{vi:'Tổng khả năng gây sát thương, gộp cả cú burst lẫn DPS rải đều.',
+      en:'Total damage output, burst and sustained DPS together.'}},
+  {key:'dur', s:{vi:'Chống chịu',en:'Durability'},  n:{vi:'Durability',en:'Durability'},
+   d:{vi:'Máu, giáp, giảm sát thương, khiên và khả năng hồi phục.',
+      en:'HP, armour, damage reduction, shields and healing.'}},
+  {key:'mob', s:{vi:'Cơ động',en:'Mobility'},       n:{vi:'Mobility',en:'Mobility'},
+   d:{vi:'Tốc chạy, cú lao, dịch chuyển, khả năng áp sát hoặc thoát thân.',
+      en:'Move speed, dashes, blinks, closing in and getting out.'}},
+  {key:'as',  s:{vi:'Tốc đánh',en:'Atk Speed'},     n:{vi:'Attack Speed',en:'Attack Speed'},
+   d:{vi:'Tần suất ra đòn và tốc độ thi triển chiêu.',
+      en:'How often the hands come out and how fast skills cast.'}},
+  {key:'rng', s:{vi:'Tầm đánh',en:'Range'},         n:{vi:'Range',en:'Range'},
+   d:{vi:'Khả năng đánh nhau từ khoảng cách xa và an toàn.',
+      en:'Fighting from a safe distance.'}},
+  {key:'cc',  s:{vi:'Khống chế',en:'Crowd Ctrl'},   n:{vi:'Crowd Control',en:'Crowd Control'},
+   d:{vi:'Choáng, làm chậm, hất lùi, trói, câm lặng…',
+      en:'Stun, slow, knockback, bind, silence…'}},
+  {key:'uti', s:{vi:'Hỗ trợ',en:'Utility'},         n:{vi:'Utility',en:'Utility'},
+   d:{vi:'Buff, debuff, hồi máu, triệu hồi, phản đòn và mấy trò đặc biệt.',
+      en:'Buffs, debuffs, heals, summons and special counters.'}},
+  {key:'con', s:{vi:'Ổn định',en:'Consistency'},    n:{vi:'Consistency',en:'Consistency'},
+   d:{vi:'Phát huy sức mạnh đều tay tới đâu, ít phụ thuộc điều kiện hay may rủi.',
+      en:'How reliably the kit performs, free of conditions and RNG.'}},
+  {key:'cmb', s:{vi:'Lật kèo',en:'Comeback'},       n:{vi:'Comeback Potential',en:'Comeback Potential'},
+   d:{vi:'Lúc thấp máu thì biến hình, buff hay tuyệt chiêu mạnh tới mức nào.',
+      en:'How hard the low-HP transformation, buff or ultimate hits back.'}}
+];
+const PW_GRADES=['E','D','C','B','A','S'];
+const pwGrade=v=>PW_GRADES[Math.max(0,Math.min(5,Math.floor((v||0)/(100/6))))];
+const pwAvg=k=>{const p=(DEX[k]||{}).pw||{};
+  return Math.round(PW_AXES.reduce((a,x)=>a+(p[x.key]||0),0)/PW_AXES.length);};
+
 const DEX={
   kono:{ role:{vi:'Ninja · Đánh xa',en:'Ninja · Ranged'}, st:{pow:3,spd:4,rng:5,def:2,tech:2},
+    pw:{dmg:62,dur:38,mob:46,as:72,rng:88,cc:60,uti:44,con:66,cmb:40},
     bio:{vi:'Ném phi tiêu từ xa, thỉnh thoảng lại quăng ra một quả kunai nổ. Bị vây sát thì xoáy một quả Rasengan nhỏ để thoát.',
          en:'Throws from range and mixes in explosive kunai. Pinned in melee, he spins a small Rasengan loose to break out.'},
     skills:[
@@ -1180,6 +1287,7 @@ const DEX={
        en:'At 20 rage he charges in with the spinning sphere.'}
     ]},
   chichi:{ role:{vi:'Nội trợ · Cận chiến',en:'Housewife · Melee'}, st:{pow:4,spd:4,rng:1,def:3,tech:2},
+    pw:{dmg:78,dur:46,mob:74,as:82,rng:24,cc:56,uti:60,con:70,cmb:92},
     bio:{vi:'Đấm đá dồn dập, chửi bật cả đạn về, và khi dồn tới đường cùng thì gọi chồng con ra đánh hộ.',
          en:'Relentless melee, a scolding that reflects projectiles, and when cornered she calls her family in.'},
     skills:[
@@ -1195,6 +1303,7 @@ const DEX={
        en:`Below 20% HP she calls for help: Kamehameha for ${KAME_DMG} then a heavy slow, Masenko for ${MASENKO_DMG} a wave with stacking slows.`}
     ]},
   tsubasa:{ role:{vi:'Tiền đạo · Sút xa',en:'Striker · Long shots'}, st:{pow:4,spd:3,rng:4,def:2,tech:3},
+    pw:{dmg:72,dur:40,mob:50,as:62,rng:84,cc:44,uti:38,con:52,cmb:96},
     bio:{vi:'Sút bóng thay cho đánh nhau. Càng ghi bàn càng mạnh, và khi sắp gục thì đôi cánh đại bàng bùng lên.',
          en:'He kicks footballs instead of fists. Goals make him stronger, and at the brink the eagle wings flare up.'},
     skills:[
@@ -1211,6 +1320,7 @@ const DEX={
        en:`Below ${Math.round(EAGLE_HP*100)}% HP: 4× attack speed, 70% resist, CC immune — but it burns his last HP away in ${rts(EAGLE_BURN)}s.`}
     ]},
   shika:{ role:{vi:'Ninja · Bóng',en:'Ninja · Shadows'}, st:{pow:3,spd:2,rng:4,def:4,tech:5},
+    pw:{dmg:48,dur:64,mob:32,as:34,rng:66,cc:88,uti:70,con:44,cmb:90},
     bio:{vi:'Ngồi lười tích chakra tới lúc bị đánh mới chịu đứng dậy. Né đòn giỏi dần lên, và cuối trận mở hẳn một lãnh địa.',
          en:'He sits around banking chakra until someone hits him. His dodging sharpens as the fight drags, and he can open a whole domain.'},
     skills:[
@@ -1228,6 +1338,7 @@ const DEX={
        en:`Below ${Math.round(SHIKA.domainHp*100)}% HP the domain opens: foes are exhausted, deal half damage and get shelled. Duration = chakra ÷ 100.`}
     ]},
   suzune:{ role:{vi:'Lớp trưởng · Cận chiến',en:'Class rep · Melee'}, st:{pow:3,spd:3,rng:1,def:3,tech:5},
+    pw:{dmg:54,dur:70,mob:58,as:40,rng:18,cc:26,uti:78,con:48,cmb:88},
     bio:{vi:'Ba form: rụt rè, dám đánh, rồi tự đứng một mình. Ayanokouji bước ra đỡ đòn giúp cô ở bước ngoặt đầu tiên.',
          en:'Three forms: timid, fighting back, then standing alone. Ayanokouji steps in to shield her at the first turning point.'},
     skills:[
@@ -1242,6 +1353,7 @@ const DEX={
        en:'When Ayanokouji leaves she reaches form 3: stronger hits, better healing, +10% damage reduction and CC resist.'}
     ]},
   ginyu:{ role:{vi:'Ginyu Force · Cận chiến',en:'Ginyu Force · Melee'}, st:{pow:4,spd:4,rng:3,def:3,tech:5},
+    pw:{dmg:70,dur:56,mob:58,as:76,rng:62,cc:80,uti:72,con:42,cmb:96},
     bio:{vi:'Bay vào sân, nhảy ba dáng rồi mới đánh. Aura của anh xoay cả thế trận, và chết tới nơi thì cướp luôn thân xác đối thủ.',
          en:'He flies in, poses three times, then fights. His aura swings the whole match — and at death he simply takes your body.'},
     skills:[
@@ -1257,6 +1369,7 @@ const DEX={
        en:'On the brink he fires from his mouth to swap bodies. On a hit both souls switch and drop to 20% HP; on a miss he is left on 1 HP.'}
     ]},
   dora:{ role:{vi:'Bảo bối · Khống chế',en:'Gadgets · Control'}, st:{pow:2,spd:4,rng:3,def:5,tech:4},
+    pw:{dmg:50,dur:74,mob:86,as:44,rng:64,cc:78,uti:92,con:58,cmb:90},
     bio:{vi:'Đòn tay nhẹ hều, nhưng cái túi thần kỳ đủ để làm chậm, giữ khoảng cách, chui cửa chạy thoát và tua ngược cả cái chết.',
          en:'His fists are light, but the pocket can slow you, keep you away, escape through a door and rewind his own death.'},
     skills:[
@@ -1273,6 +1386,7 @@ const DEX={
        en:'The first time he drops to 0 HP he rewinds time, returning to where he stood — and the HP he had — seconds ago.'}
     ]},
   superman:{ role:{vi:'Kryptonian · Bruiser',en:'Kryptonian · Bruiser'}, st:{pow:5,spd:4,rng:3,def:5,tech:2},
+    pw:{dmg:82,dur:88,mob:70,as:60,rng:54,cc:84,uti:34,con:82,cmb:62},
     bio:{vi:'Đấm nặng, lì đòn, bay đuổi được và mang cả một bộ khống chế — đổi lại chiêu nào cũng có quãng chuẩn bị nhìn thấy rõ.',
          en:'Heavy hits, thick skin, flight to close the gap and a full control kit — paid for with a clearly telegraphed wind-up on every skill.'},
     skills:[
@@ -1381,6 +1495,13 @@ async function loadSaved(){
     if(rawCast){ CAST.mul=parseFloat(rawCast)||1.8; const sel=document.getElementById('cast'); if(sel)sel.value=String(CAST.mul); }
     const rawHp=await Store.get('cfg_hp');
     if(rawHp){ const h=JSON.parse(rawHp); for(const k of CKEYS) if(h[k])HP[k]=h[k]; dirty=true; }
+    /* Lối xem skill đọc kho theo lối KHÔNG chờ (`then` chứ không `await`): mỗi cái `await`
+       thêm vào đây là `cselRefresh()` ở dưới lùi lại thêm một nhịp IndexedDB, mà lúc đó
+       người chơi (và test) có thể đã bấm đổi chế độ rồi — lượt vẽ muộn này quét sạch khung
+       đội hình họ vừa mở. Đọc rời thì chỉ vẽ lại hai thẻ hồ sơ, không đụng tới phần còn lại. */
+    Store.get('cfg_dexview').then(dv=>{
+      if((dv==='simple'||dv==='full')&&typeof dexView==='function') dexView(dv);
+    }).catch(()=>{});
     applyColors(); applyHp();
     if(typeof cselRefresh==='function'){
       TMP.a=PICK.a; TMP.b=PICK.b; TMP.mode=PMODE; TMP.stage=STAGE;
@@ -2834,7 +2955,7 @@ function mkChar(key,team,x,y,dup){
     key, dup:d, name:C.name+(d<DUP_SUFFIX.length?DUP_SUFFIX[d]:' #'+(d+1)), team, male:C.male, role:C.role, want:C.want,
     x, y, speed:C.speed, dodge:C.dodge, spriteH:C.spriteH||120,
     color:dupColor(C,key,d),
-    hp:HP[key]||1000, maxHp:HP[key]||1000
+    hp:HP[key]||HP_STD, maxHp:HP[key]||HP_STD
   });
   C.init(f);
   return f;
@@ -10953,9 +11074,14 @@ function applyHp(){
   if(m2)m2.textContent='Điều khiển '+((G&&G.c)?G.c.name:CHARS[kb].name);
   const sub=document.querySelector('.sub');
   if(sub) sub.textContent=rosterLine();
+  const all=el('hpAll');
+  if(all&&document.getElementById('hpAll')){
+    const same=CKEYS.every(k=>HP[k]===HP[CKEYS[0]]);
+    all.value=same?HP[CKEYS[0]]:HP[ka];      // mỗi người một con số thì ô chung theo bên trái
+  }
 }
 function onHp(){
-  const v=x=>clamp(Math.round(parseInt(x,10)||1000),100,9999);
+  const v=x=>hpClamp(x);
   const [ka,kb]=slotKeys();
   HP[ka]=v(el('hpK').value);
   if(ka!==kb) HP[kb]=v(el('hpC').value);
@@ -11264,22 +11390,97 @@ function tmpReady(){
    tooltip — để nguyên "TUYỆT CHIÊU" thì nó xuống ba dòng, tràn ra khỏi ô. */
 function dexTag(tag){ return tag==='P'?t('tagP'):tag==='U'?t('tagU'):tag; }
 function dexTagFull(tag){ return tag==='P'?t('tagPassive'):tag==='U'?t('tagUlt'):t('skills')+' '+tag; }
-function dexCard(key){
-  const C=CHARS[key], D=DEX[key]||{}, st=D.st||{};
+/* Biểu đồ mạng nhện chín trục, vẽ bằng SVG chứ không bằng canvas: thẻ hồ sơ là HTML nên
+   SVG nhúng thẳng vào chuỗi được, tự co theo bề ngang cột và nét không bị vỡ khi phóng to.
+   Dựng theo đúng ảnh mẫu người dùng gửi: sáu vòng NÉT ĐỨT, nan hoa đặc, bậc chữ cái
+   E→S ghi dọc trục 12 giờ, và vùng tô là polygon màu của chính nhân vật.
+   Trục đầu tiên đặt ở 12 giờ (góc -90°) rồi quay đều theo chiều kim đồng hồ. */
+/* RADAR_PAD phải đủ rộng cho cả DÒNG CHỮ nhãn chứ không chỉ cho điểm neo của nó: nhãn
+   hai bên canh mép (text-anchor start/end) nên chữ chạy tiếp ra ngoài điểm neo, để hẹp
+   là mấy chữ đầu bị cắt cụt (đã dính đúng một lần: "Ổn định" chỉ còn "định"). */
+const RADAR_R=118, RADAR_PAD=86;
+function radarPt(i,n,rad,cx,cy){
+  const a=-Math.PI/2+i*2*Math.PI/n;
+  return [cx+Math.cos(a)*rad, cy+Math.sin(a)*rad];
+}
+function radarSvg(key){
+  const C=CHARS[key], p=(DEX[key]||{}).pw||{}, n=PW_AXES.length;
+  const R=RADAR_R, cx=R+RADAR_PAD, cy=R+RADAR_PAD, W=(R+RADAR_PAD)*2;
+  const ring=k=>{
+    const rr=R*k/6;
+    return `<polygon points="${PW_AXES.map((_,i)=>radarPt(i,n,rr,cx,cy).map(v=>v.toFixed(1)).join(',')).join(' ')}" `+
+      `fill="none" stroke="#544B92" stroke-width="1" stroke-dasharray="3 3"/>`;
+  };
+  const spokes=PW_AXES.map((_,i)=>{
+    const [x,y]=radarPt(i,n,R,cx,cy);
+    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#3A3468" stroke-width="1.2"/>`;
+  }).join('');
+  const grades=PW_GRADES.map((g,i)=>
+    `<text x="${cx}" y="${(cy-R*(i+1)/6+3.5).toFixed(1)}" class="rGrade">${g}</text>`).reverse().join('');
+  const poly=PW_AXES.map((ax,i)=>
+    radarPt(i,n,R*Math.max(0,Math.min(100,p[ax.key]||0))/100,cx,cy).map(v=>v.toFixed(1)).join(',')).join(' ');
+  const dots=PW_AXES.map((ax,i)=>{
+    const [x,y]=radarPt(i,n,R*Math.max(0,Math.min(100,p[ax.key]||0))/100,cx,cy);
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" fill="${C.color}"/>`;
+  }).join('');
+  // Nhãn đẩy ra ngoài vòng; bên trái canh phải, bên phải canh trái, trên/dưới canh giữa —
+  // canh giữa hết thì nhãn hai bên đè lên biểu đồ.
+  const labs=PW_AXES.map((ax,i)=>{
+    const [x,y]=radarPt(i,n,R+15,cx,cy);
+    const dx=x-cx, anchor=Math.abs(dx)<6?'middle':(dx>0?'start':'end');
+    const val=Math.max(0,Math.min(100,p[ax.key]||0));
+    return `<text x="${x.toFixed(1)}" y="${(y+3).toFixed(1)}" class="rLab" text-anchor="${anchor}">`+
+      `${tr(ax.s)} <tspan class="rVal" fill="${C.color}">${val}</tspan></text>`;
+  }).join('');
+  return `<svg class="radar" viewBox="0 0 ${W} ${W}" role="img" aria-label="${tr({vi:'Biểu đồ sức mạnh',en:'Power chart'})} ${C.name}">`+
+    [1,2,3,4,5,6].map(ring).join('')+spokes+
+    `<polygon points="${poly}" fill="${C.color}" fill-opacity=".30" stroke="${C.color}" stroke-width="2" stroke-linejoin="round"/>`+
+    dots+grades+labs+`</svg>`;
+}
+/* Bảng chấm điểm thang 100 — chỉ hiện ở lối xem CHI TIẾT. Mỗi dòng: tên tiêu chí, một
+   câu giải thích, thanh lấp đầy, con số và bậc chữ cái. */
+function pwTable(key){
+  const C=CHARS[key], p=(DEX[key]||{}).pw||{};
+  const rows=PW_AXES.map(ax=>{
+    const v=Math.max(0,Math.min(100,p[ax.key]||0));
+    return `<div class="pwRow"><b>${tr(ax.n)}</b><span class="pwBar"><i style="width:${v}%;background:${C.color}"></i></span>`+
+      `<span class="pwNum">${v}<em class="g${pwGrade(v)}">${pwGrade(v)}</em></span>`+
+      `<p>${tr(ax.d)}</p></div>`;
+  }).join('');
+  return `<div class="pwTable">${rows}</div>`;
+}
+/* Ô nhãn chiêu chỉ rộng 26px nên nội tại / tuyệt chiêu phải viết TẮT, chữ đầy đủ đưa vào
+   tooltip — để nguyên "TUYỆT CHIÊU" thì nó xuống ba dòng, tràn ra khỏi ô. */
+function dexTag(tag){ return tag==='P'?t('tagP'):tag==='U'?t('tagU'):tag; }
+function dexTagFull(tag){ return tag==='P'?t('tagPassive'):tag==='U'?t('tagUlt'):t('skills')+' '+tag; }
+/* Hai lối xem, người dùng chọn bằng cặp nút ngay trên đầu màn chọn nhân vật:
+     'simple' — mặt nhân vật, máu chỉnh được, biểu đồ sức mạnh, bộ chiêu viết gọn;
+     'full'   — thêm năm thanh chỉ số 1–5, BẢNG CHẤM ĐIỂM thang 100, và toàn bộ số liệu thô.
+   Biểu đồ có mặt ở CẢ HAI lối xem — đó là yêu cầu riêng của người dùng. */
+let DEXVIEW='simple';
+function dexCard(key,view){
+  const C=CHARS[key], D=DEX[key]||{}, st=D.st||{}, full=(view||DEXVIEW)==='full';
   const row=(lab,v)=>`<div class="dexRow"><i>${lab}</i><span class="pips">`+
     [1,2,3,4,5].map(n=>`<b class="${n<=(v||0)?'on':''}"></b>`).join('')+`</span></div>`;
   const sk=(D.skills||[]).map(k=>
     `<div class="sk"><span class="skTag t${k.tag}" title="${dexTagFull(k.tag)}">${dexTag(k.tag)}</span>`+
     `<b style="color:${C.color}">${k.name}</b><p>${tr(k)}</p></div>`).join('');
+  const avg=pwAvg(key);
   return `<div class="dexTop"><span class="dexAva">${C.emoji}</span>`+
     `<span class="dexId"><b style="color:${C.color}">${C.name}</b><i>${tr(D.role)||C.tag}</i></span>`+
-    `<span class="dexHp">${t('hp')}<b>${HP[key]||1000}</b></span></div>`+
+    `<span class="dexHp">${t('hp')}<label><input type="number" class="dexHpIn" data-hpkey="${key}" `+
+      `value="${HP[key]||HP_STD}" min="${HP_MIN}" max="${HP_MAX}" step="50" title="${t('hpTip')}"></label></span></div>`+
     (tr(D.bio)?`<div class="dexBio">${tr(D.bio)}</div>`:'')+
-    `<div class="dexStats">${row(t('stPow'),st.pow)+row(t('stSpd'),st.spd)+row(t('stRng'),st.rng)+
+    `<div class="dexHead">${t('pwChart')}<em class="pwAvg">${t('pwAvg')} <b class="g${pwGrade(avg)}">${avg}</b> `+
+      `<i class="g${pwGrade(avg)}">${pwGrade(avg)}</i></em></div>`+
+    radarSvg(key)+
+    (full?`<div class="dexHead">${t('stName')}</div><div class="dexStats">${
+      row(t('stPow'),st.pow)+row(t('stSpd'),st.spd)+row(t('stRng'),st.rng)+
       row(t('stDef'),st.def)+row(t('stTech'),st.tech)}</div>`+
+      `<div class="dexHead">${t('pwTable')}</div>`+pwTable(key):'')+
     `<div class="dexHead">${t('skills')}</div><div class="dexSkills">${sk}</div>`+
-    `<details class="dexRaw"><summary>${t('more')}</summary>`+
-    `<span class="cSkills">${C.skills.map(x=>'<i>·</i> '+x).join('<br>')}</span></details>`;
+    (full?`<details class="dexRaw" open><summary>${t('more')}</summary>`+
+      `<span class="cSkills">${C.skills.map(x=>'<i>·</i> '+x).join('<br>')}</span></details>`:'');
 }
 function cselRefresh(){
   const duel=TMP.mode==='duel';
@@ -11407,6 +11608,47 @@ el('cselGo').addEventListener('click',()=>{
   if(ARCADE){ cselPage='chars'; cselPaint(); arcFight(); }
 });
 el('cselBack').addEventListener('click',()=>{ cselPage='chars'; cselPaint(); });
+/* Hai nút lối xem skill. Đổi lối xem thì chỉ vẽ lại mấy thẻ hồ sơ, đừng gọi `cselRefresh()`
+   nguyên bàn — nó dựng lại cả lưới chọn nhân vật, cuộn trang nhảy về đầu. */
+function dexView(v){
+  DEXVIEW=v;
+  for(const b of document.querySelectorAll('.vTab')) b.classList.toggle('on',b.dataset.view===v);
+  paintDex();
+  Store.set('cfg_dexview',v).catch(()=>{});
+}
+function paintDex(){
+  for(const slot of ['a','b']){
+    const box=el(slot==='a'?'detailA':'detailB');
+    if(box&&box.innerHTML!=='') box.innerHTML=dexCard(TMP[slot]);
+  }
+}
+for(const b of document.querySelectorAll('.vTab'))
+  b.addEventListener('click',()=>dexView(b.dataset.view));
+
+/* Máu chỉnh ngay trong màn chọn — người chơi trang công cộng không có thanh công cụ xưởng,
+   nên đây là cửa duy nhất của họ. `hpSet()` gánh cả ba đường: ô trong thẻ hồ sơ, ô "mọi
+   nhân vật" và nút Chuẩn. */
+function hpClamp(x){ return clamp(Math.round(parseInt(x,10)||HP_STD),HP_MIN,HP_MAX); }
+function hpSave(){
+  Store.set('cfg_hp',JSON.stringify(HP)).catch(()=>{});
+  applyHp();
+  newGame(); running=false; el('play').textContent=t('play');
+}
+function hpSet(key,val){ HP[key]=hpClamp(val); hpSave(); }
+function hpSetAll(val){ const v=hpClamp(val); for(const k of CKEYS) HP[k]=v; hpSave(); paintDex(); }
+// ô máu nằm trong thẻ hồ sơ do dexCard() dựng lại liên tục ⇒ bắt sự kiện theo uỷ quyền,
+// và KHÔNG vẽ lại thẻ ngay lúc gõ, không thì con trỏ nhảy khỏi ô sau mỗi phím
+document.addEventListener('change',e=>{
+  const inp=e.target;
+  if(!inp||!inp.classList||!inp.classList.contains('dexHpIn')) return;
+  hpSet(inp.dataset.hpkey,inp.value);
+  inp.value=HP[inp.dataset.hpkey];
+  const all=el('hpAll'); if(all&&all.value!==undefined) all.value=HP[TMP.a]||HP_STD;
+});
+if(document.getElementById('hpAll'))
+  el('hpAll').addEventListener('change',e=>{ hpSetAll(e.target.value); e.target.value=HP[CKEYS[0]]; });
+if(document.getElementById('hpStd'))
+  el('hpStd').addEventListener('click',()=>{ hpSetAll(HP_STD); el('hpAll').value=HP_STD; });
 el('cselCancel').addEventListener('click',closeCsel);
 buildCsel();
 el('cast').addEventListener('change',e=>{

@@ -51,17 +51,20 @@ function fileNhac() {
   ok(dex.thieu.length === 0, `ca ${dex.chars} nhan vat deu co ho so (thieu: ${dex.thieu.join(',') || 'khong'})`);
   ok(dex.it.length === 0, `ho so nao cung du 5 chi so, 2 ngon ngu va >=4 chieu (${dex.it.join(',') || 'du'})`);
 
+  // năm thanh chỉ số và số liệu thô giờ nằm ở lối xem CHI TIẾT, nên bật nó lên rồi mới đo
   const the = await doc(() => {
+    window.__dexView('full');
     const box = document.getElementById('detailA');
     return { pips: box.querySelectorAll('.pips b').length, on: box.querySelectorAll('.pips b.on').length,
              sk: box.querySelectorAll('.sk').length, chiTiet: !!box.querySelector('.dexRaw .cSkills'),
-             hp: (box.querySelector('.dexHp b') || {}).textContent };
+             hp: (box.querySelector('.dexHpIn') || {}).value };
   });
   ok(the.pips === 25, `nam thanh chi so ve du 25 o (${the.pips})`);
   ok(the.on > 0 && the.on < 25, `thanh chi so co day co vong (${the.on}/25)`);
   ok(the.sk >= 4, `the chieu hien ra day du (${the.sk} chieu)`);
   ok(the.chiTiet, 'van con phan "xem chi tiet so lieu" doc mang skills cu');
-  ok(the.hp === '1000', `co dong mau cua nhan vat (${the.hp})`);
+  ok(the.hp === '800', `o mau chinh duoc, mac dinh dung chuan 800 (${the.hp})`);
+  await doc(() => window.__dexView('simple'));
 
   /* ---------- đổi ngôn ngữ ----------
      openGame() đã bấm "Vào trận" nên màn chọn đang đóng; mở lại mới bấm được nút trong đó. */
