@@ -12099,9 +12099,15 @@ function avaRefresh(){
    `touch-action:manipulation` để chặn cú phóng to đó). */
 const DBL_TAP=380;
 let tapKey='', tapAt=0;
-function tapTwice(key){
-  const gio=Date.now(), hai=(key===tapKey&&gio-tapAt<DBL_TAP);
-  tapKey=key; tapAt=hai?0:gio;      // ăn rồi thì đặt lại, ba cú không thành hai lần mở
+/* `id` phải gồm CẢ LƯỚI lẫn tên nhân vật, đừng chỉ tên nhân vật: trận đấu gương bấm
+   Konohamaru ở lưới trái rồi Konohamaru ở lưới phải là hai cú liên tiếp cùng tên, tính
+   theo tên thì game hiểu nhầm thành chạm hai lần và bật bảng thông số lên chặn mất nút
+   Vào trận (t_reg treo 30 giây rồi đổ). Hai ô khác nhau là hai thứ khác nhau.
+   Không lấy chính phần tử làm mốc được: mỗi cú bấm ở lưới đội hình đều dựng lại cả lưới,
+   phần tử cũ biến mất nên cú sau không bao giờ khớp với cú trước. */
+function tapTwice(id){
+  const gio=Date.now(), hai=(id===tapKey&&gio-tapAt<DBL_TAP);
+  tapKey=id; tapAt=hai?0:gio;       // ăn rồi thì đặt lại, ba cú không thành hai lần mở
   return hai;
 }
 function tile(key,onClick,on){
@@ -12118,7 +12124,7 @@ function tile(key,onClick,on){
     /* Đo nhịp TRƯỚC rồi mới gọi onClick, và truyền cờ `hai` vào: ở màn hỗn chiến / đánh
        đội, chạm vào ô là THÊM MỘT BẢN SAO, nên cú thứ hai phải biết đường mà không thêm
        nữa — không thì chạm hai lần vừa nhét hai người vào đội vừa mở bảng. */
-    const hai=tapTwice(key);
+    const hai=tapTwice(((o.parentNode&&o.parentNode.id)||'')+'/'+key);
     onClick(e,hai);                  // cú bấm đầu vẫn CHỌN người đó như cũ
     if(hai) dexPopOpen(key);
   });
