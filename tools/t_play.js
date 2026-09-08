@@ -102,7 +102,7 @@ function wavUrl() {
   }));
   ok(trang2.page === 'stage', `chon xong P2 thi sang trang CHON MAN (${trang2.page})`);
   ok(!trang2.chay, 'sang trang chon man thi tran VAN CHUA bat dau');
-  ok(/VÀO TRẬN/.test(trang2.nhan), `nut doi chu thanh vao tran (${trang2.nhan})`);
+  ok(/FIGHT/i.test(trang2.nhan), `nut doi chu thanh vao tran (${trang2.nhan})`);
   ok(await page.locator('#stageList .sTile[data-stage="space"]').isVisible(), 'luoi man hien ra');
 
   await page.click('#cselBack');
@@ -141,6 +141,72 @@ function wavUrl() {
   await page.click('#arcAgain');
   await page.waitForTimeout(400);
   ok(await page.evaluate(() => window.__running() && !window.__G().over), 'bam Danh lai thi vao tran moi');
+
+  /* ---------- 3b. ĐÁNH ĐỘI cũng đi từng đội một, đúng quy trình 1v1 ----------
+     Người dùng: "theo đội cũng vậy — chọn đội 1 trước đội 2 sau, quy trình như 1v1 chứ". */
+  await page.click('#pick');
+  await page.waitForTimeout(250);
+  await page.click('#mTabTeam');
+  await page.waitForTimeout(300);
+  const d1 = await page.evaluate(() => ({
+    page: document.getElementById('charSelect').dataset.page,
+    step: document.getElementById('charSelect').dataset.step,
+    h2: document.querySelector('#charSelect h2').textContent,
+    khung: [...document.querySelectorAll('#multiPane .cselCol')].filter(b => !b.classList.contains('off')).length,
+    chips: document.querySelectorAll('.pickChip').length,
+    go: document.getElementById('cselGo').textContent
+  }));
+  ok(d1.page === 't0', `danh doi bat dau o buoc DOI 1 (${d1.page})`);
+  ok(d1.step === 'pick0', `buoc dau mang data-step pick0 (${d1.step})`);
+  ok(/TEAM 1/i.test(d1.h2), `tieu de ghi dang chon doi 1 (${d1.h2})`);
+  ok(d1.khung === 1, `chi hien DUNG MOT khung doi hinh (${d1.khung})`);
+  ok(d1.chips === 0, 'buoc doi 1 chua co dai "da chon"');
+  ok(/Team 2/i.test(d1.go), `nut ghi "Tiep - Doi 2" (${d1.go})`);
+  ok(await page.locator('#teamNum').isVisible(), 'buoc doi 1 co hang chon SO DOI');
+
+  await page.click('#cselGo');
+  await page.waitForTimeout(300);
+  const d2 = await page.evaluate(() => ({
+    page: document.getElementById('charSelect').dataset.page,
+    h2: document.querySelector('#charSelect h2').textContent,
+    khung: [...document.querySelectorAll('#multiPane .cselCol')].filter(b => !b.classList.contains('off')).length,
+    nhan: [...document.querySelectorAll('.pickChip i')].map(x => x.textContent).join('|'),
+    go: document.getElementById('cselGo').textContent
+  }));
+  ok(d2.page === 't1', `bam Tiep thi sang buoc DOI 2 (${d2.page})`);
+  ok(/TEAM 2/i.test(d2.h2), `tieu de doi theo buoc (${d2.h2})`);
+  ok(d2.khung === 1, `buoc doi 2 van chi mot khung (${d2.khung})`);
+  ok(/Team 1/i.test(d2.nhan) && /Team 2/i.test(d2.nhan), `dai "da chon" giu doi 1 lai (${d2.nhan})`);
+  ok(/Stage/i.test(d2.go), `doi cuoi thi nut ghi "Tiep - Chon man" chu khong phai doi 3 (${d2.go})`);
+  ok(!await page.locator('#teamNum').isVisible(), 'tu buoc thu hai tro di giau hang chon so doi');
+
+  /* đổi sang 3 đội thì danh sách bước dài thêm một bước */
+  await page.click('#cselBack');
+  await page.waitForTimeout(200);
+  await page.click('#teamNum button:nth-of-type(2)');   // 2 3 4 -> chọn 3
+  await page.waitForTimeout(300);
+  const ba = await page.evaluate(() => ({
+    doi: window.__G && [...document.querySelectorAll('#teamNum button.on')].map(b => b.textContent).join(''),
+    page: document.getElementById('charSelect').dataset.page,
+    go: document.getElementById('cselGo').textContent
+  }));
+  ok(ba.doi === '3', `bam so 3 thi thanh ba doi (${ba.doi})`);
+  ok(ba.page === 't0' && /Team 2/i.test(ba.go), `van dung o buoc doi 1 (${ba.page} / ${ba.go})`);
+  await page.click('#teamNum button:nth-of-type(1)');   // về lại 2 đội
+  await page.waitForTimeout(250);
+
+  await page.click('#cselGo'); await page.waitForTimeout(200);
+  await page.click('#cselGo'); await page.waitForTimeout(250);
+  ok(await page.evaluate(() => document.getElementById('charSelect').dataset.page) === 'stage',
+     'chon xong doi cuoi thi sang trang CHON MAN');
+  await page.click('#cselGo');
+  await page.waitForTimeout(700);
+  const tran = await page.evaluate(() => {
+    const g = window.__G(), m = g.fighters.filter(f => !f.summon);
+    return { mode: g.mode, nguoi: m.length, phe: [...new Set(m.map(f => f.team))].length };
+  });
+  ok(tran.mode === 'team' && tran.phe === 2, `vao tran dung che do doi, hai phe (${tran.mode}/${tran.phe})`);
+  ok(tran.nguoi >= 2, `co du nguoi tren san (${tran.nguoi})`);
 
   ok(errors.length === 0, `trang choi khong co loi (${errors.slice(0, 2).join(' | ')})`);
   await browser.close(); sv.close();

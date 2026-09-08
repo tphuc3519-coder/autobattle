@@ -70,31 +70,39 @@ function fileNhac() {
 
   /* ---------- đổi ngôn ngữ ----------
      openGame() đã bấm "Vào trận" nên màn chọn đang đóng; mở lại mới bấm được nút trong đó. */
-  ok(await doc(() => window.__LANG()) === 'vi', 'mac dinh la tieng Viet');
+  /* Mặc định là TIẾNG ANH — người dùng: "cứ ưu tiên tiếng anh". */
+  ok(await doc(() => window.__LANG()) === 'en', 'mac dinh la tieng Anh');
   await page.click('#pick');
   await page.waitForTimeout(200);
-  const vi = await doc(() => ({ go: document.getElementById('cselGo').textContent,
-                                sk: document.querySelector('#detailA .sk p').textContent,
-                                stage: document.querySelector('#stageList .sTile i').textContent }));
-  await page.click('#charSelect [data-lang-toggle]');
-  await page.waitForTimeout(250);
   const en = await doc(() => ({ lang: document.documentElement.lang,
                                 go: document.getElementById('cselGo').textContent,
                                 sk: document.querySelector('#detailA .sk p').textContent,
                                 stage: document.querySelector('#stageList .sTile i').textContent,
                                 head: document.querySelector('#charSelect h2').textContent }));
-  ok(en.lang === 'en', 'bam nut la doi sang tieng Anh');
-  ok(en.go !== vi.go && /Fight/i.test(en.go), `nut vao tran doi chu (${vi.go} -> ${en.go})`);
-  ok(en.sk !== vi.sk && !/[àáâãèéêìíòóôõùúýăđĩũơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/i.test(en.sk),
-     `mo ta chieu doi sang tieng Anh ("${en.sk.slice(0, 46)}…")`);
-  ok(en.stage !== vi.stage, `phu de man doi theo (${vi.stage} -> ${en.stage})`);
-  ok(/SELECT/i.test(en.head), `tieu de man chon doi theo (${en.head})`);
+  const CO_DAU = /[àáâãèéêìíòóôõùúýăđĩũơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/i;
+  ok(en.lang === 'en', 'the html mang lang="en" ngay tu dau');
+  ok(/Fight/i.test(en.go), `nut vao tran bang tieng Anh (${en.go})`);
+  ok(!CO_DAU.test(en.sk), `mo ta chieu bang tieng Anh ("${en.sk.slice(0, 46)}…")`);
+  ok(/SELECT/i.test(en.head), `tieu de man chon bang tieng Anh (${en.head})`);
+
+  await page.click('#charSelect [data-lang-toggle]');
+  await page.waitForTimeout(250);
+  const vi = await doc(() => ({ lang: document.documentElement.lang,
+                                go: document.getElementById('cselGo').textContent,
+                                sk: document.querySelector('#detailA .sk p').textContent,
+                                stage: document.querySelector('#stageList .sTile i').textContent,
+                                head: document.querySelector('#charSelect h2').textContent }));
+  ok(vi.lang === 'vi', 'bam nut la doi sang tieng Viet');
+  ok(vi.go !== en.go && /Vào trận/i.test(vi.go), `nut vao tran doi chu (${en.go} -> ${vi.go})`);
+  ok(vi.sk !== en.sk && CO_DAU.test(vi.sk), `mo ta chieu doi sang tieng Viet ("${vi.sk.slice(0, 46)}…")`);
+  ok(vi.stage !== en.stage, `phu de man doi theo (${en.stage} -> ${vi.stage})`);
+  ok(/CHỌN/i.test(vi.head), `tieu de man chon doi theo (${vi.head})`);
 
   const nho = await doc(async () => await window.__Store.get('cfg_lang'));
-  ok(nho === 'en', `ngon ngu duoc nho lai trong kho (${nho})`);
+  ok(nho === 'vi', `ngon ngu duoc nho lai trong kho (${nho})`);
   await page.click('#charSelect [data-lang-toggle]');
   await page.waitForTimeout(200);
-  ok(await doc(() => window.__LANG()) === 'vi', 'bam lan nua thi ve tieng Viet');
+  ok(await doc(() => window.__LANG()) === 'en', 'bam lan nua thi ve tieng Anh');
 
   /* ---------- nhạc nền ----------
      Đóng màn chọn lại: nó phủ kín trang, không bấm được vào bảng ô nhạc phía dưới. */
@@ -114,13 +122,19 @@ function fileNhac() {
     document.getElementById('musicOn').click();
     await new Promise(r => setTimeout(r, 400));
     return { on: window.__MUSIC.on, chay: !!window.__MUSIC.gain,
-             noi: [...document.querySelectorAll('#log div')].some(d => /nhạc tự tạo/i.test(d.textContent)) };
+             /* nhãn ô nhạc và dòng nhật ký này song ngữ — mặc định giờ là tiếng Anh,
+                nên nhận cả hai bản chứ đừng ghim một thứ tiếng */
+             noi: [...document.querySelectorAll('#log div')]
+                    .some(d => /nhạc tự tạo|built-in track/i.test(d.textContent)) };
   });
   ok(rong.on && rong.chay, 'chua co file nhac nao ma bat nhac thi chay nhac tu tao');
   ok(rong.noi, 'va noi ra mot dong cho biet vi sao');
   await doc(async () => { document.getElementById('musicOn').click(); await new Promise(r => setTimeout(r, 200)); });
 
-  const oNhac = page.locator('#bgmArea .slotwrap').filter({ hasText: 'Màn Vũ trụ' }).first();
+  /* Bám theo THỨ TỰ ô chứ đừng bám theo nhãn: nhãn song ngữ, đổi mặc định ngôn ngữ là
+     tìm không ra. BGM_SLOTS = menu, chung, rồi sáu màn theo đúng thứ tự STAGES —
+     màn Vũ trụ (space) là ô thứ bảy. */
+  const oNhac = page.locator('#bgmArea .slotwrap').nth(6);
   await oNhac.locator('input[type=file]').setInputFiles(fileNhac());
   await page.waitForFunction(() => !!window.__BGM.src.bgm_space, null, { timeout: 20000 });
   const m1 = await doc(async () => ({
@@ -148,9 +162,13 @@ function fileNhac() {
   await p2.goto('file://' + buildPlay(), { waitUntil: 'domcontentloaded' });
   await p2.waitForTimeout(700);
   ok(await p2.locator('#arcTitle [data-lang-toggle]').isVisible(), 'man tieu de co nut doi ngon ngu');
+  ok(await p2.evaluate(() => document.documentElement.lang) === 'en', 'trang choi MO RA LA tieng Anh');
   await p2.click('#arcTitle [data-lang-toggle]');
   await p2.waitForTimeout(200);
-  ok(await p2.evaluate(() => document.documentElement.lang) === 'en', 'trang choi doi sang tieng Anh');
+  ok(await p2.evaluate(() => document.documentElement.lang) === 'vi', 'bam nut thi doi sang tieng Viet');
+  await p2.click('#arcTitle [data-lang-toggle]');
+  await p2.waitForTimeout(200);
+  ok(await p2.evaluate(() => document.documentElement.lang) === 'en', 'bam lan nua thi ve tieng Anh');
   ok(await p2.locator('#musicOn').count() === 1, 'trang choi van co nut bat nhac');
   ok(await p2.evaluate(() => document.querySelectorAll('#bgmArea').length) === 0,
      'nhung KHONG co bang o nhac (do la do nghe cua xuong)');

@@ -1511,7 +1511,22 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
   | Chế độ | Các bước |
   |---|---|
   | đấu tay đôi | `p1` → `p2` → `stage` |
-  | hỗn chiến · đánh đội | `chars` (một khung đội hình) → `stage` |
+  | hỗn chiến | `chars` (một khung đội hình) → `stage` |
+  | **đánh đội** | **`t0` → `t1` → … → `stage`** — mỗi đội một bước |
+
+  > **Đánh đội đi TỪNG ĐỘI MỘT**, đúng quy trình của 1v1 — người dùng chốt: *"chọn đội 1
+  > trước đội 2 sau — quy trình như 1v1 chứ"*. Số bước ăn theo `TMP.teams.length`, nên đổi
+  > số đội là danh sách bước tự dài ngắn theo, `cselFix()` lo kéo bước về cho hợp lệ.
+  > - **Số đội chọn ở hàng `#teamNum`** (`TEAMS 2 3 4`), chỉ hiện ở bước đội ĐẦU TIÊN.
+  >   Hai nút `+ Thêm đội` / `✕ Bỏ đội` trong đầu mỗi khung **chỉ còn ở XƯỞNG** —
+  >   `probe.js` (`openMulti`) bấm đúng hai nút đó để dựng đội hình cho test, đừng bỏ.
+  > - `stepReady()` khác `tmpReady()`: nó chỉ hỏi **bước hiện tại** đã đủ chưa. Đòi cả đội 2
+  >   phải đủ người ngay từ bước đội 1 thì không bao giờ bấm Tiếp được.
+  > - `cselPaint()` giấu mọi khung đội trừ đúng đội đang chọn; dải `#pickRow` từ đội thứ hai
+  >   trở đi hiện `TEAM 1 vs TEAM 2 …` kèm mặt nhân vật, y hệt dải của 1v1.
+  > - CSS đọc `data-step` (`pick0` · `pick` · `stage`) thay vì liệt kê `t0`/`t1`/`t2`/`t3`
+  >   ra từng cái. Dòng liệt kê `.cselVs` ở góc phải **ẩn hẳn ở trang chơi** — nó nhắc lại
+  >   đúng cái dải chip phía trên.
 
   Người dùng bác lối để hai cột cạnh nhau: *"màn chọn p1 xong r chọn p2 sau, để chung nhìn
   rối"*. CSS giấu `#colB` ở bước `p1` và `#colA` ở bước `p2`, nên **mỗi bước chỉ có MỘT lưới
@@ -1571,6 +1586,13 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
     bấm là chơi ngay, ảnh về sau thì tự hiện (đúng cách cũ). Đừng bỏ nút này đi.
   - Màn chờ **chỉ có ở trang chơi** (`window.ARCADE`). Xưởng thì file mình tự nạp phải
     thắng nên gói chạy sau, không chặn gì cả.
+  - **Phần nhìn**: nền lưới trôi + quầng sáng thở (`#arcBoot::before/::after`), con số phần
+    trăm to, vệt sáng quét qua thanh, và **câu chạy vòng** `BOOT_TIPS` (song ngữ, đổi mỗi
+    4.2 giây) kể cho người chơi biết trong game có gì. Chờ mấy chục giây mà chỉ có mỗi cái
+    thanh thì chán.
+  - **Mọi chuyển động ở đây dùng `background-position` / `opacity`, KHÔNG dùng `transform`**
+    — Playwright coi phần tử đang biến đổi là "chưa đứng yên" và không bấm được nút nằm
+    trong đó (mục 9). Nút `#bootSkip` nằm ngay trong màn này.
 - **Dòng đếm MB phải hiện ở HAI chỗ**: `#arcLoad` trong màn tiêu đề, và `#loadChip` **đè lên
   sàn đấu**. Dòng trong màn tiêu đề biến mất ngay khi bấm PRESS START, mà gói thì còn tải cả
   chục giây nữa — người chơi vào trận thấy model vector và tưởng mất ảnh. Đo được trên mạng
@@ -1616,6 +1638,9 @@ nhạc nền hoặc đưa setup nhạc nền t tự chỉnh"*.
 
 ### Ngôn ngữ — `LANG` / `t()` / `tr()`
 
+- **Mặc định là TIẾNG ANH** (`let LANG='en'`). Người dùng chốt: *"có tiếng anh vs tiếng việt
+  nhưng cứ ưu tiên tiếng anh"*. Ai đã bấm đổi thì khoá `cfg_lang` trong kho thắng.
+  `t_ui.js` soi đúng chỗ này, đổi mặc định là test đổ.
 - `t('khoá')` cho chữ TĨNH (bảng `L.vi` / `L.en`), `tr({vi,en})` cho chữ nằm trong DỮ LIỆU
   (mô tả chiêu, phụ đề màn, tiểu sử), `tf('khoá',{n:…})` cho câu có chỗ điền số.
 - **Chữ tĩnh trong HTML gắn `data-i18n="khoá"`**, `applyLang()` quét một lượt là đổi hết.
@@ -2223,9 +2248,10 @@ node tools/t_chichi.js  # ChiChi: Flying Kick 45 dmg + choáng 2s, và viện bi
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
-node tools/t_ui.js      # đổi tên game, hai ngôn ngữ (nút đổi ở cả ba chỗ, chữ và mô tả chiêu
-                        # đổi theo, nhớ lại lựa chọn), hồ sơ tám nhân vật đủ song ngữ + thẻ
-                        # chiêu vẽ ra thật, nhạc nền mặc định tắt và chạy theo ô nhạc tự nạp
+node tools/t_ui.js      # đổi tên game, hai ngôn ngữ (MẶC ĐỊNH TIẾNG ANH, nút đổi ở cả ba chỗ,
+                        # chữ và mô tả chiêu đổi theo, nhớ lại lựa chọn), hồ sơ tám nhân vật
+                        # đủ song ngữ + thẻ chiêu vẽ ra thật, nhạc nền mặc định tắt và chạy
+                        # theo ô nhạc tự nạp
 node tools/t_dex.js     # biểu đồ sức mạnh chín trục (đủ tám nhân vật, thang 0-100, sáu bậc chữ cái,
                         # nhãn không tràn khỏi khung), hai lối xem skill (đơn giản không kèm bảng
                         # chấm điểm, chi tiết thì có đủ chín dòng — biểu đồ có ở CẢ HAI), máu chuẩn
@@ -2237,7 +2263,9 @@ node tools/t_stage.js   # sáu màn đấu: mỗi màn một tông màu riêng, 
 node tools/t_play.js    # hai trang: play.html đúng bằng bản dựng từ index.html, đã cắt sạch
                         # bảng xưởng, luồng arcade từng bước (tiêu đề → P1 → P2 → màn → đánh,
                         # mỗi bước chỉ hiện một cột, dải "đã chọn" giữ P1 lại, Quay lại về
-                        # đúng bước trước),
+                        # đúng bước trước), ĐÁNH ĐỘI cũng từng đội một (t0 → t1 → màn, mỗi
+                        # bước một khung, hàng chọn số đội chỉ có ở bước đầu, đổi sang 3 đội
+                        # thì danh sách bước dài thêm),
                         # gói phát hành được nạp, hết trận hiện dải nút, và xưởng vẫn vào
                         # trận bằng MỘT cú bấm #cselGo
 node tools/t_bulk.js    # nạp hàng loạt: bảng đoán tên file (thư mục thắng tên file, alias dài

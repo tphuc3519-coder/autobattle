@@ -162,10 +162,36 @@
   .arcHint{font-size:12px;color:var(--mute);margin-top:16px}
   .arcLoad{margin-top:9px;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.06em;
     color:var(--gold);opacity:.9}
-  .arcBar{width:min(360px,72vw);height:9px;margin:24px auto 14px;border-radius:99px;
-    background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14);overflow:hidden}
-  .arcBar i{display:block;height:100%;width:0;border-radius:99px;background:var(--gold);
-    box-shadow:0 0 12px rgba(255,197,66,.55);transition:width .18s linear}
+  /* Màn chờ: nền lưới trôi + quầng sáng thở, thanh tiến độ có vệt sáng quét qua, con số
+     phần trăm to. Toàn bộ chuyển động dùng background-position / opacity — KHÔNG dùng
+     transform, vì Playwright coi phần tử đang biến đổi là "chưa đứng yên" và không bấm
+     được nút nằm trong đó (mục 9). */
+  #arcBoot{background:radial-gradient(circle at 50% 38%,#2E2168,#0A0820 68%)}
+  #arcBoot::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background-image:linear-gradient(rgba(124,106,214,.13) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(124,106,214,.13) 1px,transparent 1px);
+    background-size:44px 44px;animation:bootGrid 6s linear infinite}
+  @keyframes bootGrid{from{background-position:0 0,0 0}to{background-position:0 44px,44px 0}}
+  #arcBoot::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(circle at 50% 38%,rgba(255,197,66,.16),transparent 46%);
+    animation:bootGlow 3.4s ease-in-out infinite}
+  @keyframes bootGlow{0%,100%{opacity:.35}50%{opacity:.9}}
+  .bootIn{position:relative;z-index:1}
+  .bootPct{margin-top:20px;font-family:"Space Mono",monospace;line-height:1;color:var(--gold)}
+  .bootPct b{font-size:clamp(34px,11vw,58px);font-weight:700;letter-spacing:-.02em;
+    text-shadow:0 0 26px rgba(255,197,66,.45)}
+  .bootPct span{font-size:16px;opacity:.65;margin-left:3px}
+  .arcBar{position:relative;width:min(380px,76vw);height:10px;margin:16px auto 14px;border-radius:99px;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);overflow:hidden}
+  .arcBar i{display:block;height:100%;width:0;border-radius:99px;
+    background:linear-gradient(90deg,#FF9F45,var(--gold),#FFE9A8);
+    box-shadow:0 0 14px rgba(255,197,66,.6);transition:width .18s linear}
+  .arcBar::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.5) 50%,transparent 65%);
+    background-size:220% 100%;animation:bootSheen 1.5s linear infinite}
+  @keyframes bootSheen{from{background-position:120% 0}to{background-position:-120% 0}}
+  .bootTip{margin-top:14px;font-size:12px;color:#B9AEE4;min-height:2.6em;max-width:340px;
+    margin-left:auto;margin-right:auto;line-height:1.35;transition:opacity .4s}
   /* Nhịp nháy chỉ đổi QUẦNG SÁNG, đừng đụng tới transform: nút mà nhúc nhích thì
      Playwright coi là "chưa đứng yên" và không bao giờ bấm được (test treo 30 giây). */
   #arcStart{font-size:17px;padding:14px 34px;animation:arcPulse 1.6s ease-in-out infinite}
@@ -225,6 +251,39 @@
   .pickChip i{font-style:normal;font-family:"Space Mono",monospace;font-size:9px;color:var(--mute);
     letter-spacing:.1em;display:block;text-transform:uppercase}
   .pickVs{font-family:"Space Mono",monospace;font-size:11px;color:var(--gold);letter-spacing:.14em}
+
+  /* ---- TRANG CHƠI: hỗn chiến / đánh đội cũng đi TỪNG BƯỚC như 1v1 ----
+     Người dùng: "giao diện hỗn chiến cũng phải nhìn cho đẹp và không rối mắt, theo đội
+     cũng vậy — chọn đội 1 trước đội 2 sau, quy trình như 1v1".
+     Bước nào cũng chỉ có MỘT khung đội hình + MỘT lưới nhân vật, giống hệt bước P1/P2. */
+  .teamNum{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;
+    margin:9px 0 2px;font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--mute)}
+  .teamNum button{padding:5px 14px;background:#191436;border:1px solid #2E2758;border-radius:9px;
+    color:var(--paper);font-weight:800;font-size:13px;cursor:pointer;font-family:inherit;transition:.14s}
+  .teamNum button:hover{background:#241D4C;border-color:#4A3F8C}
+  .teamNum button.on{border-color:var(--gold);color:var(--gold);
+    background:linear-gradient(180deg,#33285C,#241C48);box-shadow:0 0 0 1px var(--gold) inset}
+  /* data-step: pick0 = bước chọn ĐẦU TIÊN, pick = mấy bước chọn sau, stage = bước chọn màn.
+     Nhờ nó khỏi phải liệt kê t0/t1/t2/t3 ra từng cái một trong CSS. */
+  body.arcade #charSelect[data-step="pick"] .cselModes,
+  body.arcade #charSelect[data-step="pick"] #teamNum,
+  body.arcade #charSelect[data-step="stage"] #teamNum{display:none}
+  body.arcade #charSelect[data-step="pick0"] #stageSub,
+  body.arcade #charSelect[data-step="pick0"] #stageList,
+  body.arcade #charSelect[data-step="pick"] #stageSub,
+  body.arcade #charSelect[data-step="pick"] #stageList{display:none}
+  body.arcade #multiPane{grid-template-columns:1fr}
+  /* Giữ viền màu đội (đó là dấu hiệu phe duy nhất ở đây) nhưng phải có đệm, không thì
+     dòng tiêu đề nằm đè lên chính cái viền. */
+  body.arcade #multiPane .cselCol{padding:11px 12px 12px;border-radius:14px;background:#130F2C}
+  /* Dòng liệt kê ở góc phải nhắc lại đúng cái dải chip phía trên — bỏ cho đỡ rối. */
+  body.arcade .cselVs{display:none}
+  body.arcade #multiPane .cTiles{grid-template-columns:repeat(4,1fr);gap:8px}
+  body.arcade #multiPane .cAva{width:52px;height:52px;flex:0 0 52px}
+  @media(min-width:760px){ body.arcade #multiPane .cTiles{grid-template-columns:repeat(8,1fr)} }
+  body.arcade .cRoster{justify-content:center;min-height:38px;border:1px dashed #332B63;
+    border-radius:11px;padding:7px;background:#120F28}
 
   /* mặt nhân vật: dán ảnh thì lấy chính ảnh thủ thế, chưa dán thì vẫn là emoji */
   .cAva img,.dexAva img{width:100%;height:100%;object-fit:contain;display:block}
@@ -502,10 +561,12 @@
      vào trận luôn thì họ thấy model vector và tưởng game hỏng (người dùng đã báo đúng
      một lần). z-index cao hơn .arc để nó nằm đè lên màn tiêu đề. -->
 <div class="arc off" id="arcBoot" style="z-index:72">
-  <div>
+  <div class="bootIn">
     <div class="arcLogo">MULTIVERSE<b>BATTLER</b></div>
+    <div class="bootPct"><b id="bootPct">0</b><span>%</span></div>
     <div class="arcBar"><i id="bootBar"></i></div>
     <div class="arcLoad" id="bootTxt"></div>
+    <div class="bootTip" id="bootTip"></div>
     <div class="arcHint" data-i18n="bootHint">Tải xong là vào chơi được ngay</div>
     <div style="margin-top:18px"><button id="bootSkip" type="button" style="display:none"
       data-i18n="bootSkip">Vào luôn, khỏi chờ</button></div>
@@ -545,6 +606,9 @@
         <button id="hpStd" type="button" data-i18n="hpStd">Chuẩn 800</button></label>
     </div>
     <div class="pickRow off" id="pickRow"></div>
+    <!-- Chọn SỐ ĐỘI. Chỉ hiện ở bước đội đầu tiên của trang chơi; xưởng vẫn dùng hai nút
+         "+ Thêm đội" / "✕ Bỏ đội" trong đầu mỗi khung (probe.js bấm đúng hai nút đó). -->
+    <div class="teamNum off" id="teamNum"></div>
     <div class="cselBody">
       <div class="cselCols" id="duelPane">
         <div class="cselCol" id="colA">
@@ -617,7 +681,9 @@ const cm=v=>v*CAST.mul;
       arcade (Meteor Strike, DEEP SPACE), dịch ra là mất chất và lệch với tên file tiếng.
 
    Nhật ký trận đấu (216 chỗ gọi `say()`) hiện vẫn chỉ có tiếng Việt — ghi ở mục 11. */
-let LANG='vi';
+/* Mặc định TIẾNG ANH — người dùng chốt: "có tiếng anh vs tiếng việt nhưng cứ ưu tiên
+   tiếng anh". Ai đã bấm đổi thì khoá `cfg_lang` trong kho thắng, xem loadSaved(). */
+let LANG='en';
 const L={
   vi:{
     tagline:'Đấu trường đa vũ trụ · 8 đấu thủ · 6 màn',
@@ -639,6 +705,11 @@ const L={
     subDuel:'Chọn một nhân vật cho mỗi bên · {n} nhân vật',
     subFfa:'Hỗn chiến — chọn {lo}–{hi} người, ai còn đứng cuối cùng thì thắng',
     subTeam:'Đánh theo đội — {n} đội ({lo}–{hi}), mỗi đội {tlo}–{thi} người · {cur}/{max} người',
+    cselTeamN:'CHỌN <span>ĐỘI {n}</span>', cselFfa:'CHỌN <span>ĐỘI HÌNH</span>',
+    goTeamN:'Tiếp ▸ Đội {n}', teamN:'Đội {n}', teamCount:'Số đội', ffaHead:'Đấu thủ',
+    subTeamStep:'Chọn {lo}–{hi} người cho đội {n} · {cur}/{max} người trên sàn',
+    rosterHint:'Bấm vào ô bên dưới để thêm người (tối thiểu {lo})',
+    rmTeam:'✕ Bỏ đội', addTeam:'+ Thêm đội', rmFighter:'Bỏ ra khỏi đội hình',
     notEnough:'Chưa đủ người',
     stName:'Chỉ số', stPow:'Sát thương', stSpd:'Tốc độ', stRng:'Tầm đánh', stDef:'Chống chịu',
     skills:'Bộ chiêu', more:'Số liệu thô', less:'Thu gọn',
@@ -676,6 +747,11 @@ const L={
     subDuel:'Pick one fighter for each side · {n} fighters',
     subFfa:'Free-for-all — pick {lo}–{hi} fighters, last one standing wins',
     subTeam:'Team battle — {n} teams ({lo}–{hi}), {tlo}–{thi} each · {cur}/{max} fighters',
+    cselTeamN:'SELECT <span>TEAM {n}</span>', cselFfa:'SELECT <span>LINE-UP</span>',
+    goTeamN:'Next ▸ Team {n}', teamN:'Team {n}', teamCount:'Teams', ffaHead:'Fighters',
+    subTeamStep:'Pick {lo}–{hi} fighters for team {n} · {cur}/{max} on the field',
+    rosterHint:'Tap a fighter below to add ({lo} minimum)',
+    rmTeam:'✕ Remove team', addTeam:'+ Add team', rmFighter:'Remove from line-up',
     notEnough:'Not enough fighters',
     stName:'Stats', stPow:'Power', stSpd:'Speed', stRng:'Range', stDef:'Defence',
     skills:'Move list', more:'Raw numbers', less:'Hide numbers',
@@ -1706,7 +1782,7 @@ async function loadSaved(){
       TMP.ffa=ROSTERS.ffa.slice(); TMP.teams=ROSTERS.teams.map(a=>a.slice());
       cselRefresh();
     }
-    if(dirty&&typeof newGame==='function'){ newGame(); running=false; document.getElementById('play').textContent='Bắt đầu'; }
+    if(dirty&&typeof newGame==='function'){ newGame(); running=false; document.getElementById('play').textContent=t('play'); }
   }catch(e){}
   let n=0;
   for(const s of SETS){
@@ -2371,12 +2447,41 @@ let packChipT=0;
    packNote() lo phần CHỮ (chip trên sàn + dòng trong màn tiêu đề), packProg() lo phần
    THANH của màn chờ. Tách hai hàm vì có lúc chỉ cần một trong hai. */
 let bootOff=false;
+/* Mấy câu chạy vòng ở màn chờ. Chờ mấy chục giây mà chỉ có một cái thanh thì chán, còn
+   đây vừa lấp chỗ vừa kể cho người chơi biết trong game có gì. Song ngữ như mọi chữ khác. */
+const BOOT_TIPS=[
+  {vi:'Tám đấu thủ từ tám vũ trụ khác nhau — Konohamaru, ChiChi, Tsubasa, Shikamaru, Horikita, Ginyu, Doraemon, Superman.',
+   en:'Eight fighters from eight different universes — Konohamaru, ChiChi, Tsubasa, Shikamaru, Horikita, Ginyu, Doraemon, Superman.'},
+  {vi:'Captain Ginyu có thể CƯỚP XÁC đối thủ ngay trước lúc gục — hồn đổi chỗ, thân xác đứng yên.',
+   en:'Captain Ginyu can steal a body right before he falls — the souls swap, the bodies stay put.'},
+  {vi:'Doraemon hết máu một lần vẫn chưa thua: Time Machine tua ngược 3.5–10 giây.',
+   en:'Doraemon gets one second chance: the Time Machine rewinds him 3.5–10 seconds.'},
+  {vi:'Shikamaru ngồi lười đầu trận để tích chakra. Cứ để yên, càng tích lâu lãnh địa càng dài.',
+   en:'Shikamaru loafs at the start to bank chakra. Leave him alone and his forest lasts longer.'},
+  {vi:'Horikita có ba form. Ayanokouji bước ra đỡ đòn cho cô, rồi có lúc sát cánh thật.',
+   en:'Horikita has three forms. Ayanokouji steps in to shield her, and later fights beside her.'},
+  {vi:'Tsubasa dưới 10% máu thì mọc cánh: đánh nhanh gấp bốn, nhưng cháy hết máu trong 7.5 giây.',
+   en:'Below 10% HP Tsubasa sprouts wings: four times the attack speed, but he burns out in 7.5s.'},
+  {vi:'Ba chế độ: đấu tay đôi, hỗn chiến tới 6 người, hoặc đánh theo đội — tối đa 4 đội.',
+   en:'Three modes: duel, free-for-all up to 6, or team battle with up to 4 teams.'},
+  {vi:'Sáu sàn đấu, mỗi sàn một tông màu riêng. Dán ảnh nền của bạn vào cũng được.',
+   en:'Six stages, each with its own palette. You can paste your own backdrop into any of them.'}
+];
+let bootTipT=0, bootTipI=0;
+function bootTip(){
+  const e=document.getElementById('bootTip'); if(!e) return;
+  e.style.opacity='0';
+  setTimeout(()=>{ e.textContent=tr(BOOT_TIPS[bootTipI%BOOT_TIPS.length]); e.style.opacity='1'; },260);
+  bootTipI++;
+}
 function bootShow(){
   if(!window.ARCADE) return;
   const b=document.getElementById('arcBoot'); if(!b) return;
   b.classList.remove('off');
   const txt=document.getElementById('bootTxt');
   if(txt&&!txt.textContent) txt.textContent=t('bootWait');
+  bootTipI=Math.floor(Math.random()*BOOT_TIPS.length); bootTip();
+  clearInterval(bootTipT); bootTipT=setInterval(bootTip,4200);
   /* Đừng bao giờ NHỐT người chơi trong màn chờ: mạng chết giữa chừng thì packLoad() treo
      mãi mà không ai thoát ra được. Sau 10 giây hiện nút vào luôn — bấm là chơi ngay, ảnh
      về sau thì tự hiện, đúng như cách cũ. */
@@ -2385,6 +2490,7 @@ function bootShow(){
 }
 function bootHide(){
   bootOff=true;
+  clearInterval(bootTipT);
   const b=document.getElementById('arcBoot'); if(b) b.classList.add('off');
 }
 function packProg(pha,lam,tong){
@@ -2392,7 +2498,10 @@ function packProg(pha,lam,tong){
   const p=tong?Math.max(0,Math.min(1,lam/tong)):0;
   /* Hai pha chia đôi thanh: TẢI file chiếm 0→70%, MỞ GÓI chiếm 70→100%. Đo được ở 8 Mbps
      là 25 giây tải và 3 giây mở, nên chia vậy cho thanh chạy đều mắt. */
-  bar.style.width=((pha==='tai'?p*.7:.7+p*.3)*100).toFixed(1)+'%';
+  const all=pha==='tai'?p*.7:.7+p*.3;
+  bar.style.width=(all*100).toFixed(1)+'%';
+  const pct=document.getElementById('bootPct');
+  if(pct) pct.textContent=String(Math.round(all*100));
   const txt=document.getElementById('bootTxt');
   if(txt) txt.textContent=pha==='tai'
     ? tf('packBytes',{a:(lam/1048576).toFixed(1),b:(tong/1048576).toFixed(1)})
@@ -7175,7 +7284,7 @@ function step(dt){
       c2.x+=c2.vx*dt; c2.y+=c2.vy*dt; c2.vy+=52*dt; c2.rot+=c2.vr*dt; c2.life-=dt;
       if(c2.life<=0)G.conf.splice(i,1);
     }
-    if(G.endT>7.5 && running){ running=false; document.getElementById('play').textContent='Bắt đầu'; }
+    if(G.endT>7.5 && running){ running=false; document.getElementById('play').textContent=t('play'); }
     return;
   }
 
@@ -11330,15 +11439,15 @@ function recFallback(src,quiet){
    ở hàng chục chỗ. Trả về ô giả nên mọi phép gán rơi vào chỗ trống thay vì ném lỗi. */
 const NUL=document.createElement('div');
 const el=id=>document.getElementById(id)||NUL;
-el('play').addEventListener('click',()=>{ ac(); musicStart(); if(G.over)newGame(); running=!running; el('play').textContent=running?'Tạm dừng':'Tiếp tục'; });
-el('reset').addEventListener('click',()=>{ newGame(); running=false; el('play').textContent='Bắt đầu'; });
+el('play').addEventListener('click',()=>{ ac(); musicStart(); if(G.over)newGame(); running=!running; el('play').textContent=running?t('pause'):t('resume'); });
+el('reset').addEventListener('click',()=>{ newGame(); running=false; el('play').textContent=t('play'); });
 el('speed').addEventListener('change',e=>speedMul=parseFloat(e.target.value));
-el('mode').addEventListener('change',e=>{ mode=e.target.value; newGame(); running=false; el('play').textContent='Bắt đầu'; });
+el('mode').addEventListener('change',e=>{ mode=e.target.value; newGame(); running=false; el('play').textContent=t('play'); });
 el('autoskill').addEventListener('change',e=>autoSkill=e.target.checked);
 addEventListener('keydown',e=>{
   const k=e.key.toLowerCase(); keys[k]=true;
-  if(k===' '){ e.preventDefault(); if(!G.over){ running=!running; el('play').textContent=running?'Tạm dừng':'Tiếp tục'; } }
-  if(k==='r'){ newGame(); running=false; el('play').textContent='Bắt đầu'; }
+  if(k===' '){ e.preventDefault(); if(!G.over){ running=!running; el('play').textContent=running?t('pause'):t('resume'); } }
+  if(k==='r'){ newGame(); running=false; el('play').textContent=t('play'); }
   if(['arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
 });
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
@@ -11406,7 +11515,7 @@ function onHp(){
   if(ka!==kb) HP[kb]=v(el('hpC').value);
   applyHp();
   Store.set('cfg_hp',JSON.stringify(HP)).catch(()=>{});
-  newGame(); running=false; el('play').textContent='Bắt đầu';
+  newGame(); running=false; el('play').textContent=t('play');
 }
 function findFighter(key){ return G.fighters.find(f=>f.key===key&&!f.summon); }
 function testSummon(kind){
@@ -11414,7 +11523,7 @@ function testSummon(kind){
   const c=findFighter('chichi');
   if(!c){ say('Cần có ChiChi trong trận mới thử được viện binh.','m'); return; }
   ac(); musicStart();
-  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(!running){ running=true; el('play').textContent=t('pause'); }
   c.summonDone=false;
   c.injured=true;
   summonHelp(c,kind);
@@ -11426,7 +11535,7 @@ function testEagle(){
   if(!t){ say('Cần có Tsubasa trong trận mới thử được Wings of the Eagle.','m'); return; }
   if(t.eagleDone){ say('Tsubasa đã kích hoạt nội tại rồi.','m'); return; }
   ac(); musicStart();
-  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(!running){ running=true; el('play').textContent=t('pause'); }
   t.hp=Math.min(t.hp,Math.round(t.maxHp*.07));
   eagleAwaken(t);
   say('[Thử nghiệm] Ép Tsubasa vào trạng thái Wings of the Eagle.','m');
@@ -11438,7 +11547,7 @@ function testForest(){
   if(k.domain){ say('Khu rừng đang mở rồi.','m'); return; }
   if(k.domainDone){ say('Shikamaru đã mở lãnh địa một lần, chakra đã cạn.','m'); return; }
   ac(); musicStart();
-  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(!running){ running=true; el('play').textContent=t('pause'); }
   k.lazy=false; k.awake=true;
   // đầu trận chakra còn ít, lãnh địa sẽ chớp một cái là hết — nạp cho đủ xem
   if(k.chakra<400){ k.chakra=400; say('[Thử nghiệm] Nạp tạm 400 chakra cho đủ xem.','m'); }
@@ -11452,7 +11561,7 @@ function testTwin(){
   if(!t){ say('Cần có Tsubasa trong trận mới thử được Twin Shot.','m'); return; }
   if(t.eagle){ say('Đang trong Wings of the Eagle — Twin Shot bị vô hiệu.','m'); return; }
   ac(); musicStart();
-  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(!running){ running=true; el('play').textContent=t('pause'); }
   t.goals=GOAL_MAX;
   say(`[Thử nghiệm] Nạp đủ ${GOAL_MAX} goal cho Tsubasa.`,'m');
 }
@@ -11462,7 +11571,7 @@ function testSuz2(){
   if(!f){ say('Cần có Horikita trong trận mới thử được.','m'); return; }
   if(f.form>=2){ say('Horikita đã qua form 1 rồi.','m'); return; }
   ac(); musicStart();
-  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(!running){ running=true; el('play').textContent=t('pause'); }
   f.hp=Math.min(f.hp,Math.round(f.maxHp*SUZ.guardHp));
   ayaShield(f);
   say('[Thử nghiệm] Ép Ayanokouji nhảy vào đỡ đòn thay.','m');
@@ -11473,7 +11582,7 @@ function testSuzAya(){
   if(!f){ say('Cần có Horikita trong trận mới thử được.','m'); return; }
   if(f.ayaDone){ say('Ayanokouji đã bước ra một lần rồi.','m'); return; }
   ac(); musicStart();
-  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(!running){ running=true; el('play').textContent=t('pause'); }
   if(f.form<2){ f.ayaG=null; f.ayaShieldDone=true; suzForm2(f); }
   f.cp=0; suzCp(f,SUZ.cpMax);
   say('[Thử nghiệm] Nạp đủ 150 điểm lớp — Ayanokouji vào sân.','m');
@@ -11484,7 +11593,7 @@ function testSuz3(){
   if(!f){ say('Cần có Horikita trong trận mới thử được.','m'); return; }
   if(f.form>=3){ say('Horikita đã ở form 3 rồi.','m'); return; }
   ac(); musicStart();
-  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(!running){ running=true; el('play').textContent=t('pause'); }
   if(f.ayaAlly){ f.ayaAlly.hp=0; say('[Thử nghiệm] Ép Ayanokouji rời sàn.','m'); return; }
   if(f.form<2){ f.ayaG=null; f.ayaShieldDone=true; suzForm2(f); }
   f.ayaDone=true;
@@ -11496,7 +11605,7 @@ function testGinyuAura(){
   const f=findFighter('ginyu');
   if(!f){ say('Cần có Captain Ginyu trong trận mới thử được.','m'); return; }
   ac(); musicStart();
-  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(!running){ running=true; el('play').textContent=t('pause'); }
   if(f.gnEntry){ f.gnEntry=null; f.pose='idle'; }
   ginyuAura(f);
   say('[Thử nghiệm] Ép aura Ginyu toả ra ngay.','m');
@@ -11507,7 +11616,7 @@ function testGinyuChange(){
   if(!f){ say('Cần có Captain Ginyu trong trận mới thử được.','m'); return; }
   if(!gnCanChange(f)){ say('Ginyu đã dùng CHANGE một lần rồi.','m'); return; }
   ac(); musicStart();
-  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(!running){ running=true; el('play').textContent=t('pause'); }
   if(f.gnEntry){ f.gnEntry=null; f.pose='idle'; }
   f.hp=0;
   ginyuChange(f);
@@ -11518,7 +11627,7 @@ function findDora(){
   if(!f){ say('Cần có Doraemon trong trận mới thử được.','m'); return null; }
   if(G.over){ newGame(); return findFighter('dora'); }
   ac(); musicStart();
-  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(!running){ running=true; el('play').textContent=t('pause'); }
   if(f.drEntry){ f.drEntry=null; f.drHide=false; f.pose='idle'; }
   return f;
 }
@@ -11546,7 +11655,7 @@ function findSuperman(){
   if(!f){ say('Cần có Superman trong trận mới thử được.','m'); return null; }
   if(G.over){ newGame(); return findFighter('superman'); }
   ac(); musicStart();
-  if(!running){ running=true; el('play').textContent='Tạm dừng'; }
+  if(!running){ running=true; el('play').textContent=t('pause'); }
   if(f.supEntry){ f.supEntry=null; f.supHide=false; f.supAir=0; f.pose='idle'; f.lock=0; }
   return f;
 }
@@ -11605,10 +11714,10 @@ const TMP={a:PICK.a,b:PICK.b,mode:PMODE,stage:STAGE,ffa:ROSTERS.ffa.slice(),team
 /* Chế độ đang chọn cần mấy nhóm đội hình: 'ffa' đúng một nhóm gộp chung, 'team' thì mỗi
    đội một nhóm. Mỗi nhóm trỏ vào một mảng trong TMP qua hàm list(). */
 function modeGroups(m){
-  if(m==='ffa')  return [{list:()=>TMP.ffa,head:'Đấu thủ',min:FFA_MIN,max:FFA_MAX,full:true}];
-  if(m==='team') return TMP.teams.map((side,t)=>({
-    list:()=>TMP.teams[t], head:'Đội '+(t+1), tint:teamTint(t),
-    min:TEAM_MIN, max:TEAM_MAX, team:t
+  if(m==='ffa')  return [{list:()=>TMP.ffa,head:t('ffaHead'),min:FFA_MIN,max:FFA_MAX,full:true}];
+  if(m==='team') return TMP.teams.map((side,i)=>({
+    list:()=>TMP.teams[i], head:tf('teamN',{n:i+1}), tint:teamTint(i), team:i,
+    min:TEAM_MIN, max:TEAM_MAX
   }));
   return [];
 }
@@ -11675,31 +11784,33 @@ function paintGroup(i,g){
   head.innerHTML=(g.tint?`<span style="color:${g.tint}">●</span> `:'')+
                  `${g.head} <b>${list.length}/${g.max}</b>`;
   // đánh đội: mỗi đội có nút bỏ đội, còn nút thêm đội nằm ở đội cuối
-  if(g.team!==undefined){
+  /* Trang chơi dùng hàng chọn SỐ ĐỘI (#teamNum) cho gọn; xưởng giữ hai nút này vì
+     probe.js bấm đúng chúng để dựng đội hình cho test. */
+  if(g.team!==undefined&&!window.ARCADE){
     const nt=TMP.teams.length;
     if(nt>TEAM_MIN_N){
       const rm=document.createElement('button');
-      rm.type='button'; rm.className='grpBtn'; rm.textContent='✕ Bỏ đội';
+      rm.type='button'; rm.className='grpBtn'; rm.textContent=t('rmTeam');
       rm.addEventListener('click',()=>{ TMP.teams.splice(g.team,1); cselRefresh(); });
       head.appendChild(rm);
     }
     if(g.team===nt-1&&nt<TEAM_MAX_N&&!day){
       const add=document.createElement('button');
-      add.type='button'; add.className='grpBtn on'; add.textContent='+ Thêm đội';
+      add.type='button'; add.className='grpBtn on'; add.textContent=t('addTeam');
       add.addEventListener('click',()=>{ TMP.teams.push([CKEYS[TMP.teams.length%CKEYS.length]]); cselRefresh(); });
       head.appendChild(add);
     }
   }
   const slots=el('grpSlots'+i);
   slots.innerHTML='';
-  if(!list.length) slots.innerHTML=`<span class="cRosterEmpty">Bấm vào ô bên dưới để thêm người (tối thiểu ${g.min})</span>`;
+  if(!list.length) slots.innerHTML=`<span class="cRosterEmpty">${tf('rosterHint',{lo:g.min})}</span>`;
   list.forEach((key,j)=>{
     const C=CHARS[key];
     const chip=document.createElement('span');
     chip.className='cChip'; chip.style.color=C.color;
     chip.innerHTML=`<span>${C.emoji}</span><span>${C.short||C.name}</span>`;
     const x=document.createElement('button');
-    x.type='button'; x.textContent='✕'; x.title='Bỏ ra khỏi đội hình';
+    x.type='button'; x.textContent='✕'; x.title=t('rmFighter');
     x.addEventListener('click',()=>{ g.list().splice(j,1); cselRefresh(); });
     chip.appendChild(x);
     slots.appendChild(chip);
@@ -11741,7 +11852,9 @@ function dexTagFull(tag){ return tag==='P'?t('tagPassive'):tag==='U'?t('tagUlt')
 /* RADAR_PAD phải đủ rộng cho cả DÒNG CHỮ nhãn chứ không chỉ cho điểm neo của nó: nhãn
    hai bên canh mép (text-anchor start/end) nên chữ chạy tiếp ra ngoài điểm neo, để hẹp
    là mấy chữ đầu bị cắt cụt (đã dính đúng một lần: "Ổn định" chỉ còn "định"). */
-const RADAR_R=118, RADAR_PAD=86;
+/* Nhãn tiếng Anh dài hơn tiếng Việt ("Consistency 66" so với "Ổn định 66") nên chỗ chừa
+   phải rộng thêm — đổi mặc định sang tiếng Anh là có nhãn chạm mép ngay. */
+const RADAR_R=118, RADAR_PAD=96;
 function radarPt(i,n,rad,cx,cy){
   const a=-Math.PI/2+i*2*Math.PI/n;
   return [cx+Math.cos(a)*rad, cy+Math.sin(a)*rad];
@@ -11855,16 +11968,33 @@ function cselRefresh(){
     if(sub) sub.textContent=cselSubText();
     if(vs) vs.innerHTML=`<b>${CHARS[TMP.a].name}</b> vs <b>${CHARS[TMP.b].name}</b>`;
   }else if(TMP.mode==='ffa'){
-    if(sub) sub.textContent=tf('subFfa',{lo:FFA_MIN,hi:FFA_MAX});
+    if(sub) sub.textContent=ARCADE?cselSubText():tf('subFfa',{lo:FFA_MIN,hi:FFA_MAX});
     if(vs) vs.innerHTML=TMP.ffa.length?TMP.ffa.map(k=>`<b>${nm(k)}</b>`).join(' · ')
       :`<b>${t('notEnough')}</b>`;
   }else{
-    if(sub) sub.textContent=tf('subTeam',{n:TMP.teams.length,lo:TEAM_MIN_N,hi:TEAM_MAX_N,
+    if(sub) sub.textContent=ARCADE?cselSubText():tf('subTeam',{n:TMP.teams.length,lo:TEAM_MIN_N,hi:TEAM_MAX_N,
       tlo:TEAM_MIN,thi:TEAM_MAX,cur:tmpTotal(),max:TEAM_TOTAL});
     if(vs) vs.innerHTML=TMP.teams.map((side,t)=>
       `<b style="color:${teamTint(t)}">${side.map(nm).join(' + ')||'—'}</b>`).join(' vs ');
   }
   if(go){ const ok=tmpReady(); go.disabled=!ok; go.style.opacity=ok?'':'.5'; go.style.cursor=ok?'':'not-allowed'; }
+  /* Hàng chọn SỐ ĐỘI, chỉ trang chơi mới có. Xưởng vẫn dùng hai nút trong đầu mỗi khung. */
+  const tn=document.getElementById('teamNum');
+  if(tn){
+    const hien=ARCADE&&TMP.mode==='team';
+    tn.classList.toggle('off',!hien);
+    tn.innerHTML='';
+    if(hien){
+      const lab=document.createElement('span'); lab.textContent=t('teamCount'); tn.appendChild(lab);
+      for(let n=TEAM_MIN_N;n<=TEAM_MAX_N;n++){
+        const b=document.createElement('button');
+        b.type='button'; b.textContent=String(n);
+        if(n===TMP.teams.length) b.className='on';
+        b.addEventListener('click',()=>setTeamCount(n));
+        tn.appendChild(b);
+      }
+    }
+  }
   if(typeof cselPaint==='function') cselPaint();
 }
 /* Ảnh thu nhỏ của một màn: vẽ THẬT sàn đấu đó ra canvas phụ rồi thu lại, nên dán ảnh nền
@@ -11915,7 +12045,7 @@ function openCsel(){
   TMP.ffa=ROSTERS.ffa.slice(); TMP.teams=ROSTERS.teams.map(a=>a.slice());
   cselRefresh();
   el('charSelect').classList.remove('off');
-  running=false; el('play').textContent='Bắt đầu';
+  running=false; el('play').textContent=t('play');
 }
 function closeCsel(){ el('charSelect').classList.add('off'); }
 function startPicked(){
@@ -11924,7 +12054,7 @@ function startPicked(){
   ROSTERS.ffa=TMP.ffa.slice(); ROSTERS.teams=TMP.teams.map(a=>a.slice());
   Store.set('cfg_picks',JSON.stringify({a:PICK.a,b:PICK.b,mode:PMODE,stage:STAGE,rosters:ROSTERS})).catch(()=>{});
   applyColors(); applyHp();
-  newGame(); running=false; el('play').textContent='Bắt đầu';
+  newGame(); running=false; el('play').textContent=t('play');
   closeCsel();
 }
 /* ---------- vỏ arcade ----------
@@ -11939,51 +12069,115 @@ const ARCADE=!!window.ARCADE;
    Xưởng KHÔNG chia bước (`dataset.page='all'`) — mọi test cũ bấm #cselGo một phát là vào trận. */
 let cselPage='p1';
 const cselDuel=()=>ARCADE&&TMP.mode==='duel';
-function cselSteps(){ return cselDuel()?['p1','p2','stage']:['chars','stage']; }
+/* Đánh đội cũng đi TỪNG ĐỘI MỘT, đúng quy trình của 1v1: `t0` → `t1` → … → `stage`.
+   Người dùng: "chọn đội 1 trước đội 2 sau — quy trình như 1v1 chứ". Số bước ăn theo số đội
+   đang có, nên đổi số đội là danh sách bước tự dài ngắn theo. */
+function cselSteps(){
+  if(!ARCADE) return ['chars','stage'];
+  if(TMP.mode==='duel') return ['p1','p2','stage'];
+  if(TMP.mode==='team') return TMP.teams.map((_,i)=>'t'+i).concat('stage');
+  return ['chars','stage'];
+}
+const teamStep=()=>{ const m=/^t(\d+)$/.exec(cselPage); return m?+m[1]:-1; };
 function cselFix(){                       // đổi chế độ giữa chừng thì kéo bước về cho hợp lệ
   const st=cselSteps();
   if(st.indexOf(cselPage)<0) cselPage=st[0];
+}
+/* Đủ điều kiện đi tiếp CHƯA — khác `tmpReady()` (cả đội hình xong chưa). Ở bước đội 1 mà
+   đòi cả đội 2 phải đủ người thì không bao giờ bấm Tiếp được. */
+function stepReady(){
+  if(!ARCADE) return tmpReady();
+  const i=teamStep();
+  if(i>=0){
+    const L=TMP.teams[i]||[];
+    return L.length>=TEAM_MIN&&L.length<=TEAM_MAX&&tmpTotal()<=TEAM_TOTAL;
+  }
+  if(cselPage==='chars') return tmpReady();
+  return cselPage==='stage'?tmpReady():true;
+}
+/* Đổi số đội: thêm thì mỗi đội mới một người mặc định, bớt thì cắt từ cuối. */
+function setTeamCount(n){
+  n=Math.max(TEAM_MIN_N,Math.min(TEAM_MAX_N,n));
+  while(TMP.teams.length<n) TMP.teams.push([CKEYS[TMP.teams.length%CKEYS.length]]);
+  while(TMP.teams.length>n) TMP.teams.pop();
+  cselFix(); cselRefresh();
 }
 /* Dòng phụ dưới tiêu đề. Ở trang chơi nó nói thẳng đang chọn cho ai — và phải gọi được
    từ `cselPaint()` nữa, không thì bấm "Tiếp" xong chữ vẫn đứng ở bước trước. */
 function cselSubText(){
   if(ARCADE&&(cselPage==='p1'||cselPage==='p2'))
     return tf('subPick',{who:cselPage==='p1'?t('p1'):t('p2'),n:CKEYS.length});
+  const i=teamStep();
+  if(i>=0) return tf('subTeamStep',{n:i+1,lo:TEAM_MIN,hi:TEAM_MAX,cur:tmpTotal(),max:TEAM_TOTAL});
+  if(ARCADE&&cselPage==='chars'&&TMP.mode==='ffa') return tf('subFfa',{lo:FFA_MIN,hi:FFA_MAX});
   return tf('subDuel',{n:CKEYS.length});
 }
 function cselPaint(){
   const box=el('charSelect');
   cselFix();
   box.dataset.page=ARCADE?cselPage:'all';
-  const st=cselSteps(), i=st.indexOf(cselPage), last=i===st.length-1;
+  const st=cselSteps(), i=st.indexOf(cselPage), last=i===st.length-1, ti=teamStep();
+  box.dataset.step=cselPage==='stage'?'stage':(i===0?'pick0':'pick');
   const h2=box.querySelector&&box.querySelector('h2');
   if(h2) h2.innerHTML=cselPage==='stage'?t('cselStage')
-                     :cselPage==='p1'?t('cselP1'):cselPage==='p2'?t('cselP2'):t('cselChar');
+                     :cselPage==='p1'?t('cselP1'):cselPage==='p2'?t('cselP2')
+                     :ti>=0?tf('cselTeamN',{n:ti+1})
+                     :(ARCADE&&TMP.mode==='ffa')?t('cselFfa'):t('cselChar');
   el('cselGo').textContent=!ARCADE?t('go'):(last?t('goFight')
-                     :cselPage==='p1'?t('goP2'):t('goNext'));
+                     :cselPage==='p1'?t('goP2')
+                     /* chỉ ghi "Tiếp ▸ Đội n+1" khi bước KẾ TIẾP đúng là một đội nữa;
+                        đội cuối thì bước sau là chọn màn, phải ghi "Tiếp ▸ Chọn màn" */
+                     :(ti>=0&&/^t\d+$/.test(st[i+1]||''))?tf('goTeamN',{n:ti+2}):t('goNext'));
   el('cselBack').classList.toggle('off',!ARCADE||i<=0);
   const sub=el('cselCount');
-  if(sub&&TMP.mode==='duel') sub.textContent=cselSubText();
+  if(sub&&(ARCADE||TMP.mode==='duel')) sub.textContent=cselSubText();
+  /* Đánh đội trên trang chơi: mỗi bước chỉ để lộ ĐÚNG một khung đội, mấy đội kia giấu đi —
+     đúng cái người dùng đòi ở 1v1 ("để chung nhìn rối"). */
+  if(ARCADE&&TMP.mode==='team')
+    for(let j=0;j<TEAM_MAX_N;j++){
+      const b=document.getElementById('grpBox'+j);
+      if(b) b.classList.toggle('off',j>=TMP.teams.length||j!==ti);
+    }
+  const go=el('cselGo');
+  if(go&&ARCADE){ const ok=stepReady(); go.disabled=!ok; go.style.opacity=ok?'':'.5'; go.style.cursor=ok?'':'not-allowed'; }
   pickRowPaint();
 }
 /* Dải người đã chốt: lúc chọn P2 vẫn nhìn thấy P1, và ở bước chọn màn thì thấy cả hai. */
 function pickRowPaint(){
   const row=document.getElementById('pickRow');
   if(!row) return;
-  if(!ARCADE||!cselDuel()||cselPage==='p1'){ row.classList.add('off'); row.innerHTML=''; return; }
+  const tat=()=>{ row.classList.add('off'); row.innerHTML=''; };
+  if(!ARCADE) return tat();
+  const mat=key=>{
+    const C=CHARS[key], src=avaSrc(key);
+    return src?`<img alt="" src="${src}">`:`<span class="e" style="color:${C.color}">${C.emoji}</span>`;
+  };
+  if(cselDuel()){
+    if(cselPage==='p1') return tat();
+    row.classList.remove('off');
+    row.innerHTML=['a','b'].map(slot=>{
+      const key=TMP[slot], C=CHARS[key];
+      const now=(cselPage==='p2'&&slot==='b');
+      return `<span class="pickChip${now?' now':''}" data-key="${key}">`+mat(key)+
+        `<b style="color:${C.color}">${C.short||C.name}<i>${slot==='a'?t('p1'):t('p2')}</i></b></span>`;
+    }).join('<span class="pickVs">VS</span>');
+    return;
+  }
+  /* Đánh đội: từ đội thứ hai trở đi mới có cái để khoe — hiện mấy đội đã chốt cộng đội
+     đang chọn, đúng kiểu dải "đã chọn" của 1v1. */
+  const ti=teamStep();
+  if(TMP.mode!=='team'||ti<=0) return tat();
   row.classList.remove('off');
-  row.innerHTML=['a','b'].map(slot=>{
-    const key=TMP[slot], C=CHARS[key];
-    const now=(cselPage==='p2'&&slot==='b');
-    const src=avaSrc(key);
-    return `<span class="pickChip${now?' now':''}" data-key="${key}">`+
-      (src?`<img alt="" src="${src}">`:`<span class="e" style="color:${C.color}">${C.emoji}</span>`)+
-      `<b style="color:${C.color}">${C.short||C.name}<i>${slot==='a'?t('p1'):t('p2')}</i></b></span>`;
+  row.innerHTML=TMP.teams.slice(0,ti+1).map((side,j)=>{
+    const tint=teamTint(j);
+    const ten=side.map(k=>CHARS[k].short||CHARS[k].name).join(' + ')||'—';
+    return `<span class="pickChip${j===ti?' now':''}">`+side.slice(0,3).map(mat).join('')+
+      `<b style="color:${tint}">${ten}<i>${tf('teamN',{n:j+1})}</i></b></span>`;
   }).join('<span class="pickVs">VS</span>');
 }
 function arcFight(){
   ac(); musicStart();
-  running=true; el('play').textContent='Tạm dừng';
+  running=true; el('play').textContent=t('pause');
 }
 for(const b of document.querySelectorAll('[data-lang-toggle]'))
   b.addEventListener('click',()=>setLang(LANG==='vi'?'en':'vi'));
@@ -11991,7 +12185,7 @@ el('pick').addEventListener('click',openCsel);
 el('cselGo').addEventListener('click',()=>{
   if(ARCADE){
     const st=cselSteps(), i=st.indexOf(cselPage);
-    if(i<st.length-1){ if(!cselDuel()&&!tmpReady())return; cselPage=st[i+1]; cselPaint(); return; }
+    if(i<st.length-1){ if(!stepReady())return; cselPage=st[i+1]; cselPaint(); return; }
   }
   startPicked();
   if(ARCADE){ cselPage=cselSteps()[0]; cselPaint(); arcFight(); }
@@ -12046,7 +12240,7 @@ buildCsel();
 el('cast').addEventListener('change',e=>{
   CAST.mul=parseFloat(e.target.value)||1.8;
   Store.set('cfg_cast',String(CAST.mul)).catch(()=>{});
-  newGame(); running=false; el('play').textContent='Bắt đầu';
+  newGame(); running=false; el('play').textContent=t('play');
 });
 el('hpK').addEventListener('change',onHp);
 el('hpC').addEventListener('change',onHp);
