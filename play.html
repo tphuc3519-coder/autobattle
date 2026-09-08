@@ -523,7 +523,8 @@ const L={
     pwChart:'Biểu đồ sức mạnh', pwTable:'Chấm điểm thang 100', pwAvg:'Trung bình',
     hpTip:'Máu khởi đầu của nhân vật này — chỉnh thoải mái',
     hpAll:'Máu mọi nhân vật', hpStd:'Chuẩn '+HP_STD,
-    packLoading:'Đang tải ảnh và tiếng…', packDone:'Đã nạp {n} ảnh · {s} tiếng'
+    packLoading:'Đang tải ảnh và tiếng…', packDone:'Đã nạp {n} ảnh · {s} tiếng',
+    packBytes:'Đang tải ảnh và tiếng… {a} / {b} MB', packDecode:'Đang mở gói…'
   },
   en:{
     tagline:'Cross-universe arena · 8 fighters · 6 stages',
@@ -556,7 +557,8 @@ const L={
     pwChart:'Power chart', pwTable:'Rated out of 100', pwAvg:'Average',
     hpTip:'Starting HP for this fighter — set it to whatever you like',
     hpAll:'HP for everyone', hpStd:'Standard '+HP_STD,
-    packLoading:'Loading art and sound…', packDone:'Loaded {n} images · {s} sounds'
+    packLoading:'Loading art and sound…', packDone:'Loaded {n} images · {s} sounds',
+    packBytes:'Loading art and sound… {a} / {b} MB', packDecode:'Unpacking…'
   }
 };
 const t=k=>{ const d=L[LANG]||L.vi; return d[k]!==undefined?d[k]:(L.vi[k]!==undefined?L.vi[k]:k); };
@@ -2237,10 +2239,32 @@ function packNote(msg){
   el.textContent=msg||'';
   el.style.display=msg?'':'none';
 }
+/* Đọc gói kèm ĐẾM SỐ MB đã tải. Gói là một file mấy chục MB, trên mạng chậm nó về sau khi
+   trang đã mở — không đếm ra màn hình thì người chơi ngồi nhìn model vector và tưởng game
+   hỏng. Trình duyệt nào không cho đọc dòng byte thì lùi về `r.json()` như cũ. */
+async function packRead(r){
+  const all=+(r.headers.get('content-length')||0);
+  if(!r.body||!r.body.getReader||!all) return r.json();
+  const rd=r.body.getReader(); let got=0; const parts=[];
+  for(;;){
+    const {done,value}=await rd.read();
+    if(done) break;
+    parts.push(value); got+=value.length;
+    packNote(tf('packBytes',{a:(got/1048576).toFixed(1),b:(all/1048576).toFixed(1)}));
+  }
+  const buf=new Uint8Array(got); let at=0;
+  for(const p of parts){ buf.set(p,at); at+=p.length; }
+  packNote(t('packDecode'));
+  return JSON.parse(new TextDecoder().decode(buf));
+}
 async function packLoad(noi){
   let data=null;
   packNote(t('packLoading'));
-  try{ const r=await fetchAsset(PACK_URL,{cache:'no-store'}); if(r) data=await r.json(); }catch(e){}
+  /* KHÔNG dùng `cache:'no-store'` nữa: nó bắt tải lại nguyên mấy chục MB mỗi lần mở trang,
+     trên điện thoại là chờ dài cổ và tốn dung lượng. Để trình duyệt cache như thường thì
+     lần sau vào là ăn ngay bản trong máy, và GitHub Pages có ETag nên gói mới vẫn về đúng
+     (nó hỏi lại rồi nhận 304 vài trăm byte). */
+  try{ const r=await fetchAsset(PACK_URL); if(r) data=await packRead(r); }catch(e){}
   if(!data||!data.spr&&!data.sfx){
     packNote('');
     if(noi) status('Chưa có '+PACK_URL+' — mở trang bằng http, hoặc bấm "Xuất gói" rồi đẩy file đó lên repo.');
