@@ -1555,11 +1555,18 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
   lượt `''` → `'../'` → `'../../'` rồi **nhớ mức nào ăn**, các file sau đi thẳng mức đó (bộ giọng
   mẫu nạp chín file nên không được dò lại từ đầu mỗi lần). `t_play.js` dựng hẳn bản giống Pages
   (trang chơi ở gốc, xưởng trong `/studio/`, `assets` ở gốc) rồi kiểm cả hai trang.
-- **Gói nặng thì phải nói cho người chơi biết.** `pack.json` gói ảnh base64 nên vài chục MB là
+- **Gói nặng thì phải ĐẾM MB ra màn hình.** `pack.json` gói ảnh base64 nên vài chục MB là
   bình thường (bản người dùng đang dùng: **24 MB, 89 ảnh, 46 tiếng**), trên mạng chậm nó tới sau
-  khi trang đã mở — không nói gì thì người chơi tưởng game hỏng. Màn tiêu đề vì vậy có dòng
-  `#arcLoad`: *Đang tải ảnh và tiếng…* rồi đổi thành *Đã nạp N ảnh · M tiếng*. Đo trên máy test:
-  xong sau **3 giây** với gói 24 MB đọc từ localhost.
+  khi trang đã mở — không nói gì thì người chơi tưởng game hỏng và nhắn "sao mất ảnh". Màn tiêu
+  đề vì vậy có dòng `#arcLoad`, đi qua ba chặng: *Đang tải ảnh và tiếng… 4.0 / 23.7 MB* (đọc
+  dòng byte bằng `packRead()` + `content-length`) → *Đang mở gói…* → *Đã nạp 89 ảnh · 46 tiếng*.
+  Trình duyệt nào không cho đọc dòng byte thì lùi về `r.json()` như cũ.
+- **Đã bỏ `cache:'no-store'` khi tải gói** — cờ đó CẤM trình duyệt giữ lại, tức mở trang lần nào
+  cũng kéo lại nguyên mấy chục MB. Bỏ đi thì trình duyệt được phép cache, và Pages có ETag nên
+  gói mới vẫn về đúng. **Nhưng đừng hứa là nhanh hơn**: đo thật thì Chrome *không* cất một mục
+  24 MB vào disk cache (mỗi mục có trần cỡ), nên lần hai vẫn tải lại — 4.1s cả hai lần trên
+  localhost. Muốn nhanh thật thì phải **chẻ gói ra nhiều file nhỏ** (mỗi nhân vật một file),
+  chưa làm.
 - **`const PACK_URL` phải khai TRƯỚC `sfxRestore()`.** Để nó ở dưới thì lúc `sfxRestore()`
   chạy (rất sớm), `PACK_URL` còn trong TDZ, `packLoad()` ném lỗi **ngay trong `try{}` và bị
   nuốt mất** — trang chơi im lặng không nạp gói, không một dòng lỗi nào. Mất một lượt dò mới ra.
@@ -1622,8 +1629,19 @@ thẻ chiêu, rồi `<details>` "xem chi tiết số liệu" mở ra **mảng `C
   đúng tên ô.
 - Nhạc chạy bằng thẻ `<audio loop>`, **không** đi qua `decodeAudioData` — file nhạc dài,
   giải mã cả bài ra buffer là ngốn bộ nhớ mà chẳng để làm gì.
-- **Mọi chỗ bật nhạc gọi `musicStart()`**, đừng gọi thẳng `startMusic()` nữa: hàm đó xét theo
-  thứ tự **nhạc của màn → nhạc chung → nhạc tự sinh (nếu bạn bật) → im lặng**.
+- **Mọi chỗ bật nhạc gọi `musicStart()`**, đừng gọi thẳng `startMusic()` nữa. Ba nấc:
+
+  | Tình huống | Chạy gì |
+  |---|---|
+  | có file cho màn này (hoặc ô chung) | **file đó** |
+  | không có file cho màn NÀY nhưng có file ở ô khác | theo ô **🎹 Nhạc tự tạo** của xưởng |
+  | **không có file nào cả** (`!bgmAny()`) | **nhạc tự tạo**, kèm một dòng nhật ký nói vì sao |
+
+  > **Bật nhạc mà im lặng là vô lý** — người chơi vừa tự tay bấm bật. Nấc cuối trước đây rơi
+  > thẳng vào `stopMusic()`: gói phát hành chưa có ô nhạc nào (`pack.bgm` rỗng) nên bấm bật
+  > nhạc xong chẳng nghe gì, cũng chẳng có dòng nào giải thích — người dùng nhắn "và có âm
+  > thanh" (ý là không có). Dòng `musicNone` chỉ nói **một lần** mỗi lượt mở trang
+  > (`musicSaidEmpty`), đừng để nó lặp mỗi lần đổi màn.
 - Ô bật nhạc và thanh âm lượng nhạc nằm ở **thanh công cụ chính**, không nằm trong bảng
   tiếng: cả bảng tiếng bị cắt khỏi `play.html`, để trong đó thì người chơi không tắt bật được.
 - Gói phát hành mang theo cả nhạc (`pack.bgm`) — nhớ là nhạc nặng, xem cảnh báo dung lượng ở
