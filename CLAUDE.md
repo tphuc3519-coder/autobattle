@@ -1550,6 +1550,33 @@ Cách đoán (`bulkSprMatch()` / `bulkSfxMatch()`), ba luật, đừng nới ra:
 
 Kiểm bằng `node tools/t_bulk.js`.
 
+### Bộ giọng máy dựng sẵn — `assets/voice` + `tools/mk_voice.py`
+
+Chín ô 🎙 không còn phải chờ người dùng tự thu: `python3 tools/mk_voice.py` gọi **espeak-ng**
+đọc thẳng lời thoại **lấy từ `index.html`** (`SUZ_ASK`, `SUZ_DECISIONS`, `SUZ_WRONG`,
+`AYA_STAND`, `AYA_LAST`, `AYA_BYE`, `GN_SHOUT`, `GN_CHANGE_LINE`, `DORA_HI`) rồi ghi ra
+`assets/voice/*.wav` + `manifest.json`. Giọng máy, nghe ra robot, nhưng đúng câu và đúng
+nhịp — thu file thật đè lên lúc nào cũng được.
+
+- **Sửa câu thoại trong `index.html` thì chạy lại script**, đừng chép tay câu sang script.
+- **Hai ô đọc nối tiếp chia ĐÚNG từng đoạn `SUZ_BUBBLE*RT` = 3.8 giây**: game nhảy tới đoạn
+  thứ n bằng phép nhân, nên câu ngắn phải chèn im lặng cho đủ đoạn, và thứ tự câu phải y hệt
+  thứ tự trong mảng (mục 4, luật về tiếng số 2).
+- **Câu dài quá khung thì đọc NHANH hơn chứ không cắt** (`fit()` tăng dần tốc đọc) — luật
+  "tiếng không được sống lâu hơn hình đi kèm". Đo được: `aya_join` 2.4s trên khung 5.0s,
+  `ginyu_change` 1.9s trên 5.2s.
+- File 11025 Hz mono 16-bit, cả bộ ~1.9 MB.
+
+**`voicePack()` trong game tự nạp bộ này**, gọi ở cuối lượt khôi phục của `buildSfx()` nên
+**ô nào người dùng đã tự nạp thì bỏ qua, không bao giờ đè lên**. Nó đi bằng `fetch` nên:
+
+| Mở trang kiểu gì | Ra sao |
+|---|---|
+| `http://` (ví dụ `python3 -m http.server`) | tự nạp cả chín ô lúc mở trang |
+| `file://` | trình duyệt chặn fetch — kéo thẳng thư mục `assets/voice` thả vào bảng tiếng, hoặc bấm 🎙 **Nạp bộ giọng mẫu** để hiện đúng câu nhắc đó |
+
+Kiểm bằng `node tools/t_voice.js`.
+
 > **Khoá phải giữ nguyên đời đời.** Đổi tên khoá là xoá sạch ảnh và tiếng người dùng đã nạp.
 > Đổi tên một ô thì chỉ đổi **nhãn**, giữ nguyên tên khoá.
 
@@ -1817,6 +1844,9 @@ node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng
 node tools/t_bulk.js    # nạp hàng loạt: bảng đoán tên file (thư mục thắng tên file, alias dài
                         # thắng alias ngắn, số đuôi là số khung), nạp thật qua ô chọn file,
                         # file đoán không ra được báo tên, danh sách tên file đủ mọi ô
+node tools/t_voice.js   # bộ giọng máy: file khớp lời thoại trong index.html, hai ô đọc nối tiếp
+                        # chia đúng từng đoạn 3.8s, mở bằng http thì tự nạp, ô người dùng đã tự
+                        # nạp thì không bị đè
 node tools/t_bubble.js  # bong bóng thoại nằm trên băng-rôn tên chiêu và băng-rôn giữa màn
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
                         # khiêu khích kéo địch ở mọi khoảng cách, anh miễn nhiễm Sexy no Jutsu,
@@ -1941,11 +1971,11 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 - Bộ ảnh thẻ nhân vật (dựng bằng script trong thư mục nháp, chụp bằng Playwright,
   `deviceScaleFactor: 2`, font **Liberation Sans** — DejaVu Sans Mono thiếu chữ tiếng Việt có dấu)
   đang cũ: chưa có Shikamaru lẫn Horikita, và chưa cập nhật vài con số của Tsubasa/ChiChi.
-- Ô tiếng của Doraemon cũng mới chỉ có tiếng tự tạo trong `synth()`; ô giọng `dora_hi` đang
-  chờ người dùng thu file (giọng Nhật cũng được — chỉ **chữ hiển thị** mới bắt buộc tiếng
+- Ô tiếng của Doraemon mới chỉ có tiếng tự tạo trong `synth()`; ô giọng `dora_hi` giờ đã có
+  **giọng máy dựng sẵn** trong `assets/voice`, vẫn chờ người dùng thu file thật đè lên (giọng Nhật cũng được — chỉ **chữ hiển thị** mới bắt buộc tiếng
   Anh). Quãng ra mắt cố tình để đúng **1.5 giây thật ở thanh tốc độ gốc** để canh tiếng.
-- Ô tiếng của Captain Ginyu cũng mới chỉ có tiếng tự tạo trong `synth()`; hai ô giọng
-  (`ginyu_force`, `ginyu_change`) đang chờ người dùng thu file. Quãng bay vào sân cố tình
+- Ô tiếng của Captain Ginyu mới chỉ có tiếng tự tạo trong `synth()`; hai ô giọng
+  (`ginyu_force`, `ginyu_change`) đã có **giọng máy dựng sẵn**, vẫn chờ file thu thật. Quãng bay vào sân cố tình
   để đúng **1.5 giây thật ở thanh tốc độ gốc** để người dùng canh tiếng — đổi thanh tốc độ
   thì con số đó đổi theo, đây không phải lỗi.
 - **Đã hạ sát thương hai vòng theo yêu cầu**: hưng phấn +75%→+50% dmg (khống chế +30%→+40%),
@@ -1965,5 +1995,6 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
   **không có ô giọng nào** vì bản mô tả không nêu câu thoại nào cho anh. Quãng xuất hiện cố ý
   để đúng **1.5 giây thật ở thanh tốc độ gốc** để người dùng canh tiếng; đổi thanh tốc độ thì
   con số đó đổi theo, đây không phải lỗi.
-- Ô tiếng của Horikita/Ayanokouji mới chỉ có tiếng tự tạo trong `synth()`; hai ô đọc nối tiếp
-  (`suz_decide`, `suz_wrong`) đang chờ người dùng thu file TTS theo `SUZ_DECISIONS` / `SUZ_WRONG`.
+- Ô tiếng của Horikita/Ayanokouji mới chỉ có tiếng tự tạo trong `synth()`; sáu ô giọng của hai
+  người (kể cả hai ô đọc nối tiếp `suz_decide` / `suz_wrong`) đã có **giọng máy dựng sẵn** đúng
+  thứ tự `SUZ_DECISIONS` / `SUZ_WRONG`, vẫn chờ file thu thật đè lên.

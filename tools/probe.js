@@ -78,6 +78,7 @@ window.__supEyeY=f=>supEyeY(f); window.__bindTick=bindTick; window.__supStatus=s
 window.__bulkSprMatch=bulkSprMatch; window.__bulkSfxMatch=bulkSfxMatch;
 window.__bulkSprites=bulkSprites; window.__bulkSfxFiles=bulkSfxFiles;
 window.__bulkNames=bulkNames; window.__bulkNorm=bulkNorm;
+window.__voicePack=voicePack;
 /* ba chế độ đấu */
 window.__PMODE=()=>PMODE; window.__ROSTERS=ROSTERS; window.__PICK=PICK;
 window.__buildRoster=buildRoster; window.__spawnSpots=spawnSpots; window.__newGame=newGame;

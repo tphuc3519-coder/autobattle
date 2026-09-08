@@ -239,6 +239,7 @@
         <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
           ⚡ Nạp nhiều tiếng<input type="file" id="sfxBulk" accept="audio/*" multiple style="display:none">
         </label>
+        <button id="sfxVoice" title="Nạp bộ giọng máy dựng sẵn trong assets/voice">🎙 Nạp bộ giọng mẫu</button>
         <button id="sfxNames">📋 Tải danh sách tên file</button>
         <button id="sfxExport">⬇ Sao lưu tiếng</button>
         <label class="chk" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:700;color:var(--paper)">
@@ -1854,6 +1855,8 @@ async function decodeInto(name,dataUrl){
       }
     }catch(e){}
     if(n) sfxStatus(`Đã khôi phục ${n} tiếng đã nạp.`);
+    /* Gọi SAU khi khôi phục xong: ô nào người dùng đã tự nạp thì bộ giọng mẫu bỏ qua. */
+    voicePack(false);
   })();
 })();
 
@@ -2073,6 +2076,31 @@ async function bulkDropFiles(dt){
   await Promise.all(ents.map(e=>walk(e,'')));
   return out;
 }
+/* Bộ giọng máy dựng sẵn trong `assets/voice` (xem `tools/mk_voice.py`). Mở trang bằng
+   http thì tự nạp cho mấy ô 🎙 CÒN TRỐNG; mở bằng file:// thì trình duyệt chặn fetch —
+   lúc đó kéo thẳng thư mục `assets/voice` thả vào bảng tiếng, bảng đoán tên lo phần
+   còn lại. File người dùng tự nạp LUÔN THẮNG: chỗ này không bao giờ đè lên. */
+async function voicePack(noi){
+  let man=null;
+  try{ const r=await fetch('assets/voice/manifest.json',{cache:'no-store'}); if(r.ok) man=await r.json(); }catch(e){}
+  if(!man||!man.slots){
+    if(noi) sfxStatus('Không đọc được assets/voice — mở trang bằng http, hoặc kéo thẳng thư mục assets/voice thả vào bảng này.');
+    return 0;
+  }
+  let n=0,bo=0;
+  for(const nm in man.slots){
+    if(SFXSRC[nm]){ bo++; continue; }
+    try{
+      const r=await fetch('assets/voice/'+man.slots[nm].file,{cache:'no-store'});
+      if(!r.ok)continue;
+      const b=await r.blob();
+      const src=await new Promise(res=>{ const rd=new FileReader(); rd.onload=()=>res(rd.result); rd.onerror=()=>res(null); rd.readAsDataURL(b); });
+      if(src&&await decodeInto(nm,src)){ sfxSet(nm,true); n++; }
+    }catch(e){}
+  }
+  if(n||noi) sfxStatus(`Đã nạp ${n} ô giọng mẫu từ assets/voice${bo?` (bỏ qua ${bo} ô bạn đã tự nạp)`:''}.`);
+  return n;
+}
 function bulkZone(el,fn){
   if(!el)return;
   const on=v=>el.classList.toggle('on',v);
@@ -2100,6 +2128,8 @@ function bulkZone(el,fn){
     (kind==='spr'?status:sfxStatus)('Đã tải danh sách tên file về máy.');
   }); };
   nb('sprNames','spr','ten-file-anh.txt'); nb('sfxNames','sfx','ten-file-tieng.txt');
+  const vb=document.getElementById('sfxVoice');
+  if(vb) vb.addEventListener('click',()=>voicePack(true));
 })();
 
 /* ---------- nhạc nền ---------- */
