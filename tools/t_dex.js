@@ -88,7 +88,7 @@ const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if 
   ok(chi.svg, 'lo xem CHI TIET van co bieu do (yeu cau rieng cua nguoi dung)');
   ok(chi.bang === 9 && chi.thanh === 9 && chi.so === 9 && chi.mota === 9,
     `bang cham diem du chin dong, moi dong co thanh - so - mo ta (${chi.bang}/${chi.thanh}/${chi.so}/${chi.mota})`);
-  ok(chi.pips === 25, `van con nam thanh chi so 1-5 (${chi.pips})`);
+  ok(chi.pips === 20, `van con bon thanh chi so 1-5, da bo hang "do kho" (${chi.pips})`);
   ok(chi.tho, 'van mo ra duoc so lieu tho cua mang skills');
   ok(/^\d+[SABCDE]$/.test((chi.dau || '').trim()), `moi dong ghi ca diem lan bac (${chi.dau})`);
 

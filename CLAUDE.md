@@ -1558,9 +1558,14 @@ nhạc nền hoặc đưa setup nhạc nền t tự chỉnh"*.
 
 ### Hồ sơ nhân vật — `DEX`
 
-`DEX[key]` là lớp **hiển thị**: `role` · `bio` · `st{pow,spd,rng,def,tech}` (thang 1–5) ·
-`skills[{tag,name,vi,en}]`. `dexCard(key)` dựng thẻ: mặt nhân vật, máu, năm thanh chỉ số,
+`DEX[key]` là lớp **hiển thị**: `role` · `bio` · `st{pow,spd,rng,def}` (thang 1–5) ·
+`skills[{tag,name,vi,en}]`. `dexCard(key)` dựng thẻ: mặt nhân vật, máu, bốn thanh chỉ số,
 thẻ chiêu, rồi `<details>` "xem chi tiết số liệu" mở ra **mảng `CHARS[].skills` cũ**.
+
+> **Thanh "Độ khó" (`st.tech`) đã BỎ HẲN.** Người dùng: *"bỏ cái phần độ khó đi"*. Bốn
+> thanh còn lại là sát thương · tốc độ · tầm đánh · chống chịu; `t_ui.js` soi luôn để chắc
+> `st.tech` không mọc lại. Muốn biết một nhân vật khó chơi tới đâu thì đã có trục
+> **Consistency** trong biểu đồ sức mạnh (mục 2g) — đừng dựng lại thanh cũ.
 
 - Hai thứ **khác việc nhau, đừng gộp**: `DEX` để hiểu nhân vật trong ba giây, `skills` để
   soi từng con số — và `t_dora.js` / `t_superman.js` quét đúng mảng `skills` đó.
@@ -1648,7 +1653,7 @@ Cặp nút `.vTab` (`#vSimple` / `#vFull`) nằm ngay dưới dòng phụ của 
 | | Có gì |
 |---|---|
 | `simple` | mặt nhân vật · ô máu · một câu giới thiệu · **biểu đồ** · bộ chiêu viết gọn |
-| `full` | thêm năm thanh chỉ số 1–5 · **bảng chấm điểm thang 100** (tên, mô tả, thanh, điểm, bậc) · toàn bộ số liệu thô của mảng `CHARS[].skills` |
+| `full` | thêm bốn thanh chỉ số 1–5 · **bảng chấm điểm thang 100** (tên, mô tả, thanh, điểm, bậc) · toàn bộ số liệu thô của mảng `CHARS[].skills` |
 
 - **Biểu đồ có mặt ở CẢ HAI lối xem** — yêu cầu riêng của người dùng, đừng gỡ khỏi lối đơn giản.
 - Đổi lối xem thì gọi `paintDex()` chứ **đừng gọi `cselRefresh()`**: hàm kia dựng lại cả lưới

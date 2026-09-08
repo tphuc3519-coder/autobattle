@@ -558,7 +558,7 @@ const L={
     subFfa:'Hỗn chiến — chọn {lo}–{hi} người, ai còn đứng cuối cùng thì thắng',
     subTeam:'Đánh theo đội — {n} đội ({lo}–{hi}), mỗi đội {tlo}–{thi} người · {cur}/{max} người',
     notEnough:'Chưa đủ người',
-    stName:'Chỉ số', stPow:'Sát thương', stSpd:'Tốc độ', stRng:'Tầm đánh', stDef:'Chống chịu', stTech:'Độ khó',
+    stName:'Chỉ số', stPow:'Sát thương', stSpd:'Tốc độ', stRng:'Tầm đánh', stDef:'Chống chịu',
     skills:'Bộ chiêu', more:'Số liệu thô', less:'Thu gọn',
     hp:'Máu', tagPassive:'Nội tại', tagUlt:'Tuyệt chiêu', tagP:'NT', tagU:'ULT',
     vSimple:'Xem skill đơn giản', vFull:'Xem skill chi tiết',
@@ -587,7 +587,7 @@ const L={
     subFfa:'Free-for-all — pick {lo}–{hi} fighters, last one standing wins',
     subTeam:'Team battle — {n} teams ({lo}–{hi}), {tlo}–{thi} each · {cur}/{max} fighters',
     notEnough:'Not enough fighters',
-    stName:'Stats', stPow:'Power', stSpd:'Speed', stRng:'Range', stDef:'Defence', stTech:'Difficulty',
+    stName:'Stats', stPow:'Power', stSpd:'Speed', stRng:'Range', stDef:'Defence',
     skills:'Move list', more:'Raw numbers', less:'Hide numbers',
     hp:'HP', tagPassive:'Passive', tagUlt:'Ultimate', tagP:'PAS', tagU:'ULT',
     vSimple:'Simple skill view', vFull:'Detailed skill view',
@@ -1318,8 +1318,9 @@ const CKEYS=Object.keys(CHARS);
    Số trong DEX **đọc từ chính hằng số cân bằng** (`${KUNAI_DMG}`…), không gõ tay, nên
    chỉnh cân bằng là hồ sơ đổi theo.
 
-   Năm thanh chỉ số chấm theo thang 1–5, đây là **cảm nhận khi chơi** chứ không phải phép
-   đo: pow sát thương · spd tốc độ · rng tầm đánh · def chống chịu · tech độ khó hiểu bài. */
+   Bốn thanh chỉ số chấm theo thang 1–5, đây là **cảm nhận khi chơi** chứ không phải phép
+   đo: pow sát thương · spd tốc độ · rng tầm đánh · def chống chịu. (Từng có thanh thứ năm
+   "độ khó" — người dùng bảo bỏ, đừng dựng lại.) */
 /* ---------- biểu đồ sức mạnh: chín tiêu chí trên thang 100 ----------
    Người dùng gửi ảnh mẫu (biểu đồ mạng nhện có vòng nét đứt và bậc chữ cái) và chốt chín
    tiêu chí dưới đây. Đây là **bảng chấm tay** — cảm nhận sức mạnh khi chơi — chứ không phải
@@ -1364,7 +1365,7 @@ const pwAvg=k=>{const p=(DEX[k]||{}).pw||{};
   return Math.round(PW_AXES.reduce((a,x)=>a+(p[x.key]||0),0)/PW_AXES.length);};
 
 const DEX={
-  kono:{ role:{vi:'Ninja · Đánh xa',en:'Ninja · Ranged'}, st:{pow:3,spd:4,rng:5,def:2,tech:2},
+  kono:{ role:{vi:'Ninja · Đánh xa',en:'Ninja · Ranged'}, st:{pow:3,spd:4,rng:5,def:2},
     pw:{dmg:62,dur:38,mob:46,as:72,rng:88,cc:60,uti:44,con:66,cmb:40},
     bio:{vi:'Ném phi tiêu từ xa, thỉnh thoảng lại quăng ra một quả kunai nổ. Bị vây sát thì xoáy một quả Rasengan nhỏ để thoát.',
          en:'Throws from range and mixes in explosive kunai. Pinned in melee, he spins a small Rasengan loose to break out.'},
@@ -1385,7 +1386,7 @@ const DEX={
        vi:'Đủ 20 nộ khí thì lao thẳng vào địch với quả cầu xoáy.',
        en:'At 20 rage he charges in with the spinning sphere.'}
     ]},
-  chichi:{ role:{vi:'Nội trợ · Cận chiến',en:'Housewife · Melee'}, st:{pow:4,spd:4,rng:1,def:3,tech:2},
+  chichi:{ role:{vi:'Nội trợ · Cận chiến',en:'Housewife · Melee'}, st:{pow:4,spd:4,rng:1,def:3},
     pw:{dmg:78,dur:46,mob:74,as:82,rng:24,cc:56,uti:60,con:70,cmb:92},
     bio:{vi:'Đấm đá dồn dập, chửi bật cả đạn về, và khi dồn tới đường cùng thì gọi chồng con ra đánh hộ.',
          en:'Relentless melee, a scolding that reflects projectiles, and when cornered she calls her family in.'},
@@ -1401,7 +1402,7 @@ const DEX={
        vi:`Dưới 20% máu gọi viện binh: Kamehameha ${KAME_DMG} dmg rồi ghì chân, Masenko ${MASENKO_DMG} dmg mỗi đợt và chồng lớp làm chậm.`,
        en:`Below 20% HP she calls for help: Kamehameha for ${KAME_DMG} then a heavy slow, Masenko for ${MASENKO_DMG} a wave with stacking slows.`}
     ]},
-  tsubasa:{ role:{vi:'Tiền đạo · Sút xa',en:'Striker · Long shots'}, st:{pow:4,spd:3,rng:4,def:2,tech:3},
+  tsubasa:{ role:{vi:'Tiền đạo · Sút xa',en:'Striker · Long shots'}, st:{pow:4,spd:3,rng:4,def:2},
     pw:{dmg:72,dur:40,mob:50,as:62,rng:84,cc:44,uti:38,con:52,cmb:96},
     bio:{vi:'Sút bóng thay cho đánh nhau. Càng ghi bàn càng mạnh, và khi sắp gục thì đôi cánh đại bàng bùng lên.',
          en:'He kicks footballs instead of fists. Goals make him stronger, and at the brink the eagle wings flare up.'},
@@ -1418,7 +1419,7 @@ const DEX={
        vi:`Dưới ${Math.round(EAGLE_HP*100)}% máu: tốc đánh ×4, kháng 70%, miễn khống chế — nhưng cháy hết máu trong ${rts(EAGLE_BURN)}s.`,
        en:`Below ${Math.round(EAGLE_HP*100)}% HP: 4× attack speed, 70% resist, CC immune — but it burns his last HP away in ${rts(EAGLE_BURN)}s.`}
     ]},
-  shika:{ role:{vi:'Ninja · Bóng',en:'Ninja · Shadows'}, st:{pow:3,spd:2,rng:4,def:4,tech:5},
+  shika:{ role:{vi:'Ninja · Bóng',en:'Ninja · Shadows'}, st:{pow:3,spd:2,rng:4,def:4},
     pw:{dmg:48,dur:64,mob:32,as:34,rng:66,cc:88,uti:70,con:44,cmb:90},
     bio:{vi:'Ngồi lười tích chakra tới lúc bị đánh mới chịu đứng dậy. Né đòn giỏi dần lên, và cuối trận mở hẳn một lãnh địa.',
          en:'He sits around banking chakra until someone hits him. His dodging sharpens as the fight drags, and he can open a whole domain.'},
@@ -1436,7 +1437,7 @@ const DEX={
        vi:`Dưới ${Math.round(SHIKA.domainHp*100)}% máu mở lãnh địa: địch kiệt sức, gây sát thương giảm nửa và ăn bom liên tục. Thời lượng = chakra ÷ 100.`,
        en:`Below ${Math.round(SHIKA.domainHp*100)}% HP the domain opens: foes are exhausted, deal half damage and get shelled. Duration = chakra ÷ 100.`}
     ]},
-  suzune:{ role:{vi:'Lớp trưởng · Cận chiến',en:'Class rep · Melee'}, st:{pow:3,spd:3,rng:1,def:3,tech:5},
+  suzune:{ role:{vi:'Lớp trưởng · Cận chiến',en:'Class rep · Melee'}, st:{pow:3,spd:3,rng:1,def:3},
     pw:{dmg:54,dur:70,mob:58,as:40,rng:18,cc:26,uti:78,con:48,cmb:88},
     bio:{vi:'Ba form: rụt rè, dám đánh, rồi tự đứng một mình. Ayanokouji bước ra đỡ đòn giúp cô ở bước ngoặt đầu tiên.',
          en:'Three forms: timid, fighting back, then standing alone. Ayanokouji steps in to shield her at the first turning point.'},
@@ -1451,7 +1452,7 @@ const DEX={
       {tag:'U',name:'Standing Alone',vi:'Ayanokouji rời sàn ⇒ form 3: mạnh hơn, hồi máu nhiều hơn, +10% miễn thương và kháng hiệu ứng.',
        en:'When Ayanokouji leaves she reaches form 3: stronger hits, better healing, +10% damage reduction and CC resist.'}
     ]},
-  ginyu:{ role:{vi:'Ginyu Force · Cận chiến',en:'Ginyu Force · Melee'}, st:{pow:4,spd:4,rng:3,def:3,tech:5},
+  ginyu:{ role:{vi:'Ginyu Force · Cận chiến',en:'Ginyu Force · Melee'}, st:{pow:4,spd:4,rng:3,def:3},
     pw:{dmg:70,dur:56,mob:58,as:76,rng:62,cc:80,uti:72,con:42,cmb:96},
     bio:{vi:'Bay vào sân, nhảy ba dáng rồi mới đánh. Aura của anh xoay cả thế trận, và chết tới nơi thì cướp luôn thân xác đối thủ.',
          en:'He flies in, poses three times, then fights. His aura swings the whole match — and at death he simply takes your body.'},
@@ -1467,7 +1468,7 @@ const DEX={
       {tag:'U',name:'CHANGE!!!',vi:'Sắp chết thì bắn tia từ miệng để hoán đổi thân xác. Trúng thì hai bên đổi hồn, cùng về 20% máu; trượt thì anh còn 1 máu.',
        en:'On the brink he fires from his mouth to swap bodies. On a hit both souls switch and drop to 20% HP; on a miss he is left on 1 HP.'}
     ]},
-  dora:{ role:{vi:'Bảo bối · Khống chế',en:'Gadgets · Control'}, st:{pow:2,spd:4,rng:3,def:5,tech:4},
+  dora:{ role:{vi:'Bảo bối · Khống chế',en:'Gadgets · Control'}, st:{pow:2,spd:4,rng:3,def:5},
     pw:{dmg:50,dur:74,mob:86,as:44,rng:64,cc:78,uti:92,con:58,cmb:90},
     bio:{vi:'Đòn tay nhẹ hều, nhưng cái túi thần kỳ đủ để làm chậm, giữ khoảng cách, chui cửa chạy thoát và tua ngược cả cái chết.',
          en:'His fists are light, but the pocket can slow you, keep you away, escape through a door and rewind his own death.'},
@@ -1484,7 +1485,7 @@ const DEX={
       {tag:'U',name:'Time Machine',vi:'Máu về 0 một lần trong trận thì tua ngược thời gian, quay lại vị trí và máu của vài giây trước.',
        en:'The first time he drops to 0 HP he rewinds time, returning to where he stood — and the HP he had — seconds ago.'}
     ]},
-  superman:{ role:{vi:'Kryptonian · Bruiser',en:'Kryptonian · Bruiser'}, st:{pow:5,spd:4,rng:3,def:5,tech:2},
+  superman:{ role:{vi:'Kryptonian · Bruiser',en:'Kryptonian · Bruiser'}, st:{pow:5,spd:4,rng:3,def:5},
     pw:{dmg:82,dur:88,mob:70,as:60,rng:54,cc:84,uti:34,con:82,cmb:62},
     bio:{vi:'Đấm nặng, lì đòn, bay đuổi được và mang cả một bộ khống chế — đổi lại chiêu nào cũng có quãng chuẩn bị nhìn thấy rõ.',
          en:'Heavy hits, thick skin, flight to close the gap and a full control kit — paid for with a clearly telegraphed wind-up on every skill.'},
@@ -11575,7 +11576,7 @@ function dexCard(key,view){
     radarSvg(key)+
     (full?`<div class="dexHead">${t('stName')}</div><div class="dexStats">${
       row(t('stPow'),st.pow)+row(t('stSpd'),st.spd)+row(t('stRng'),st.rng)+
-      row(t('stDef'),st.def)+row(t('stTech'),st.tech)}</div>`+
+      row(t('stDef'),st.def)}</div>`+
       `<div class="dexHead">${t('pwTable')}</div>`+pwTable(key):'')+
     `<div class="dexHead">${t('skills')}</div><div class="dexSkills">${sk}</div>`+
     (full?`<details class="dexRaw" open><summary>${t('more')}</summary>`+

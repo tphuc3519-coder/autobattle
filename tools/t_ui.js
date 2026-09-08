@@ -40,7 +40,9 @@ function fileNhac() {
       const d = window.__DEX[k];
       if (!d) { out.thieu.push(k); continue; }
       const st = d.st || {};
-      const duSt = ['pow', 'spd', 'rng', 'def', 'tech'].every(x => st[x] >= 1 && st[x] <= 5);
+      // thanh "do kho" da bo theo yeu cau nguoi dung, chi con bon chi so
+      const duSt = ['pow', 'spd', 'rng', 'def'].every(x => st[x] >= 1 && st[x] <= 5) &&
+        st.tech === undefined;
       const duNgu = d.role && d.role.vi && d.role.en && d.bio && d.bio.vi && d.bio.en &&
         (d.skills || []).every(s => s.name && s.vi && s.en);
       if (!duSt || !duNgu || (d.skills || []).length < 4) out.it.push(k);
@@ -49,7 +51,7 @@ function fileNhac() {
     return out;
   });
   ok(dex.thieu.length === 0, `ca ${dex.chars} nhan vat deu co ho so (thieu: ${dex.thieu.join(',') || 'khong'})`);
-  ok(dex.it.length === 0, `ho so nao cung du 5 chi so, 2 ngon ngu va >=4 chieu (${dex.it.join(',') || 'du'})`);
+  ok(dex.it.length === 0, `ho so nao cung du 4 chi so (khong con do kho), 2 ngon ngu va >=4 chieu (${dex.it.join(',') || 'du'})`);
 
   // năm thanh chỉ số và số liệu thô giờ nằm ở lối xem CHI TIẾT, nên bật nó lên rồi mới đo
   const the = await doc(() => {
@@ -59,8 +61,8 @@ function fileNhac() {
              sk: box.querySelectorAll('.sk').length, chiTiet: !!box.querySelector('.dexRaw .cSkills'),
              hp: (box.querySelector('.dexHpIn') || {}).value };
   });
-  ok(the.pips === 25, `nam thanh chi so ve du 25 o (${the.pips})`);
-  ok(the.on > 0 && the.on < 25, `thanh chi so co day co vong (${the.on}/25)`);
+  ok(the.pips === 20, `bon thanh chi so ve du 20 o (${the.pips})`);
+  ok(the.on > 0 && the.on < 20, `thanh chi so co day co vong (${the.on}/20)`);
   ok(the.sk >= 4, `the chieu hien ra day du (${the.sk} chieu)`);
   ok(the.chiTiet, 'van con phan "xem chi tiet so lieu" doc mang skills cu');
   ok(the.hp === '800', `o mau chinh duoc, mac dinh dung chuan 800 (${the.hp})`);
