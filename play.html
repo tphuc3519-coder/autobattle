@@ -11709,8 +11709,12 @@ function tile(key,onClick,on){
   o.innerHTML=`<span class="cAva" style="color:${C.color}">${avaHtml(key)}</span>`+
               `<span class="cName" style="color:${C.color}">${C.short||C.name}</span>`;
   o.addEventListener('click',e=>{
-    onClick(e);                      // cú bấm đầu vẫn CHỌN người đó như cũ
-    if(tapTwice(key)) dexPopOpen(key);
+    /* Đo nhịp TRƯỚC rồi mới gọi onClick, và truyền cờ `hai` vào: ở màn hỗn chiến / đánh
+       đội, chạm vào ô là THÊM MỘT BẢN SAO, nên cú thứ hai phải biết đường mà không thêm
+       nữa — không thì chạm hai lần vừa nhét hai người vào đội vừa mở bảng. */
+    const hai=tapTwice(key);
+    onClick(e,hai);                  // cú bấm đầu vẫn CHỌN người đó như cũ
+    if(hai) dexPopOpen(key);
   });
   return o;
 }
@@ -11776,7 +11780,8 @@ function paintGroup(i,g){
   const grid=el('grpList'+i);
   grid.innerHTML='';
   for(const key of CKEYS){
-    grid.appendChild(tile(key,()=>{
+    grid.appendChild(tile(key,(e,hai)=>{
+      if(hai) return;                // cú thứ hai chỉ để mở bảng thông số, đừng thêm nữa
       const L=g.list();
       if(L.length>=g.max||tmpTotal()>=TEAM_TOTAL)return;
       L.push(key); cselRefresh();

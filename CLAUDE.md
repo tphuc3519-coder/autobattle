@@ -1779,6 +1779,12 @@ Cặp nút `.vTab` (`#vSimple` / `#vFull`) nằm ngay dưới dòng phụ của 
     ăn rồi thì đặt lại đồng hồ, ba cú bấm liên tiếp không thành hai lần mở.
   - **Cú bấm đầu vẫn CHỌN nhân vật như cũ** — chạm hai lần chỉ là mở thêm bảng, không thay
     chức năng cũ.
+  - **Ở hỗn chiến / đánh đội thì chạm vào ô là THÊM MỘT BẢN SAO**, nên `tile()` đo nhịp
+    TRƯỚC rồi mới gọi `onClick(e, hai)`; nhánh đội hình `return` ngay khi `hai` bật, không
+    thì chạm hai lần vừa nhét hai người vào đội vừa mở bảng. Kéo theo: `openMulti()` trong
+    `probe.js` phải **giãn nhịp 420ms khi khoá lặp lại** — đội hình cho chọn trùng nhân vật,
+    mà bấm liên tiếp vào cùng một ô thì game hiểu là chạm hai lần và bảng bật lên chặn mất
+    mấy cú bấm sau (đã dính, `t_modes` treo 30 giây rồi đổ).
   - Bảng nằm **NGOÀI `#charSelect`** với `z-index:68` (trên `.csel` = 60, dưới `.arc` = 70);
     để trong màn chọn thì nó bị chính màn chọn phủ mất. Đóng bằng ✕, bấm ra nền, hoặc Esc.
   - `paintDex()` vẽ lại cả `#dexPopBody` chứ không chỉ hai ô `detailA` / `detailB`.

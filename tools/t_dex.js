@@ -125,6 +125,22 @@ const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if 
   await page.click('#listA .cTile[data-key="kono"]');
   await page.waitForTimeout(250);
   ok(!await page.locator('#dexPop').isVisible(), 'hai cu bam cach xa nhau thi khong mo bang');
+  /* Ở hỗn chiến / đánh đội, chạm vào ô là THÊM một bản sao — cú thứ hai chỉ được mở bảng
+     chứ không được nhét thêm người vào đội. */
+  await page.click('#mTabFfa');
+  await page.waitForTimeout(300);
+  const truoc = await doc(() => window.__TMP().ffa.length);
+  await page.click('#grpList0 .cTile[data-key="superman"]');
+  await page.click('#grpList0 .cTile[data-key="superman"]');
+  await page.waitForTimeout(300);
+  const sau = await doc(() => window.__TMP().ffa.length);
+  ok(!await page.locator('#dexPop').isVisible() === false, 'cham hai lan trong doi hinh cung mo bang');
+  ok(sau === truoc + 1, `cham hai lan chi them DUNG MOT nguoi vao doi hinh (${truoc} -> ${sau})`);
+  await page.click('#dexPopX');
+  await page.waitForTimeout(200);
+  await page.click('#mTabDuel');
+  await page.waitForTimeout(300);
+
   /* trả ô A về Shikamaru: mấy mục đo máu phía dưới gõ vào chính ô của người đang chọn */
   await page.click('#listA .cTile[data-key="shika"]');
   await page.click('#vSimple');
