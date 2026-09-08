@@ -75,6 +75,77 @@ const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if 
   });
   ok(tran === 0, `khong nhan nao bi cat ra ngoai khung (${tran} cai tran)`);
 
+  /* ---------- chạm hai lần vào ô nhân vật thì bật bảng thông số ----------
+     Người dùng: "double tap vào icon nhân vật để hiện bảng thông số nhân vật
+     (2 nút xem skill sơ lược / chi tiết)". Bắt bằng nhịp bấm chứ không phải sự kiện
+     `dblclick` — trên điện thoại cú chạm đôi bị trình duyệt nuốt để phóng to trang. */
+  ok(!await page.locator('#dexPop').isVisible(), 'chua cham thi bang thong so dang an');
+  await page.click('#listA .cTile[data-key="shika"]');
+  await page.waitForTimeout(700);
+  ok(!await page.locator('#dexPop').isVisible(), 'mot cu bam thi chi CHON, khong mo bang');
+
+  await page.click('#listA .cTile[data-key="ginyu"]');
+  await page.click('#listA .cTile[data-key="ginyu"]');
+  await page.waitForTimeout(300);
+  const pop = await doc(() => ({
+    hien: !document.getElementById('dexPop').classList.contains('off'),
+    ten: (document.querySelector('#dexPopBody .dexId b') || {}).textContent,
+    nut: document.querySelectorAll('#dexPop .vTab').length,
+    radar: !!document.querySelector('#dexPopBody svg.radar'),
+    bang: document.querySelectorAll('#dexPopBody .pwRow').length
+  }));
+  ok(pop.hien, 'cham hai lan thi bang thong so bat len');
+  ok(/Ginyu/i.test(pop.ten || ''), `dung nhan vat vua cham (${pop.ten})`);
+  ok(pop.nut === 2, `trong bang co du HAI nut xem skill (${pop.nut})`);
+  ok(pop.radar && pop.bang === 0, `lo so luoc: co bieu do, chua co bang cham diem (${pop.bang})`);
+
+  await page.click('#dexPop .vTab[data-view="full"]');
+  await page.waitForTimeout(250);
+  const popCt = await doc(() => ({
+    bang: document.querySelectorAll('#dexPopBody .pwRow').length,
+    ngoai: [...document.querySelectorAll('.cselOpts .vTab')]
+             .filter(b => b.classList.contains('on')).map(b => b.dataset.view).join('')
+  }));
+  ok(popCt.bang === 9, `bam Chi tiet ngay trong bang thi hien du chin dong (${popCt.bang})`);
+  ok(popCt.ngoai === 'full', `cap nut ngoai man chon di theo cung mot lua chon (${popCt.ngoai})`);
+
+  await page.click('#dexPopX');
+  await page.waitForTimeout(200);
+  ok(!await page.locator('#dexPop').isVisible(), 'bam X thi dong bang');
+  await page.click('#listA .cTile[data-key="dora"]');
+  await page.click('#listA .cTile[data-key="dora"]');
+  await page.waitForTimeout(250);
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(200);
+  ok(!await page.locator('#dexPop').isVisible(), 'phim Esc cung dong duoc');
+
+  /* hai cú bấm cách xa nhau thì KHÔNG được tính là chạm hai lần */
+  await page.click('#listA .cTile[data-key="kono"]');
+  await page.waitForTimeout(900);
+  await page.click('#listA .cTile[data-key="kono"]');
+  await page.waitForTimeout(250);
+  ok(!await page.locator('#dexPop').isVisible(), 'hai cu bam cach xa nhau thi khong mo bang');
+  /* Ở hỗn chiến / đánh đội, chạm vào ô là THÊM một bản sao — cú thứ hai chỉ được mở bảng
+     chứ không được nhét thêm người vào đội. */
+  await page.click('#mTabFfa');
+  await page.waitForTimeout(300);
+  const truoc = await doc(() => window.__TMP().ffa.length);
+  await page.click('#grpList0 .cTile[data-key="superman"]');
+  await page.click('#grpList0 .cTile[data-key="superman"]');
+  await page.waitForTimeout(300);
+  const sau = await doc(() => window.__TMP().ffa.length);
+  ok(!await page.locator('#dexPop').isVisible() === false, 'cham hai lan trong doi hinh cung mo bang');
+  ok(sau === truoc + 1, `cham hai lan chi them DUNG MOT nguoi vao doi hinh (${truoc} -> ${sau})`);
+  await page.click('#dexPopX');
+  await page.waitForTimeout(200);
+  await page.click('#mTabDuel');
+  await page.waitForTimeout(300);
+
+  /* trả ô A về Shikamaru: mấy mục đo máu phía dưới gõ vào chính ô của người đang chọn */
+  await page.click('#listA .cTile[data-key="shika"]');
+  await page.click('#vSimple');
+  await page.waitForTimeout(200);
+
   await page.click('#vFull');
   await page.waitForTimeout(200);
   const chi = await doc(() => {
@@ -154,7 +225,7 @@ const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if 
   await page2.waitForTimeout(350);
   const doc2 = (fn) => page2.evaluate(fn);
   const choi = await doc2(() => ({
-    tab: document.querySelectorAll('.vTab').length,
+    tab: document.querySelectorAll('.cselOpts .vTab').length,   // bảng bật lên có thêm hai nút nữa
     hpAll: !!document.getElementById('hpAll'), hpStd: !!document.getElementById('hpStd'),
     hpIn: !!document.querySelector('#detailA .dexHpIn'),
     radar: !!document.querySelector('#detailA svg.radar'),

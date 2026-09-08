@@ -92,6 +92,7 @@ window.__stageThumb=stageThumb; window.__packBuild=packBuild; window.__packLoad=
 window.__ARCADE=()=>ARCADE; window.__groundShadows=groundShadows; window.__running=()=>running;
 /* ba chế độ đấu */
 window.__PMODE=()=>PMODE; window.__ROSTERS=ROSTERS; window.__PICK=PICK;
+window.__TMP=()=>TMP;   // đội hình đang NHÁP trong màn chọn, chưa chốt vào ROSTERS
 window.__buildRoster=buildRoster; window.__spawnSpots=spawnSpots; window.__newGame=newGame;
 window.__foeOf=foeOf; window.__nearestFoe=nearestFoe; window.__aliveMains=aliveMains;
 window.__aliveTeams=aliveTeams; window.__defeat=defeat; window.__finish=finish;
@@ -183,7 +184,15 @@ async function openMulti(mode, picks, opt) {
       if (!n) break;
       await page.click(slots + ' .cChip button');
     }
-    for (const k of keys) await page.click(`${list} .cTile[data-key="${k}"]`);
+    /* Đội hình cho phép chọn TRÙNG nhân vật, mà bấm hai lần liên tiếp vào CÙNG một ô thì
+       game hiểu là "chạm hai lần" và mở bảng thông số (DBL_TAP = 380ms). Nên khi khoá lặp
+       lại thì phải giãn nhịp ra, đúng như người thật bấm. */
+    let truoc = '';
+    for (const k of keys) {
+      if (k === truoc) await page.waitForTimeout(420);
+      await page.click(`${list} .cTile[data-key="${k}"]`);
+      truoc = k;
+    }
   }
   await page.click('#cselGo');
   if (o.play !== false) await page.click('#play');

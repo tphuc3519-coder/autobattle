@@ -1511,7 +1511,22 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
   | Chế độ | Các bước |
   |---|---|
   | đấu tay đôi | `p1` → `p2` → `stage` |
-  | hỗn chiến · đánh đội | `chars` (một khung đội hình) → `stage` |
+  | hỗn chiến | `chars` (một khung đội hình) → `stage` |
+  | **đánh đội** | **`t0` → `t1` → … → `stage`** — mỗi đội một bước |
+
+  > **Đánh đội đi TỪNG ĐỘI MỘT**, đúng quy trình của 1v1 — người dùng chốt: *"chọn đội 1
+  > trước đội 2 sau — quy trình như 1v1 chứ"*. Số bước ăn theo `TMP.teams.length`, nên đổi
+  > số đội là danh sách bước tự dài ngắn theo, `cselFix()` lo kéo bước về cho hợp lệ.
+  > - **Số đội chọn ở hàng `#teamNum`** (`TEAMS 2 3 4`), chỉ hiện ở bước đội ĐẦU TIÊN.
+  >   Hai nút `+ Thêm đội` / `✕ Bỏ đội` trong đầu mỗi khung **chỉ còn ở XƯỞNG** —
+  >   `probe.js` (`openMulti`) bấm đúng hai nút đó để dựng đội hình cho test, đừng bỏ.
+  > - `stepReady()` khác `tmpReady()`: nó chỉ hỏi **bước hiện tại** đã đủ chưa. Đòi cả đội 2
+  >   phải đủ người ngay từ bước đội 1 thì không bao giờ bấm Tiếp được.
+  > - `cselPaint()` giấu mọi khung đội trừ đúng đội đang chọn; dải `#pickRow` từ đội thứ hai
+  >   trở đi hiện `TEAM 1 vs TEAM 2 …` kèm mặt nhân vật, y hệt dải của 1v1.
+  > - CSS đọc `data-step` (`pick0` · `pick` · `stage`) thay vì liệt kê `t0`/`t1`/`t2`/`t3`
+  >   ra từng cái. Dòng liệt kê `.cselVs` ở góc phải **ẩn hẳn ở trang chơi** — nó nhắc lại
+  >   đúng cái dải chip phía trên.
 
   Người dùng bác lối để hai cột cạnh nhau: *"màn chọn p1 xong r chọn p2 sau, để chung nhìn
   rối"*. CSS giấu `#colB` ở bước `p1` và `#colA` ở bước `p2`, nên **mỗi bước chỉ có MỘT lưới
@@ -1555,6 +1570,44 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
   lượt `''` → `'../'` → `'../../'` rồi **nhớ mức nào ăn**, các file sau đi thẳng mức đó (bộ giọng
   mẫu nạp chín file nên không được dò lại từ đầu mỗi lần). `t_play.js` dựng hẳn bản giống Pages
   (trang chơi ở gốc, xưởng trong `/studio/`, `assets` ở gốc) rồi kiểm cả hai trang.
+- **Trang chơi có MÀN CHỜ đứng TRƯỚC màn tiêu đề** (`#arcBoot`, z-index 72 nên đè lên
+  `#arcTitle`). Người dùng chốt: *"làm màn loading cái ảnh và tiếng trước màn vào game đi,
+  chứ để thẳng vậy rồi bảo người chơi chờ thì không được"*. `sfxRestore()` gọi
+  `bootShow()` → `await packLoad()` → `bootHide()`, nên **nút PRESS START chỉ bấm được khi
+  ảnh và tiếng đã về đủ**. Đo ở 8 Mbps: màn chờ đứng 28.7 giây rồi mới cho vào, lúc đó đã có
+  đủ 89 ảnh · 46 tiếng.
+  - **Thanh tiến độ chia hai pha**, `packProg(pha,lam,tong)`: `'tai'` (tải file) chiếm
+    **0→70%**, `'mo'` (mở gói) chiếm **70→100%** — đo được 25 giây tải và 3 giây mở nên chia
+    vậy thì thanh chạy đều mắt.
+  - **Đếm TRƯỚC tổng số việc rồi mới chạy** (`tong` trong `packLoad`). Cộng dồn kiểu "xong
+    bao nhiêu biết bấy nhiêu" thì thanh nhảy cóc, nhìn như treo.
+  - **Không bao giờ được NHỐT người chơi trong màn chờ.** Mạng chết giữa chừng thì
+    `packLoad()` treo mãi, nên sau **10 giây** hiện nút `#bootSkip` *Vào luôn, khỏi chờ* —
+    bấm là chơi ngay, ảnh về sau thì tự hiện (đúng cách cũ). Đừng bỏ nút này đi.
+  - Màn chờ **chỉ có ở trang chơi** (`window.ARCADE`). Xưởng thì file mình tự nạp phải
+    thắng nên gói chạy sau, không chặn gì cả.
+  - **Phần nhìn**: nền lưới trôi + quầng sáng thở (`#arcBoot::before/::after`), con số phần
+    trăm to, vệt sáng quét qua thanh, và **câu chạy vòng** `BOOT_TIPS` (song ngữ, đổi mỗi
+    4.2 giây) kể cho người chơi biết trong game có gì. Chờ mấy chục giây mà chỉ có mỗi cái
+    thanh thì chán.
+  - **Mọi chuyển động ở đây dùng `background-position` / `opacity`, KHÔNG dùng `transform`**
+    — Playwright coi phần tử đang biến đổi là "chưa đứng yên" và không bấm được nút nằm
+    trong đó (mục 9). Nút `#bootSkip` nằm ngay trong màn này.
+  - **`#arcTitle` dùng CHUNG nền với `#arcBoot`** (cùng cặp `::before`/`::after`), nên hết
+    màn chờ sang màn tiêu đề là liền mạch chứ không giật sang một nền khác. Hai lớp phủ đó
+    **bắt buộc có `pointer-events:none`** — thiếu thì nút `PRESS START` nằm dưới không bấm
+    được, kể cả người lẫn Playwright.
+- **Dòng đếm MB phải hiện ở HAI chỗ**: `#arcLoad` trong màn tiêu đề, và `#loadChip` **đè lên
+  sàn đấu**. Dòng trong màn tiêu đề biến mất ngay khi bấm PRESS START, mà gói thì còn tải cả
+  chục giây nữa — người chơi vào trận thấy model vector và tưởng mất ảnh. Đo được trên mạng
+  giả lập **8 Mbps** (mức bình thường của điện thoại): bấm PRESS START rồi chọn xong hai nhân
+  vật thì **0/89 ảnh** đã về, nên cả hai người đều là model vector. Chờ đủ ~25 giây thì đủ 89
+  ảnh và model đổi sang ảnh dán. **Đây không phải lỗi, chỉ là gói quá nặng** — người dùng đã
+  báo nhầm thành "k có model" đúng một lần.
+  - `packNote(msg, xong)`: `xong=true` là dòng tổng kết ⇒ màn tiêu đề giữ lại, còn chip trên
+    sàn **tự tắt sau 4 giây** (nó nằm đè lên chỗ đánh nhau).
+  - Chip **không được dùng `transform`** để canh giữa — Playwright coi phần tử đang biến đổi
+    là "chưa đứng yên" (mục 9). Canh bằng `left/right` + `text-align:center`.
 - **Gói nặng thì phải ĐẾM MB ra màn hình.** `pack.json` gói ảnh base64 nên vài chục MB là
   bình thường (bản người dùng đang dùng: **24 MB, 89 ảnh, 46 tiếng**), trên mạng chậm nó tới sau
   khi trang đã mở — không nói gì thì người chơi tưởng game hỏng và nhắn "sao mất ảnh". Màn tiêu
@@ -1589,6 +1642,9 @@ nhạc nền hoặc đưa setup nhạc nền t tự chỉnh"*.
 
 ### Ngôn ngữ — `LANG` / `t()` / `tr()`
 
+- **Mặc định là TIẾNG ANH** (`let LANG='en'`). Người dùng chốt: *"có tiếng anh vs tiếng việt
+  nhưng cứ ưu tiên tiếng anh"*. Ai đã bấm đổi thì khoá `cfg_lang` trong kho thắng.
+  `t_ui.js` soi đúng chỗ này, đổi mặc định là test đổ.
 - `t('khoá')` cho chữ TĨNH (bảng `L.vi` / `L.en`), `tr({vi,en})` cho chữ nằm trong DỮ LIỆU
   (mô tả chiêu, phụ đề màn, tiểu sử), `tf('khoá',{n:…})` cho câu có chỗ điền số.
 - **Chữ tĩnh trong HTML gắn `data-i18n="khoá"`**, `applyLang()` quét một lượt là đổi hết.
@@ -1713,6 +1769,27 @@ Cặp nút `.vTab` (`#vSimple` / `#vFull`) nằm ngay dưới dòng phụ của 
 | `full` | thêm bốn thanh chỉ số 1–5 · **bảng chấm điểm thang 100** (tên, mô tả, thanh, điểm, bậc) · toàn bộ số liệu thô của mảng `CHARS[].skills` |
 
 - **Biểu đồ có mặt ở CẢ HAI lối xem** — yêu cầu riêng của người dùng, đừng gỡ khỏi lối đơn giản.
+- **Chạm HAI LẦN vào ô nhân vật thì bật bảng thông số** (`#dexPop`) — người dùng: *"double
+  tap vào icon nhân vật để hiện bảng thông số nhân vật (2 nút xem skill sơ lược/chi tiết)"*.
+  Cặp nút xem skill nằm ngay trong bảng, **dùng chung `DEXVIEW`** với cặp ngoài màn chọn nên
+  đổi bên nào bên kia theo.
+  - **Bắt bằng NHỊP BẤM (`tapTwice`), đừng dùng sự kiện `dblclick`**: trên điện thoại cú chạm
+    đôi hay bị trình duyệt nuốt mất để phóng to trang nên `dblclick` không bắn ra. Ô `.cTile`
+    vì vậy cũng mang `touch-action:manipulation` để chặn cú phóng to đó. Mốc `DBL_TAP = 380ms`;
+    ăn rồi thì đặt lại đồng hồ, ba cú bấm liên tiếp không thành hai lần mở.
+  - **Cú bấm đầu vẫn CHỌN nhân vật như cũ** — chạm hai lần chỉ là mở thêm bảng, không thay
+    chức năng cũ.
+  - **Ở hỗn chiến / đánh đội thì chạm vào ô là THÊM MỘT BẢN SAO**, nên `tile()` đo nhịp
+    TRƯỚC rồi mới gọi `onClick(e, hai)`; nhánh đội hình `return` ngay khi `hai` bật, không
+    thì chạm hai lần vừa nhét hai người vào đội vừa mở bảng. Kéo theo: `openMulti()` trong
+    `probe.js` phải **giãn nhịp 420ms khi khoá lặp lại** — đội hình cho chọn trùng nhân vật,
+    mà bấm liên tiếp vào cùng một ô thì game hiểu là chạm hai lần và bảng bật lên chặn mất
+    mấy cú bấm sau (đã dính, `t_modes` treo 30 giây rồi đổ).
+  - Bảng nằm **NGOÀI `#charSelect`** với `z-index:68` (trên `.csel` = 60, dưới `.arc` = 70);
+    để trong màn chọn thì nó bị chính màn chọn phủ mất. Đóng bằng ✕, bấm ra nền, hoặc Esc.
+  - `paintDex()` vẽ lại cả `#dexPopBody` chứ không chỉ hai ô `detailA` / `detailB`.
+  - **Đếm `.vTab` thì phải bám `.cselOpts .vTab`** — cả trang giờ có bốn nút, hai trong bảng.
+  - Trong `tile()` đừng đặt tên biến nút là `t`: `t` là hàm dịch, đặt trùng là che mất nó.
 - Đổi lối xem thì gọi `paintDex()` chứ **đừng gọi `cselRefresh()`**: hàm kia dựng lại cả lưới
   chọn nhân vật, trang cuộn nhảy về đầu.
 - Lựa chọn lưu ở khoá `cfg_dexview`.
@@ -2196,10 +2273,14 @@ node tools/t_chichi.js  # ChiChi: Flying Kick 45 dmg + choáng 2s, và viện bi
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
-node tools/t_ui.js      # đổi tên game, hai ngôn ngữ (nút đổi ở cả ba chỗ, chữ và mô tả chiêu
-                        # đổi theo, nhớ lại lựa chọn), hồ sơ tám nhân vật đủ song ngữ + thẻ
-                        # chiêu vẽ ra thật, nhạc nền mặc định tắt và chạy theo ô nhạc tự nạp
-node tools/t_dex.js     # biểu đồ sức mạnh chín trục (đủ tám nhân vật, thang 0-100, sáu bậc chữ cái,
+node tools/t_ui.js      # đổi tên game, hai ngôn ngữ (MẶC ĐỊNH TIẾNG ANH, nút đổi ở cả ba chỗ,
+                        # chữ và mô tả chiêu đổi theo, nhớ lại lựa chọn), hồ sơ tám nhân vật
+                        # đủ song ngữ + thẻ chiêu vẽ ra thật, nhạc nền mặc định tắt và chạy
+                        # theo ô nhạc tự nạp
+node tools/t_dex.js     # chạm hai lần vào ô nhân vật thì bật bảng thông số (đúng người vừa chạm,
+                        # hai nút xem skill nằm trong bảng và đi chung lựa chọn với cặp ngoài,
+                        # một cú bấm thì chỉ chọn, X / Esc đóng được, hai cú cách xa nhau
+                        # không tính), biểu đồ sức mạnh chín trục (đủ tám nhân vật, thang 0-100, sáu bậc chữ cái,
                         # nhãn không tràn khỏi khung), hai lối xem skill (đơn giản không kèm bảng
                         # chấm điểm, chi tiết thì có đủ chín dòng — biểu đồ có ở CẢ HAI), máu chuẩn
                         # 800 và ba đường chỉnh máu chạy được ngay trên trang chơi, màn rừng đã bỏ
@@ -2210,7 +2291,9 @@ node tools/t_stage.js   # sáu màn đấu: mỗi màn một tông màu riêng, 
 node tools/t_play.js    # hai trang: play.html đúng bằng bản dựng từ index.html, đã cắt sạch
                         # bảng xưởng, luồng arcade từng bước (tiêu đề → P1 → P2 → màn → đánh,
                         # mỗi bước chỉ hiện một cột, dải "đã chọn" giữ P1 lại, Quay lại về
-                        # đúng bước trước),
+                        # đúng bước trước), ĐÁNH ĐỘI cũng từng đội một (t0 → t1 → màn, mỗi
+                        # bước một khung, hàng chọn số đội chỉ có ở bước đầu, đổi sang 3 đội
+                        # thì danh sách bước dài thêm),
                         # gói phát hành được nạp, hết trận hiện dải nút, và xưởng vẫn vào
                         # trận bằng MỘT cú bấm #cselGo
 node tools/t_bulk.js    # nạp hàng loạt: bảng đoán tên file (thư mục thắng tên file, alias dài
@@ -2332,6 +2415,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Bấm nút đổi ngôn ngữ không được | nút chỉ nằm ở thanh công cụ, mà màn chọn nhân vật phủ kín trang | gắn `data-lang-toggle` cho cả nút trong màn chọn lẫn nút trên màn tiêu đề |
 | Đội hình hỗn chiến / đánh đội trắng trơn giữa chừng, `t_modes` đổ ở chỗ khác nhau mỗi lần | thêm một `await Store.get(...)` vào `loadSaved()` đẩy lượt `cselRefresh()` ở cuối hàm lùi lại một nhịp IndexedDB — rơi đúng vào lúc người dùng vừa bấm đổi chế độ, lượt vẽ muộn quét sạch khung đội hình vừa mở | đọc khoá phụ bằng `.then()` chứ đừng `await`; mọi thứ cần đọc trước `cselRefresh()` thì gom vào đúng chỗ cũ, đừng nối thêm |
 | Nhãn biểu đồ mạng nhện bị cắt cụt chữ đầu (`Ổn định` còn `định`) | `RADAR_PAD` chỉ chừa chỗ cho ĐIỂM NEO, mà nhãn hai bên canh mép nên chữ chạy tiếp ra ngoài | nới chỗ chừa; test đo `getBoundingClientRect()` của từng nhãn so với khung SVG |
+| Vào trận trên điện thoại thấy model vector, tưởng mất ảnh | gói 24 MB còn đang tải; dòng đếm MB chỉ nằm trong màn tiêu đề nên bấm PRESS START là mất, không còn gì nói cho người chơi biết là phải chờ | thêm `#loadChip` đè lên sàn đấu, `packNote()` bắn ra cả hai chỗ; đo ở 8 Mbps thì lúc vào trận có 0/89 ảnh, đủ 89 ảnh sau ~25 giây |
 | Dán ảnh, xuất gói, commit `pack.json` lên repo mà trang XƯỞNG vẫn hiện model vector | `packLoad()` / `voicePack()` gọi thẳng `fetch('assets/…')`, mà trang xưởng trên Pages nằm trong `/studio/` ⇒ đường dẫn thành `/studio/assets/…` và **404 im lặng** (`try{}` nuốt lỗi) | mọi cú fetch vào assets đi qua `fetchAsset()`: thử `''` → `'../'` → `'../../'` rồi nhớ mức ăn. Test dựng hẳn bản giống Pages rồi kiểm cả hai trang |
 | Thả `sup_resolve.mp3` vào `assets/voice` thì `mk_manifest.py` báo "không đoán ra tên ô" | `slot_keys()` bắt cả tên khoá lẫn nhãn bằng mẫu `\['(\w+)','([^']*)'`, mà nhãn của ô đó có dấu nháy đơn (`"Last Son's Resolve bùng lên"`) nên viết bằng nháy kép và cả dòng bị bỏ sót — 82 ô đọc ra thay vì 83 | chỉ bắt **tên khoá** (`\['(\w+)'`), đừng đòi luôn cái nhãn phía sau |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
