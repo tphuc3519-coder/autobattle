@@ -52,6 +52,13 @@
     box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 50px rgba(0,0,0,.55)}
   .stage::before{content:'';position:absolute;left:16%;right:16%;top:-1px;height:2px;
     background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.55}
+  /* Không dùng transform: Playwright coi phần tử đang biến đổi là "chưa đứng yên" và
+     không bao giờ bấm được thứ nằm dưới nó (mục 9). Canh giữa bằng left/right thôi. */
+  .loadChip{position:absolute;left:13px;right:13px;bottom:22px;text-align:center;
+    font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.05em;
+    color:#EFE6FF;pointer-events:none;z-index:5}
+  .loadChip span{background:rgba(10,8,24,.82);border:1px solid rgba(255,255,255,.18);
+    border-radius:999px;padding:5px 12px;display:inline-block}
   canvas{width:100%;max-width:520px;height:auto;display:block;touch-action:none;image-rendering:auto}
 
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-top:10px}
@@ -369,7 +376,11 @@
     
   </div>
 
-  <div class="stage"><canvas id="arena" width="620" height="620"></canvas></div>
+  <div class="stage"><canvas id="arena" width="620" height="620"></canvas>
+    <!-- Dòng báo tải gói, ĐẶT ĐÈ LÊN SÀN: dòng trong màn tiêu đề (#arcLoad) biến mất
+         ngay khi bấm PRESS START, mà gói mấy chục MB thì còn tải cả chục giây nữa —
+         người chơi vào trận thấy model vector và tưởng mất ảnh. -->
+    <div class="loadChip" id="loadChip" style="display:none"></div></div>
 
   
 
@@ -2235,11 +2246,23 @@ function packBuild(){
 }
 /* Gói ảnh nặng vài chục MB nên trên đường mạng chậm nó tới sau khi trang đã mở. Không
    nói gì thì người chơi tưởng game hỏng — nên màn tiêu đề có một dòng trạng thái riêng. */
-function packNote(msg){
-  const el=document.getElementById('arcLoad');
-  if(!el) return;
-  el.textContent=msg||'';
-  el.style.display=msg?'':'none';
+let packChipT=0;
+function packNote(msg,xong){
+  /* Hai chỗ, không phải một: #arcLoad nằm trong màn tiêu đề (mất khi vào trận),
+     #loadChip đè lên sàn đấu (còn suốt lúc đang tải). Cùng một câu chữ.
+     `xong` = dòng tổng kết: màn tiêu đề giữ lại, còn chip trên sàn thì tự tắt sau 4 giây —
+     nó nằm đè lên chỗ đánh nhau, để mãi là vướng mắt. */
+  clearTimeout(packChipT);
+  if(xong) packChipT=setTimeout(()=>{
+    const c=document.getElementById('loadChip'); if(c) c.style.display='none';
+  },4000);
+  for(const id of ['arcLoad','loadChip']){
+    const el=document.getElementById(id);
+    if(!el) continue;
+    if(id==='loadChip') el.innerHTML=msg?'<span></span>':'';
+    if(msg) (el.firstChild&&id==='loadChip'?el.firstChild:el).textContent=msg;
+    el.style.display=msg?'':'none';
+  }
 }
 /* Đọc gói kèm ĐẾM SỐ MB đã tải. Gói là một file mấy chục MB, trên mạng chậm nó về sau khi
    trang đã mở — không đếm ra màn hình thì người chơi ngồi nhìn model vector và tưởng game
@@ -2295,7 +2318,7 @@ async function packLoad(noi){
     BGM.src[key]=src; if(typeof bgmMark==='function') bgmMark(key,true); nhac++;
   }
   if(nhac&&MUSIC.on) musicStart();
-  packNote(img||snd?tf('packDone',{n:img,s:snd}):'');
+  packNote(img||snd?tf('packDone',{n:img,s:snd}):'',true);
   if(img){ avaRefresh(); if(typeof cselRefresh==='function') paintDex(); }
   if(img||snd||noi){
     status(`Đã nạp gói phát hành: ${img} ảnh · ${snd} tiếng (bản ${data.at||'?'}).`);

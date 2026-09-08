@@ -1555,6 +1555,17 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
   lượt `''` → `'../'` → `'../../'` rồi **nhớ mức nào ăn**, các file sau đi thẳng mức đó (bộ giọng
   mẫu nạp chín file nên không được dò lại từ đầu mỗi lần). `t_play.js` dựng hẳn bản giống Pages
   (trang chơi ở gốc, xưởng trong `/studio/`, `assets` ở gốc) rồi kiểm cả hai trang.
+- **Dòng đếm MB phải hiện ở HAI chỗ**: `#arcLoad` trong màn tiêu đề, và `#loadChip` **đè lên
+  sàn đấu**. Dòng trong màn tiêu đề biến mất ngay khi bấm PRESS START, mà gói thì còn tải cả
+  chục giây nữa — người chơi vào trận thấy model vector và tưởng mất ảnh. Đo được trên mạng
+  giả lập **8 Mbps** (mức bình thường của điện thoại): bấm PRESS START rồi chọn xong hai nhân
+  vật thì **0/89 ảnh** đã về, nên cả hai người đều là model vector. Chờ đủ ~25 giây thì đủ 89
+  ảnh và model đổi sang ảnh dán. **Đây không phải lỗi, chỉ là gói quá nặng** — người dùng đã
+  báo nhầm thành "k có model" đúng một lần.
+  - `packNote(msg, xong)`: `xong=true` là dòng tổng kết ⇒ màn tiêu đề giữ lại, còn chip trên
+    sàn **tự tắt sau 4 giây** (nó nằm đè lên chỗ đánh nhau).
+  - Chip **không được dùng `transform`** để canh giữa — Playwright coi phần tử đang biến đổi
+    là "chưa đứng yên" (mục 9). Canh bằng `left/right` + `text-align:center`.
 - **Gói nặng thì phải ĐẾM MB ra màn hình.** `pack.json` gói ảnh base64 nên vài chục MB là
   bình thường (bản người dùng đang dùng: **24 MB, 89 ảnh, 46 tiếng**), trên mạng chậm nó tới sau
   khi trang đã mở — không nói gì thì người chơi tưởng game hỏng và nhắn "sao mất ảnh". Màn tiêu
@@ -2332,6 +2343,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Bấm nút đổi ngôn ngữ không được | nút chỉ nằm ở thanh công cụ, mà màn chọn nhân vật phủ kín trang | gắn `data-lang-toggle` cho cả nút trong màn chọn lẫn nút trên màn tiêu đề |
 | Đội hình hỗn chiến / đánh đội trắng trơn giữa chừng, `t_modes` đổ ở chỗ khác nhau mỗi lần | thêm một `await Store.get(...)` vào `loadSaved()` đẩy lượt `cselRefresh()` ở cuối hàm lùi lại một nhịp IndexedDB — rơi đúng vào lúc người dùng vừa bấm đổi chế độ, lượt vẽ muộn quét sạch khung đội hình vừa mở | đọc khoá phụ bằng `.then()` chứ đừng `await`; mọi thứ cần đọc trước `cselRefresh()` thì gom vào đúng chỗ cũ, đừng nối thêm |
 | Nhãn biểu đồ mạng nhện bị cắt cụt chữ đầu (`Ổn định` còn `định`) | `RADAR_PAD` chỉ chừa chỗ cho ĐIỂM NEO, mà nhãn hai bên canh mép nên chữ chạy tiếp ra ngoài | nới chỗ chừa; test đo `getBoundingClientRect()` của từng nhãn so với khung SVG |
+| Vào trận trên điện thoại thấy model vector, tưởng mất ảnh | gói 24 MB còn đang tải; dòng đếm MB chỉ nằm trong màn tiêu đề nên bấm PRESS START là mất, không còn gì nói cho người chơi biết là phải chờ | thêm `#loadChip` đè lên sàn đấu, `packNote()` bắn ra cả hai chỗ; đo ở 8 Mbps thì lúc vào trận có 0/89 ảnh, đủ 89 ảnh sau ~25 giây |
 | Dán ảnh, xuất gói, commit `pack.json` lên repo mà trang XƯỞNG vẫn hiện model vector | `packLoad()` / `voicePack()` gọi thẳng `fetch('assets/…')`, mà trang xưởng trên Pages nằm trong `/studio/` ⇒ đường dẫn thành `/studio/assets/…` và **404 im lặng** (`try{}` nuốt lỗi) | mọi cú fetch vào assets đi qua `fetchAsset()`: thử `''` → `'../'` → `'../../'` rồi nhớ mức ăn. Test dựng hẳn bản giống Pages rồi kiểm cả hai trang |
 | Thả `sup_resolve.mp3` vào `assets/voice` thì `mk_manifest.py` báo "không đoán ra tên ô" | `slot_keys()` bắt cả tên khoá lẫn nhãn bằng mẫu `\['(\w+)','([^']*)'`, mà nhãn của ô đó có dấu nháy đơn (`"Last Son's Resolve bùng lên"`) nên viết bằng nháy kép và cả dòng bị bỏ sót — 82 ô đọc ra thay vì 83 | chỉ bắt **tên khoá** (`\['(\w+)'`), đừng đòi luôn cái nhãn phía sau |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
