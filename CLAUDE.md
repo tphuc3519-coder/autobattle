@@ -1611,6 +1611,95 @@ quanh sàn để né đòn**: quãng bay nhẹ của Murak chỉ là hiệu ứn
 > khoảng cách ra 77px — đó là hành vi của ChiChi chứ không phải của cô, và bản mô tả nói rõ
 > cô không được tự chạy trốn. `t_beatrice.js` vì vậy ghim chân đối thủ ở 440px rồi mới đo.
 
+### Đợt NERF — đọc trước khi đụng vào bất kỳ con số nào của cô
+
+Bản đầu **quá mạnh, gần như không ai hạ nổi**. Người dùng báo: *"hiện tại beatrice quá mạnh,
+cần giảm sức mạnh gấp"* và *"test k ai win đc"*. Đo bằng `tools/t_bea_balance.js` (16 trận,
+hai lượt mỗi đối thủ): **thắng 15/16 = 94%**, trung bình còn **46% máu** lúc thắng — riêng
+Shikamaru và Doraemon thì cô kết trận với **85% / 86% máu**, tức cả bộ chiêu của họ gần như
+không chạm được vào người.
+
+**Ba thứ chồng lên nhau mới ra chuyện đó, và cả ba đều phải cắt:**
+
+| Vấn đề | Bản đầu |
+|---|---|
+| E.M.T chặn 100% sát thương | **28.6%** trận đấu cô không ăn một điểm nào (2s mỗi 7s) |
+| Murak miễn khống chế | **42.9%** — cộng lại **~71%** thời gian cô có lớp bảo vệ nào đó |
+| Sát thương duy trì | **38 DPS** ⇒ hạ 800 máu trong **21 giây** |
+| Al Shamac mỗi 5s | cận chiến mất **36%** mỗi chu kỳ chỉ để đi bộ lại vào tầm |
+
+> **Chỗ chí mạng là hai chiêu phòng thủ TỰ BUNG đúng nhịp hồi chiêu** (luật "mọi skill phải
+> tự dùng ngay khi hồi chiêu xong"). Nghĩa là quãng miễn thương đó **được bảo đảm, không bao
+> giờ lỡ nhịp** — khác hẳn một chiêu phòng thủ do người chơi bấm tay. Vì vậy cắt **thời lượng
+> và nới hồi chiêu** ăn thua hơn hẳn cắt mỗi con số sát thương.
+
+> **ĐƯỜNG CONG RẤT DỐC — ghi lại cho khỏi mò lại từ đầu.** Ba lượt đo thật:
+>
+> | | DPS duy trì | Uptime bảo vệ | **Tỉ lệ thắng** |
+> |---|---|---|---|
+> | bản đầu | 38 | 71% | **94%** |
+> | cắt quá tay | 17 | 21% | **13%** |
+> | nới lại | 27 | 36% | **81%** |
+> | **chốt** | **21** | **27%** | **38%** |
+>
+> Hai bài học:
+> 1. **Cắt cả sát thương LẪN quãng miễn thương cùng lúc thì hai thứ NHÂN vào nhau**, không
+>    phải cộng — lượt đầu rơi thẳng từ "không ai hạ nổi" sang "không hạ nổi ai" (thua trắng
+>    0–2 trước kono · chichi · tsubasa · shika · suzune · superman).
+> 2. **Khoảng giữa rất hẹp**: từ 17 DPS/21% lên 27 DPS/36% là tỉ lệ thắng nhảy 13% → 81%.
+>    Nới tay một nấc nhỏ là mạnh lại gần như cũ.
+>
+> Vì vậy: **chỉnh một nấc rồi ĐO LẠI bằng `node tools/t_bea_balance.js`**, đừng chỉnh theo
+> cảm tính và đừng cắt hai mảng một lượt.
+
+| | Bản đầu (94%) | Cắt quá tay (13%) | Nới lại (81%) | **Chốt** |
+|---|---|---|---|---|
+| `emtT` / `emtCd` | 2s mỗi 7s (**28.6%**) | 1.2s/16s (7.5%) | 1.5s/11s (13.6%) | **1.35s mỗi 13.5s (10%)** |
+| `emtRefl` | 20% | 10% | 15% | **12%** |
+| `murakT` / `murakCd` | 3s mỗi 7s (**42.9%**) | 1.8s/13s (13.8%) | 2.2s/10s (22%) | **2s mỗi 11.5s (17.4%)** |
+| `murakRes` | −20% dmg nhận | −10% | −15% | **−12%** |
+| `shamacDmg` / `shamacCd` | 10 dmg mỗi 5s | 8 mỗi 10s | 10 mỗi 7s | **9 mỗi 8.5s** |
+| `ultDmg` / `ultCd` | 50/tia mỗi 8s (150) | 30 mỗi 13s (90) | 40 mỗi 10s (120) | **34/tia mỗi 11.5s (102)** |
+| `eroDps` | 2 HP/s (ba stack 6) | 1 (ba stack 3) | 1.5 (4.5) | **1.2 HP/s (ba stack 3.6)** |
+| `minyaDmg` | 15 | 9 | 12 | **10** |
+| `minyaStunOdds` | 20% | 12% | 15% | **13%** |
+
+Kết quả: sát thương duy trì **38 → ~21 DPS** (hạ 800 máu mất ~38 giây thay vì 21), quãng có
+lớp bảo vệ **71% → ~27%** — đúng điểm giữa của hai mốc ĐÃ ĐO 13% và 81%. Đúng chất một pháp
+sư khống chế: thắng chậm bằng cách bào mòn, chứ không phải bằng cách không ai đụng được vào mình.
+
+**Đo lại bản chốt: thắng 6/16 = 38%**, trung bình còn 40% máu lúc thắng:
+
+| Đối thủ | Thắng–Thua | | Đối thủ | Thắng–Thua |
+|---|---|---|---|---|
+| Konohamaru | 0–2 | | Horikita | 2–0 |
+| ChiChi | 0–2 | | Ginyu | 2–0 |
+| Tsubasa | 0–2 | | Doraemon | 2–0 |
+| Shikamaru | 0–2 | | Superman | 0–2 |
+
+Năm người hạ được cô, ba người thì chưa. **Shikamaru từ 0–2 (cô còn 85% máu) giờ thành
+0–2 NGƯỢC LẠI** — đúng chỗ người dùng kêu nhất. Doraemon vẫn là đối thủ khó nhất của cô
+(2–0, cô còn 70%/33% máu): anh không có đòn nào xuyên được quãng E.M.T, còn cô thì cứ ném
+anh ra rìa tầm.
+
+> **38% là hơi dưới mốc 50% lý tưởng, và đó là CỐ Ý.** Đường cong quá dốc (13% → 81% chỉ
+> trong một nấc nhỏ) nên nhích lên tí nữa là rất dễ vọt lại quá mạnh. Thà để hơi yếu một
+> chút còn hơn quay lại cảnh "không ai win đc". Muốn nhích lên thì **chỉ đụng vào SÁT
+> THƯƠNG** (`minyaDmg` / `ultDmg`), đừng đụng vào `emtT` / `murakT` — chính hai con số đó
+> mới là thứ làm cô không ai đánh trúng, và cũng là thứ chơi vào thì khó chịu nhất.
+
+> **`shamacWeak` giữ nguyên −20%** — đó là debuff đặt lên ĐỊCH chứ không phải lớp bảo vệ của
+> cô, và nó chính là phần "khống chế" trong bộ chiêu. Cắt nốt chỗ đó là mất luôn tính cách
+> nhân vật. **Máu vẫn 800** như cả bảng (mục 2), đừng đụng vào.
+
+> **Nerf thì phải KÉO BIỂU ĐỒ SỨC MẠNH XUỐNG theo**, đúng luật đã chốt cho mấy đợt buff
+> trước (mục 2g): `dmg 52→38 · dur 82→62 · as 36→31 · cc 86→69 · uti 84→70 · con 80→72 ·
+> cmb 34→29`, và thanh chỉ số `spd 3→2 · def 4→3`.
+
+> **Đo lại sau mỗi lần chỉnh bằng `node tools/t_bea_balance.js`** chứ đừng chỉnh theo cảm
+> tính. Nó chạy Beatrice với cả tám đối thủ và in ra tỉ lệ thắng kèm **máu còn lại lúc
+> thắng** — con số thứ hai mới nói lên trận đó sát nút hay một chiều.
+
 **Ăn mừng / gục ngã.**
 - Thắng: đóng quyển sách, **khoanh hai tay**, quay nhẹ mặt sang một bên với vẻ kiêu kỳ. Cánh
   cửa Forbidden Library hiện phía sau (`drawBeaWin()`), cô nhìn lại sàn đấu rồi bước vào.
