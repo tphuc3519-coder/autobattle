@@ -274,7 +274,10 @@
   body.arcade #charSelect[data-step="stage"] #teamNum,
   body.arcade #charSelect[data-step="pick"] #cupSeed,
   body.arcade #charSelect[data-step="stage"] #cupSeed,
-  #charSelect[data-page="stage"] #cupSeed{display:none}
+  #charSelect[data-page="stage"] #cupSeed,
+  body.arcade #charSelect[data-step="pick"] #lgLegs,
+  body.arcade #charSelect[data-step="stage"] #lgLegs,
+  #charSelect[data-page="stage"] #lgLegs{display:none}
   body.arcade #charSelect[data-step="pick0"] #stageSub,
   body.arcade #charSelect[data-step="pick0"] #stageList,
   body.arcade #charSelect[data-step="pick"] #stageSub,
@@ -397,6 +400,19 @@
   .lgTab tr.top td.r{color:var(--gold);font-weight:700}
   .lgAva{display:inline-flex;width:22px;height:22px;border-radius:6px;overflow:hidden;
     align-items:center;justify-content:center;background:#0C0920;vertical-align:middle;margin-right:6px;font-size:13px}
+  /* ---- hiệu ứng bảng xếp hạng sau mỗi trận ----
+     Hàng trượt từ chỗ cũ về chỗ mới, điểm đếm dần lên, mũi tên chỉ ai vừa vượt ai.
+     Phần dịch chuyển do JS gán thẳng `transform` nên ở đây chỉ lo mấy thứ tô màu. */
+  .lgTab td.r i{font-style:normal;font-family:"Space Mono",monospace;font-size:9px;margin-left:4px}
+  .lgTab td.r i.up{color:#5BE39A}
+  .lgTab td.r i.dn{color:#FF8FA3}
+  /* Không dùng `forwards`: hết hiệu ứng là nền trả về đúng màu CSS, hàng đầu bảng vẫn giữ
+     được vệt vàng của nó. */
+  .lgTab tr.just td{animation:lgJust 1.6s ease-out 1}
+  @keyframes lgJust{0%{background:rgba(255,197,66,.30)}100%{background:transparent}}
+  .brM.fresh{animation:brPop 1.2s ease-out 1}
+  @keyframes brPop{0%{box-shadow:0 0 0 2px var(--gold) inset,0 0 22px rgba(255,197,66,.45)}
+    100%{box-shadow:0 0 0 0 rgba(255,197,66,0) inset,0 0 0 rgba(255,197,66,0)}}
   .lgAva img{width:100%;height:100%;object-fit:contain;display:block}
 
   /* Sơ đồ nhánh: mỗi vòng một cột, cuộn ngang khi màn hẹp chứ đừng ép chữ bé lại. */
@@ -618,6 +634,8 @@
     <div class="teamNum off" id="teamNum"></div>
     <!-- Xếp nhánh cho giải loại trực tiếp: bốc thăm hay tự xếp. -->
     <div class="teamNum off" id="cupSeed"></div>
+    <!-- Giải vòng tròn: đá một lượt hay có cả lượt về. -->
+    <div class="teamNum off" id="lgLegs"></div>
     <div class="cselBody">
       <div class="cselCols" id="duelPane">
         <div class="cselCol" id="colA">
@@ -738,9 +756,12 @@ const L={
     mCup:'🥇 Giải loại trực tiếp', mCupSub:'4 hoặc 8 người · bracket',
     cselLeague:'CHỌN <span>DÀN ĐẤU THỦ</span>', cselCup:'XẾP <span>NHÁNH ĐẤU</span>',
     subLeague:'Giải vòng tròn — chọn {lo}–{hi} người, ai cũng gặp ai đúng một lượt',
+    subLeague2:'Giải vòng tròn — chọn {lo}–{hi} người, ai cũng gặp ai hai lượt đi và về',
     subCup:'Giải loại trực tiếp — chọn đúng {a} hoặc {b} người, đánh loại tới khi có vô địch',
     goComp:'⚔ Khai mạc giải', seedLab:'Xếp nhánh', seedRandom:'🎲 Bốc thăm', seedManual:'✋ Tự xếp',
     seedHint:'Bấm vào hai người trong dàn để tráo chỗ cho nhau',
+    legsLab:'Thể thức', legs1:'Một lượt', legs2:'Lượt đi lượt về',
+    legsHint:'{n} trận · {v} vòng', leg1:'Lượt đi', leg2:'Lượt về',
     lgRound:'Vòng {n}/{t}', lgTeam:'Đấu thủ', lgP:'Trận', lgW:'Thắng', lgL:'Thua',
     lgDiff:'Hiệu số', lgPts:'Điểm',
     cupQF:'Tứ kết', cupSF:'Bán kết', cupFinal:'Chung kết', cupThird:'Tranh hạng ba',
@@ -796,9 +817,12 @@ const L={
     mCup:'🥇 Tournament', mCupSub:'4 or 8 fighters · bracket',
     cselLeague:'PICK THE <span>LEAGUE</span>', cselCup:'SEED THE <span>BRACKET</span>',
     subLeague:'League — pick {lo}–{hi} fighters, everyone plays everyone once',
+    subLeague2:'League — pick {lo}–{hi} fighters, everyone plays everyone twice, home and away',
     subCup:'Knockout — pick exactly {a} or {b} fighters, last one standing takes the cup',
     goComp:'⚔ Start the competition', seedLab:'Bracket', seedRandom:'🎲 Random draw', seedManual:'✋ Set it myself',
     seedHint:'Tap two fighters in the line-up to swap their slots',
+    legsLab:'Format', legs1:'Single round', legs2:'Home and away',
+    legsHint:'{n} matches · {v} rounds', leg1:'First leg', leg2:'Second leg',
     lgRound:'Round {n}/{t}', lgTeam:'Fighter', lgP:'P', lgW:'W', lgL:'L',
     lgDiff:'Diff', lgPts:'Pts',
     cupQF:'Quarter-finals', cupSF:'Semi-finals', cupFinal:'Final', cupThird:'Third place',
@@ -921,6 +945,7 @@ const TEAM_MIN=1, TEAM_MAX=3, TEAM_MIN_N=2, TEAM_MAX_N=4, TEAM_TOTAL=8;
 const ROSTERS={ffa:['kono','chichi','tsubasa'], teams:[['kono','chichi'],['tsubasa','shika']],
                 comp:['kono','chichi','tsubasa','shika']};   // dàn đấu thủ của giải đấu
 let CUPSEED='random';               // xếp nhánh: 'random' bốc thăm, 'manual' tự xếp
+let LGLEGS=1;                       // giải vòng tròn: 1 = một lượt, 2 = lượt đi lượt về
 /* Màu nhận dạng của từng đội. Đánh đội từ ba đội trở lên thì nhìn nhân vật không đoán
    ra ai cùng phe với ai, nên mỗi đội có một vòng sáng dưới chân theo màu này. */
 const TEAM_TINT=['#63B4FF','#FF4D6D','#2ED573','#FFC542'];
@@ -1821,6 +1846,7 @@ async function loadSaved(){
       if(CHARS[p.a])PICK.a=p.a; if(CHARS[p.b])PICK.b=p.b; dirty=true;
       if(['ffa','team','duel','league','cup'].indexOf(p.mode)>=0) PMODE=p.mode;
       if(p.seed==='random'||p.seed==='manual') CUPSEED=p.seed;
+      if(p.legs===1||p.legs===2) LGLEGS=p.legs;
       if(p.stage&&STAGE_KEYS.indexOf(p.stage)>=0) STAGE=p.stage;
       if(p.rosters){
         const ok=a=>Array.isArray(a)&&a.length&&a.every(k=>!!CHARS[k]);
@@ -3880,6 +3906,7 @@ function finish(w){
 const LG_MIN=3, LG_MAX=8;        // vòng tròn tính điểm: 3~8 người
 const CUP_SIZES=[4,8];           // loại trực tiếp: đúng 4 hoặc 8 người, không thì lệch nhánh
 const LG_WIN=3;                  // điểm mỗi trận thắng, đúng lối bóng đá
+const LG_LEGS_MAX=2;             // một lượt, hoặc lượt đi lượt về
 /* Trần thời gian một trận trong giải, tính bằng giây TRONG TRẬN (= 180 giây người chơi).
    Hai người cùng có cửa hồi máu thì về lý thuyết đánh nhau mãi không xong; giải mà kẹt
    một trận là kẹt cả giải, nên hết giờ thì ai còn nhiều PHẦN TRĂM máu hơn người đó thắng.
@@ -3887,6 +3914,9 @@ const LG_WIN=3;                  // điểm mỗi trận thắng, đúng lối b
    là dính TDZ. */
 const COMP_MAXT=90;
 let COMP=null;                   // giải đang chạy; null là không có giải nào
+/* Ảnh chụp bảng NGAY TRƯỚC trận vừa xong, để chạy hiệu ứng "hàng trượt về chỗ mới,
+   điểm đếm dần lên". Dùng đúng một lần rồi xoá. */
+let lgAnim=null, cupAnim=null;
 let compLive=false;              // đang ở TRONG một trận của giải
 
 const duelLike=m=>m==='duel'||m==='league'||m==='cup';
@@ -3914,12 +3944,20 @@ function shuffled(a){
   for(let i=o.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=o[i]; o[i]=o[j]; o[j]=t; }
   return o;
 }
-function leagueNew(keys){
+/* `legs` = 1 đá một lượt (mặc định), = 2 thì có LƯỢT VỀ: đá lại đúng bấy nhiêu vòng nữa
+   nhưng ĐẢO SÂN — ai đứng bên A lượt đi thì lượt về đứng bên B. Số vòng nhân đôi theo,
+   nên dòng "Vòng 3/14" vẫn tự đúng mà không phải sửa chỗ nào khác. */
+function leagueNew(keys,legs){
   const tab={};
   for(const k of keys) tab[k]={p:0,w:0,l:0,gf:0,ga:0,pts:0};
   const vong=roundRobin(keys.length), fix=[];
-  vong.forEach((cap,r)=>cap.forEach(pair=>fix.push({r,a:keys[pair[0]],b:keys[pair[1]],w:null,ga:0,gb:0})));
-  return {kind:'league',keys:keys.slice(),tab,fix,nr:vong.length,cur:null};
+  const n=Math.max(1,Math.min(LG_LEGS_MAX,legs|0||1));
+  for(let L=0;L<n;L++)
+    vong.forEach((cap,r)=>cap.forEach(pair=>{
+      const a=keys[pair[L%2]], b=keys[pair[(L+1)%2]];
+      fix.push({r:r+L*vong.length,a,b,w:null,ga:0,gb:0,leg:L+1});
+    }));
+  return {kind:'league',keys:keys.slice(),tab,fix,nr:vong.length*n,legs:n,cur:null};
 }
 function cupNew(keys){
   const n=keys.length, r1=[];
@@ -3950,10 +3988,16 @@ function cupRoundName(r,R){
   return so>=4?t('cupQF'):so===2?t('cupSF'):t('cupFinal');
 }
 /* Trận kế tiếp phải đánh, hoặc null khi giải đã xong. */
+/* Nhãn một vòng của giải vòng tròn. Đá lượt về thì ghi thêm "Lượt đi / Lượt về" — chỉ nhìn
+   số vòng thì không đoán ra vòng 9/14 là lượt nào. */
+function lgLabel(m){
+  const v=tf('lgRound',{n:m.r+1,t:COMP.nr});
+  return (COMP.legs===2&&m.leg)?v+' · '+t(m.leg===2?'leg2':'leg1'):v;
+}
 function compNextMatch(){
   if(!COMP) return null;
   if(COMP.kind==='league'){
-    for(const m of COMP.fix) if(!m.w) return {a:m.a,b:m.b,ref:m,label:tf('lgRound',{n:m.r+1,t:COMP.nr})};
+    for(const m of COMP.fix) if(!m.w) return {a:m.a,b:m.b,ref:m,label:lgLabel(m)};
     return null;
   }
   cupFill(COMP);
@@ -3983,8 +4027,8 @@ function compChampion(){
 }
 /* Mở một giải mới. `seed` chỉ có nghĩa với loại trực tiếp: 'random' thì xáo lại nhánh,
    'manual' thì giữ nguyên đúng thứ tự người dùng đã xếp. */
-function compStart(kind,keys,stage,seed){
-  COMP=kind==='league'?leagueNew(keys):cupNew(seed==='random'?shuffled(keys):keys);
+function compStart(kind,keys,stage,seed,legs){
+  COMP=kind==='league'?leagueNew(keys,legs):cupNew(seed==='random'?shuffled(keys):keys);
   COMP.stage=stage||STAGE;
   COMP.seed=seed||'manual';
   compLive=false;
@@ -4008,6 +4052,12 @@ function compResult(win){
   compLive=false;
   const m=COMP&&COMP.cur;
   if(!m) return;
+  /* Chụp bảng TRƯỚC khi cộng điểm — hiệu ứng cần cả thứ hạng cũ lẫn con số cũ. */
+  if(COMP.kind==='league'){
+    const cu={};
+    for(const k of COMP.keys) cu[k]=Object.assign({},COMP.tab[k]);
+    lgAnim={ord:lgOrder(),tab:cu,pair:[m.a,m.b]};
+  }else cupAnim=m.ref;
   const mains=G.fighters.filter(f=>f&&!f.summon);
   const A=mains.find(f=>f.key===m.a)||mains[0], B=mains.find(f=>f.key===m.b)||mains[1];
   const ga=Math.round((A&&A.dmgDealt)||0), gb=Math.round((B&&B.dmgDealt)||0);
@@ -11952,7 +12002,7 @@ el('testForest').addEventListener('click',testForest);
    hai chế độ nhiều người. Bấm "Vào trận" mới chép sang PICK / PMODE / ROSTERS.
    TMP.teams là MẢNG các đội — số đội cũng do người chơi chọn (TEAM_MIN_N~TEAM_MAX_N). */
 const TMP={a:PICK.a,b:PICK.b,mode:PMODE,stage:STAGE,ffa:ROSTERS.ffa.slice(),
-           teams:ROSTERS.teams.map(a=>a.slice()),comp:ROSTERS.comp.slice(),seed:CUPSEED};
+           teams:ROSTERS.teams.map(a=>a.slice()),comp:ROSTERS.comp.slice(),seed:CUPSEED,legs:LGLEGS};
 /* Chế độ đang chọn cần mấy nhóm đội hình: 'ffa' đúng một nhóm gộp chung, 'team' thì mỗi
    đội một nhóm. Mỗi nhóm trỏ vào một mảng trong TMP qua hàm list(). */
 function modeGroups(m){
@@ -12270,7 +12320,8 @@ function cselRefresh(){
       :`<b>${t('notEnough')}</b>`;
   }else if(TMP.mode==='league'||TMP.mode==='cup'){
     if(sub) sub.textContent=ARCADE?cselSubText()
-      :(TMP.mode==='league'?tf('subLeague',{lo:LG_MIN,hi:LG_MAX}):tf('subCup',{a:CUP_SIZES[0],b:CUP_SIZES[1]}));
+      :(TMP.mode==='league'?tf(TMP.legs===2?'subLeague2':'subLeague',{lo:LG_MIN,hi:LG_MAX})
+                           :tf('subCup',{a:CUP_SIZES[0],b:CUP_SIZES[1]}));
     if(vs) vs.innerHTML=TMP.comp.map(k=>`<b>${nm(k)}</b>`).join(' · ')||`<b>${t('notEnough')}</b>`;
   }else{
     if(sub) sub.textContent=ARCADE?cselSubText():tf('subTeam',{n:TMP.teams.length,lo:TEAM_MIN_N,hi:TEAM_MAX_N,
@@ -12279,6 +12330,28 @@ function cselRefresh(){
       `<b style="color:${teamTint(t)}">${side.map(nm).join(' + ')||'—'}</b>`).join(' vs ');
   }
   if(go){ const ok=tmpReady(); go.disabled=!ok; go.style.opacity=ok?'':'.5'; go.style.cursor=ok?'':'not-allowed'; }
+  /* Hàng chọn thể thức — chỉ có ở giải vòng tròn. Kèm luôn số trận và số vòng, vì
+     8 người đá lượt về là 56 trận, người chơi phải biết trước mình đang chọn cái gì. */
+  const lg=document.getElementById('lgLegs');
+  if(lg){
+    const hien=TMP.mode==='league';
+    lg.classList.toggle('off',!hien);
+    lg.innerHTML='';
+    if(hien){
+      const lab=document.createElement('span'); lab.textContent=t('legsLab'); lg.appendChild(lab);
+      const n=TMP.comp.length, vong=n>1?roundRobin(n).length:0;
+      for(const [v,k] of [[1,'legs1'],[2,'legs2']]){
+        const b=document.createElement('button');
+        b.type='button'; b.dataset.legs=String(v); b.textContent=t(k);
+        if(v===TMP.legs) b.className='on';
+        b.addEventListener('click',()=>{ TMP.legs=v; cselRefresh(); });
+        lg.appendChild(b);
+      }
+      const h=document.createElement('span'); h.style.opacity='.7';
+      h.textContent=tf('legsHint',{n:n*(n-1)/2*TMP.legs,v:vong*TMP.legs});
+      lg.appendChild(h);
+    }
+  }
   /* Hàng chọn cách xếp nhánh — chỉ có ở giải loại trực tiếp. */
   const cs=document.getElementById('cupSeed');
   if(cs){
@@ -12369,7 +12442,7 @@ function buildCsel(){
 function openCsel(){
   TMP.a=PICK.a; TMP.b=PICK.b; TMP.mode=PMODE; TMP.stage=STAGE;
   TMP.ffa=ROSTERS.ffa.slice(); TMP.teams=ROSTERS.teams.map(a=>a.slice());
-  TMP.comp=ROSTERS.comp.slice(); TMP.seed=CUPSEED; swapAt=-1;
+  TMP.comp=ROSTERS.comp.slice(); TMP.seed=CUPSEED; TMP.legs=LGLEGS; swapAt=-1;
   cselRefresh();
   el('charSelect').classList.remove('off');
   running=false; el('play').textContent=t('play');
@@ -12379,15 +12452,15 @@ function startPicked(){
   if(!tmpReady())return;
   PICK.a=TMP.a; PICK.b=TMP.b; PMODE=TMP.mode; STAGE=TMP.stage||STAGE;
   ROSTERS.ffa=TMP.ffa.slice(); ROSTERS.teams=TMP.teams.map(a=>a.slice());
-  ROSTERS.comp=TMP.comp.slice(); CUPSEED=TMP.seed||'random';
+  ROSTERS.comp=TMP.comp.slice(); CUPSEED=TMP.seed||'random'; LGLEGS=TMP.legs===2?2:1;
   Store.set('cfg_picks',JSON.stringify({a:PICK.a,b:PICK.b,mode:PMODE,stage:STAGE,
-    rosters:ROSTERS,seed:CUPSEED})).catch(()=>{});
+    rosters:ROSTERS,seed:CUPSEED,legs:LGLEGS})).catch(()=>{});
   applyColors(); applyHp();
   closeCsel();
   /* Giải đấu KHÔNG vào trận ngay: mở giải rồi hiện bảng xếp hạng / sơ đồ nhánh, người
      chơi bấm "đánh trận này" thì mới vào. */
   if(PMODE==='league'||PMODE==='cup'){
-    compStart(PMODE,ROSTERS.comp.slice(),STAGE,CUPSEED);
+    compStart(PMODE,ROSTERS.comp.slice(),STAGE,CUPSEED,LGLEGS);
     newGame(); running=false; el('play').textContent=t('play');
     compOpen();
     return;
@@ -12402,8 +12475,11 @@ function startPicked(){
    dưới. Không có gì khác. */
 function compOpen(){
   if(!COMP) return;
-  compPaint();
+  /* HIỆN BẢNG RA TRƯỚC rồi mới vẽ: `lgPlay()` phải đo `offsetTop` của từng hàng, mà đo bố
+     cục bên trong một khối `display:none` thì mọi thứ trả về 0 — hàng không trượt được một
+     pixel nào. Đã dính đúng một lần. */
   const b=document.getElementById('compBoard'); if(b) b.classList.remove('off');
+  compPaint();
 }
 function compBoardClose(){
   const b=document.getElementById('compBoard'); if(b) b.classList.add('off');
@@ -12425,8 +12501,7 @@ function compPlayed(){
 /* Mọi trận của giải kèm tên vòng, đúng thứ tự sẽ đá. */
 function compMatches(){
   if(!COMP) return [];
-  if(COMP.kind==='league')
-    return COMP.fix.map(m=>({m,lab:tf('lgRound',{n:m.r+1,t:COMP.nr})}));
+  if(COMP.kind==='league') return COMP.fix.map(m=>({m,lab:lgLabel(m)}));
   const R=COMP.rounds.length, out=[];
   for(let r=0;r<R-1;r++) for(const m of COMP.rounds[r]) out.push({m,lab:cupRoundName(r,R)});
   out.push({m:COMP.third,lab:t('cupThird')});
@@ -12448,20 +12523,66 @@ function compNextHtml(){
   return `<div class="nextM compWin"><i>🏆</i>`+
     `<b style="color:${CHARS[k].color}">${CHARS[k].name}</b><em>${t('compChamp')}</em></div>`;
 }
+const lgSign=v=>(v>0?'+':'')+v;
+/* Có `lgAnim` (vừa đá xong một trận) thì bảng vẽ ra mang theo cả SỐ CŨ và THỨ HẠNG CŨ:
+   `lgPlay()` đọc mấy thuộc tính đó rồi cho hàng trượt về chỗ mới và đếm số lên. Không có
+   thì vẽ thẳng số cuối như thường. */
 function lgTableHtml(){
-  const ord=lgOrder();
+  const ord=lgOrder(), truoc=lgAnim, cu=truoc?truoc.tab:null;
   const rows=ord.map((k,i)=>{
     const st=COMP.tab[k], gd=st.gf-st.ga, C=CHARS[k], src=avaSrc(k);
-    return `<tr class="${i===0?'top':''}"><td class="r">${i+1}</td>`+
+    const o=cu?cu[k]:null, oj=truoc?truoc.ord.indexOf(k):-1;
+    const so=(v,ov,cls)=>`<td class="${cls||''}"${o?` data-a="${ov}" data-b="${v}"`:''}>${o?ov:v}</td>`;
+    const ogd=o?o.gf-o.ga:gd;
+    const hieu=`<td class="${gd>0?'up':gd<0?'dn':''}"${o?` data-a="${ogd}" data-b="${gd}" data-sign="1"`:''}>`+
+      `${lgSign(o?ogd:gd)}</td>`;
+    /* Mũi tên lên xuống chỉ hiện đúng lượt vẽ ngay sau trận — nhìn là biết ai vừa vượt ai. */
+    const mui=(oj>=0&&oj!==i)?`<i class="${oj>i?'up':'dn'}">${oj>i?'▲':'▼'}${Math.abs(oj-i)}</i>`:'';
+    const vua=(truoc&&truoc.pair.indexOf(k)>=0)?' just':'';
+    return `<tr class="${i===0?'top':''}${vua}" data-old="${oj}">`+
+      `<td class="r">${i+1}${mui}</td>`+
       `<td class="n"><span class="lgAva">${src?`<img alt="" src="${src}">`:C.emoji}</span>`+
       `<b style="color:${C.color}">${C.short||C.name}</b></td>`+
-      `<td>${st.p}</td><td>${st.w}</td><td>${st.l}</td>`+
-      `<td class="${gd>0?'up':gd<0?'dn':''}">${gd>0?'+':''}${gd}</td>`+
-      `<td class="pt">${st.pts}</td></tr>`;
+      so(st.p,o&&o.p)+so(st.w,o&&o.w)+so(st.l,o&&o.l)+hieu+so(st.pts,o&&o.pts,'pt')+`</tr>`;
   }).join('');
   return `<table class="lgTab"><thead><tr><th></th><th style="text-align:left">${t('lgTeam')}</th>`+
     `<th>${t('lgP')}</th><th>${t('lgW')}</th><th>${t('lgL')}</th>`+
     `<th>${t('lgDiff')}</th><th>${t('lgPts')}</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+/* Lối FLIP: bảng đã vẽ ở thứ hạng MỚI rồi, giờ dịch ngược từng hàng về chỗ CŨ, ép trình
+   duyệt tính lại bố cục, xong mới thả cho chúng trượt về. Số thì đếm dần trong 0.7 giây. */
+function lgPlay(){
+  if(!lgAnim) return;
+  const box=document.getElementById('compBody');
+  const rows=box?[].slice.call(box.querySelectorAll('.lgTab tbody tr')):[];
+  lgAnim=null;                       // chạy đúng MỘT lần cho mỗi trận
+  if(!rows.length) return;
+  const cho=rows.map(r=>r.offsetTop);
+  for(let i=0;i<rows.length;i++){
+    const j=+rows[i].dataset.old;
+    if(!(j>=0)||j>=cho.length||j===i) continue;
+    rows[i].style.transition='none';
+    rows[i].style.transform='translateY('+(cho[j]-cho[i])+'px)';
+  }
+  void box.offsetHeight;             // thiếu dòng này thì hai lần gán bị gộp làm một, hàng không trượt
+  requestAnimationFrame(()=>{
+    for(const r of rows){
+      r.style.transition='transform .55s cubic-bezier(.22,.9,.24,1)';
+      r.style.transform='translateY(0)';
+    }
+  });
+  const o=[].slice.call(box.querySelectorAll('.lgTab td[data-b]'));
+  if(!o.length) return;
+  const T=700, t0=(window.performance||Date).now();
+  const buoc=()=>{
+    const p=Math.min(1,(((window.performance||Date).now())-t0)/T), e=1-Math.pow(1-p,3);
+    for(const c of o){
+      const a=+c.dataset.a, b=+c.dataset.b, v=Math.round(a+(b-a)*e);
+      c.textContent=c.dataset.sign?lgSign(v):String(v);
+    }
+    if(p<1) requestAnimationFrame(buoc);
+  };
+  requestAnimationFrame(buoc);
 }
 function brSlotHtml(k,win){
   if(!k) return `<span class="brSlot empty"><i>·</i><b>—</b></span>`;
@@ -12471,7 +12592,8 @@ function brSlotHtml(k,win){
     `<b>${C.short||C.name}</b></span>`;
 }
 function brMatchHtml(m){
-  return `<div class="brM">${brSlotHtml(m.a,m.w&&m.w===m.a)}${brSlotHtml(m.b,m.w&&m.w===m.b)}</div>`;
+  const vua=(m===cupAnim)?' fresh':'';   // trận vừa đá xong thì nháy một cái cho thấy
+  return `<div class="brM${vua}">${brSlotHtml(m.a,m.w&&m.w===m.a)}${brSlotHtml(m.b,m.w&&m.w===m.b)}</div>`;
 }
 function bracketHtml(){
   cupFill(COMP);
@@ -12506,6 +12628,8 @@ function compPaint(){
     `<div class="compHead">${t('compResults')}</div>`+compResultsHtml();
   const go=document.getElementById('compGo');
   if(go){ go.textContent=t('compGo'); go.style.display=compDone()?'none':''; }
+  lgPlay();                          // đọc DOM vừa dựng nên phải gọi SAU khi gán innerHTML
+  cupAnim=null;                      // sơ đồ nhánh cũng chỉ nháy một lần
 }
 /* ---------- vỏ arcade ----------
    Cùng MỘT engine chạy cho hai trang: `index.html` là xưởng, `play.html` là trang chơi
@@ -12561,7 +12685,8 @@ function cselSubText(){
   const i=teamStep();
   if(i>=0) return tf('subTeamStep',{n:i+1,lo:TEAM_MIN,hi:TEAM_MAX,cur:tmpTotal(),max:TEAM_TOTAL});
   if(ARCADE&&cselPage==='chars'&&TMP.mode==='ffa') return tf('subFfa',{lo:FFA_MIN,hi:FFA_MAX});
-  if(ARCADE&&TMP.mode==='league') return tf('subLeague',{lo:LG_MIN,hi:LG_MAX});
+  if(ARCADE&&TMP.mode==='league')
+    return tf(TMP.legs===2?'subLeague2':'subLeague',{lo:LG_MIN,hi:LG_MAX});
   if(ARCADE&&TMP.mode==='cup') return tf('subCup',{a:CUP_SIZES[0],b:CUP_SIZES[1]});
   return tf('subDuel',{n:CKEYS.length});
 }

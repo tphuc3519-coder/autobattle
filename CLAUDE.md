@@ -1452,8 +1452,8 @@ là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa 
 | | `league` | `cup` |
 |---|---|---|
 | bao nhiêu người | `LG_MIN`–`LG_MAX` = **3–8** | **đúng 4 hoặc 8** (`CUP_SIZES`) |
-| lịch | vòng tròn một lượt, `roundRobin()` kiểu *circle method* | nhánh loại trực tiếp `cupNew()` |
-| số trận | `n(n−1)/2` | `n−1` + **1 trận tranh hạng ba** |
+| lịch | vòng tròn, `roundRobin()` kiểu *circle method*; **một lượt hoặc lượt đi lượt về** | nhánh loại trực tiếp `cupNew()` |
+| số trận | `n(n−1)/2` × số lượt | `n−1` + **1 trận tranh hạng ba** |
 | thắng được gì | **3 điểm** (`LG_WIN`), không có hoà | đi tiếp một vòng |
 | xếp hạng | điểm → hiệu số → tổng sát thương gây ra → tên | vô địch = người thắng chung kết |
 
@@ -1467,6 +1467,16 @@ là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa 
   có cửa hồi máu thì về lý thuyết đánh nhau mãi không xong; giải mà kẹt một trận là kẹt cả
   giải. `compTick()` gọi ở đầu `step()`, hết giờ thì ai còn nhiều **phần trăm** máu hơn thì
   thắng. Khai bằng số thẳng chứ **đừng gọi `gs()`** — hàm đó khai mãi dưới khối Shikamaru.
+- **Lượt đi lượt về là TUỲ CHỌN, mặc định MỘT LƯỢT** (`LGLEGS`, hàng `#lgLegs`). Người dùng
+  hỏi lại: *"đánh vòng tròn này chưa có lượt đi lượt về đúng không? chỉ có mới đánh 1 turn
+  thôi mà đúng k"* — đúng, và giờ có thêm lựa chọn.
+  - `leagueNew(keys, legs)`: lượt về đá lại **đúng bấy nhiêu vòng nữa nhưng ĐẢO SÂN** — ai
+    đứng bên A lượt đi thì lượt về đứng bên B (`keys[pair[L%2]]`). Số vòng nhân đôi theo nên
+    dòng "Vòng 9/14" tự đúng, không phải sửa chỗ nào khác.
+  - Nhãn vòng đi qua `lgLabel(m)` và ghi thêm **Lượt đi / Lượt về** khi `legs===2`: chỉ nhìn
+    số vòng thì không đoán ra vòng 9/14 là lượt nào.
+  - Hàng chọn **in sẵn số trận và số vòng** (`legsHint`): 8 người đá lượt về là **56 trận**,
+    phải cho người chơi biết trước mình đang chọn cái gì.
 - **Dàn đấu thủ bấm là BẬT/TẮT, không có bản sao** (`modeGroups()` gắn cờ `toggle`): bảng xếp
   hạng mà có hai Konohamaru thì đọc không ra ai với ai.
 - **`tmpReady()` chặn riêng cho `cup`**: 5 người vẫn nằm trong khoảng 4~8 nên vòng kiểm
@@ -1484,6 +1494,21 @@ là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa 
 - **Giải đá dở được lưu** ở khoá `cfg_comp`; bấm PRESS START mà còn giải chưa xong thì vào
   thẳng bảng xếp hạng chứ không bắt chọn lại dàn đấu thủ. Khoá đó đọc bằng `.then()` chứ
   **đừng `await`** — thêm một nhịp IndexedDB vào giữa `loadSaved()` là dính đúng lỗi ở mục 9.
+- **Bảng xếp hạng có hiệu ứng sau mỗi trận** — người dùng: *"làm hiệu ứng khi 1 người thắng
+  trận rồi movement thay đổi vị trí và điểm số trên bxh cho nó hay"*. `compResult()` chụp
+  bảng **TRƯỚC** khi cộng điểm vào `lgAnim` (thứ hạng cũ + con số cũ + cặp vừa đá), rồi
+  `lgTableHtml()` vẽ ra kèm `data-old` / `data-a` / `data-b` và `lgPlay()` chạy:
+  - **hàng trượt theo lối FLIP**: bảng đã vẽ ở thứ hạng MỚI, dịch ngược từng hàng về chỗ CŨ,
+    **ép trình duyệt tính lại bố cục** (`void box.offsetHeight`) rồi mới thả cho trượt về.
+    Thiếu dòng ép đó thì hai lần gán bị gộp làm một và hàng đứng im.
+  - **số đếm dần lên** trong 0.7 giây (P · W · L · hiệu số · điểm), hiệu số giữ dấu `+`.
+  - **mũi tên ▲▼ chỉ ai vừa vượt ai**, và hai người vừa đá được tô sáng 1.6 giây.
+  - `lgAnim` / `cupAnim` dùng **đúng một lần** rồi xoá — `compPaint()` còn được gọi lại khi
+    đổi ngôn ngữ, không xoá là hiệu ứng chạy lại vô duyên.
+  - Sơ đồ nhánh thì trận vừa có kết quả nháy một cái (`.brM.fresh`).
+  - **`compOpen()` phải BỎ LỚP `off` TRƯỚC rồi mới `compPaint()`**: `lgPlay()` đo `offsetTop`
+    của từng hàng, mà đo bố cục bên trong khối `display:none` thì mọi thứ trả về 0 và không
+    hàng nào trượt được một pixel. Đã dính đúng một lần — đo ra 0px, sửa xong ra 105px.
 - **Giao diện chỉ có ĐÚNG BA khối xếp dọc**: *trận kế tiếp* to nhất ở trên, *bảng điểm hoặc
   sơ đồ nhánh* ở giữa, *kết quả đã đá* ở dưới. Không thêm gì nữa — người dùng đã dặn "đừng
   bị rối". Sơ đồ nhánh **cuộn ngang** khi màn hẹp chứ đừng ép chữ bé lại.
@@ -2321,8 +2346,11 @@ node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4
                         # đúng một lượt), bảng xếp hạng cộng điểm và xếp thứ tự đúng, dàn đấu
                         # thủ bấm là bật/tắt chứ không có bản sao, sơ đồ nhánh 8 người đủ ba
                         # vòng + trận tranh hạng ba, 5 người thì khoá nút vào giải, xếp nhánh
-                        # bốc thăm / tự xếp (bấm hai người là tráo chỗ), và cả hai giải chạy
-                        # từ trận đầu tới lúc có nhà vô địch
+                        # bốc thăm / tự xếp (bấm hai người là tráo chỗ), lượt đi lượt về
+                        # (mặc định một lượt, bật lên thì nhân đôi số trận và ĐẢO SÂN),
+                        # hiệu ứng bảng sau mỗi trận (hàng trượt thật, số đếm dần, mũi tên
+                        # đổi hạng, và ảnh chụp chỉ dùng một lần),
+                        # và cả hai giải chạy từ trận đầu tới lúc có nhà vô địch
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ nổ là AoE nhạt dần
@@ -2480,6 +2508,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Dán ảnh, xuất gói, commit `pack.json` lên repo mà trang XƯỞNG vẫn hiện model vector | `packLoad()` / `voicePack()` gọi thẳng `fetch('assets/…')`, mà trang xưởng trên Pages nằm trong `/studio/` ⇒ đường dẫn thành `/studio/assets/…` và **404 im lặng** (`try{}` nuốt lỗi) | mọi cú fetch vào assets đi qua `fetchAsset()`: thử `''` → `'../'` → `'../../'` rồi nhớ mức ăn. Test dựng hẳn bản giống Pages rồi kiểm cả hai trang |
 | Thả `sup_resolve.mp3` vào `assets/voice` thì `mk_manifest.py` báo "không đoán ra tên ô" | `slot_keys()` bắt cả tên khoá lẫn nhãn bằng mẫu `\['(\w+)','([^']*)'`, mà nhãn của ô đó có dấu nháy đơn (`"Last Son's Resolve bùng lên"`) nên viết bằng nháy kép và cả dòng bị bỏ sót — 82 ô đọc ra thay vì 83 | chỉ bắt **tên khoá** (`\['(\w+)'`), đừng đòi luôn cái nhãn phía sau |
 | Trận đấu gương (kono vs kono) treo ở màn chọn, `t_reg` đổ | `tapTwice()` tính theo TÊN NHÂN VẬT, mà đấu gương thì bấm kono ở lưới trái rồi kono ở lưới phải là hai cú liên tiếp cùng tên ⇒ hiểu nhầm thành chạm hai lần, bảng thông số bật lên chặn mất nút Vào trận | mốc gồm **cả lưới lẫn tên** (`parentNode.id + '/' + key`). Đừng lấy chính phần tử làm mốc: mỗi cú bấm ở lưới đội hình dựng lại cả lưới |
+| Hiệu ứng trượt hàng của bảng xếp hạng không chạy, đo ra 0px | `compOpen()` gọi `compPaint()` TRƯỚC khi bỏ lớp `off`, nên `lgPlay()` đo `offsetTop` bên trong một khối `display:none` — mọi hàng cùng ra 0 nên độ lệch cũng bằng 0 | hiện bảng ra trước rồi mới vẽ; đo lại hàng trượt xa nhất 105px |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---
