@@ -2543,8 +2543,21 @@ function ac(){
     return AC;
   }catch(e){ return null; }
 }
+/* Thanh tốc độ đổi thì TIẾNG cũng phải đổi theo. Chọn "Nhanh 2x" nghĩa là một giây
+   trong trận chỉ còn nửa giây thật, nên bong bóng thoại, băng-rôn, cả trận đều trôi
+   nhanh gấp đôi — tiếng mà vẫn giữ nhịp cũ thì lạc hẳn quẻ (và tiếng nói còn sống lâu
+   hơn cái bong bóng đi kèm, phạm đúng luật số 1 của mục "Luật về tiếng").
+   `sfxRate()` trả về hệ số so với tốc độ gốc: 0.7 · 1 · 1.5 · 2.
+   File thu sẵn đi bằng `playbackRate` (nhanh lên thì cao giọng lên, đúng kiểu tua băng),
+   còn tiếng tự tạo thì rút ngắn quãng ngân và quãng chờ — giữ nguyên cao độ cho khỏi chói.
+
+   CHỈ ăn vào TIẾNG ĐỘNG. **Nhạc nền đứng hẳn ngoài chuyện này** — người dùng chốt riêng:
+   *"bỏ nhạc nền luôn đi"*. Cả file nhạc lẫn nhạc tự sinh giữ nguyên nhịp gốc dù kéo thanh
+   tốc độ tới đâu. Đừng gắn `sfxRate()` vào `bgmEl()` / `bgmPlay()` / `startMusic()` nữa. */
+const sfxRate=()=>clamp(speedMul/BASE_SPEED,.25,4);
 function tone(c,g,o){
-  const t=c.currentTime+(o.delay||0), dur=o.dur||.2;
+  const R=sfxRate();
+  const t=c.currentTime+(o.delay||0)/R, dur=(o.dur||.2)/R;
   const os=c.createOscillator(), gg=c.createGain();
   os.type=o.type||'sine';
   os.frequency.setValueAtTime(o.f0||440,t);
@@ -2555,7 +2568,8 @@ function tone(c,g,o){
   os.connect(gg); gg.connect(g); os.start(t); os.stop(t+dur+.03);
 }
 function noise(c,g,o){
-  const t=c.currentTime+(o.delay||0), dur=o.dur||.2;
+  const R=sfxRate();
+  const t=c.currentTime+(o.delay||0)/R, dur=(o.dur||.2)/R;
   const b=c.createBuffer(1,Math.max(1,Math.ceil(c.sampleRate*dur)),c.sampleRate);
   const d=b.getChannelData(0);
   for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length);
@@ -2694,7 +2708,7 @@ function synth(name,c,g){
       break;
     }
     case 'cheer': {
-      const t=c.currentTime, dur=4.2;
+      const t=c.currentTime, dur=4.2/sfxRate();
       const b=c.createBuffer(1,Math.ceil(c.sampleRate*dur),c.sampleRate);
       const d=b.getChannelData(0);
       for(let i=0;i<d.length;i++){
@@ -2896,19 +2910,31 @@ const SFX_POS={}, SFX_ACTIVE={};
    đoạn tiếng, chẳng hạn Shikamaru đang than dở thì bật dậy đánh. */
 function stopSfx(name){ try{ if(SFX_ACTIVE[name]) SFX_ACTIVE[name].stop(); }catch(e){} SFX_ACTIVE[name]=null; }
 function resetSfxPos(){ for(const k in SFX_POS) delete SFX_POS[k]; }
+/* Hai đơn vị thời gian nằm cạnh nhau ở đây, đừng trộn:
+     - `off` / `len` / `dur` đo bằng GIÂY CỦA FILE (mốc đọc trong buffer). Chúng KHÔNG
+       chia cho R: cùng bấy nhiêu nội dung tiếng, chỉ là đọc nhanh hơn. Trần `SFX_MAXLEN`
+       và quãng `SFX_SEG` cũng vậy — bong bóng đi kèm cũng ngắn lại đúng R lần nên hai bên
+       vẫn khớp.
+     - mấy mốc lên xuống âm lượng đo bằng GIÂY THẬT của AudioContext, nên phải chia R:
+       phát `len` giây file ở tốc độ R chỉ tốn `len/R` giây thật.
+   `stop(t+len/R)` là chốt chặn cuối: tham số thứ ba của `start()` mỗi trình duyệt hiểu
+   một kiểu (giây file hay giây thật), chốt thêm cú dừng thì đường nào cũng ra đúng `len`
+   giây file. */
 function playBuffer(name,buf,c,g){
+  const R=sfxRate();
   const dur=buf.duration;
   const src=c.createBufferSource(); src.buffer=buf;
+  src.playbackRate.value=R;
   if(SFX_MAXLEN[name]){
     const len=Math.min(dur,SFX_MAXLEN[name]);
     const t=c.currentTime, gg=c.createGain();
     gg.gain.setValueAtTime(1,t);
-    gg.gain.setValueAtTime(1,t+Math.max(.05,len-.25));
-    gg.gain.linearRampToValueAtTime(.0001,t+len);
+    gg.gain.setValueAtTime(1,t+Math.max(.05,len-.25)/R);
+    gg.gain.linearRampToValueAtTime(.0001,t+len/R);
     src.connect(gg); gg.connect(g);
     try{ if(SFX_ACTIVE[name]) SFX_ACTIVE[name].stop(); }catch(e){}
     SFX_ACTIVE[name]=src;
-    src.start(t,0,len);
+    src.start(t,0,len); try{ src.stop(t+len/R); }catch(e){}
     return;
   }
   if(SFX_FULL.has(name) || dur<=2.6){
@@ -2924,13 +2950,13 @@ function playBuffer(name,buf,c,g){
   const len=Math.min(SEG, dur-off);
   const t=c.currentTime, gg=c.createGain();
   gg.gain.setValueAtTime(.0001,t);
-  gg.gain.linearRampToValueAtTime(1,t+.05);
-  gg.gain.setValueAtTime(1,t+Math.max(.06,len-.14));
-  gg.gain.linearRampToValueAtTime(.0001,t+len);
+  gg.gain.linearRampToValueAtTime(1,t+.05/R);
+  gg.gain.setValueAtTime(1,t+Math.max(.06,len-.14)/R);
+  gg.gain.linearRampToValueAtTime(.0001,t+len/R);
   src.connect(gg); gg.connect(g);
   try{ if(SFX_ACTIVE[name]) SFX_ACTIVE[name].stop(); }catch(e){}
   SFX_ACTIVE[name]=src;
-  src.start(t,off,len);
+  src.start(t,off,len); try{ src.stop(t+len/R); }catch(e){}
   SFX_POS[name]=off+len;
 }
 function sfx(name){

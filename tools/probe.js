@@ -19,6 +19,9 @@ window.__talk=talk; window.__CV=CV; window.__S=S; window.__HEADER=HEADER; window
 /* sfx() nuốt lỗi của synth(), mà switch thiếu case thì cũng không ném — nên muốn biết
    một ô có tiếng tự tạo dự phòng hay không thì phải soi thẳng thân hàm. */
 window.__synthSrc=()=>synth.toString();
+/* Tiếng chạy theo thanh tốc độ (mục "Tiếng chạy theo thanh tốc độ"). */
+window.__sfxRate=()=>sfxRate(); window.__speedMul=()=>speedMul;
+window.__playBuffer=playBuffer;   // __BGM đã có ở dưới
 window.__CHARS=CHARS; window.__hurt=hurt; window.__shikaStabHit=shikaStabHit;
 window.__gs=gs; window.__rts=rts;
 window.__vector=vector; window.__drawFighter=drawFighter;
@@ -172,6 +175,8 @@ async function openGame(keyA, keyB, opt) {
   // (Đừng gom console.error vào đây: cú chặn font mạng ở trên luôn in một dòng
   //  ERR_FAILED, gom vào là mọi test đều báo hỏng oan.)
   page.on('crash', () => errors.push('TRANG SUP (renderer crash)'));
+  // o.init: hàm chạy TRƯỚC trang, để bọc mấy API của trình duyệt (AudioContext…)
+  if (o.init) await page.addInitScript(o.init);
   await page.goto('file://' + (o.file || build()), { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
   await page.click('#mTabDuel');                      // 1v1: chế độ mặc định
