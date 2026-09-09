@@ -572,8 +572,13 @@
     <div class="arcLoad" id="bootTxt"></div>
     <div class="bootTip" id="bootTip"></div>
     <div class="arcHint" data-i18n="bootHint">Tải xong là vào chơi được ngay</div>
-    <div style="margin-top:18px"><button id="bootSkip" type="button" style="display:none"
-      data-i18n="bootSkip">Vào luôn, khỏi chờ</button></div>
+    <!-- KHÔNG có cửa vào sớm: người dùng chốt "load hết rồi mới cho vào". Khối này chỉ
+         hiện khi mạng thật sự hỏng, và nó là nút TẢI LẠI chứ không phải đường lách vào
+         game với gói còn dở. -->
+    <div id="bootFail" style="display:none;margin-top:16px">
+      <div class="arcHint" id="bootErr" style="color:#FF9A9A" data-i18n="bootErr">Mạng trục trặc, chưa tải xong gói ảnh và tiếng.</div>
+      <div style="margin-top:12px"><button id="bootRetry" type="button" data-i18n="bootRetry">↻ Thử tải lại</button></div>
+    </div>
   </div>
 </div>
 <div class="arc off" id="arcTitle">
@@ -764,6 +769,7 @@ const L={
     legsHint:'{n} trận · {v} vòng', leg1:'Lượt đi', leg2:'Lượt về',
     lgRound:'Vòng {n}/{t}', lgTeam:'Đấu thủ', lgP:'Trận', lgW:'Thắng', lgL:'Thua',
     lgDiff:'Hiệu số', lgPts:'Điểm',
+    lgDiffTip:'Hiệu số = máu còn lại của người thắng: thắng mà còn 32 máu thì +32, người thua −32. Trận hết giờ thì lấy máu của người còn nhiều phần trăm hơn.',
     cupQF:'Tứ kết', cupSF:'Bán kết', cupFinal:'Chung kết', cupThird:'Tranh hạng ba',
     compNext:'Trận kế tiếp', compGo:'▶ Đánh trận này', compTable:'Bảng xếp hạng',
     compBracket:'Sơ đồ nhánh', compResults:'Kết quả đã đá', compPick:'⚔ Đổi đội hình',
@@ -785,7 +791,7 @@ const L={
     packLoading:'Đang tải ảnh và tiếng…', packDone:'Đã nạp {n} ảnh · {s} tiếng',
     packBytes:'Đang tải ảnh và tiếng… {a} / {b} MB', packDecode:'Đang mở gói…',
     packOpen:'Đang mở gói… {n} / {t}', bootHint:'Tải xong là vào chơi được ngay',
-    bootSkip:'Vào luôn, khỏi chờ', bootWait:'Đang chuẩn bị…',
+    bootRetry:'↻ Thử tải lại', bootErr:'Mạng trục trặc, chưa tải xong gói ảnh và tiếng.', bootWait:'Đang chuẩn bị…',
     musicNone:'Chưa có file nhạc nền nào nên đang dùng nhạc tự tạo. Muốn nhạc của bạn thì nạp file vào ô nhạc ở trang xưởng rồi xuất gói.'
   },
   en:{
@@ -825,6 +831,7 @@ const L={
     legsHint:'{n} matches · {v} rounds', leg1:'First leg', leg2:'Second leg',
     lgRound:'Round {n}/{t}', lgTeam:'Fighter', lgP:'P', lgW:'W', lgL:'L',
     lgDiff:'Diff', lgPts:'Pts',
+    lgDiffTip:'Diff = the winner HP left: win with 32 HP and you get +32, the loser gets −32. On a time-out the winner is whoever has the higher HP percentage.',
     cupQF:'Quarter-finals', cupSF:'Semi-finals', cupFinal:'Final', cupThird:'Third place',
     compNext:'Next match', compGo:'▶ Play this match', compTable:'Standings',
     compBracket:'Bracket', compResults:'Played', compPick:'⚔ Change line-up',
@@ -846,7 +853,7 @@ const L={
     packLoading:'Loading art and sound…', packDone:'Loaded {n} images · {s} sounds',
     packBytes:'Loading art and sound… {a} / {b} MB', packDecode:'Unpacking…',
     packOpen:'Unpacking… {n} / {t}', bootHint:'The fight starts as soon as this finishes',
-    bootSkip:'Skip and play now', bootWait:'Getting ready…',
+    bootRetry:'↻ Try again', bootErr:'Network hiccup — the image and sound pack did not finish loading.', bootWait:'Getting ready…',
     musicNone:'No music file loaded yet, so the built-in track is playing. Drop your own music into the studio slots and export the pack.'
   }
 };
@@ -1826,6 +1833,12 @@ async function saveChar(ck){
   try{ await Store.set('spr_'+ck,json); status(`Đã lưu ảnh (${(json.length/1048576).toFixed(1)} MB). Lần sau mở lại là có sẵn.`); }
   catch(err){ status('Không lưu được (ảnh quá nặng). Thử ảnh nhỏ hơn hoặc dùng nút Xuất file.'); }
 }
+/* Lối tính hiệu số của giải. Bản 1 lấy SÁT THƯƠNG, bản 2 lấy MÁU CÒN LẠI CỦA NGƯỜI
+   THẮNG. Giải lưu dở theo lối cũ mà cộng tiếp số của lối mới thì hai đơn vị trộn vào
+   nhau, nên `loadSaved()` thấy `sc` cũ là xoá cột hiệu số về 0 (giữ nguyên điểm, thắng,
+   thua). Khai ở ĐÂY chứ không khai chung với `COMP_MAXT` mãi dưới khối giải đấu:
+   `loadSaved()` chạy rất sớm, để dưới là đúng cái bẫy TDZ ở mục 9. */
+const COMP_SC=2;
 async function loadSaved(){
   try{
     let dirty=false;
@@ -1838,6 +1851,13 @@ async function loadSaved(){
         const c=JSON.parse(raw);
         if(!c||(c.kind!=='league'&&c.kind!=='cup')) return;
         if(!Array.isArray(c.keys)||!c.keys.length||!c.keys.every(k=>!!CHARS[k])) return;
+        /* Giải lưu từ bản tính hiệu số theo SÁT THƯƠNG: xoá cột đó về 0 chứ đừng cộng
+           tiếp bằng máu còn lại — hai đơn vị trộn vào nhau thì bảng đọc ra vô nghĩa.
+           Điểm / thắng / thua giữ nguyên, chỉ hiệu số bắt đầu lại. */
+        if(c.sc!==COMP_SC){
+          if(c.tab) for(const k in c.tab){ c.tab[k].gf=0; c.tab[k].ga=0; }
+          c.sc=COMP_SC;
+        }
         COMP=c; compLive=false; c.cur=null;
       }catch(e){}
     }).catch(()=>{});
@@ -2581,11 +2601,25 @@ function bootShow(){
   if(txt&&!txt.textContent) txt.textContent=t('bootWait');
   bootTipI=Math.floor(Math.random()*BOOT_TIPS.length); bootTip();
   clearInterval(bootTipT); bootTipT=setInterval(bootTip,4200);
-  /* Đừng bao giờ NHỐT người chơi trong màn chờ: mạng chết giữa chừng thì packLoad() treo
-     mãi mà không ai thoát ra được. Sau 10 giây hiện nút vào luôn — bấm là chơi ngay, ảnh
-     về sau thì tự hiện, đúng như cách cũ. */
-  const s=document.getElementById('bootSkip');
-  if(s){ s.onclick=bootHide; setTimeout(()=>{ if(!bootOff) s.style.display=''; },10000); }
+  const f=document.getElementById('bootFail'); if(f) f.style.display='none';
+}
+/* Nạp gói cho TRANG CHƠI: chỉ rời màn chờ khi gói đã về đủ. Không có cửa vào sớm —
+   người dùng chốt "load hết rồi mới cho vào". Mạng hỏng thì hiện nút TẢI LẠI chứ không
+   thả người chơi vào trận với model vector; `packRead()` có đồng hồ chết máy nên cú
+   fetch treo cũng rơi xuống đây chứ không đứng im mãi. */
+async function bootLoad(){
+  for(;;){
+    const r=await packLoad(false);
+    if(r.ok) return r;
+    const f=document.getElementById('bootFail'); if(!f) return r;
+    packProg('tai',0,1);
+    f.style.display='';
+    await new Promise(ok=>{
+      const b=document.getElementById('bootRetry');
+      if(!b) return ok();
+      b.onclick=()=>{ b.onclick=null; f.style.display='none'; ok(); };
+    });
+  }
 }
 function bootHide(){
   bootOff=true;
@@ -2626,12 +2660,23 @@ function packNote(msg,xong){
 /* Đọc gói kèm ĐẾM SỐ MB đã tải. Gói là một file mấy chục MB, trên mạng chậm nó về sau khi
    trang đã mở — không đếm ra màn hình thì người chơi ngồi nhìn model vector và tưởng game
    hỏng. Trình duyệt nào không cho đọc dòng byte thì lùi về `r.json()` như cũ. */
+/* Không có nút "vào luôn" nữa, nên cú fetch treo là NHỐT người chơi thật. Vì vậy mỗi
+   lượt đọc có đồng hồ chết máy: quá PACK_STALL mà không về thêm một byte nào thì huỷ,
+   ném lỗi ra cho `bootLoad()` hiện nút TẢI LẠI. Đo theo từng lượt đọc chứ đừng đặt trần
+   cho cả cú tải — mạng chậm mà vẫn chảy thì phải để nó chảy tiếp. */
+const PACK_STALL=25000;
 async function packRead(r){
   const all=+(r.headers.get('content-length')||0);
   if(!r.body||!r.body.getReader||!all) return r.json();
   const rd=r.body.getReader(); let got=0; const parts=[];
   for(;;){
-    const {done,value}=await rd.read();
+    let tm=0;
+    const cho=new Promise((_,xau)=>{ tm=setTimeout(()=>xau(new Error('pack stalled')),PACK_STALL); });
+    let b;
+    try{ b=await Promise.race([rd.read(),cho]); }
+    catch(e){ clearTimeout(tm); try{ rd.cancel(); }catch(_){} throw e; }
+    clearTimeout(tm);
+    const {done,value}=b;
     if(done) break;
     parts.push(value); got+=value.length;
     packNote(tf('packBytes',{a:(got/1048576).toFixed(1),b:(all/1048576).toFixed(1)}));
@@ -2649,11 +2694,16 @@ async function packLoad(noi){
      trên điện thoại là chờ dài cổ và tốn dung lượng. Để trình duyệt cache như thường thì
      lần sau vào là ăn ngay bản trong máy, và GitHub Pages có ETag nên gói mới vẫn về đúng
      (nó hỏi lại rồi nhận 304 vài trăm byte). */
-  try{ const r=await fetchAsset(PACK_URL); if(r) data=await packRead(r); }catch(e){}
+  /* Phân biệt hai kiểu hỏng, đừng gộp làm một:
+       · `fetchAsset` trả null ⇒ site KHÔNG có gói (chạy file://, hoặc chưa ai xuất gói).
+         Chẳng có gì để chờ, cứ cho vào chơi — bắt bấm "tải lại" ở đây là nhốt luôn.
+       · có phản hồi rồi mà đọc/parse hỏng ⇒ cú tải ĐỨT giữa chừng. Đúng chỗ cần hỏi lại. */
+  let coFile=false;
+  try{ const r=await fetchAsset(PACK_URL); if(r){ coFile=true; data=await packRead(r); } }catch(e){}
   if(!data||!data.spr&&!data.sfx){
     packNote('');
     if(noi) status('Chưa có '+PACK_URL+' — mở trang bằng http, hoặc bấm "Xuất gói" rồi đẩy file đó lên repo.');
-    return {img:0,sfx:0};
+    return {img:0,sfx:0,ok:!coFile};   // ok=false CHỈ khi gói có thật mà tải đứt
   }
   let img=0, snd=0;
   /* Đếm TRƯỚC tổng số việc phải làm rồi mới chạy: thanh tiến độ mà cộng dồn theo kiểu
@@ -2698,7 +2748,7 @@ async function packLoad(noi){
     status(`Đã nạp gói phát hành: ${img} ảnh · ${snd} tiếng (bản ${data.at||'?'}).`);
     sfxStatus(`Đã nạp ${snd} tiếng từ gói phát hành.`);
   }
-  return {img,sfx:snd};
+  return {img,sfx:snd,ok:true};
 }
 /* Khôi phục tiếng đã lưu + gói phát hành + bộ giọng mẫu. Tách hẳn ra hàm vì TRANG CHƠI
    không có bảng dán tiếng: `buildSfx()` return sớm ở đó, mà phần này vẫn phải chạy. */
@@ -2707,7 +2757,7 @@ async function sfxRestore(){
      dán), mà lượt khôi phục kho đọc hơn 80 khoá IndexedDB nên xếp gói sau nó thì người
      chơi phải nhìn model vector mất mấy giây đầu trận. Trang xưởng thì ngược lại — file
      bạn tự nạp phải thắng, nên gói chạy sau. */
-  if(window.ARCADE){ bootShow(); await packLoad(false); bootHide(); }
+  if(window.ARCADE){ bootShow(); await bootLoad(); bootHide(); }
 
     try{ const v=await Store.get('cfg_vol'); if(v!==null&&v!==undefined){ volume=parseFloat(v); document.getElementById('vol').value=volume; } }catch(e){}
     try{
@@ -3749,8 +3799,16 @@ function hurt(t,amt,src,crit,kind,tint,raw){
   // Ginyu: hưng phấn thì ăn thêm 50% sát thương (xuyên qua phòng thủ), thăm dò thì chỉ ăn 40%
   if(t.dmgTake!==undefined&&t.dmgTake!==1) amt*=t.dmgTake;
   if(t.dash&&t.dash.guard) amt*=CHICHI_DASH_RES;   // đang lao tới: nhận ít sát thương hơn
-  // Small Light chọn mục tiêu theo tổng sát thương đã gây ra, nên phải cộng dồn ở đây
-  if(src&&!src.summon) src.dmgDealt=(src.dmgDealt||0)+amt;
+  /* Sổ sát thương gây ra — Small Light chọn mục tiêu theo nó, và giải đấu lấy nó làm
+     hiệu số. Hai luật:
+       · VIỆN BINH ghi công cho CHỦ (`src.master`). Goku / Gohan / Ayanokouji là người
+         của ai thì sát thương thuộc về người đó; bỏ qua họ thì cả cú Kamehameha 400 dmg
+         không thuộc về ai và hiệu số hụt đúng bấy nhiêu.
+       · Chỉ tính phần máu THẬT SỰ mất đi (`min(amt, t.hp)`) — đòn thừa lúc kết liễu
+         không được tính thêm, nếu không thì một cú ultimate vào người còn 5 máu cũng
+         cộng cả trăm điểm hiệu số. */
+  const cred=src&&(src.summon?src.master:src);
+  if(cred&&!cred.summon) cred.dmgDealt=(cred.dmgDealt||0)+Math.min(amt,t.hp);
   t.hp=Math.max(0,t.hp-amt);
   /* Man of Steel: đòn dưới 25 dmg không làm anh ngã người ra — vẫn mất máu, vẫn chớp
      sáng, nhưng không đổi sang dáng trúng đòn và gần như không giật lùi. */
@@ -3957,7 +4015,7 @@ function leagueNew(keys,legs){
       const a=keys[pair[L%2]], b=keys[pair[(L+1)%2]];
       fix.push({r:r+L*vong.length,a,b,w:null,ga:0,gb:0,leg:L+1});
     }));
-  return {kind:'league',keys:keys.slice(),tab,fix,nr:vong.length*n,legs:n,cur:null};
+  return {kind:'league',sc:COMP_SC,keys:keys.slice(),tab,fix,nr:vong.length*n,legs:n,cur:null};
 }
 function cupNew(keys){
   const n=keys.length, r1=[];
@@ -3965,7 +4023,7 @@ function cupNew(keys){
   const rs=[r1];
   for(let c=r1.length;c>1;){ c>>=1; const v=[]; for(let i=0;i<c;i++) v.push({a:null,b:null,w:null,ga:0,gb:0}); rs.push(v); }
   /* Trận tranh hạng ba đánh TRƯỚC chung kết, đúng lối World Cup. */
-  return {kind:'cup',keys:keys.slice(),rounds:rs,third:{a:null,b:null,w:null,ga:0,gb:0},cur:null};
+  return {kind:'cup',sc:COMP_SC,keys:keys.slice(),rounds:rs,third:{a:null,b:null,w:null,ga:0,gb:0},cur:null};
 }
 /* Đẩy người thắng lên vòng sau, và lấy hai người thua bán kết xuống trận tranh hạng ba. */
 function cupFill(C){
@@ -4060,12 +4118,17 @@ function compResult(win){
   }else cupAnim=m.ref;
   const mains=G.fighters.filter(f=>f&&!f.summon);
   const A=mains.find(f=>f.key===m.a)||mains[0], B=mains.find(f=>f.key===m.b)||mains[1];
-  const ga=Math.round((A&&A.dmgDealt)||0), gb=Math.round((B&&B.dmgDealt)||0);
+  /* Hiệu số = MÁU CÒN LẠI CỦA NGƯỜI THẮNG, người dùng chốt: "winner có 32 máu thì +32,
+     còn loser −32". Không phải sát thương, không phải máu của kẻ thua — một trận cho ra
+     đúng một con số, cộng cho người thắng và trừ đúng bấy nhiêu của người thua. Dòng kết
+     quả thì in máu còn lại của CẢ HAI bên (`0–32`), thua vì cạn máu nên vế kia là 0; chỉ
+     trận hết giờ mới có hai số cùng dương. */
+  const ga=Math.max(0,Math.round((A&&A.hp)||0)), gb=Math.max(0,Math.round((B&&B.hp)||0));
   const wk=(win&&win.key===m.b)?m.b:m.a;    // không đọc ra được thì mặc định bên A
   m.ref.w=wk; m.ref.ga=ga; m.ref.gb=gb;
   if(COMP.kind==='league'){
-    const T=COMP.tab, lk=wk===m.a?m.b:m.a;
-    T[m.a].gf+=ga; T[m.a].ga+=gb; T[m.b].gf+=gb; T[m.b].ga+=ga;
+    const T=COMP.tab, lk=wk===m.a?m.b:m.a, con=wk===m.a?ga:gb;
+    T[wk].gf+=con; T[lk].ga+=con;           // thắng +máu còn lại, thua −đúng bấy nhiêu
     T[wk].p++; T[lk].p++; T[wk].w++; T[lk].l++; T[wk].pts+=LG_WIN;
   }
   COMP.cur=null;
@@ -12547,7 +12610,7 @@ function lgTableHtml(){
   }).join('');
   return `<table class="lgTab"><thead><tr><th></th><th style="text-align:left">${t('lgTeam')}</th>`+
     `<th>${t('lgP')}</th><th>${t('lgW')}</th><th>${t('lgL')}</th>`+
-    `<th>${t('lgDiff')}</th><th>${t('lgPts')}</th></tr></thead><tbody>${rows}</tbody></table>`;
+    `<th title="${t('lgDiffTip')}">${t('lgDiff')}</th><th>${t('lgPts')}</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 /* Lối FLIP: bảng đã vẽ ở thứ hạng MỚI rồi, giờ dịch ngược từng hàng về chỗ CŨ, ép trình
    duyệt tính lại bố cục, xong mới thả cho chúng trượt về. Số thì đếm dần trong 0.7 giây. */

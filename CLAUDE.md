@@ -1460,9 +1460,29 @@ là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa 
 - **Không có trận HOÀ.** Game đối kháng thì luôn có người gục; chỗ duy nhất có thể hoà là
   hết giờ, mà chỗ đó đã xử bằng "ai còn nhiều % máu hơn thì thắng". Vì vậy bảng chỉ có
   `P · W · L · Hiệu số · Điểm`, đừng thêm cột D cho rối.
-- **Hiệu số đo bằng SÁT THƯƠNG**, không phải bàn thắng: `gf` = sát thương mình gây ra trong
-  trận đó (`f.dmgDealt`), `ga` = sát thương phải chịu. Đây là thứ gần "bàn thắng" nhất mà
-  game có, và nó phân định được hai người cùng điểm.
+- **Hiệu số = MÁU CÒN LẠI CỦA NGƯỜI THẮNG.** Người dùng chốt: *"winner có 32 máu thì +32,
+  còn loser −32"*. Một trận cho ra **đúng một con số**: cộng cho người thắng, trừ đúng bấy
+  nhiêu của người thua (`T[wk].gf += con; T[lk].ga += con`). Máu của kẻ thua **không** tính —
+  thường là 0, và trận hết giờ thì cũng chỉ lấy máu của người thắng.
+  - Dòng *kết quả đã đá* in **máu còn lại của CẢ HAI bên** (`0–137`): thua vì cạn máu nên vế
+    kia là 0, chỉ trận hết giờ mới có hai số cùng dương.
+  - **Bản 1 lấy SÁT THƯƠNG, bản 2 lấy máu còn lại** — `COMP_SC = 2` đánh dấu lối tính, ghi
+    thẳng vào `COMP.sc`. `loadSaved()` thấy `sc` cũ thì **xoá cột hiệu số về 0** (giữ nguyên
+    điểm, thắng, thua): giải lưu dở tính bằng sát thương mà cộng tiếp bằng máu là trộn hai
+    đơn vị, bảng đọc ra vô nghĩa. `COMP_SC` **khai ngay trên `loadSaved()`**, không khai
+    chung với `COMP_MAXT` mãi dưới khối giải đấu — hàm đó chạy rất sớm, để dưới là đúng cái
+    bẫy TDZ ở mục 9.
+  - Đo được (`t_comp`): ghim máu người thắng 137 rồi kết trận ⇒ hiệu số **+137 / −137**, dòng
+    kết quả ra `0–137`; giải lưu theo lối cũ ⇒ hiệu số về **0/0** mà vẫn còn **3 điểm / 1 trận thắng**.
+  - Cột `HIỆU SỐ` có `title` (`lgDiffTip`, song ngữ) nói đúng luật đó — hỏi "tính kiểu gì" thì
+    rê chuột vào là ra, không phải thêm dòng chữ nào lên bảng.
+
+  > **`f.dmgDealt` vẫn phải đúng dù bảng không còn đọc nó**: `drSlTarget()` của Doraemon và
+  > `supMsTarget()` của Superman chọn mục tiêu theo nó. Hai luật đã sửa lúc còn dùng nó làm
+  > hiệu số, **giữ nguyên**: viện binh ghi công cho CHỦ (`src.summon ? src.master : src` —
+  > trước đó Kamehameha 400 dmg không ghi cho ai cả, đo được 0, sau sửa 400), và chỉ cộng
+  > phần máu THẬT SỰ mất (`min(amt, t.hp)` — đấm 400 vào người còn 30 máu ghi 30, không phải
+  > 400). Phân thân của Konohamaru chưa bao giờ dính, nó là viên đạn mang `owner: k`.
 - **Trần thời gian `COMP_MAXT` = 90 giây trong trận (180 giây người chơi).** Hai người cùng
   có cửa hồi máu thì về lý thuyết đánh nhau mãi không xong; giải mà kẹt một trận là kẹt cả
   giải. `compTick()` gọi ở đầu `step()`, hết giờ thì ai còn nhiều **phần trăm** máu hơn thì
@@ -1661,9 +1681,24 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
     vậy thì thanh chạy đều mắt.
   - **Đếm TRƯỚC tổng số việc rồi mới chạy** (`tong` trong `packLoad`). Cộng dồn kiểu "xong
     bao nhiêu biết bấy nhiêu" thì thanh nhảy cóc, nhìn như treo.
-  - **Không bao giờ được NHỐT người chơi trong màn chờ.** Mạng chết giữa chừng thì
-    `packLoad()` treo mãi, nên sau **10 giây** hiện nút `#bootSkip` *Vào luôn, khỏi chờ* —
-    bấm là chơi ngay, ảnh về sau thì tự hiện (đúng cách cũ). Đừng bỏ nút này đi.
+  - **KHÔNG có cửa vào sớm. Nút `#bootSkip` *Vào luôn, khỏi chờ* đã BỎ HẲN** — người dùng
+    bác: *"đừng có vụ vào luôn khỏi chờ — load hết rồi mới cho vào hiểu không"*. Vào sớm là
+    thấy model vector rồi lại tưởng game hỏng, đúng cái lỗi mà màn chờ sinh ra để chữa.
+    **Đừng dựng lại nút đó.** Ba thứ thay chỗ nó, để "không có cửa vào sớm" không biến
+    thành "nhốt người chơi":
+    1. `bootLoad()` lặp cho tới khi `packLoad()` trả `ok:true` rồi mới `bootHide()`.
+    2. **`packLoad()` trả thêm cờ `ok`, và cờ đó phân biệt hai kiểu hỏng.** `fetchAsset`
+       trả null ⇒ site **không hề có gói** (chạy `file://`, hoặc chưa ai xuất gói) ⇒
+       `ok:true`, cho vào luôn — chẳng có gì để chờ, bắt bấm ở đây là nhốt thật. Có phản
+       hồi rồi mà đọc/parse hỏng ⇒ cú tải **đứt giữa chừng** ⇒ `ok:false`, hiện khối
+       `#bootFail` với nút `#bootRetry` *Thử tải lại*. Nút đó **tải lại**, không phải vào sớm.
+    3. **`packRead()` có đồng hồ chết máy `PACK_STALL` = 25 giây**, đo theo **từng lượt
+       đọc** chứ không đặt trần cho cả cú tải: quá 25 giây mà không về thêm một byte nào
+       thì huỷ reader và ném lỗi xuống nhánh `ok:false`. Không có nó thì một cú fetch treo
+       là đứng mãi trong màn chờ — mạng chậm mà vẫn chảy thì vẫn để nó chảy tiếp.
+    Đo được (`t_play.js` mục 6, dựng server tự cắt ngang thân file): tải đứt ⇒ hiện nút tải
+    lại, **0 ảnh nạp được và màn chờ vẫn đứng nguyên**; bấm tải lại ⇒ về đủ ảnh rồi mới tắt
+    màn chờ; site không có `pack.json` ⇒ vào thẳng, không bắt bấm gì.
   - Màn chờ **chỉ có ở trang chơi** (`window.ARCADE`). Xưởng thì file mình tự nạp phải
     thắng nên gói chạy sau, không chặn gì cả.
   - **Phần nhìn**: nền lưới trôi + quầng sáng thở (`#arcBoot::before/::after`), con số phần
@@ -1672,7 +1707,7 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
     thanh thì chán.
   - **Mọi chuyển động ở đây dùng `background-position` / `opacity`, KHÔNG dùng `transform`**
     — Playwright coi phần tử đang biến đổi là "chưa đứng yên" và không bấm được nút nằm
-    trong đó (mục 9). Nút `#bootSkip` nằm ngay trong màn này.
+    trong đó (mục 9). Nút `#bootRetry` nằm ngay trong màn này.
   - **`#arcTitle` dùng CHUNG nền với `#arcBoot`** (cùng cặp `::before`/`::after`), nên hết
     màn chờ sang màn tiêu đề là liền mạch chứ không giật sang một nền khác. Hai lớp phủ đó
     **bắt buộc có `pointer-events:none`** — thiếu thì nút `PRESS START` nằm dưới không bấm
@@ -2346,7 +2381,10 @@ node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4
                         # đúng một lượt), bảng xếp hạng cộng điểm và xếp thứ tự đúng, dàn đấu
                         # thủ bấm là bật/tắt chứ không có bản sao, sơ đồ nhánh 8 người đủ ba
                         # vòng + trận tranh hạng ba, 5 người thì khoá nút vào giải, xếp nhánh
-                        # bốc thăm / tự xếp (bấm hai người là tráo chỗ), lượt đi lượt về
+                        # bốc thăm / tự xếp (bấm hai người là tráo chỗ), hiệu số = MÁU CÒN
+                        # LẠI của người thắng (+137 / −137, dòng kết quả in 0–137) và giải
+                        # lưu theo lối tính cũ thì cột hiệu số về 0 mà giữ nguyên điểm,
+                        # lượt đi lượt về
                         # (mặc định một lượt, bật lên thì nhân đôi số trận và ĐẢO SÂN),
                         # hiệu ứng bảng sau mỗi trận (hàng trượt thật, số đếm dần, mũi tên
                         # đổi hạng, và ảnh chụp chỉ dùng một lần),
@@ -2384,7 +2422,9 @@ node tools/t_play.js    # hai trang: play.html đúng bằng bản dựng từ i
                         # bước một khung, hàng chọn số đội chỉ có ở bước đầu, đổi sang 3 đội
                         # thì danh sách bước dài thêm),
                         # gói phát hành được nạp, hết trận hiện dải nút, và xưởng vẫn vào
-                        # trận bằng MỘT cú bấm #cselGo
+                        # trận bằng MỘT cú bấm #cselGo; MÀN CHỜ không còn nút "vào luôn khỏi
+                        # chờ" — tải đứt thì hiện nút tải lại và vẫn đứng trong màn chờ, bấm
+                        # tải lại thì về đủ ảnh mới cho vào, site không có pack thì vào thẳng
 node tools/t_bulk.js    # nạp hàng loạt: bảng đoán tên file (thư mục thắng tên file, alias dài
                         # thắng alias ngắn, số đuôi là số khung), nạp thật qua ô chọn file,
                         # file đoán không ra được báo tên, danh sách tên file đủ mọi ô
@@ -2508,6 +2548,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Dán ảnh, xuất gói, commit `pack.json` lên repo mà trang XƯỞNG vẫn hiện model vector | `packLoad()` / `voicePack()` gọi thẳng `fetch('assets/…')`, mà trang xưởng trên Pages nằm trong `/studio/` ⇒ đường dẫn thành `/studio/assets/…` và **404 im lặng** (`try{}` nuốt lỗi) | mọi cú fetch vào assets đi qua `fetchAsset()`: thử `''` → `'../'` → `'../../'` rồi nhớ mức ăn. Test dựng hẳn bản giống Pages rồi kiểm cả hai trang |
 | Thả `sup_resolve.mp3` vào `assets/voice` thì `mk_manifest.py` báo "không đoán ra tên ô" | `slot_keys()` bắt cả tên khoá lẫn nhãn bằng mẫu `\['(\w+)','([^']*)'`, mà nhãn của ô đó có dấu nháy đơn (`"Last Son's Resolve bùng lên"`) nên viết bằng nháy kép và cả dòng bị bỏ sót — 82 ô đọc ra thay vì 83 | chỉ bắt **tên khoá** (`\['(\w+)'`), đừng đòi luôn cái nhãn phía sau |
 | Trận đấu gương (kono vs kono) treo ở màn chọn, `t_reg` đổ | `tapTwice()` tính theo TÊN NHÂN VẬT, mà đấu gương thì bấm kono ở lưới trái rồi kono ở lưới phải là hai cú liên tiếp cùng tên ⇒ hiểu nhầm thành chạm hai lần, bảng thông số bật lên chặn mất nút Vào trận | mốc gồm **cả lưới lẫn tên** (`parentNode.id + '/' + key`). Đừng lấy chính phần tử làm mốc: mỗi cú bấm ở lưới đội hình dựng lại cả lưới |
+| Hiệu số của giải hụt mất mấy trăm điểm | dòng cộng dồn `dmgDealt` trong `hurt()` gác ở `!src.summon`, nên Kamehameha / Masenko do object Goku-Gohan bắn ra **không ghi cho ai cả** — trận ChiChi vs Doraemon ra `369–851` trong khi Doraemon kết trận với 32 máu | ghi công cho `src.master` khi `src` là viện binh, và chỉ cộng phần máu THẬT SỰ mất (`min(amt, t.hp)`) để đòn thừa lúc kết liễu không tính. Đo lại: Kamehameha 400 dmg 0 → **400**, đấm 400 vào người còn 30 máu 400 → **30** |
 | Hiệu ứng trượt hàng của bảng xếp hạng không chạy, đo ra 0px | `compOpen()` gọi `compPaint()` TRƯỚC khi bỏ lớp `off`, nên `lgPlay()` đo `offsetTop` bên trong một khối `display:none` — mọi hàng cùng ra 0 nên độ lệch cũng bằng 0 | hiện bảng ra trước rồi mới vẽ; đo lại hàng trượt xa nhất 105px |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 

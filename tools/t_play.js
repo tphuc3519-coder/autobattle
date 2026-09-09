@@ -265,6 +265,79 @@ function wavUrl() {
   }
   await b3.close(); sv2.close();
 
+  /* ---------- 6. màn chờ: LOAD HẾT RỒI MỚI CHO VÀO ----------
+     Người dùng bác nút "Vào luôn, khỏi chờ": vào sớm là thấy model vector. Giờ không có
+     cửa vào sớm nào cả — chỉ có nút TẢI LẠI khi cú tải đứt giữa chừng, và site không hề
+     có gói thì vẫn phải cho vào (bắt bấm ở đó là nhốt luôn người chơi). */
+  const site2 = fs.mkdtempSync(path.join(os.tmpdir(), 'boot-'));
+  fs.mkdirSync(path.join(site2, 'assets', 'pack'), { recursive: true });
+  fs.copyFileSync(buildPlay(), path.join(site2, 'index.html'));
+  const goi = JSON.stringify({ v: 1, at: '2026-09-09', spr: { kono: { idle: [PNG] } }, sfx: {} });
+  fs.writeFileSync(path.join(site2, 'assets', 'pack', 'pack.json'), goi);
+  let dut = 0, coGoi = true;              // dut>0: cú tải đầu bị cắt ngang giữa thân file
+  const sv3 = http.createServer((rq, rs) => {
+    const rel = decodeURIComponent(rq.url.split('?')[0]).replace(/\/$/, '/index.html');
+    if (rel.endsWith('pack.json')) {
+      if (!coGoi) { rs.statusCode = 404; rs.end(); return; }
+      rs.setHeader('content-type', 'application/json');
+      rs.setHeader('content-length', String(Buffer.byteLength(goi)));
+      if (dut > 0) { dut--; rs.write(goi.slice(0, 40)); setTimeout(() => rs.socket.destroy(), 40); return; }
+      rs.end(goi); return;
+    }
+    const f = path.join(site2, rel);
+    if (!f.startsWith(site2) || !fs.existsSync(f)) { rs.statusCode = 404; rs.end(); return; }
+    rs.setHeader('content-type', mime(f)); rs.end(fs.readFileSync(f));
+  });
+  await new Promise(r => sv3.listen(0, '127.0.0.1', r));
+  const goc3 = `http://127.0.0.1:${sv3.address().port}/`;
+  const b4 = await chromium.launch();
+  const moBoot = async () => {
+    const q = await b4.newPage({ viewport: { width: 820, height: 980 } });
+    await q.route('**://fonts.*/**', r => r.abort());
+    await q.goto(goc3, { waitUntil: 'domcontentloaded' });
+    return q;
+  };
+  const hienRa = (q, id) => q.evaluate(i => {
+    const e = document.getElementById(i);
+    return !!e && !e.classList.contains('off') && e.style.display !== 'none';
+  }, id);
+  const demAnh = q => q.evaluate(() => ((window.__SPR.kono || {}).idle || []).length);
+
+  let q1 = await moBoot();
+  ok(await q1.evaluate(() => !document.getElementById('bootSkip')), 'man cho: khong con nut "vao luon, khoi cho"');
+  ok(await q1.evaluate(() => !/khỏi chờ|Skip and play/.test(document.body.innerText || '')),
+    'man cho: khong con dong chu nao moi vao som');
+  let na = 0;
+  for (let i = 0; i < 40 && !na; i++) { na = await demAnh(q1); if (!na) await q1.waitForTimeout(200); }
+  ok(na === 1, `man cho: goi ve du roi moi thoi (${na} anh)`);
+  await q1.waitForTimeout(400);
+  ok(!(await hienRa(q1, 'arcBoot')), 'man cho: tai xong thi tat');
+  ok(await hienRa(q1, 'arcTitle'), 'man cho: sang thang man tieu de');
+  await q1.close();
+
+  dut = 1;
+  const q2 = await moBoot();
+  let bao = false;
+  for (let i = 0; i < 60 && !bao; i++) { bao = await hienRa(q2, 'bootFail'); if (!bao) await q2.waitForTimeout(200); }
+  ok(bao, 'tai dut giua chung: hien dong loi + nut tai lai');
+  ok(await hienRa(q2, 'arcBoot'), 'tai dut: van dung nguyen trong man cho, KHONG tha vao game');
+  ok((await demAnh(q2)) === 0, 'tai dut: chua nap duoc anh nao');
+  await q2.click('#bootRetry');
+  na = 0;
+  for (let i = 0; i < 40 && !na; i++) { na = await demAnh(q2); if (!na) await q2.waitForTimeout(200); }
+  ok(na === 1, `bam tai lai: goi ve du (${na} anh)`);
+  await q2.waitForTimeout(400);
+  ok(!(await hienRa(q2, 'arcBoot')), 'bam tai lai: xong roi moi tat man cho');
+  await q2.close();
+
+  coGoi = false;
+  const q3 = await moBoot();
+  let tat = false;
+  for (let i = 0; i < 40 && !tat; i++) { tat = !(await hienRa(q3, 'arcBoot')); if (!tat) await q3.waitForTimeout(200); }
+  ok(tat, 'site khong he co pack.json thi van vao duoc, khong nhot nguoi choi');
+  await q3.close();
+  await b4.close(); sv3.close();
+
   console.log(loi.length ? `\nHONG ${loi.length} muc` : '\nDAT het');
   process.exit(loi.length ? 1 : 0);
 })();

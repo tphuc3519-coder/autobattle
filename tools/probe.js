@@ -100,6 +100,7 @@ window.__lgOrder=()=>lgOrder(); window.__roundRobin=roundRobin; window.__compPai
 window.__compTotal=()=>compTotal(); window.__compPlayed=()=>compPlayed();
 window.__COMP_MAXT=COMP_MAXT; window.__compLive=()=>compLive;
 window.__leagueNew=leagueNew; window.__lgAnim=()=>lgAnim; window.__cupAnim=()=>cupAnim;
+window.__loadSaved=()=>loadSaved(); window.__COMP_SC=COMP_SC;
 /* Ép trận đang đá kết thúc ngay với người thắng chỉ định — khỏi phải ngồi xem đủ mấy chục
    giây mỗi trận khi test cả một giải. */
 window.__compWin=key=>{ const f=G.fighters.find(x=>!x.summon&&x.key===key); finish(f||G.k); };
