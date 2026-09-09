@@ -142,15 +142,22 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
 
 ### ChiChi (`chichi`)
 - Chiêu 1 cận chiến, chiêu 2 **Mắng** — 5 đợt sóng xung kích, phản lại shuriken / kunai /
-  bóng / **vòng khí Air Cannon**.
-  > **Air Cannon hất ngược được** — người dùng chốt: *"ChiChi có skill mắng phản được air
-  > cannon nhé"*. Nó là một **khối khí bay tới** chứ không phải tia năng lượng, nên chỉ việc
-  > thêm `'aircan'` vào tập `PHYSICAL`. Hai thứ phải sửa kèm ở nhánh phản đòn, thiếu là hỏng:
-  > **xoay luôn `p.ang`** (vòng khí vẽ theo góc đó chứ không theo vận tốc, không xoay thì nó
-  > bay lùi mà miệng vòng vẫn hướng cũ) và **xoá sạch `p.hitList`** (không thì viên đạn vẫn
-  > nhớ là đã trúng Doraemon và bay xuyên qua chính anh). Đo được: Doraemon ăn nguyên **85
-  > dmg** và dính choáng của chính mình. Kamehameha / Masenko vẫn không phản được — chúng là
-  > tia năng lượng; Drive Shot và Twin Shot vẫn mang cờ `noReflect`.
+  bóng / **vòng khí Air Cannon** / **luồng khí tím của Ginyu**.
+  > **Hai loại vừa thêm, người dùng chốt riêng từng cái**: *"ChiChi có skill mắng phản được
+  > air cannon nhé"*, rồi *"mắng ChiChi cản được beam Ginyu"*. Cả hai chỉ việc thêm tên type
+  > (`'aircan'`, `'gbeam'`) vào tập `PHYSICAL`. Hất ngược rồi thì **chủ cũ ăn nguyên đòn của
+  > chính mình** — đo được: Doraemon **85 dmg + choáng**, Ginyu **18 dmg mỗi luồng**, và đủ
+  > ba luồng thì chính anh dính *Worn Out*.
+  > - **Kame / Masenko vẫn KHÔNG phản được** — tia xuyên và cầu năng lượng cỡ ultimate; Drive
+  >   Shot và Twin Shot vẫn mang cờ `noReflect`.
+  > - Nhánh phản đòn phải **xoay luôn `p.ang`** và **xoá sạch `p.hitList`**, viết chung một
+  >   lần cho mọi loại chứ đừng cắm theo từng type: mấy viên vẽ theo `p.ang` chứ không theo
+  >   vận tốc, không xoay thì chúng bay lùi mà đầu đạn vẫn hướng cũ; còn `hitList` không xoá
+  >   thì viên đạn vẫn nhớ là đã trúng ai rồi và **bay xuyên qua đúng người đó**.
+  > - **Cú hất ngược lệch ±0.25 rad nên KHÔNG phải lần nào cũng trúng** — đó là cơ chế sẵn
+  >   có, không phải lỗi. `t_chichi.js` vì vậy thử tới 10 lượt và đòi có ít nhất một lượt ăn
+  >   đủ dmg (đo được: Air Cannon trúng ngay lượt 1, luồng khí tím trúng ở lượt 3), chứ đo
+  >   đúng một lượt là đổ oan.
 - **Flying Kick**: đồng hồ riêng `f.dashCd`, **không** nằm trong `f.cds` — cố định
   `CHICHI_DASH_CD = 5` giây-trong-trận = **10 giây người chơi**, nên hiệu ứng Kiệt sức
   không kéo dài được nó. Lúc lao: miễn khống chế, chỉ nhận 70% sát thương
@@ -2419,8 +2426,8 @@ node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ 
 node tools/t_chichi.js  # ChiChi: Flying Kick 45 dmg + choáng 2s, và viện binh — Kamehameha
                         # 400 dmg + choáng 2s rồi ghì chân 4s (hết choáng mới tới),
                         # Masenko 100 dmg mỗi đợt + chồng lớp −10%/−7%, và chiêu Mắng hất
-                        # ngược cả vòng khí Air Cannon (Doraemon ăn đúng 85 dmg của chính
-                        # mình, miệng vòng xoay theo hướng bay mới)
+                        # ngược cả vòng khí Air Cannon lẫn luồng khí tím của Ginyu (chủ cũ ăn
+                        # đúng 85 / 18 dmg của chính mình, đầu đạn xoay theo hướng bay mới)
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
@@ -2578,7 +2585,9 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Hiệu ứng trượt hàng của bảng xếp hạng không chạy, đo ra 0px | `compOpen()` gọi `compPaint()` TRƯỚC khi bỏ lớp `off`, nên `lgPlay()` đo `offsetTop` bên trong một khối `display:none` — mọi hàng cùng ra 0 nên độ lệch cũng bằng 0 | hiện bảng ra trước rồi mới vẽ; đo lại hàng trượt xa nhất 105px |
 | Giải đấu ghi sai người thắng sau cú CHANGE | `compResult()` đọc `f.key`, tức đọc THÂN XÁC — Superman thắng trong xác Ginyu thì điểm về tay Ginyu | tra qua `compSoul(f)` = `f.gnSoul || f.key`. Băng-rôn và thanh máu vốn đã đọc `f.name` nên chúng đúng sẵn, chỉ sổ giải đấu sai |
 | Ginyu vào thân xác người khác đánh mãi không trúng | 55% hụt đòn + lệch 1.05 rad, cộng thêm mức cắt 25% sát thương ⇒ cú đấm chỉ còn ~11% sức | hạ xuống `GN.swapMiss = .20` và `GN.aimOff = .45`; đừng ghim số vào `ginyuPossess()` |
-| Vòng khí Air Cannon bị hất ngược mà bay lùi với miệng vòng hướng cũ, rồi xuyên qua chính Doraemon | nhánh phản đòn chỉ đổi `p.vx/p.vy`, mà vòng khí vẽ theo `p.ang` và vẫn giữ `p.hitList` cũ | xoay luôn `p.ang` và `p.hitList.length = 0` ngay tại chỗ phản |
+| Vòng khí Air Cannon bị hất ngược mà bay lùi với miệng vòng hướng cũ, rồi xuyên qua chính Doraemon | nhánh phản đòn chỉ đổi `p.vx/p.vy`, mà vòng khí vẽ theo `p.ang` và vẫn giữ `p.hitList` cũ | xoay luôn `p.ang` và `p.hitList.length = 0` ngay tại chỗ phản, viết chung cho MỌI loại đạn chứ đừng cắm theo từng type |
+| Phép đo "đầu đạn xoay theo hướng bay mới" đổ chừng một nửa số lần | so góc bằng phép trừ thẳng, mà `p.ang` cộng thêm nhiễu nên vọt qua π trong khi `atan2` luôn trả về trong (−π, π] — lệch nguyên 2π mà thật ra vẫn một hướng | so góc theo VÒNG: `d = |x−y| % 2π`, quá π thì lấy `2π − d` |
+| Phép đo "ăn nguyên đòn của chính mình" lúc ra 85, lúc ra 45, lúc ra 0 | 45 là cú Flying Kick của ChiChi xen vào, 0 là cú hất ngược lệch ±0.25 rad nên bắn trượt thật | dọn sạch sóng âm + khoá ChiChi rồi mới đo, và **thử tới 10 lượt** đòi có ít nhất một lượt trúng đủ dmg |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---

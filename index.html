@@ -1435,7 +1435,7 @@ const CHARS={
   chichi:{
     name:'ChiChi', short:'ChiChi', tag:'Housewife · Melee', emoji:'🍳', color:'#FF4D6D', alt:'#FF93A8',
     role:'melee', speed:106, dodge:.55, male:false,
-    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball / Air Cannon',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in for a guaranteed ${CHICHI_KICK_DMG} damage and a ${rts(CHICHI_KICK_STUN)}s stun, CC immune &amp; −30% dmg taken while dashing`,'<b>Passive</b> every 5 hits +5% crit',`<b>Below 20% HP</b> calls Goku / Gohan — Goku's Kamehameha ${KAME_DMG} dmg, stun ${rts(KAME_STUN)}s then −${Math.round((1-KAME_SLOW_MOVE)*100)}% move / −${Math.round((1-KAME_SLOW_CAST)*100)}% cast for ${rts(KAME_SLOW_T)}s · Gohan's Masenko ${MASENKO_DMG} dmg a wave, each wave stacking −${Math.round(MASENKO_STACK_MOVE*100)}% move / −${Math.round(MASENKO_STACK_CAST*100)}% cast for ${rts(MASENKO_STACK_T)}s`],
+    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball / Air Cannon / Ginyu&apos;s Beam',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in for a guaranteed ${CHICHI_KICK_DMG} damage and a ${rts(CHICHI_KICK_STUN)}s stun, CC immune &amp; −30% dmg taken while dashing`,'<b>Passive</b> every 5 hits +5% crit',`<b>Below 20% HP</b> calls Goku / Gohan — Goku's Kamehameha ${KAME_DMG} dmg, stun ${rts(KAME_STUN)}s then −${Math.round((1-KAME_SLOW_MOVE)*100)}% move / −${Math.round((1-KAME_SLOW_CAST)*100)}% cast for ${rts(KAME_SLOW_T)}s · Gohan's Masenko ${MASENKO_DMG} dmg a wave, each wave stacking −${Math.round(MASENKO_STACK_MOVE*100)}% move / −${Math.round(MASENKO_STACK_CAST*100)}% cast for ${rts(MASENKO_STACK_T)}s`],
     init(f){ f.cds={s1:0,s2:cm(3)}; f.dashCd=CHICHI_DASH_CD; f.hits=0; f.critBonus=0; },
     think(f,e,d,auto){
       if(f.cds.s1<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
@@ -1761,8 +1761,8 @@ const DEX={
     skills:[
       {tag:'1',name:'Punch & Kick',vi:'Đòn tay nhanh, cứ 5 đòn lại cộng thêm tỉ lệ chí mạng.',
        en:'Fast hands; every 5 hits raise her crit chance.'},
-      {tag:'2',name:'Scolding',vi:'Năm đợt sóng xung kích, phản ngược shuriken, kunai, bóng và cả vòng khí Air Cannon về phía địch.',
-       en:'Five shockwaves that reflect shuriken, kunai, footballs and even the Air Cannon ring back at the sender.'},
+      {tag:'2',name:'Scolding',vi:'Năm đợt sóng xung kích, phản ngược shuriken, kunai, bóng, vòng khí Air Cannon và luồng khí tím của Ginyu về phía địch.',
+       en:'Five shockwaves that reflect shuriken, kunai, footballs, the Air Cannon ring and Ginyu\'s Beam back at the sender.'},
       {tag:'3',name:'Flying Kick',
        vi:`Mỗi ${rts(CHICHI_DASH_CD)}s lao tới: ${CHICHI_KICK_DMG} dmg + choáng ${rts(CHICHI_KICK_STUN)}s, lúc lao miễn khống chế và chỉ nhận 70% sát thương.`,
        en:`Every ${rts(CHICHI_DASH_CD)}s she dashes in for ${CHICHI_KICK_DMG} damage and a ${rts(CHICHI_KICK_STUN)}s stun — CC immune and −30% damage taken while dashing.`},
@@ -4731,10 +4731,12 @@ function scold(c,e){
    Kame / masenko là tia và cầu năng lượng nên không hất được.
    Drive shot và twin shot tuy là bóng nhưng cố ý miễn nhiễm với đòn phản:
    vừa không nằm trong tập này, vừa mang cờ noReflect ngay lúc tạo.
-   VÒNG KHÍ NÉN của Air Cannon thì hất ngược được — người dùng chốt: "ChiChi có skill mắng
-   phản được air cannon nhé". Nó là một khối khí bay tới chứ không phải tia năng lượng, nên
-   nằm đúng nhóm này; hất ngược rồi thì Doraemon ăn nguyên 85 dmg + choáng của chính mình. */
-const PHYSICAL=new Set(['shuriken','kunai','ball','aircan']);
+   VÒNG KHÍ NÉN của Air Cannon và LUỒNG KHÍ TÍM của Ginyu thì hất ngược được — người dùng
+   chốt riêng hai chỗ đó ("mắng phản được air canon nhé", rồi "mắng ChiChi cản được beam
+   Ginyu"). Hất ngược rồi thì chủ cũ ăn nguyên đòn của chính mình: Doraemon 85 dmg + choáng,
+   Ginyu 18 dmg mỗi luồng + hất lùi, và đủ ba luồng thì chính anh dính Worn Out.
+   Kame / masenko vẫn KHÔNG hất được — đó là tia xuyên và cầu năng lượng cỡ ultimate. */
+const PHYSICAL=new Set(['shuriken','kunai','ball','aircan','gbeam']);
 const canReflect=p=>PHYSICAL.has(p.type)&&!p.noReflect;
 
 /* ---------- Ozora Tsubasa ---------- */
@@ -7967,16 +7969,17 @@ function step(dt){
         p.vx=Math.cos(a)*sp*1.15; p.vy=Math.sin(a)*sp*1.15;
         p.team=w.team; p.owner=w.owner; p.bounced=true; p.life=Math.max(p.life,2);
         if(p.type==='ball'){ p.bounce=0; p.spin=0; }   // bóng bị hất ngược thì được nảy lại từ đầu
-        /* Vòng khí nén vẽ theo `p.ang` chứ không theo vận tốc, nên quay đầu rồi phải xoay
-           luôn cái vòng — không thì nó bay lùi mà miệng vòng vẫn hướng cũ. Và `hitList`
-           phải xoá sạch, nếu không viên đạn vẫn nhớ là đã trúng Doraemon rồi và bay xuyên
-           qua chính anh. */
-        if(p.type==='aircan'){ p.ang=a; if(p.hitList) p.hitList.length=0; }
+        /* Mấy loại đạn vẽ theo `p.ang` chứ không theo vận tốc (vòng khí Air Cannon, luồng
+           khí của Ginyu), nên quay đầu rồi phải xoay luôn cái hình — không thì nó bay lùi
+           mà đầu đạn vẫn hướng cũ. Và `hitList` phải xoá sạch, nếu không viên đạn vẫn nhớ
+           là đã trúng ai rồi và bay xuyên qua đúng người đó. */
+        if(p.ang!==undefined) p.ang=a;
+        if(p.hitList) p.hitList.length=0;
         G.fx.push({type:'ring',x:p.x,y:p.y,r:4,max:26,color:'#FFE100',life:.25,ml:.25});
         const back=w.owner?foeOf(w.owner):null;
         const who=back?back.name:'đối thủ';
         const what=p.type==='kunai'?'kunai nổ':p.type==='ball'?'trái bóng'
-                  :p.type==='aircan'?'vòng khí nén':'phi tiêu';
+                  :p.type==='aircan'?'vòng khí nén':p.type==='gbeam'?'luồng khí tím':'phi tiêu';
         say(`Sóng âm hất ngược ${what} về phía ${who}!`,'c');
       }
     }

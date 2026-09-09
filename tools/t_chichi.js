@@ -159,32 +159,46 @@ function ok(name, pass, note) {
     await g2.page.selectOption('#speed', '1');
     await g2.page.waitForTimeout(500);
     const r2 = await g2.page.evaluate(() => {
-      const G = window.__G(), o = {};
+      const G = window.__G(), o = { lan: 0 };
       const d = G.fighters.find(f => f.key === 'dora'), c = G.fighters.find(f => f.key === 'chichi');
       d.drHide = false; d.drEntry = null; d.lock = 0; c.lock = 0;
       o.nhom = window.__canReflect({ type: 'aircan' });
-      d.x = 200; d.y = 300; c.x = 560; c.y = 300; d.hp = d.maxHp; c.hp = c.maxHp;
-      G.proj.length = 0; G.waves.length = 0;
-      window.__doraAirCannon(d, c);
-      for (let i = 0; i < 200 && !G.proj.some(p => p.type === 'aircan'); i++) window.__step(1 / 120);
-      const p = G.proj.find(x => x.type === 'aircan');
-      if (!p) return o;
-      o.teamTruoc = p.team;
-      // một đợt sóng xung kích của chiêu Mắng, lan ra từ chỗ ChiChi đứng
-      G.waves.push({ x: c.x, y: c.y, r: 12, max: 195, spd: 330, dmg: 10, crit: false,
-                     owner: c, team: c.team, hit: [] });
-      d.edCd = 999;                       // khoá cửa thần kỳ cho phép đo sạch
-      for (let i = 0; i < 400 && !p.bounced; i++) window.__step(1 / 120);
-      o.bat = !!p.bounced; o.teamSau = p.team; o.chu = p.owner && p.owner.key;
-      o.goc = Math.abs(Math.atan2(p.vy, p.vx) - p.ang) < .01;
-      /* Đo CÚ SỤT LỚN NHẤT trong một nhịp, đừng cộng dồn — trận vẫn chạy nên ChiChi còn
-         đấm thường xen vào (mục 9 của CLAUDE.md). */
-      let sut = 0, choang = false;
-      for (let i = 0; i < 600; i++) {
-        const truoc = d.hp; d.edCd = 999; window.__step(1 / 120);
-        const m = truoc - d.hp; if (m > sut) { sut = m; choang = d.stun > 0; }
+      /* So góc phải tính VÒNG: `p.ang` lấy thẳng từ atan2 cộng thêm một nhiễu nhỏ nên có
+         thể vọt qua π, trong khi atan2 luôn trả về trong (−π, π] — lệch nguyên 2π mà thật
+         ra vẫn là một hướng. Trừ thẳng thì đổ oan chừng một nửa số lần. */
+      const cungGoc = (x, y) => { let t = Math.abs(x - y) % (Math.PI * 2);
+                                  if (t > Math.PI) t = Math.PI * 2 - t; return t < .01; };
+      /* Cú hất ngược lệch ±0.25 rad nên KHÔNG phải lần nào cũng trúng — đó là cơ chế thật,
+         không phải lỗi. Vì vậy thử tới 10 lượt và đòi có ít nhất một lượt trúng đủ dmg,
+         thay vì đo đúng một lượt rồi đổ oan. Đứng gần nhau cho tỉ lệ trúng cao. */
+      for (let lan = 1; lan <= 10 && !o.mat; lan++) {
+        o.lan = lan;
+        d.x = 200; d.y = 300; c.x = 380; c.y = 300;
+        d.hp = d.maxHp; c.hp = c.maxHp; d.stun = 0; d.dash = null; c.dash = null;
+        G.proj.length = 0; G.waves.length = 0; G.timers.length = 0;
+        window.__doraAirCannon(d, c);
+        for (let i = 0; i < 400 && !G.proj.some(p => p.type === 'aircan'); i++) window.__step(1 / 120);
+        const p = G.proj.find(x => x.type === 'aircan');
+        if (!p) continue;
+        o.dmg = Math.round(p.dmg); o.teamTruoc = p.team;
+        // một đợt sóng xung kích của chiêu Mắng, lan ra từ chỗ ChiChi đứng
+        G.waves.push({ x: c.x, y: c.y, r: 12, max: 195, spd: 330, dmg: 10, crit: false,
+                       owner: c, team: c.team, hit: [] });
+        d.edCd = 999;                       // khoá cửa thần kỳ cho phép đo sạch
+        for (let i = 0; i < 400 && !p.bounced; i++) window.__step(1 / 120);
+        if (!p.bounced) continue;
+        o.bat = true; o.teamSau = p.team; o.chu = p.owner && p.owner.key;
+        o.goc = cungGoc(Math.atan2(p.vy, p.vx), p.ang);
+        /* Dọn sạch sóng âm và khoá ChiChi lại: chỉ còn đúng vòng khí bị hất ngược có thể
+           chạm vào Doraemon, nên cú sụt máu đo được là của chính nó. Không khoá thì cú
+           Flying Kick 45 dmg của cô xen vào và phép đo đọc nhầm sang đòn đó. */
+        G.waves.length = 0;
+        for (let i = 0; i < 400; i++) {
+          c.lock = 9; d.edCd = 999; const truoc = d.hp; window.__step(1 / 120);
+          const m = truoc - d.hp; if (m > o.mat || !o.mat) { o.mat = m; o.choang = d.stun > 0; }
+        }
+        o.mat = Math.round(o.mat);
       }
-      o.mat = Math.round(sut); o.choang = choang;
       return o;
     });
     ok('vòng khí nén nằm trong nhóm phản ngược được', r2.nhom === true);
@@ -193,9 +207,63 @@ function ok(name, pass, note) {
       `phe ${r2.teamTruoc} -> ${r2.teamSau}, chủ mới ${r2.chu}`);
     ok('miệng vòng xoay theo hướng bay mới', r2.goc === true);
     ok('Doraemon ăn nguyên phát Air Cannon của chính mình',
-      r2.mat >= 40 && r2.choang === true, `${r2.mat} dmg, choáng ${r2.choang}`);
+      r2.mat === r2.dmg && r2.mat > 0 && r2.choang === true,
+      `${r2.mat} dmg trên mốc ${r2.dmg}, choáng ${r2.choang} (lượt thứ ${r2.lan})`);
     ok('không lỗi trang (trận phản đòn)', g2.errors.length === 0, g2.errors.slice(0, 2).join(' | '));
     await g2.browser.close();
+  }
+
+  /* ---------- Mắng cản được cả luồng khí tím của Ginyu ----------
+     Người dùng chốt: "mắng ChiChi cản được beam Ginyu". Hất ngược thì chính anh ăn đòn. */
+  {
+    const g3 = await openGame('ginyu', 'chichi');
+    await g3.page.selectOption('#speed', '1');
+    await g3.page.waitForTimeout(500);
+    const r3 = await g3.page.evaluate(() => {
+      const G = window.__G(), o = { lan: 0 };
+      const g = G.fighters.find(f => f.key === 'ginyu'), c = G.fighters.find(f => f.key === 'chichi');
+      g.gnEntry = null; g.lock = 0; c.lock = 0;
+      g.gnState = null; g.gnStateT = 0; g.gnAura = Infinity;   // thế đứng trung tính cho dễ đo
+      o.nhom = window.__canReflect({ type: 'gbeam' });
+      const cungGoc = (x, y) => { let t = Math.abs(x - y) % (Math.PI * 2);
+                                  if (t > Math.PI) t = Math.PI * 2 - t; return t < .01; };
+      for (let lan = 1; lan <= 10 && !o.mat; lan++) {
+        o.lan = lan;
+        g.x = 200; g.y = 300; c.x = 380; c.y = 300;
+        g.hp = g.maxHp; c.hp = c.maxHp; g.stun = 0; g.dash = null; c.dash = null;
+        G.proj.length = 0; G.waves.length = 0; G.timers.length = 0;
+        window.__ginyuBeam(g, c);
+        for (let i = 0; i < 400 && !G.proj.some(p => p.type === 'gbeam'); i++) window.__step(1 / 120);
+        const p = G.proj.find(x => x.type === 'gbeam');
+        if (!p) continue;
+        o.dmg = Math.round(p.dmg); o.teamTruoc = p.team;
+        G.waves.push({ x: c.x, y: c.y, r: 12, max: 195, spd: 330, dmg: 10, crit: false,
+                       owner: c, team: c.team, hit: [] });
+        for (let i = 0; i < 400 && !p.bounced; i++) window.__step(1 / 120);
+        if (!p.bounced) continue;
+        o.bat = true; o.teamSau = p.team; o.chu = p.owner && p.owner.key;
+        o.goc = cungGoc(Math.atan2(p.vy, p.vx), p.ang);
+        /* Dọn sạch sóng âm, xoá nốt mấy luồng chưa bắn và khoá ChiChi lại: chỉ còn đúng
+           luồng khí bị hất ngược có thể chạm vào Ginyu. */
+        G.waves.length = 0; G.timers.length = 0;
+        for (const q of G.proj.slice()) if (q !== p) G.proj.splice(G.proj.indexOf(q), 1);
+        for (let i = 0; i < 400; i++) {
+          c.lock = 9; const truoc = g.hp; window.__step(1 / 120);
+          const m = truoc - g.hp; if (m > o.mat || !o.mat) o.mat = m;
+        }
+        o.mat = Math.round(o.mat);
+      }
+      return o;
+    });
+    ok('luồng khí tím nằm trong nhóm phản ngược được', r3.nhom === true);
+    ok('sóng âm hất ngược luồng khí về phía Ginyu',
+      r3.bat === true && r3.teamSau !== r3.teamTruoc && r3.chu === 'chichi',
+      `phe ${r3.teamTruoc} -> ${r3.teamSau}, chủ mới ${r3.chu}`);
+    ok('đầu luồng khí xoay theo hướng bay mới', r3.goc === true);
+    ok('Ginyu ăn nguyên luồng khí của chính mình',
+      r3.mat === r3.dmg && r3.mat > 0, `${r3.mat} dmg trên mốc ${r3.dmg} (lượt thứ ${r3.lan})`);
+    ok('không lỗi trang (trận phản beam)', g3.errors.length === 0, g3.errors.slice(0, 2).join(' | '));
+    await g3.browser.close();
   }
 
   console.log(out.join('\n'));
