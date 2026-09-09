@@ -37,16 +37,16 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
      `R = nua duong cheo hop than ${C.bodyW}x${C.bodyH} = ${C.R}`);
   ok(C.range === C.R * 5, `Basic Attack Range = 5 x R = ${C.range}`);
   ok(near(C.refl, C.R * 2.5, .001), `Reflection Radius = 2.5 x R = ${C.refl}`);
-  ok(C.minyaDmg === 9 && near(C.minyaCd, 1, .001),
+  ok(C.minyaDmg === 12 && near(C.minyaCd, 1, .001),
      `Minya ${C.minyaDmg} dmg, mot don moi ${C.minyaCd}s nguoi choi`);
-  ok(near(C.stunOdds, .12, .001) && near(C.stun, .5, .001),
+  ok(near(C.stunOdds, .15, .001) && near(C.stun, .5, .001),
      `Minya Stun ${Math.round(C.stunOdds * 100)}% x ${C.stun}s`);
-  ok(C.shamacDmg === 8 && near(C.shamacCd, 10, .001), `Al Shamac ${C.shamacDmg} dmg / ${C.shamacCd}s`);
-  ok(near(C.murakCd, 13, .001) && near(C.murakT, 1.8, .001), `Murak ${C.murakCd}s cd, giu ${C.murakT}s`);
-  ok(near(C.emtCd, 16, .001) && near(C.emtT, 1.2, .001), `E.M.T ${C.emtCd}s cd, giu ${C.emtT}s`);
-  ok(C.ultN === 3 && C.ultDmg === 30 && near(C.ultCd, 13, .001),
+  ok(C.shamacDmg === 10 && near(C.shamacCd, 7, .001), `Al Shamac ${C.shamacDmg} dmg / ${C.shamacCd}s`);
+  ok(near(C.murakCd, 10, .001) && near(C.murakT, 2.2, .001), `Murak ${C.murakCd}s cd, giu ${C.murakT}s`);
+  ok(near(C.emtCd, 11, .001) && near(C.emtT, 1.5, .001), `E.M.T ${C.emtCd}s cd, giu ${C.emtT}s`);
+  ok(C.ultN === 3 && C.ultDmg === 40 && near(C.ultCd, 10, .001),
      `El Minya ${C.ultN} tia x ${C.ultDmg} dmg / ${C.ultCd}s`);
-  ok(near(C.eroDps, 1, .001) && C.eroMax === 3 && near(C.eroT, 3, .001),
+  ok(near(C.eroDps, 1.5, .001) && C.eroMax === 3 && near(C.eroT, 3, .001),
      `Mana Erosion ${C.eroDps} HP/s, tran ${C.eroMax} stack, moi stack ${C.eroT}s`);
 
   console.log('\n=== 2. Man ra mat: cua Forbidden Library dung 1.5 giay ===');
@@ -102,7 +102,7 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
     Math.random = rnd0;
     return { dmg, s1: s1 * window.__RT, s2: s2 * window.__RT, cap: B.minyaStun * window.__RT };
   });
-  ok(minya.dmg === 9, `mot mui Minya an dung ${minya.dmg} dmg`);
+  ok(minya.dmg === 12, `mot mui Minya an dung ${minya.dmg} dmg`);
   ok(near(minya.s1, C.stun, .01), `choang ra dung ${minya.s1.toFixed(2)}s`);
   ok(near(minya.s2, C.stun, .01),
      `ban them mot vien khi dang choang: LAM MOI ve ${minya.s2.toFixed(2)}s, khong cong thanh ${(C.stun * 1.4).toFixed(2)}s`);
@@ -170,7 +170,7 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
   ok(sham.fromNear <= C.range, `cho dap KHONG bao gio vuot qua 5R (${sham.fromNear.toFixed(0)} <= ${C.range})`);
   ok(sham.inArena && sham.clear, 'cho dap nam han trong san va khong chong len model nao');
   ok(sham.facing, 'Beatrice quay mat ve phia cho moi cua muc tieu');
-  ok(sham.dmg === 8, `hien ra o cho moi an dung ${sham.dmg} dmg`);
+  ok(sham.dmg === 10, `hien ra o cho moi an dung ${sham.dmg} dmg`);
   ok(near(sham.stun, 1, .05), `choang ${sham.stun.toFixed(2)}s`);
   ok(near(sham.weakT1, 4, .01), `Shamac Weakness dai ${sham.weakT1.toFixed(2)}s`);
   ok(near(sham.cut, .80, .001), `Shamac Weakness cat ${Math.round((1 - sham.cut) * 100)}% sat thuong gay ra`);
@@ -224,10 +224,10 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
      'go sach kiet suc, lam cham va da bi hat tung');
   ok(murak.dots === murak.dotsBefore, `KHONG xoa sat thuong duy tri (con dung ${murak.dots} dot)`);
   ok(murak.stunBlocked, 'trong Murak Protection: moi cu choang bi vo hieu hoa hoan toan');
-  ok(near(murak.take, C.murakRes, .001) && murak.hit === 90,
+  ok(near(murak.take, C.murakRes, .001) && murak.hit === 85,
      `don 100 dmg + choang 2s => an dung ${murak.hit} dmg va khong choang`);
-  ok(murak.stacked === 72,
-     `hai lop giam sat thuong NHAN chong: -20% Shamac Weakness + -10% Murak => ${murak.stacked} dmg, khong phai 70 (cong phan tram)`);
+  ok(murak.stacked === 68,
+     `hai lop giam sat thuong NHAN chong: -20% Shamac Weakness + -15% Murak => ${murak.stacked} dmg, khong phai 65 (cong phan tram)`);
   ok(murak.canAct, 'van di chuyen va tung chieu duoc trong luc Murak Protection con');
   ok(near(murak.cd, 7, .05), `hoi chieu ${murak.cd.toFixed(1)}s bat dau ngay luc kich hoat`);
 
@@ -276,8 +276,8 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
   });
   ok(emt.on && near(emt.cd, 7, .05), `E.M.T bung ra, hoi chieu ${emt.cd.toFixed(1)}s`);
   ok(emt.taken100 === 0, `don 100 dmg vao ket gioi: nhan dung ${emt.taken100} dmg`);
-  ok(emt.refl100 === 10 && emt.refl50 === 5 && emt.refl200 === 20,
-     `phan lai 10%: chan 50 => ${emt.refl50}, chan 100 => ${emt.refl100}, chan 200 => ${emt.refl200}`);
+  ok(emt.refl100 === 15 && emt.refl50 === 7.5 && emt.refl200 === 30,
+     `phan lai 15%: chan 50 => ${emt.refl50}, chan 100 => ${emt.refl100}, chan 200 => ${emt.refl200}`);
   ok(emt.dotTaken === 0 && emt.dotRefl > 0,
      `moi tick doc cung bi chan (${emt.dotTaken} dmg) va phan rieng ${emt.dotRefl} dmg`);
   ok(emt.reflFar === 0, `ke tan cong dung ngoai 2.5R thi khong nhan don phan (${emt.reflFar} dmg)`);
@@ -325,10 +325,10 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
   ok(near(ult.shots[0], C.ultAim, .06) && near(ult.shots[1], C.ultAim + C.ultGap, .06) &&
      near(ult.shots[2], C.ultAim + 2 * C.ultGap, .06),
      `moc ban: ${ult.shots.map(x => x.toFixed(2)).join(' / ')}s (moc 0.65 / 0.90 / 1.15)`);
-  ok(ult.hit1 === 30, `mot mui an dung ${ult.hit1} dmg`);
-  ok(ult.direct === 120 && ult.ero3 === 3 && ult.ero4 === 3,
+  ok(ult.hit1 === 40, `mot mui an dung ${ult.hit1} dmg`);
+  ok(ult.direct === 160 && ult.ero3 === 3 && ult.ero4 === 3,
      `Mana Erosion cong don toi ${ult.ero3} stack roi dung han (mui thu tu van ${ult.ero4})`);
-  ok(near(ult.dps, 3, .001), `ba stack cung chay: ${ult.dps} HP moi giay nguoi choi`);
+  ok(near(ult.dps, 4.5, .001), `ba stack cung chay: ${ult.dps} HP moi giay nguoi choi`);
   ok(near(ult.slowT, 3, .01) && near(ult.slowMul, .5, .001),
      `Minya Slow ${ult.slowT.toFixed(1)}s, tong lai van dung -${Math.round((1 - ult.slowMul) * 100)}% chu khong phai -150%`);
 

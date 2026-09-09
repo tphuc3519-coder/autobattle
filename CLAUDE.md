@@ -1633,20 +1633,26 @@ không chạm được vào người.
 > giờ lỡ nhịp** — khác hẳn một chiêu phòng thủ do người chơi bấm tay. Vì vậy cắt **thời lượng
 > và nới hồi chiêu** ăn thua hơn hẳn cắt mỗi con số sát thương.
 
-| | Bản đầu | **Sau nerf** |
-|---|---|---|
-| `emtT` / `emtCd` | 2s mỗi 7s (**28.6%** miễn thương) | **1.2s mỗi 16s (7.5%)** |
-| `emtRefl` | 20% | **10%** |
-| `murakT` / `murakCd` | 3s mỗi 7s (**42.9%**) | **1.8s mỗi 13s (13.8%)** |
-| `murakRes` | −20% dmg nhận | **−10%** |
-| `shamacDmg` / `shamacCd` | 10 dmg mỗi 5s | **8 dmg mỗi 10s** |
-| `ultDmg` / `ultCd` | 50/tia mỗi 8s (150 một lượt) | **30/tia mỗi 13s (90)** |
-| `eroDps` | 2 HP/s mỗi stack (ba stack 6) | **1 HP/s (ba stack 3)** |
-| `minyaDmg` | 15 | **9** |
-| `minyaStunOdds` | 20% | **12%** |
+> **Lượt cắt ĐẦU TIÊN quá tay, ghi lại cho khỏi lặp.** Cắt CẢ sát thương LẪN quãng miễn
+> thương cùng một lúc thì hai thứ nhân vào nhau: đo lại ra **thắng 2/16 = 13%**, thua sạch
+> 0–2 trước kono · chichi · tsubasa · shika · suzune · superman. Từ "không ai hạ nổi" rơi
+> thẳng sang "không hạ nổi ai". **Chỉnh cân bằng thì đi từng nấc rồi đo lại**, đừng cắt hai
+> mảng một lượt.
 
-Kết quả: sát thương duy trì **38 → ~17 DPS** (hạ 800 máu mất ~46 giây thay vì 21), quãng có
-lớp bảo vệ **71% → ~21%**. Đúng chất một pháp sư khống chế: thắng chậm bằng cách bào mòn,
+| | Bản đầu (94%) | Cắt quá tay (13%) | **Chốt** |
+|---|---|---|---|
+| `emtT` / `emtCd` | 2s mỗi 7s (**28.6%**) | 1.2s mỗi 16s (7.5%) | **1.5s mỗi 11s (13.6%)** |
+| `emtRefl` | 20% | 10% | **15%** |
+| `murakT` / `murakCd` | 3s mỗi 7s (**42.9%**) | 1.8s mỗi 13s (13.8%) | **2.2s mỗi 10s (22%)** |
+| `murakRes` | −20% dmg nhận | −10% | **−15%** |
+| `shamacDmg` / `shamacCd` | 10 dmg mỗi 5s | 8 mỗi 10s | **10 mỗi 7s** |
+| `ultDmg` / `ultCd` | 50/tia mỗi 8s (150) | 30 mỗi 13s (90) | **40/tia mỗi 10s (120)** |
+| `eroDps` | 2 HP/s (ba stack 6) | 1 HP/s (ba stack 3) | **1.5 HP/s (ba stack 4.5)** |
+| `minyaDmg` | 15 | 9 | **12** |
+| `minyaStunOdds` | 20% | 12% | **15%** |
+
+Kết quả: sát thương duy trì **38 → ~27 DPS** (hạ 800 máu mất ~30 giây thay vì 21), quãng có
+lớp bảo vệ **71% → ~36%**. Đúng chất một pháp sư khống chế: thắng chậm bằng cách bào mòn,
 chứ không phải bằng cách không ai đụng được vào mình.
 
 > **`shamacWeak` giữ nguyên −20%** — đó là debuff đặt lên ĐỊCH chứ không phải lớp bảo vệ của
@@ -1654,8 +1660,8 @@ chứ không phải bằng cách không ai đụng được vào mình.
 > nhân vật. **Máu vẫn 800** như cả bảng (mục 2), đừng đụng vào.
 
 > **Nerf thì phải KÉO BIỂU ĐỒ SỨC MẠNH XUỐNG theo**, đúng luật đã chốt cho mấy đợt buff
-> trước (mục 2g): `dmg 52→34 · dur 82→56 · as 36→30 · cc 86→64 · uti 84→66 · con 80→70 ·
-> cmb 34→28`, và bốn thanh chỉ số `pow 2→1 · spd 3→2 · def 4→3`.
+> trước (mục 2g): `dmg 52→42 · dur 82→68 · as 36→33 · cc 86→74 · uti 84→75 · con 80→74 ·
+> cmb 34→31`, và thanh chỉ số `pow 2→1 · spd 3→2`.
 
 > **Đo lại sau mỗi lần chỉnh bằng `node tools/t_bea_balance.js`** chứ đừng chỉnh theo cảm
 > tính. Nó chạy Beatrice với cả tám đối thủ và in ra tỉ lệ thắng kèm **máu còn lại lúc
