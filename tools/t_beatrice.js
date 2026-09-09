@@ -229,9 +229,9 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
   ok(near(murak.stacked, 70.4, .05),
      `hai lop giam sat thuong NHAN chong: -20% Shamac Weakness + -12% Murak => ${murak.stacked} dmg, khong phai 68 (cong phan tram)`);
   ok(murak.canAct, 'van di chuyen va tung chieu duoc trong luc Murak Protection con');
-  ok(near(murak.cd, 7, .05), `hoi chieu ${murak.cd.toFixed(1)}s bat dau ngay luc kich hoat`);
+  ok(near(murak.cd, C.murakCd, .05), `hoi chieu ${murak.cd.toFixed(1)}s bat dau ngay luc kich hoat`);
 
-  console.log('\n=== 6. E.M.T: chan 100% sat thuong, phan lai 20% trong 2.5R ===');
+  console.log('\n=== 6. E.M.T: chan 100% sat thuong, phan lai % da chan trong 2.5R ===');
   const emt = await page.evaluate(() => {
     const G = window.__G(), B = window.__BEA;
     const f = G.fighters.find(x => x.key === 'beatrice');
@@ -274,7 +274,7 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
     out.blockedAll = f.hp === 800;
     return out;
   });
-  ok(emt.on && near(emt.cd, 7, .05), `E.M.T bung ra, hoi chieu ${emt.cd.toFixed(1)}s`);
+  ok(emt.on && near(emt.cd, C.emtCd, .05), `E.M.T bung ra, hoi chieu ${emt.cd.toFixed(1)}s`);
   ok(emt.taken100 === 0, `don 100 dmg vao ket gioi: nhan dung ${emt.taken100} dmg`);
   ok(emt.refl100 === 12 && emt.refl50 === 6 && emt.refl200 === 24,
      `phan lai 12%: chan 50 => ${emt.refl50}, chan 100 => ${emt.refl100}, chan 200 => ${emt.refl200}`);
