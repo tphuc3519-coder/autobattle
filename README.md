@@ -1,15 +1,15 @@
 # Multiverse Battler
 
 Game đối kháng tự động vẽ bằng canvas 2D, **không cần cài gì, không có bước build**.
-Tám đấu thủ từ tám vũ trụ, sáu màn đấu, ba chế độ (1v1 · hỗn chiến · đánh theo đội),
+Chín đấu thủ từ chín vũ trụ, sáu màn đấu, ba chế độ (1v1 · hỗn chiến · đánh theo đội),
 giao diện **Việt / Anh** đổi được bằng một nút.
 
 ## Có gì trong game
 
 | | |
 |---|---|
-| **8 đấu thủ** | mỗi người một hồ sơ: vai trò, năm thanh chỉ số, bộ chiêu mô tả gọn, và phần "xem chi tiết số liệu" cho ai muốn soi từng con số |
-| **6 màn đấu** | Dojo · Night Street · Stadium · Nara Forest · Deep Space · Sunset Roof — mỗi màn có một ô dán ảnh nền riêng |
+| **9 đấu thủ** | mỗi người một hồ sơ: vai trò, năm thanh chỉ số, bộ chiêu mô tả gọn, và phần "xem chi tiết số liệu" cho ai muốn soi từng con số |
+| **6 màn đấu** | Dojo · Night Street · Stadium · Forest · Deep Space · Sunset Roof — mỗi màn có một ô dán ảnh nền riêng |
 | **3 chế độ** | 1v1 · hỗn chiến 3–6 người · đánh đội 2–4 đội |
 | **2 ngôn ngữ** | Tiếng Việt / English, nút 🌐 ở thanh công cụ, trong màn chọn và trên màn tiêu đề |
 | **Nhạc nền của bạn** | mặc định **tắt**; nạp nhạc riêng cho từng màn ở trang xưởng rồi bật ở thanh công cụ |

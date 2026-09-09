@@ -625,7 +625,7 @@
 <div class="wrap">
   <header>
     <h1>MULTIVERSE <span>BATTLER</span></h1>
-    <div class="sub" data-i18n="tagline">Đấu trường đa vũ trụ · 8 đấu thủ · 6 màn</div>
+    <div class="sub" data-i18n="tagline">Đấu trường đa vũ trụ · 9 đấu thủ · 6 màn</div>
   </header>
 
   <div class="bar">
@@ -681,7 +681,11 @@
     <button id="testSupFly" title="Ép Superman cất cánh Kryptonian Flight">🧪 Test Flight</button>
     <button id="testSupResolve" title="Ép Superman vào Last Son's Resolve">🧪 Test Resolve</button>
     <button id="testSupFreeze" title="Ép Superman thổi Freeze Breath ngay">🧪 Test Freeze Breath</button>
-    <button id="testSupMeteor" title="Ép Superman tung Meteor Strike ngay">🧪 Test Meteor Strike</button><!--/STUDIO-->
+    <button id="testSupMeteor" title="Ép Superman tung Meteor Strike ngay">🧪 Test Meteor Strike</button>
+    <button id="testBeaShamac" title="Ép Beatrice dịch chuyển đối thủ bằng Al Shamac">🧪 Test Al Shamac</button>
+    <button id="testBeaMurak" title="Ép Beatrice bật Murak Protection ngay">🧪 Test Murak</button>
+    <button id="testBeaEmt" title="Ép Beatrice dựng kết giới E.M.T ngay">🧪 Test E.M.T</button>
+    <button id="testBeaUlt" title="Ép Beatrice tung El Minya ngay">🧪 Test El Minya</button><!--/STUDIO-->
   </div>
 
   <div class="stage"><canvas id="arena" width="620" height="620"></canvas>
@@ -802,7 +806,7 @@
 <div class="arc off" id="arcTitle">
   <div>
     <div class="arcLogo">MULTIVERSE<b>BATTLER</b></div>
-    <div class="arcTag">8 fighters · 6 stages · auto battle</div>
+    <div class="arcTag">9 fighters · 6 stages · auto battle</div>
     <button id="arcStart" class="primary" type="button">PRESS START</button>
     <div style="margin-top:14px"><button type="button" data-lang-toggle title="Vietnamese / English">🌐 English</button></div>
     <div class="arcHint" data-i18n="arcHint">Chọn nhân vật, chọn màn rồi ngồi xem máy đánh với máy</div>
@@ -940,13 +944,13 @@ let vsOn=false, vsTimer=0;
 const keys={};
 
 /* ---------- sprite slots ---------- */
-const SPR={stages:{},kono:{},chichi:{},tsubasa:{},shika:{},suzune:{},ginyu:{},dora:{},superman:{},ayanokouji:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
-const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',suzune:'#7FC8FF',ginyu:'#A05CFF',dora:'#2B9BE8',superman:'#2E5BD8'};
+const SPR={stages:{},kono:{},chichi:{},tsubasa:{},shika:{},suzune:{},ginyu:{},dora:{},superman:{},beatrice:{},ayanokouji:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
+const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',suzune:'#7FC8FF',ginyu:'#A05CFF',dora:'#2B9BE8',superman:'#2E5BD8',beatrice:'#C77DFF'};
 /* Superman đứng riêng ở 800 máu — cả bộ chiêu của anh cân theo đúng thanh máu đó. */
 /* Máu chuẩn của cả bảng. Người chơi chỉnh thoải mái ở màn chọn nhân vật (ô HP_MIN..HP_MAX),
    nút "Chuẩn" đưa mọi người về đúng con số này. */
 const HP_STD=800, HP_MIN=100, HP_MAX=9999;
-const HP={kono:800,chichi:800,tsubasa:800,shika:800,suzune:800,ginyu:800,dora:800,superman:800};
+const HP={kono:800,chichi:800,tsubasa:800,shika:800,suzune:800,ginyu:800,dora:800,superman:800,beatrice:800};
 const CAST={mul:1.8};
 const cm=v=>v*CAST.mul;
 /* ---------- ngôn ngữ ----------
@@ -967,7 +971,7 @@ const cm=v=>v*CAST.mul;
 let LANG='en';
 const L={
   vi:{
-    tagline:'Đấu trường đa vũ trụ · 8 đấu thủ · 6 màn',
+    tagline:'Đấu trường đa vũ trụ · 9 đấu thủ · 6 màn',
     pick:'⚔ Chọn nhân vật', play:'Bắt đầu', pause:'Tạm dừng', resume:'Tiếp tục', reset:'Đánh lại',
     mAuto:'Máy vs Máy', mP1:'Điều khiển bên trái', mP2:'Điều khiển bên phải',
     spSlow:'Chậm 0.7x', spNormal:'Gốc 1x', spFast:'Nhanh 1.5x', spFaster:'Nhanh 2x',
@@ -1030,7 +1034,7 @@ const L={
     musicNone:'Chưa có file nhạc nền nào nên đang dùng nhạc tự tạo. Muốn nhạc của bạn thì nạp file vào ô nhạc ở trang xưởng rồi xuất gói.'
   },
   en:{
-    tagline:'Cross-universe arena · 8 fighters · 6 stages',
+    tagline:'Cross-universe arena · 9 fighters · 6 stages',
     pick:'⚔ Select fighter', play:'Start', pause:'Pause', resume:'Resume', reset:'Rematch',
     mAuto:'CPU vs CPU', mP1:'Control left side', mP2:'Control right side',
     spSlow:'Slow 0.7x', spNormal:'Normal 1x', spFast:'Fast 1.5x', spFaster:'Fast 2x',
@@ -1150,6 +1154,7 @@ const SETS=[
   {key:'ginyu', name:'Captain Ginyu', poses:[['idle','Thủ thế'],['fly','Bay vào sân (đầu trận)'],['dance1','Ginyu Force · dáng 1'],['dance2','Ginyu Force · dáng 2'],['dance3','Ginyu Force · dáng 3'],['punch','Đấm'],['kick','Đá'],['beam','Ginyu Beam'],['flash','Ginyu Flash'],['change','CHANGE!!!'],['panic','Hoảng hốt (bắn trượt Change)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)']]},
   {key:'dora', name:'Doraemon', poses:[['idle','Thủ thế'],['punch','Đấm (bàn tay tròn)'],['kick','Đá'],['slam','Lao bụng / húc đầu (đòn 3)'],['aircannon','Air Cannon'],['smalllight','Small Light'],['copter','Take-copter (bay)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Ngồi ăn dorayaki (thắng)'],['down','Ngã ngồi, choáng váng (thua)']]},
   {key:'superman', name:'Superman', poses:[['idle','Thủ thế'],['fly','Bay (Kryptonian Flight)'],['land','Tiếp đất bằng một chân'],['punch','Đấm tay phải (đòn 1)'],['punch2','Xoay người đấm tay trái (đòn 2)'],['upper','Uppercut (đòn 3)'],['heat','Heat Vision'],['freeze','Freeze Breath'],['meteor','Meteor Strike (lao xuống)'],['down','Ngã sau khi Meteor Strike trượt'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Ăn mừng (chống hông, bay lên)'],['ko','Gục xuống']]},
+  {key:'beatrice', name:'Beatrice', poses:[['idle','Thủ thế (khoanh tay)'],['minya','Minya (bắn tinh thể)'],['shamac','Al Shamac (giơ tay)'],['murak','Murak (bay lên, vòng phép)'],['emt','E.M.T (kén kết giới)'],['elminya','El Minya (mở sách, vòng phép)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Ăn mừng (đóng sách, khoanh tay)'],['down','Gục xuống (quỳ rồi ngã)']]},
   {key:'ayanokouji', name:'Ayanokouji', poses:[['idle','Đứng'],['guard','Đỡ đòn thay Horikita'],['strike','Đòn đột kích'],['leave','Rời sàn đấu']]},
   {key:'nara', name:'Con nai nhà Nara', poses:[['idle','Đứng cạnh Shikamaru trong lãnh địa']]},
   {key:'garden', name:'Phong cảnh lãnh địa', poses:[['idle','Ảnh nền khu rừng nhà Nara']]},
@@ -1434,7 +1439,7 @@ const GN={
 /* Thân xác hệ ném / sút: Ginyu mượn tay người ta thì đạn vẹo hẳn đi (aimOff) thay vì
    đấm hụt (missOdds). Chỉ còn dùng để chọn KIỂU ngắm hỏng — phần cắt sát thương giờ là
    một con số chung GN.swapCut cho mọi thân xác, không còn miễn trừ cho hệ ném nữa. */
-const GN_PROJ_BODY=new Set(['kono','tsubasa','shika']);
+const GN_PROJ_BODY=new Set(['kono','tsubasa','shika','beatrice']);
 /* Câu thoại và tuổi thọ bong bóng của chúng. Khai TRƯỚC SFX_MAXLEN vì trần độ dài
    của ô giọng bám theo đúng mấy con số này — tiếng không được sống lâu hơn hình. */
 const GN_SHOUT='GINYU FORCE!';
@@ -1588,6 +1593,50 @@ const SUP={
   msLog:gs(6),               // ba người trở lên: nhắm ai đánh anh đau nhất 6 giây qua
   /* Trần khống chế cứng LIÊN TỤC do riêng Superman gây ra */
   ccCap:gs(3.5), ccSlow:.60, ccFree:gs(1)
+};
+/* ---------- Beatrice ----------
+   Pháp sư tầm xa thiên về khống chế, tự bảo vệ và giữ khoảng cách. Khai theo lối của
+   Shikamaru / Horikita / Ginyu / Doraemon / Superman: giây NGƯỜI CHƠI bọc `gs()`.
+
+   TẦM ĐÁNH ĐO THEO "R" — bán kính vòng tròn ngoại tiếp nhỏ nhất bao quanh phần THÂN
+   CHÍNH của model lúc đứng bình thường. Người dùng chốt riêng cách đo này, nên nó phải
+   là một HẰNG SỐ chứ đừng đọc `f.r`: `f.r` bị Small Light của Doraemon bóp nhỏ, mà bản
+   mô tả nói thẳng là tầm đánh KHÔNG đổi khi model bị phóng to hay thu nhỏ tạm thời, khi
+   cô cúi người, bị đánh ngã, hay lúc tóc và váy bay.
+
+   Thân chính của cô là một hộp 34×96 (bỏ hai lọn tóc xoắn, phần váy xoè, quyển sách và
+   mọi hiệu ứng phép). Vòng tròn nhỏ nhất bao được một hình chữ nhật là vòng ngoại tiếp,
+   bán kính bằng nửa đường chéo — nên R tính thẳng ra chứ không gõ tay con số. */
+const BEA_BODY_W=34, BEA_BODY_H=96;
+const BEA_R=Math.round(Math.hypot(BEA_BODY_W,BEA_BODY_H)/2);      // = 51
+const BEA={
+  bodyW:BEA_BODY_W, bodyH:BEA_BODY_H, R:BEA_R,
+  range:BEA_R*5,                       // Basic Attack Range = 5 × R = 255
+  refl:BEA_R*2.5,                      // Reflection Radius  = 2.5 × R = 127.5
+  /* Màn ra mắt — Forbidden Library. Đúng 1.5 giây người chơi, bốn pha: cửa gỗ hiện ra ·
+     cửa mở, ánh tím hắt ra · cô bước ra, tay cầm sách · cửa đóng rồi biến mất. */
+  doorT:gs(1.5), doorPh:[gs(.4),gs(.8),gs(1.2),gs(1.5)],
+  /* 1 · Minya — mũi tinh thể tím đen, một đòn mỗi giây người chơi.
+     KHÔNG chí mạng, không sát thương theo phần trăm máu. */
+  minyaDmg:15, minyaCd:gs(1), minyaSpd:430, minyaWind:gs(.18),
+  minyaStunOdds:.20, minyaStun:gs(.5),
+  /* 2 · Al Shamac — bóp méo không gian rồi ném mục tiêu ra sát rìa tầm đánh. */
+  shamacDmg:10, shamacCd:gs(5),
+  shamacWarp:gs(.3),                   // quãng không gian méo trước khi biến mất
+  shamacBack:gs(.3),                   // hiện ra ở chỗ mới — cả chiêu vừa đúng 0.6s
+  shamacStun:gs(1), shamacWeakT:gs(4), shamacWeak:.20,
+  shamacRim:.94,                       // đích ngắm: sát rìa tầm, chừa một chút cho khỏi rơi ra ngoài
+  /* 3 · Murak — giải khống chế rồi miễn khống chế, dùng được cả khi đang bị choáng. */
+  murakCd:gs(7), murakT:gs(3), murakRes:.80, murakLift:14,
+  /* 4 · E.M.T — kén kết giới chặn sạch sát thương và phản lại 20% chỗ vừa chặn. */
+  emtCd:gs(7), emtT:gs(2), emtRefl:.20,
+  /* 5 · El Minya — ba mũi tinh thể bắn lần lượt, mỗi mũi 50 dmg. */
+  ultCd:gs(8), ultAim:gs(.65), ultGap:gs(.25), ultN:3, ultDmg:50, ultSpd:470,
+  ultBreak:gs(.4), ultBreakCut:.50,    // choáng trong 0.4 giây đầu ⇒ huỷ, chờ nửa hồi chiêu
+  slowT:gs(3), slowMul:.50,            // Minya Slow — không cộng dồn, chỉ làm mới
+  eroT:gs(3), eroDps:2*RT, eroMax:3,   // Mana Erosion — 2 HP mỗi giây NGƯỜI CHƠI, cộng dồn
+  /* AI: giữ mục tiêu trong tầm nhưng không xáp vào cự ly cận chiến. */
+  want:BEA_R*4.2
 };
 const CHARS={
   kono:{
@@ -1844,6 +1893,52 @@ const CHARS={
               txt:w<=0?'Meteor Strike ready':`Meteor Strike: ${(w*RT).toFixed(1)}s`};
     }
   }
+  ,beatrice:{
+    name:'Beatrice', short:'Beatrice', tag:'Mage · Ranged control', emoji:'📕', color:'#C77DFF', alt:'#E3B8FF',
+    role:'ranged', want:BEA.want, speed:96, dodge:.85, male:false, spriteH:104,
+    skills:[
+      `<b>Entrance</b> She does not start on the ground — a wooden door to the <b>Forbidden Library</b> fades in at her spot, swings open on a wash of purple light, and she steps out with a grimoire under one arm before the door shuts and vanishes. The whole thing takes ${rts(BEA.doorT)}s and the foe can only wait: no moving, no attacking, and the match proper starts the moment the door is gone`,
+      `<b>Attack range</b> everything she does is measured in <b>R</b> — the radius of the smallest circle around her standing body (${BEA.bodyW}×${BEA.bodyH}, so R = ${BEA.R}). Basic Attack Range is <b>5 × R = ${BEA.range}</b>, centre to centre, and it never changes when she crouches, gets knocked down, or is temporarily shrunk or enlarged. Out of range, she walks in until the target is inside it — but she never closes to melee on purpose`,
+      `<b>1 · Minya</b> ${BEA.minyaDmg} magic damage, one shot a second, at the nearest enemy inside ${BEA.range} · a shard of dark purple crystal leaves her open hand and flies dead straight · ${Math.round(BEA.minyaStunOdds*100)}% of the shards that actually connect leave <b>Minya Stun</b> for ${rts(BEA.minyaStun)}s — rolled per projectile at the moment of impact, so a dodged or blocked shard never rolls at all, and a second stun only refreshes the ${rts(BEA.minyaStun)}s, it never adds to it · no critical hits, no %-HP damage`,
+      `<b>2 · Al Shamac</b> every ${rts(BEA.shamacCd)}s at the nearest enemy — space folds around them for ${rts(BEA.shamacWarp)}s and they reappear as close to the rim of her ${BEA.range} range as a legal spot allows: never in a wall, never on top of another fighter, never outside the arena, and she turns to face wherever they land · standing too close, they get thrown out to the rim; standing too far, they get dragged in to it · on arrival ${BEA.shamacDmg} magic damage, a ${rts(BEA.shamacStun)}s stun and <b>Shamac Weakness</b> for ${rts(BEA.shamacWeakT)}s: −${Math.round(BEA.shamacWeak*100)}% to <b>all</b> damage they deal — basic attacks, actives, ultimates and their own damage over time alike — with no effect on their healing or shields · it never stacks, a second hit only refreshes the ${rts(BEA.shamacWeakT)}s · the blink cuts a melee blow or a skill that needed her where she was, but projectiles already in the air keep flying`,
+      `<b>3 · Murak</b> every ${rts(BEA.murakCd)}s, on herself, and it fires <b>even while she is crowd-controlled</b> — a purple glyph opens under her feet, she lifts a little off the ground, and stun, freeze, root, knockdown, airborne, slow, silence, fear, sleep, confusion and every other movement restriction are stripped off at once · burn, poison, bleed, damage-over-time, damage-reduction debuffs, marks and body swap all stay · then <b>Murak Protection</b> for ${rts(BEA.murakT)}s: 100% crowd control immunity and −${Math.round((1-BEA.murakRes)*100)}% damage taken from every source, while she still moves, still shoots Minya and still casts everything else · a blow that would deal 100 damage and stun for 2s lands as ${Math.round(100*BEA.murakRes)} damage and no stun at all · this is not damage immunity, and it stacks <b>multiplicatively</b> with any other damage reduction, never additively to 100%`,
+      `<b>4 · E.M.T</b> every ${rts(BEA.emtCd)}s — a round magic cocoon closes over her for ${rts(BEA.emtT)}s and <b>blocks 100% of incoming damage</b>: basic attacks, skills, ultimates, projectiles and damage over time all land on the barrier for exactly 0. She is still targetable, still moves, still shoots, still casts, and the barrier travels with her · it clears no debuffs and grants no crowd control immunity on its own, so a stun still lands even though its damage does not · every blocked hit sends back <b>E.M.T Reflection</b> = ${Math.round(BEA.emtRefl*100)}% of what was blocked, as an area hit on every enemy within <b>2.5 × R = ${BEA.refl}</b> — the attacker included only if they are standing that close · block 100 ⇒ reflect 20 · multi-hit blows and each poison tick reflect separately · reflected damage never crits, never stuns, never slows and can never be reflected again`,
+      `<b>5 · El Minya</b> every ${rts(BEA.ultCd)}s at the nearest enemy — a dark purple glyph opens behind her and <b>${BEA.ultN} separate</b> crystal bolts leave one after another: the first at ${rts(BEA.ultAim)}s, then one every ${rts(BEA.ultGap)}s · ${BEA.ultDmg} magic damage each, ${BEA.ultN*BEA.ultDmg} if all ${BEA.ultN} land, each with its own collision, each flying dead straight with no homing and stopping at the first fighter it touches · every bolt aims where the target is at the instant it is fired, so the second and third can be side-stepped · each hit applies <b>Minya Slow</b> −${Math.round((1-BEA.slowMul)*100)}% move speed for ${rts(BEA.slowT)}s (refreshed, never stacked past −${Math.round((1-BEA.slowMul)*100)}%) and one stack of <b>Mana Erosion</b>: ${BEA.eroDps/RT} HP a second for ${rts(BEA.eroT)}s, up to ${BEA.eroMax} stacks that each expire on their own — ${BEA.eroMax} stacks is ${BEA.eroMax*BEA.eroDps/RT} HP/s and ${BEA.eroMax*BEA.eroDps/RT*BEA.eroT*RT} damage in all, so <b>${BEA.ultN*BEA.ultDmg+BEA.eroMax*BEA.eroDps/RT*BEA.eroT*RT}</b> is the ceiling for one cast · if the target dies mid-volley the rest switch to the nearest survivor, and with no valid target left the unfired bolts are cancelled · a stun inside the first ${rts(BEA.ultBreak)}s of the wind-up cancels the cast for ${Math.round(BEA.ultBreakCut*100)}% of the cooldown; once the first bolt is out the rest keep coming`,
+      `<b>Auto-cast</b> every skill goes off the instant it comes off cooldown — nothing is ever held back for a better moment. Same-frame ties resolve <b>Murak → E.M.T → Al Shamac → El Minya → Minya</b>, Murak and E.M.T need no target at all, and a skill animation pauses the basic attack without ever resetting its one-a-second clock`],
+    init(f){
+      /* s1 Minya · s2 Al Shamac · s3 Murak · s4 El Minya · s5 E.M.T. Murak và E.M.T mở
+         sẵn từ đầu trận: mọi chiêu của cô đều tự dùng ngay khi hồi chiêu xong. */
+      f.cds={s1:BEA.minyaCd,s2:BEA.shamacCd*.5,s3:0,s4:BEA.ultCd*.6,s5:0};
+      f.beaEntry=null; f.beaHide=false; f.beaShamac=null; f.beaUlt=null;
+      f.beaMurak=0; f.beaEmt=0; f.beaLift=0; f.beaRipple=0; f.beaLog=[];
+      beatriceEnter(f);
+    },
+    /* Chỉ ba chiêu CẦN mục tiêu nằm ở đây; Murak và E.M.T tự dùng lên bản thân nên chạy
+       trong beatriceTick() — think() không chạy lúc đang choáng, mà Murak thì bắt buộc
+       phải phá được choáng. Đúng cái bẫy của Mini Rasengan và cú thoát góc của Tsubasa. */
+    think(f,e,d,auto){
+      if(f.beaEntry||f.beaShamac||f.beaUlt)return;
+      if(f.cds.s2<=0&&(auto||keys['k'])){ f.cds.s2=BEA.shamacCd; beaShamac(f,beaTarget(f)||e); return; }
+      if(f.cds.s4<=0&&(auto||keys['u'])){ f.cds.s4=BEA.ultCd; beaElMinya(f,beaTarget(f)||e); return; }
+      /* Đòn thường: bốc lại mục tiêu gần nhất TRƯỚC mỗi phát, và chỉ bắn khi mục tiêu
+         thật sự nằm trong 5R. Ngoài tầm thì để nguyên hồi chiêu cho AI đi vào. */
+      if(f.cds.s1<=0&&(auto||keys['j'])){
+        const t2=beaTarget(f);
+        if(t2&&dist(f,t2)<=BEA.range){ f.cds.s1=BEA.minyaCd; beaMinya(f,t2); }
+      }
+    },
+    /* Thanh phụ nói đúng một chuyện: lớp bảo vệ đang mang, không thì El Minya còn bao
+       lâu nữa. Không dán chữ giải thích lên sàn — cùng luật với mấy nhân vật kia. */
+    gauge:f=>{
+      if(f.beaEmt>0) return {pct:clamp(f.beaEmt/BEA.emtT,0,1), fill:'#E3B8FF',
+                             txt:`E.M.T ${(f.beaEmt*RT).toFixed(1)}s`};
+      if(f.beaMurak>0) return {pct:clamp(f.beaMurak/BEA.murakT,0,1), fill:'#C77DFF',
+                               txt:`Murak Protection ${(f.beaMurak*RT).toFixed(1)}s`};
+      const w=Math.max(0,f.cds.s4||0);
+      return {pct:clamp(1-w/BEA.ultCd,0,1), fill:'#9B4DE0',
+              txt:w<=0?'El Minya ready':`El Minya: ${(w*RT).toFixed(1)}s`};
+    }
+  }
 };
 const CKEYS=Object.keys(CHARS);
 
@@ -2048,6 +2143,33 @@ const DEX={
        en:`−${Math.round(SUP.steelRes*100)}% physical damage and −${Math.round(SUP.steelKb*100)}% knockback — but burn, poison and %-HP damage still land in full.`},
       {tag:'U',name:'Meteor Strike',vi:`Bay lên rồi lao thẳng xuống: ${SUP.msDmg} dmg vào mục tiêu chính, cộng vùng chấn động quanh điểm rơi.`,
        en:`He rises, then drops straight down: ${SUP.msDmg} on the main target plus a shockwave around the impact.`}
+    ]},
+  /* Beatrice chấm thấp ở SÁT THƯƠNG và TỐC ĐÁNH (đòn thường 15 dmg, một phát mỗi giây) nhưng
+     cao hẳn ở KHỐNG CHẾ, CHỐNG CHỊU và HỖ TRỢ: cô có cửa giải khống chế, một quãng miễn
+     khống chế, một lớp chặn sạch sát thương biết phản đòn, cộng thêm cú dịch chuyển cưỡng
+     bức và một debuff giảm 20% sát thương của địch. LẬT KÈO thì thấp — bộ chiêu của cô
+     không có ngưỡng máu nào cả, đánh đầu trận thế nào thì cuối trận vẫn thế; đổi lại ỔN
+     ĐỊNH rất cao vì mọi chiêu đều tự bung đúng nhịp hồi chiêu, không phụ thuộc may rủi. */
+  beatrice:{ role:{vi:'Pháp sư · Khống chế tầm xa',en:'Mage · Ranged control'}, st:{pow:2,spd:3,rng:4,def:4},
+    pw:{dmg:52,dur:82,mob:44,as:36,rng:76,cc:86,uti:84,con:80,cmb:34},
+    bio:{vi:'Pháp sư nhỏ người của Forbidden Library. Đòn thường nhẹ hều, nhưng cô đẩy địch ra xa liên tục, tự gỡ khống chế, dựng kết giới chặn sạch sát thương rồi hắt ngược lại.',
+         en:'The small mage of the Forbidden Library. Her basic attack barely stings, but she keeps shoving the fight away, breaks her own crowd control, and raises a barrier that eats every hit and throws part of it back.'},
+    skills:[
+      {tag:'1',name:'Minya',
+       vi:`Mũi tinh thể tím đen bay thẳng: ${BEA.minyaDmg} dmg, một phát mỗi giây, ${Math.round(BEA.minyaStunOdds*100)}% choáng ${rts(BEA.minyaStun)}s. Tầm bắn 5 × R = ${BEA.range}.`,
+       en:`A dark purple crystal shard, dead straight: ${BEA.minyaDmg} damage, one a second, ${Math.round(BEA.minyaStunOdds*100)}% to stun for ${rts(BEA.minyaStun)}s. Range 5 × R = ${BEA.range}.`},
+      {tag:'2',name:'Al Shamac',
+       vi:`Mỗi ${rts(BEA.shamacCd)}s: bóp méo không gian rồi ném địch ra SÁT RÌA tầm đánh — ${BEA.shamacDmg} dmg, choáng ${rts(BEA.shamacStun)}s và Shamac Weakness −${Math.round(BEA.shamacWeak*100)}% sát thương trong ${rts(BEA.shamacWeakT)}s.`,
+       en:`Every ${rts(BEA.shamacCd)}s space folds and drops the foe out at the rim of her range — ${BEA.shamacDmg} damage, a ${rts(BEA.shamacStun)}s stun and Shamac Weakness: −${Math.round(BEA.shamacWeak*100)}% to all the damage they deal for ${rts(BEA.shamacWeakT)}s.`},
+      {tag:'3',name:'Murak',
+       vi:`Mỗi ${rts(BEA.murakCd)}s, dùng được cả khi ĐANG BỊ CHOÁNG: rũ sạch mọi khống chế rồi miễn khống chế 100% và giảm ${Math.round((1-BEA.murakRes)*100)}% sát thương nhận trong ${rts(BEA.murakT)}s. Không xoá cháy, độc hay chảy máu.`,
+       en:`Every ${rts(BEA.murakCd)}s, and it fires even while she is stunned: every crowd control effect is stripped off, then ${rts(BEA.murakT)}s of full CC immunity and −${Math.round((1-BEA.murakRes)*100)}% damage taken. Burn, poison and bleed all stay.`},
+      {tag:'3',name:'E.M.T',
+       vi:`Mỗi ${rts(BEA.emtCd)}s: kén kết giới ${rts(BEA.emtT)}s chặn 100% sát thương — kể cả sát thương duy trì — và hắt lại ${Math.round(BEA.emtRefl*100)}% chỗ vừa chặn lên mọi kẻ địch trong 2.5 × R = ${BEA.refl}.`,
+       en:`Every ${rts(BEA.emtCd)}s a cocoon holds for ${rts(BEA.emtT)}s and blocks 100% of incoming damage, damage over time included, sending ${Math.round(BEA.emtRefl*100)}% of every blocked hit back at any enemy within 2.5 × R = ${BEA.refl}.`},
+      {tag:'U',name:'El Minya',
+       vi:`Mỗi ${rts(BEA.ultCd)}s: ba mũi tinh thể bắn lần lượt, ${BEA.ultDmg} dmg mỗi mũi (${BEA.ultN*BEA.ultDmg} nếu trúng đủ). Mỗi mũi trúng gây Minya Slow −${Math.round((1-BEA.slowMul)*100)}% tốc chạy và một stack Mana Erosion ${BEA.eroDps/RT} HP/s.`,
+       en:`Every ${rts(BEA.ultCd)}s, ${BEA.ultN} crystal bolts one after another for ${BEA.ultDmg} each (${BEA.ultN*BEA.ultDmg} if they all land). Every hit adds Minya Slow, −${Math.round((1-BEA.slowMul)*100)}% move speed, and one stack of Mana Erosion at ${BEA.eroDps/RT} HP/s.`}
     ]}
 };
 
@@ -2315,7 +2437,7 @@ const SFX_GROUPS={
   crit:'Chung', throw:'Konohamaru', punch:'ChiChi', kick:'Ozora Tsubasa',
   shika_lazy:'Shikamaru', suz_think:'Horikita Suzune', aya_appear:'Ayanokouji',
   ginyu_fly:'Captain Ginyu', dora_door:'Doraemon', sup_enter:'Superman',
-  ui_start:'Giao diện'
+  bea_door:'Beatrice', ui_start:'Giao diện'
 };
 const SFX_EVENTS=[
   ['crit','Chí mạng'],['stun','Choáng'],['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt'],
@@ -2384,6 +2506,17 @@ const SFX_EVENTS=[
   ['sup_impact','Meteor Strike chạm đất'],
   ['sup_win','Superman ăn mừng'],
   ['sup_down','Superman bị hạ gục'],
+
+  ['bea_door','Cửa Forbidden Library hiện ra / mở ra'],
+  ['bea_book','Beatrice bước ra, mở quyển sách phép'],
+  ['bea_minya','Minya bắn ra'],
+  ['bea_shamac','Al Shamac bóp méo không gian'],
+  ['bea_warp','Mục tiêu hiện ra ở chỗ mới'],
+  ['bea_murak','Murak — vòng phép giải khống chế'],
+  ['bea_emt','E.M.T — kén kết giới khép lại'],
+  ['bea_reflect','E.M.T Reflection hắt đòn trở lại'],
+  ['bea_elminya','El Minya — vòng phép mở ra sau lưng'],
+  ['bea_down','Beatrice bị hạ gục'],
 
   /* Ô của GIAO DIỆN, không phải của trận đấu: tiếng bấm nút, tiếng lật bước, tiếng màn VS
      và tiếng bảng xếp hạng. Chín ô này chỉ kêu lúc người chơi bấm tay nên đừng để chúng
@@ -2668,6 +2801,29 @@ function synth(name,c,g){
     case 'sup_win':   [523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(c,g,{type:'triangle',f0:f,f1:f,dur:i===3?.8:.16,vol:.16,delay:i*.14})); break;
     case 'sup_down':  tone(c,g,{type:'sine',f0:300,f1:70,dur:.9,vol:.22});
                       noise(c,g,{dur:.6,f0:800,f1:120,vol:.16,type:'lowpass'}); break;
+    case 'bea_door':  tone(c,g,{type:'triangle',f0:180,f1:90,dur:.55,vol:.16});
+                      noise(c,g,{dur:.7,f0:900,f1:260,vol:.11,q:1.1,type:'lowpass'});
+                      tone(c,g,{type:'sine',f0:620,f1:940,dur:.4,vol:.1,delay:.3}); break;
+    case 'bea_book':  noise(c,g,{dur:.22,f0:2600,f1:900,vol:.12,q:1.4});
+                      tone(c,g,{type:'sine',f0:840,f1:1180,dur:.26,vol:.11,delay:.1}); break;
+    case 'bea_minya': tone(c,g,{type:'triangle',f0:1500,f1:620,dur:.2,vol:.16});
+                      noise(c,g,{dur:.16,f0:3600,f1:1400,vol:.1,q:1.8}); break;
+    case 'bea_shamac':tone(c,g,{type:'sawtooth',f0:300,f1:820,dur:.42,vol:.16});
+                      tone(c,g,{type:'sine',f0:820,f1:300,dur:.42,vol:.12});
+                      noise(c,g,{dur:.42,f0:700,f1:2600,vol:.1,q:1.2}); break;
+    case 'bea_warp':  tone(c,g,{type:'sine',f0:1100,f1:380,dur:.3,vol:.18});
+                      noise(c,g,{dur:.3,f0:2800,f1:600,vol:.12}); break;
+    case 'bea_murak': [0,.1,.2].forEach((d,i)=>tone(c,g,{type:'triangle',f0:523+i*175,f1:659+i*196,dur:.36,vol:.14,delay:d}));
+                      noise(c,g,{dur:.6,f0:900,f1:3000,vol:.08}); break;
+    case 'bea_emt':   tone(c,g,{type:'sine',f0:420,f1:1260,dur:.4,vol:.16});
+                      tone(c,g,{type:'triangle',f0:840,f1:1680,dur:.4,vol:.08,delay:.05});
+                      noise(c,g,{dur:.45,f0:1200,f1:3600,vol:.07}); break;
+    case 'bea_reflect':tone(c,g,{type:'square',f0:1300,f1:420,dur:.24,vol:.16});
+                      noise(c,g,{dur:.26,f0:3400,f1:800,vol:.13,q:1.1}); break;
+    case 'bea_elminya':tone(c,g,{type:'sawtooth',f0:220,f1:640,dur:.7,vol:.18});
+                      [0,.25,.5].forEach(d=>tone(c,g,{type:'triangle',f0:1180,f1:520,dur:.18,vol:.12,delay:d})); break;
+    case 'bea_down':  tone(c,g,{type:'sine',f0:520,f1:130,dur:.7,vol:.18});
+                      noise(c,g,{dur:.5,f0:1400,f1:200,vol:.12,type:'lowpass'}); break;
     /* ---- giao diện ----
        Tiếng bấm nút thì phải GỌN và NHẸ: người chơi bấm cả chục lần trong một lượt chọn
        nhân vật, để dài hay để to là nghe nhức đầu ngay. Cả chín ô đều dưới .2 âm lượng
@@ -3806,6 +3962,11 @@ function mk(o){
     supEntry:null, supHide:false, supAir:0, supCone:null, supLog:null,
     supFly:0, supFlyCd:0, supStuck:0, lsr:0, lsrDone:false, fatigue:0,
     supCombo:null, supHv:null, supFb:null, supMs:null, supMsDown:0,
+    /* Beatrice: Minya Slow, Shamac Weakness, Mana Erosion và quãng bị Al Shamac ném đi
+       là thứ cô dán lên NGƯỜI KHÁC, nên khai chung ở đây với giá trị trung tính. */
+    beaSlow:0, beaWeak:0, beaWarp:null, beaRipple:0, beaLog:null,
+    beaEntry:null, beaHide:false, beaShamac:null, beaUlt:null,
+    beaMurak:0, beaEmt:0, beaLift:0,
     hist:[], histT:0, startX:0, startY:0,
     bind:null, bindGuard:false, bindPending:false, lazyTalk:0, wakeT:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
@@ -4012,6 +4173,11 @@ function stunFx(f,dur,kind){
       life:.9,ml:.9,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
     return false;
   }
+  if(f.beaMurak>0){                              // Murak Protection: miễn khống chế 100%
+    G.floats.push({x:f.x,y:f.y-104,txt:'CC IMMUNE',color:'#C77DFF',
+      life:.9,ml:.9,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
+    return false;
+  }
   if(f.eagle){                                   // bảo hộ: lúc này miễn khống chế
     G.floats.push({x:f.x,y:f.y-104,txt:'CC IMMUNE',color:'#FFE9A8',
       life:.9,ml:.9,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
@@ -4064,7 +4230,7 @@ function tryEvade(t,kind){
     G.floats.push({x:t.x,y:t.y-88,txt:'DODGE',color:'#CFC6FF',life:.9,ml:.9,banner:true,sc:.62});
     return true;
   }
-  if(kind!=='big'&&!isUlt(kind)) t.evade=Math.min(SHIKA.evadeMax,t.evade+SHIKA.evadeStep);  // chiêu lớn né được nhưng không cộng dồn
+  if(kind!=='big'&&kind!=='reflect'&&!isUlt(kind)) t.evade=Math.min(SHIKA.evadeMax,t.evade+SHIKA.evadeStep);  // chiêu lớn và đòn phản né được nhưng không cộng dồn
   return false;
 }
 /* Trả về true nếu đòn thật sự trúng. Chỗ nào còn gắn thêm choáng hay sát thương duy trì
@@ -4075,7 +4241,7 @@ function tryEvade(t,kind){
    nấp trong màn ra mắt (Anywhere Door / bóng người trên cao), đang trong phân cảnh Time
    Machine, hay đang mang lớp miễn thương. hurt() có sẵn từng lớp chặn này; gom lại một
    hàm để mấy chỗ KHÔNG đi qua hurt() — như tia CHANGE của Ginyu — dùng chung, khỏi lệch. */
-const offField=f=>!!f&&(f.edT>0||f.drHide||f.supHide||!!f.tm||!!f.gnChange||f.invuln>0||f.leaving>0);
+const offField=f=>!!f&&(f.edT>0||f.drHide||f.supHide||f.beaHide||!!f.tm||!!f.gnChange||f.invuln>0||f.leaving>0);
 function hurt(t,amt,src,crit,kind,tint,raw){
   if(!t.alive||G.over)return false;
   if(t.leaving>0)return false;              // Ayanokouji đang rời sàn: không ăn đòn nữa
@@ -4102,6 +4268,17 @@ function hurt(t,amt,src,crit,kind,tint,raw){
   if(tryEvade(t,kind))return false;
   if(src&&!raw&&src.dmgOut!==undefined&&src.dmgOut!==1) amt*=src.dmgOut;
   if(src&&src.outCut>0) amt*=(1-src.outCut);   // đứng trong lãnh địa thì đánh yếu hẳn
+  /* E.M.T — kén kết giới của Beatrice chặn 100% sát thương và phản lại 20% chỗ vừa chặn.
+     Đặt ĐÚNG chỗ này: sau khi đã nhân hệ số sát thương của kẻ tấn công (Shamac Weakness
+     tính trong đó, nên phần phản lại cũng tính từ con số đã bị giảm) nhưng TRƯỚC mọi lớp
+     giảm sát thương của chính cô — đúng câu người dùng chốt. Đòn vẫn tính là ĐÃ TRÚNG kết
+     giới, chỉ là lượng nhận vào bằng 0. */
+  if(t.beaEmt>0&&beaEmtBlock(t,amt,src,kind)) return false;
+  /* Sổ ai vừa đánh cô — Beatrice dùng nó để phá thế hoà khi hai địch đứng cách đều nhau. */
+  if(t.key==='beatrice'&&!t.summon&&src&&src.team!==t.team){
+    if(!t.beaLog) t.beaLog=[];
+    t.beaLog.push({t:G.t,src});
+  }
   if(t.vuln>0) amt*=1.5;                    // dính Twin Shot: nhận thêm 50% sát thương
   if(t.eagle) amt*=.3;                      // Wings of the Eagle: miễn 70% sát thương
   else if(t.prewing) amt*=PREWING_RES;      // Pre-Wings: miễn 35% sát thương
@@ -4204,6 +4381,16 @@ function koFx(loser){
     loser.pose='ko'; loser.supAir=0; loser.supFly=0; loser.supMs=null;
     sfx('sup_down');
   }
+  /* Beatrice thua: quyển sách rơi khỏi tay và biến mất, cô lùi lại rồi quỳ xuống, sau đó
+     ngã sang một bên. Mấy hạt ma thuật tím quanh người nhạt dần rồi tắt hẳn. Không máu me,
+     không hiệu ứng tử vong. */
+  if(loser.key==='beatrice'&&!loser.swapAs){
+    loser.pose='down'; loser.beaEmt=0; loser.beaMurak=0; loser.beaLift=0;
+    loser.beaShamac=null; loser.beaUlt=null;
+    for(let i=0;i<12;i++) G.fx.push({type:'dust',x:loser.x+rnd(-24,24),y:loser.y+rnd(-40,10),
+      r:4,life:1.4,ml:1.4});
+    sfx('bea_down');
+  }
   G.kos.push({f:loser,t:0,puff:0,sup:loser.key==='superman'&&!loser.swapAs});
   ring(loser.x,loser.y-10,140,loser.color,.5);
 }
@@ -4214,6 +4401,8 @@ function defeat(t,src){
   t.alive=false; t.hp=0;
   t.dash=null; t.lock=0; t.bind=null; t.domain=null;
   t.supCone=null; t.supHv=null; t.supFb=null; t.supMs=null; t.supCombo=null; t.drCone=null;
+  if(t.beaShamac&&t.beaShamac.e) t.beaShamac.e.beaWarp=null;
+  t.beaShamac=null; t.beaUlt=null; t.beaWarp=null;
   // ai đang nhắm vào người vừa gục thì bỏ nhắm, để lượt sau bốc lại đối thủ khác
   for(const o of G.fighters){ if(o.foe===t) o.foe=null; if(o.tauntBy===t) o.tauntBy=null; }
   const teams=aliveTeams();
@@ -6309,6 +6498,11 @@ function ginyuPossess(g,t){
      mà hurt()/tryEvade() thì đọc thẳng cờ. Để nguyên là thân xác cướp được vẫn né 70%
      như Wings of the Eagle hay lách đòn như Shikamaru. */
   t.eagle=false; t.prewing=false; t.evade=0;
+  for(const o of [g,t]){
+    o.beaEmt=0; o.beaMurak=0; o.beaLift=0; o.beaEntry=null; o.beaHide=false;
+    if(o.beaShamac&&o.beaShamac.e) o.beaShamac.e.beaWarp=null;
+    o.beaShamac=null; o.beaUlt=null; o.beaWarp=null;
+  }
   /* Thân xác Superman bị cướp: mấy chiêu đang gồng dở của anh phải dọn sạch, vì
      supermanTick() không chạy nữa khi swapAs đã bật — để lại là chúng treo mãi. */
   for(const o of [g,t]){
@@ -6386,6 +6580,7 @@ function gnSoulCds(key){
     case 'suzune':   return {s1:0,s2:SUZ.decThink+SUZ.decCd};
     case 'dora':     return {s1:0,s2:DORA.acCd,s3:DORA.slCd};
     case 'superman': return {s1:0,s2:SUP.hvCd,s3:SUP.fbCd,s4:SUP.msCd};
+    case 'beatrice': return {s1:0,s2:BEA.shamacCd,s4:BEA.ultCd};
     default:         return {s1:0};
   }
 }
@@ -6395,6 +6590,7 @@ const gnSoulDashCd=key=>key==='chichi'?CHICHI_DASH_CD:key==='shika'?SHIKA.stabCd
    2 / 3 trong CHARS[key].think, bỏ chiêu 1 và bỏ mấy chiêu ăn theo thanh tiến trình. */
 function gnSoulThink(f,e,d,auto){
   if(f.dash||f.bind||f.drAim||f.supHv||f.supFb||f.supMs||f.supMsDown>0||f.decT>0)return;
+  if(f.beaShamac||f.beaUlt)return;
   switch(f.gnSoul){
     case 'kono':
       if(f.cds.s2<=0&&(auto?d<420:keys['k'])){ f.cds.s2=cm(6.5); bunshin(f,e); return; }
@@ -6418,6 +6614,10 @@ function gnSoulThink(f,e,d,auto){
     case 'dora':
       if(f.cds.s3<=0&&(auto?d<DORA.slRange*.9:keys['l'])){ f.cds.s3=DORA.slCd; doraSmallLight(f,e); return; }
       if(f.cds.s2<=0&&(auto?d<540:keys['k'])){ f.cds.s2=DORA.acCd; doraAirCannon(f,e); return; }
+      break;
+    case 'beatrice':
+      if(f.cds.s2<=0&&(auto||keys['k'])){ f.cds.s2=BEA.shamacCd; beaShamac(f,beaTarget(f)||e); return; }
+      if(f.cds.s4<=0&&(auto||keys['u'])){ f.cds.s4=BEA.ultCd; beaElMinya(f,beaTarget(f)||e); return; }
       break;
     case 'superman':
       if(f.cds.s4<=0&&d<SUP.msRange&&(auto||keys['u'])){ f.cds.s4=SUP.msCd; supermanMeteor(f,e); return; }
@@ -6448,6 +6648,13 @@ function gnSoulTick(f,dt){
       if(f.drCone){ f.drCone.t-=dt; if(f.drCone.t<=0) f.drCone=null; }
       drAimTick(f,dt);
       break;
+    case 'beatrice':
+      /* Hai chiêu của cô chạy theo nhiều pha, mà beatriceTick() gác ở !swapAs nên không
+         chạy nữa. Thiếu chỗ này thì hồn Beatrice bấm Al Shamac xong là đứng hình vĩnh
+         viễn — đúng cái bẫy của quãng đứng suy nghĩ bên Horikita. */
+      if(f.beaShamac) beaShamacTick(f,dt);
+      if(f.beaUlt) beaUltTick(f,dt);
+      break;
     case 'superman':
       if(f.supCone){ f.supCone.t-=dt; if(f.supCone.t<=0) f.supCone=null; }
       if(f.supMs){ supMsTick(f,dt); return; }
@@ -6468,6 +6675,7 @@ function gnBorrowBasic(f,e,d){
     case 'tsubasa': if(d<520){ f.cds.s1=cm(1.35); basicShot(f,e); } break;
     case 'chichi':  if(d<reach){ f.cds.s1=cm(.25); melee(f,e); } break;
     case 'suzune':  if(d<f.r+e.r+SUZ.atkRange){ f.cds.s1=suzTune(f).atkCd; suzStrike(f,e); } break;
+    case 'beatrice':if(d<BEA.range){ f.cds.s1=BEA.minyaCd; beaMinya(f,e); } break;
     /* Thân xác Superman: mượn đúng cú đấm đầu combo. Đừng gọi supCombo() — combo ba
        đòn chạy trong supermanTick(), mà hàm đó tắt hẳn khi swapAs đã bật. */
     case 'superman': if(d<reach){ f.cds.s1=SUP.hitCd; supBlow(f,e,0); } break;
@@ -6495,7 +6703,10 @@ const drCanTime=f=>!!f&&f.key==='dora'&&!f.summon&&!f.swapAs&&!f.tmDone&&!f.tm;
 /* Dựng lại toàn bộ hệ số nhân của một người. gnStatus() GÁN, drStatus() và supStatus()
    NHÂN CHỒNG lên — nên ba hàm đó phải đi liền nhau và đúng thứ tự này. Gọi lẻ một mình
    là hệ số cộng dồn qua từng nhịp; vì vậy chỉ có đúng một cửa vào là hàm này. */
-function statusTick(f,dt){ gnStatus(f,dt); summonStatus(f,dt); drStatus(f,dt); supStatus(f,dt); }
+/* beaStatus() chạy CUỐI: gnStatus GÁN ĐÈ mấy hệ số nên phải nằm sau nó, và Murak
+   Protection thì phải có tiếng nói cuối cùng — miễn khống chế 100% nghĩa là gạt sạch mọi
+   thứ làm chậm mà mấy hàm trên vừa nhân vào. */
+function statusTick(f,dt){ gnStatus(f,dt); summonStatus(f,dt); drStatus(f,dt); supStatus(f,dt); beaStatus(f,dt); }
 function drStatus(f,dt){
   for(const k of ['dis','shrunk','copter','fk','edSpeed']) if(f[k]>0) f[k]=Math.max(0,f[k]-dt);
   if(f.copCd>0) f.copCd=Math.max(0,f.copCd-dt);
@@ -6857,6 +7068,10 @@ function drInterrupt(e){
   if(e.supHv){ e.supHv=null; e.lock=0; e.pose='idle'; cut=true; }
   if(e.supFb){ e.supFb=null; e.lock=0; e.pose='idle'; cut=true; }
   if(e.supMs&&e.supMs.ph!=='dive'){ supMsCancel(e); cut=true; }
+  /* Hai chiêu của Beatrice cần cô đứng đúng chỗ mới thi triển được. El Minya chỉ cắt
+     được khi CHƯA bắn mũi nào — bắn mũi đầu rồi thì mấy mũi sau vẫn ra, đúng bản mô tả. */
+  if(e.beaShamac){ if(e.beaShamac.e) e.beaShamac.e.beaWarp=null; e.beaShamac=null; e.lock=0; e.pose='idle'; cut=true; }
+  if(e.beaUlt&&e.beaUlt.fired===0&&beaUltCancel(e)) cut=true;
   if(cut) G.floats.push({x:e.x,y:e.y-92,txt:'INTERRUPTED',color:'#D6F2FF',
     life:1.1,ml:1.1,banner:true,sc:.6});
   return cut;
@@ -7772,6 +7987,479 @@ function supermanTick(f,dt){
   supComboTick(f,dt);
 }
 
+/* ---------- Beatrice ---------- */
+/* Pháp sư tầm xa thiên về khống chế, tự bảo vệ và giữ khoảng cách. Mọi khoảng cách trong
+   khối này đo bằng R (BEA.R) — một HẰNG SỐ của model lúc đứng bình thường — chứ không đo
+   bằng f.r, vì f.r bị Small Light của Doraemon bóp nhỏ. Xem ghi chú ở khối hằng BEA. */
+
+/* Mục tiêu của cô: kẻ địch GẦN NHẤT, đo từ tâm model tới tâm model. Bằng nhau thì ưu tiên
+   người ÍT MÁU hơn, rồi tới người đang gây sát thương lên cô, cuối cùng là người xuất hiện
+   TRƯỚC trong danh sách trận đấu. Bốc lại trước mỗi đòn thường và trước mỗi chiêu, nên cô
+   không giữ mục tiêu cũ khi có người khác đã tiến đến gần hơn.
+   Vẫn tôn trọng khiêu khích của Ayanokouji: aimTarget() là cửa duy nhất cho việc NHẮM. */
+const BEA_HURT_MEM=gs(3);
+function beaHurtBy(f,o){
+  if(!f.beaLog)return false;
+  for(const r of f.beaLog) if(r.src===o&&G.t-r.t<=BEA_HURT_MEM) return true;
+  return false;
+}
+function beaTarget(f){
+  const taunt=aimTarget(f);
+  if(taunt&&taunt!==foeOf(f)) return taunt;      // đang bị khiêu khích thì nhắm vào người khiêu khích
+  let best=null, bd=Infinity, bi=Infinity;
+  const list=G.fighters;
+  for(let i=0;i<list.length;i++){
+    const o=list[i];
+    if(!o||o===f||o.team===f.team||!o.alive||o.hp<=0||o.leaving>0)continue;
+    if(o.summon&&!o.ally)continue;              // viện binh thuần không có thanh máu
+    if(offField(o))continue;
+    const d=dist(f,o);
+    if(d<bd-.001){ bd=d; best=o; bi=i; continue; }
+    if(best&&Math.abs(d-bd)<=.001){
+      if(o.hp<best.hp-.001){ best=o; bi=i; continue; }
+      if(Math.abs(o.hp-best.hp)<=.001){
+        const oHit=beaHurtBy(f,o), bHit=beaHurtBy(f,best);
+        if(oHit&&!bHit){ best=o; bi=i; continue; }
+        if(oHit===bHit&&i<bi){ best=o; bi=i; }
+      }
+    }
+  }
+  return best||taunt||foeOf(f);
+}
+
+/* Có ai đó đang diễn màn ra mắt không (Ginyu bay vào, Anywhere Door, Superman đáp xuống,
+   cửa Forbidden Library). Suốt mấy quãng đó cả sàn đứng chờ, không ai được làm gì. */
+const introOn=()=>!!G&&G.fighters.some(o=>o&&(o.gnEntry||o.drEntry||o.supEntry||o.beaEntry));
+
+/* ---- màn ra mắt: Forbidden Library ---- */
+function beatriceEnter(f){
+  /* Bấm Bắt đầu mới bắt đầu đếm — step() chỉ chạy khi trận đang chạy, nên 1.5 giây trong
+     trận này đúng bằng 1.5 giây thật ở thanh tốc độ gốc. */
+  f.startX=f.x; f.startY=f.y;
+  f.beaEntry={t:0, x:f.x, y:f.y, said:false, lit:false, side:(f.team===0?1:-1), doorA:0, doorOpen:0};
+  f.beaHide=true;
+  f.pose='idle'; f.poseT=0;
+}
+function beaEntryTick(f,dt){
+  const E=f.beaEntry, P=BEA.doorPh;
+  // suốt màn ra mắt đối phương chỉ được đứng chờ, không di chuyển cũng không đánh
+  for(const o of G.fighters) if(o.team!==f.team&&!(o.summon&&!o.ally)) o.lock=Math.max(o.lock,.3);
+  f.lock=Math.max(f.lock,.3);
+  if(!E.said){ E.said=true; sfx('bea_door');
+    say('Một cánh cửa gỗ dẫn vào Forbidden Library hiện ra — Beatrice chưa có mặt trên sàn.','m'); }
+  E.t+=dt;
+  const t=E.t;
+  // pha 1: cửa hiện dần · pha 2: cửa mở, ánh tím hắt ra · pha 3: cô bước ra · pha 4: cửa đóng rồi biến mất
+  E.doorA=t<P[0]?clamp(t/P[0],0,1):(t<P[2]?1:clamp(1-(t-P[2])/(P[3]-P[2]),0,1));
+  E.doorOpen=t<P[0]?0:(t<P[1]?clamp((t-P[0])/(P[1]-P[0]),0,1)
+                              :(t<P[2]?1:clamp(1-(t-P[2])/(P[3]-P[2]),0,1)));
+  f.beaHide = t<P[1];
+  if(t>=P[1]){
+    const q=clamp((t-P[1])/(P[2]-P[1]),0,1);
+    f.x=E.x+E.side*20*q;
+    f.face=E.side;
+    f.pose='idle'; f.poseT=0;
+    if(!E.lit&&q>=.5){ E.lit=true; sfx('bea_book'); ring(f.x,f.y,88,'#C77DFF',.45); }
+  }
+  if(t>=P[3]){
+    f.beaEntry=null; f.beaHide=false; f.pose='idle'; f.poseT=0;
+    const e=beaTarget(f);
+    if(e) aim(f,e,0);
+    say('Cửa đóng lại và biến mất — Beatrice quay về phía đối thủ, trận đấu bắt đầu.','m');
+  }
+}
+
+/* ---- chiêu 1: Minya ---- */
+/* Mũi tinh thể tím đen bay thẳng, xuất phát từ TRƯỚC bàn tay. Xác suất choáng chỉ được
+   bốc lúc nó THẬT SỰ chạm vào người (beaMinyaHit), nên đòn bị né hay bị chặn không bốc. */
+function beaMinya(f,e){
+  if(!e||!e.alive)return;
+  aim(f,e,.9);
+  setPose(f,'minya',BEA.minyaWind+gs(.2));
+  later(BEA.minyaWind,()=>{
+    if(!f.alive||G.over)return;
+    /* Mục tiêu chết hoặc ra khỏi tầm TRƯỚC lúc bắn thì bốc lại kẻ địch gần nhất. Đã bắn
+       ra rồi thì viên đạn cứ bay theo cơ chế ban đầu, không tự đổi sang mục tiêu khác. */
+    let tg=e;
+    if(!tg.alive||tg.hp<=0||offField(tg)||dist(f,tg)>BEA.range) tg=beaTarget(f);
+    if(!tg||!tg.alive)return;
+    const ang=Math.atan2(tg.y-bodyCY(f)-6,tg.x-f.x);
+    G.proj.push({type:'minya',team:f.team,owner:f,
+      x:f.x+Math.cos(ang)*22, y:bodyCY(f)+6+Math.sin(ang)*22,
+      vx:Math.cos(ang)*BEA.minyaSpd, vy:Math.sin(ang)*BEA.minyaSpd,
+      ang, r:7, dmg:BEA.minyaDmg, life:2.4});
+    sfx('bea_minya');
+  });
+}
+function beaMinyaHit(p,e){
+  const landed=hurt(e,p.dmg,p.owner,false,'minya');
+  if(!landed)return;                            // né / chặn: KHÔNG bốc xác suất choáng
+  sfx('hit');
+  /* Xác suất bốc RIÊNG cho từng viên, đúng lúc chạm. "Minya Stun" không cộng dồn thời
+     gian: stunFx() lấy Math.max nên một cú mới chỉ làm mới về đúng minyaStun chứ không
+     cộng thêm vào phần đang chạy — đừng đổi chỗ đó thành phép cộng. */
+  if(chance(BEA.minyaStunOdds)&&stunFx(e,gnCc(p.owner,BEA.minyaStun),'spark')){
+    sfx('stun');
+    G.floats.push({x:e.x,y:e.y-108,txt:`MINYA STUN ${rts(BEA.minyaStun)}s`,color:'#C77DFF',
+      life:1.2,ml:1.2,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
+    say(`Mũi Minya găm trúng — ${BEA.minyaDmg} dmg và choáng ${rts(BEA.minyaStun)} giây.`,'g');
+  }else{
+    say(`Mũi Minya găm trúng — ${BEA.minyaDmg} dmg.`,'g');
+  }
+}
+
+/* ---- chiêu 2: Al Shamac ---- */
+/* Chỗ đáp: xa Beatrice nhất có thể mà VẪN nằm trong tầm đánh thường của cô. Bốc 32 điểm
+   quanh vòng tròn bán kính 5R rồi lùi dần vào trong tới khi có chỗ hợp lệ — nằm hẳn trong
+   sàn, không chồng lên model của ai. Cùng lối drSafeSpot() của Doraemon, chỉ khác là ở đây
+   điểm càng SÁT RÌA càng tốt. */
+function beaShamacSpot(f,t){
+  const rings=[BEA.range*BEA.shamacRim, BEA.range*.82, BEA.range*.68, BEA.range*.54];
+  const lo=PAD+t.r+4, hiX=W-PAD-t.r-4, loY=PAD+56+t.r, hiY=H-PAD-14-t.r;
+  let best=null, bs=-Infinity;
+  for(let ri=0;ri<rings.length;ri++){
+    const R=rings[ri];
+    for(let i=0;i<32;i++){
+      const a=(i/32)*Math.PI*2+G.t*.7;
+      const x=f.x+Math.cos(a)*R, y=f.y+Math.sin(a)*R;
+      if(x<lo||x>hiX||y<loY||y>hiY)continue;          // phải nằm HẲN trong sàn, không dính tường
+      let clash=false, near=Infinity;
+      for(const o of G.fighters){
+        if(!o||o===t||o===f||!o.alive||o.leaving>0)continue;
+        const d=Math.hypot(x-o.x,y-o.y);
+        if(d<o.r+t.r+MELEE_GAP){ clash=true; break; }  // không đặt chồng lên model người khác
+        if(d<near) near=d;
+      }
+      if(clash)continue;
+      /* Chấm điểm: sát rìa là chính (vòng ngoài thắng đậm), rồi mới tới chỗ thoáng —
+         "không dịch chuyển mục tiêu vào giữa nhiều model khác". */
+      const sc=(rings.length-ri)*1000+Math.min(near,240);
+      if(sc>bs){ bs=sc; best={x,y}; }
+    }
+    if(best)break;                                     // vòng ngoài đã có chỗ thì khỏi lùi vào
+  }
+  // không còn chỗ hợp lệ nào: giữ nguyên chỗ đứng, chiêu vẫn gây dmg và hiệu ứng
+  return best||{x:clamp(t.x,lo,hiX),y:clamp(t.y,loY,hiY)};
+}
+function beaShamac(f,e){
+  if(!e||!e.alive){ f.cds.s2=Math.min(f.cds.s2,BEA.shamacCd*.3); return; }
+  aim(f,e,1);
+  setPose(f,'shamac',BEA.shamacWarp+BEA.shamacBack);
+  f.beaShamac={t:0, e, spot:beaShamacSpot(f,e), done:false};
+  /* Không gian quanh mục tiêu bị bóp méo — họ đứng im suốt quãng này, và cú blink cắt
+     ngang mấy chiêu cần đứng đúng chỗ mới thi triển được. Quãng đứng suy nghĩ của
+     Horikita thì KHÔNG đụng vào, đúng luật đã chốt cho Air Cannon. */
+  e.beaWarp={t:0, max:BEA.shamacWarp+BEA.shamacBack, ph:'out', x0:e.x, y0:e.y};
+  e.lock=Math.max(e.lock,BEA.shamacWarp);
+  drInterrupt(e);
+  ring(e.x,e.y,BEA.R*1.7,'#9B4DE0',.5);
+  sfx('bea_shamac');
+  say(`Beatrice giơ tay — không gian quanh ${e.name} méo đi.`,'g');
+}
+function beaShamacTick(f,dt){
+  const S=f.beaShamac; if(!S)return;
+  const e=S.e;
+  if(!e||!e.alive||G.over){ f.beaShamac=null; if(e)e.beaWarp=null; return; }
+  S.t+=dt;
+  f.lock=Math.max(f.lock,.05);                        // đứng yên giơ tay suốt chiêu
+  if(e.beaWarp) e.beaWarp.t=S.t;
+  if(!S.done&&S.t>=BEA.shamacWarp){
+    S.done=true;
+    if(e.beaWarp) e.beaWarp.ph='in';
+    G.fx.push({type:'poof',x:e.x,y:e.y-18,life:.4,ml:.4});
+    /* Chỉ dời x/y. Không đụng tới alive, hp hay G.fighters — mục tiêu không bao giờ bị
+       coi là đã chết hay đã rời trận, nên thanh máu và tên vẫn hiện bình thường. */
+    e.x=S.spot.x; e.y=S.spot.y;
+    e.vx=0; e.vy=0; e.kbx=0; e.kby=0;
+    if(e.beaWarp){ e.beaWarp.x1=e.x; e.beaWarp.y1=e.y; }
+    ring(e.x,e.y,BEA.R*1.7,'#C77DFF',.5);
+    G.fx.push({type:'poof',x:e.x,y:e.y-18,life:.5,ml:.5});
+    sfx('bea_warp');
+    aim(f,e,.4);                                      // quay mặt về phía chỗ mới của mục tiêu
+    if(hurt(e,BEA.shamacDmg,f,'AL SHAMAC!','big')){
+      if(stunFx(e,gnCc(f,BEA.shamacStun),'spin')) sfx('stun');
+      beaWeaken(e);
+      say(`${e.name} hiện ra sát rìa tầm đánh — ${BEA.shamacDmg} dmg, choáng ${rts(BEA.shamacStun)} giây và Shamac Weakness.`,'g');
+    }else{
+      say(`${e.name} bị ném ra sát rìa tầm đánh nhưng né được đòn đi kèm.`,'s');
+    }
+  }
+  if(S.t>=BEA.shamacWarp+BEA.shamacBack){
+    f.beaShamac=null; e.beaWarp=null; f.pose='idle'; f.poseT=0;
+  }
+}
+/* Shamac Weakness — giảm 20% MỌI sát thương mục tiêu gây ra. Không cộng dồn: lần sau chỉ
+   làm mới đồng hồ về đúng 4 giây. Ăn vào f.dmgOut trong beaStatus() nên nó phủ được cả đòn
+   thường, chiêu, ultimate lẫn sát thương duy trì do mục tiêu tạo ra — và KHÔNG đụng tới
+   hồi máu hay khiên, vì dmgOut chỉ nhân vào đúng lúc gây sát thương. */
+function beaWeaken(t){
+  t.beaWeak=BEA.shamacWeakT;                          // GÁN chứ không cộng: làm mới, không chồng
+  G.floats.push({x:t.x,y:t.y-126,txt:'SHAMAC WEAKNESS',color:'#C9A0FF',
+    life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  G.floats.push({x:t.x,y:t.y-104,
+    txt:`−${Math.round(BEA.shamacWeak*100)}% DAMAGE DEALT ${rts(BEA.shamacWeakT)}s`,
+    color:'#E3B8FF',life:1.6,ml:1.6,banner:true,sc:.62});
+}
+
+/* ---- chiêu 3: Murak ---- */
+/* Chạy trong beatriceTick() chứ KHÔNG chạy trong think(): think() không được gọi khi
+   f.stun>0, mà chiêu này bắt buộc phải phá được choáng ngay lập tức. Đúng cái bẫy của
+   Mini Rasengan và cú thoát góc của Tsubasa. */
+function beaMurak(f){
+  f.cds.s3=BEA.murakCd;
+  f.beaMurak=BEA.murakT;
+  beaCleanse(f);
+  setPose(f,'murak',gs(.5));
+  ring(f.x,f.y,BEA.R*2,'#C77DFF',.55);
+  for(let i=0;i<10;i++) G.fx.push({type:'dust',x:f.x+rnd(-20,20),y:f.y+16,r:5,life:.5,ml:.5});
+  sfx('bea_murak');
+  G.floats.push({x:f.x,y:f.y-126,txt:'MURAK PROTECTION',color:'#C77DFF',
+    life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  G.floats.push({x:f.x,y:f.y-104,
+    txt:`CC IMMUNE · −${Math.round((1-BEA.murakRes)*100)}% DAMAGE TAKEN ${rts(BEA.murakT)}s`,
+    color:'#E3B8FF',life:1.7,ml:1.7,banner:true,sc:.62});
+  say(`Vòng phép tím mở ra dưới chân Beatrice — cô bay nhẹ lên, rũ sạch khống chế và miễn nhiễm khống chế ${rts(BEA.murakT)} giây.`,'g');
+}
+/* Rũ sạch KHỐNG CHẾ và mọi thứ trói chân: choáng, đóng băng, trói, quật ngã, hất tung,
+   làm chậm, câm lặng, sợ hãi, ngủ, rối loạn. KHÔNG đụng tới cháy, độc, chảy máu, sát
+   thương duy trì, debuff giảm sát thương, dấu, hay hoán đổi thân xác — đó là luật riêng
+   người dùng chốt, đừng nới danh sách ra. */
+function beaCleanse(f){
+  f.stun=0; f.stunKind=null; f.lock=0;
+  f.frozen=0; f.frozenDmg=0; f.chill=0; f.chillAfter=0;
+  f.exhaust=0; f.dis=0; f.hvSlowT=0; f.supSlow=0; f.supQuake=0;
+  f.gnDaze=0; f.gnRage=0; f.gnTired=0; f.gnSlow=0; f.gnSlowAfter=0;
+  f.kameSlow=0; f.kameAfter=0; f.msSlow=0; f.msStack=0;
+  f.beaSlow=0;
+  f.kbx=0; f.kby=0; f.dvx=0; f.dvy=0;                 // quật ngã / hất tung: cắt luôn đà bị hất
+  f.supCcT=0; f.supCcAcc=0;
+  /* Dải bóng của Shikamaru trói chân — nó nằm trên NGƯỜI KẾT ẤN chứ không nằm trên nạn
+     nhân, nên phải đi tìm ai đang trói cô rồi cắt từ đầu bên đó. */
+  for(const o of G.fighters) if(o&&o.bind&&o.bind.e===f){ o.bind=null; o.lock=0; o.pose='idle'; }
+}
+
+/* ---- chiêu 4: E.M.T ---- */
+function beaEmtOn(f){
+  f.cds.s5=BEA.emtCd;
+  f.beaEmt=BEA.emtT;
+  setPose(f,'emt',gs(.4));
+  ring(f.x,f.y,BEA.R*1.9,'#E3B8FF',.5);
+  sfx('bea_emt');
+  G.floats.push({x:f.x,y:f.y-126,txt:'E.M.T',color:'#E3B8FF',
+    life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
+  G.floats.push({x:f.x,y:f.y-104,txt:`100% DAMAGE BLOCKED ${rts(BEA.emtT)}s`,
+    color:'#FBF3F7',life:1.6,ml:1.6,banner:true,sc:.62});
+  say(`Lớp kén kết giới khép lại quanh Beatrice — chặn sạch sát thương ${rts(BEA.emtT)} giây và phản lại ${Math.round(BEA.emtRefl*100)}%.`,'g');
+}
+/* Kết giới chặn một đòn. Gọi từ hurt() SAU khi đã nhân hệ số sát thương của kẻ tấn công
+   (Shamac Weakness tính trong đó) nhưng TRƯỚC mọi lớp giảm sát thương của chính Beatrice —
+   đúng câu người dùng chốt. Trả về true nghĩa là đòn đó không gây một điểm nào.
+   Vì kết giới chặn sạch nên lượng thật sự nhận vào là 0; phản đòn phải tính theo lượng
+   VỪA CHẶN chứ không tính theo con số 0 đó. */
+function beaEmtBlock(t,amt,src,kind){
+  if(!(t.beaEmt>0))return false;
+  const blocked=Math.max(0,amt);
+  t.flash=Math.max(t.flash,.12); t.flashCol=null;
+  t.beaRipple=.32;                                    // mặt kết giới gợn sóng ở chỗ vừa chặn
+  G.floats.push({x:t.x+rnd(-10,10),y:t.y-30,txt:'0',color:'#E3B8FF',life:.8,ml:.8,sc:.6});
+  /* Phản lại 20% chỗ VỪA CHẶN. Đòn phản đi bằng kind riêng 'reflect' và không bao giờ
+     được phản lại lần nữa, nên hai Beatrice đối đầu nhau vẫn chặn được của nhau mà
+     không dựng ra vòng lặp phản đòn vô hạn. Mỗi nhịp của một hiệu ứng nhiều lần dmg
+     (hay mỗi tick độc) đi qua đây riêng nên cũng được phản riêng. */
+  if(kind!=='reflect'&&blocked>0) beaReflect(t,blocked*BEA.emtRefl);
+  return true;
+}
+function beaReflect(f,dmg){
+  if(!(dmg>0))return;
+  const d=Math.round(dmg*10)/10;
+  ring(f.x,f.y,BEA.refl,'#E3B8FF',.4);
+  sfx('bea_reflect');
+  let n=0;
+  for(const o of [...G.fighters]){
+    if(!o||o===f||o.team===f.team||!o.alive||o.hp<=0||o.leaving>0)continue;
+    if(o.summon&&!o.ally)continue;
+    if(dist(f,o)>BEA.refl)continue;                   // ngoài 2.5R thì không dính, kể cả kẻ vừa đánh
+    /* Đòn phản KHÔNG chí mạng, KHÔNG choáng, KHÔNG làm chậm. raw=true để nó không bị
+       nhân thêm hệ số sát thương của Beatrice lần nữa — con số đã chốt ở lúc chặn. */
+    if(hurt(o,d,f,false,'reflect','#E3B8FF',true)) n++;
+  }
+  if(n) say(`E.M.T Reflection — kết giới hắt lại ${d} dmg lên ${n} người trong bán kính ${Math.round(BEA.refl)}.`,'g');
+}
+
+/* ---- chiêu 5: El Minya ---- */
+/* Ba mũi tinh thể TÁCH BIỆT, bắn lần lượt chứ không phải một luồng năng lượng liền mạch.
+   Mỗi mũi ngắm vào chỗ mục tiêu đang đứng ĐÚNG LÚC nó rời tay, nên mũi thứ hai và thứ ba
+   né được. Dáng ra chiêu sống hết chiêu, đúng luật đã chốt cho Ginyu Beam. */
+function beaElMinya(f,e){
+  if(!e||!e.alive){ f.cds.s4=Math.min(f.cds.s4,BEA.ultCd*.3); return; }
+  aim(f,e,1);
+  const span=BEA.ultAim+(BEA.ultN-1)*BEA.ultGap+gs(.35);
+  f.beaUlt={t:0, fired:0, e, span};
+  setPose(f,'elminya',span);
+  sfx('bea_elminya');
+  G.callBanner={txt:'EL MINYA',color:'#9B4DE0',life:1.5,ml:1.5};
+  say('Beatrice mở quyển sách — một vòng phép tím đen mở ra sau lưng cô.','g');
+}
+/* Huỷ El Minya và chỉ phải chờ 50% hồi chiêu. Chỉ gọi được khi CHƯA bắn mũi nào — bắn mũi
+   đầu rồi thì mấy mũi sau vẫn ra, đúng bản mô tả. */
+function beaUltCancel(f){
+  if(!f.beaUlt||f.beaUlt.fired>0)return false;
+  f.beaUlt=null; f.lock=0; f.pose='idle'; f.poseT=0;
+  f.cds.s4=BEA.ultCd*BEA.ultBreakCut;
+  G.floats.push({x:f.x,y:f.y-92,txt:'INTERRUPTED',color:'#E3B8FF',
+    life:1.1,ml:1.1,banner:true,sc:.6});
+  say('El Minya bị cắt ngang giữa lúc đang vận — Beatrice chỉ phải chờ nửa hồi chiêu.','s');
+  return true;
+}
+function beaUltTick(f,dt){
+  const U=f.beaUlt; if(!U)return;
+  /* Bị choáng trong ultBreak giây đầu của quãng chuẩn bị ⇒ huỷ chiêu. Qua mốc đó, hoặc đã
+     bắn được mũi đầu, thì loạt bắn cứ chạy tiếp — beatriceTick() nằm trong vòng duyệt
+     fighter nên nó không bị `stun` chặn, đúng như bản mô tả muốn. */
+  if(f.stun>0&&U.fired===0&&U.t<BEA.ultBreak){ beaUltCancel(f); return; }
+  U.t+=dt;
+  f.lock=Math.max(f.lock,.05);
+  setPose(f,'elminya',Math.max(0,U.span-U.t));
+  while(U.fired<BEA.ultN&&U.t>=BEA.ultAim+U.fired*BEA.ultGap){
+    U.fired++;
+    /* Mục tiêu ban đầu gục sau mũi một hay mũi hai thì mấy mũi còn lại chuyển sang kẻ địch
+       gần nhất còn sống; không còn ai hợp lệ thì mũi chưa bắn bị huỷ. */
+    if(!U.e||!U.e.alive||U.e.hp<=0||offField(U.e)) U.e=beaTarget(f);
+    const tg=U.e;
+    if(!tg||!tg.alive){ U.fired=BEA.ultN; say('Không còn mục tiêu hợp lệ — mấy mũi El Minya còn lại bị huỷ.','m'); break; }
+    const ang=Math.atan2(tg.y-bodyCY(f)-4,tg.x-f.x);
+    G.proj.push({type:'elminya',team:f.team,owner:f,
+      x:f.x+Math.cos(ang)*26, y:bodyCY(f)+4+Math.sin(ang)*26,
+      vx:Math.cos(ang)*BEA.ultSpd, vy:Math.sin(ang)*BEA.ultSpd,
+      ang, r:9, dmg:BEA.ultDmg, life:2.4});
+    sfx('bea_minya');
+  }
+  if(U.t>=U.span){ f.beaUlt=null; f.pose='idle'; f.poseT=0; }
+}
+/* Một mũi El Minya chạm người. Nó dừng lại ở fighter ĐẦU TIÊN chạm phải, không xuyên qua
+   ai để đi tìm mục tiêu ban đầu — nên người vô tình đứng chắn đường vẫn ăn đủ dmg, Minya
+   Slow và Mana Erosion. */
+function beaUltHit(p,e){
+  if(!hurt(e,p.dmg,p.owner,'EL MINYA!','big'))return;
+  sfx('hit');
+  beaSlowOn(e);
+  beaErode(e,p.owner);
+  say(`Mũi El Minya trúng ${e.name} — ${BEA.ultDmg} dmg, Minya Slow và Mana Erosion ×${beaEroStacks(e).length}.`,'g');
+}
+/* Minya Slow — giảm 50% tốc chạy trong 3 giây. KHÔNG cộng dồn phần trăm: trúng cả ba mũi
+   vẫn đúng −50% chứ không phải −150%, mũi sau chỉ làm mới đồng hồ. Hệ số nhân vào moveMul
+   trong beaStatus(). */
+function beaSlowOn(t){
+  t.beaSlow=BEA.slowT;                                // GÁN chứ không cộng
+  G.floats.push({x:t.x,y:t.y-112,
+    txt:`MINYA SLOW −${Math.round((1-BEA.slowMul)*100)}% MOVE ${rts(BEA.slowT)}s`,
+    color:'#C9A0FF',life:1.3,ml:1.3,banner:true,sc:.58});
+}
+/* Mana Erosion — mỗi mũi trúng thêm MỘT stack, mỗi stack có đồng hồ RIÊNG và hết hạn
+   riêng. Ba stack là trần. Sát thương đi đường dots[] của engine; dots[].dps tính theo
+   giây TRONG TRẬN nên hằng số đã nhân RT sẵn (2 HP mỗi giây người chơi).
+   Không chí mạng, không theo phần trăm máu, và không kích hoạt cửa choáng của Minya. */
+/* Số stack ĐẾM THẲNG TỪ `dots` chứ đừng giữ một mảng song song: có tới năm chỗ trong game
+   xoá sạch `dots` một lượt (phân cảnh gọi viện binh, CHANGE của Ginyu, Time Machine…), mà
+   mảng song song thì không ai xoá theo — lệch nhau là hiện sai số stack rồi từ chối cộng
+   thêm stack mới. Mỗi dot vốn đã có `left` riêng và tự hết hạn riêng trong step(), đúng
+   luật "mỗi stack có thời gian tồn tại riêng" mà không phải nuôi thêm đồng hồ nào. */
+const beaEroStacks=t=>(t&&t.dots?t.dots.filter(d=>d&&d.bea):[]);
+function beaErode(t,src){
+  const cur=beaEroStacks(t);
+  if(cur.length>=BEA.eroMax){
+    // đủ trần rồi thì làm mới stack cũ nhất, không đẩy thêm cái thứ tư
+    let old=cur[0];
+    for(const d of cur) if(d.left<old.left) old=d;
+    old.left=BEA.eroT;
+  }else{
+    t.dots.push({dps:BEA.eroDps, left:BEA.eroT, acc:0, src, tint:'#C9A0FF', bea:true});
+  }
+  G.floats.push({x:t.x,y:t.y-96,txt:`MANA EROSION ×${beaEroStacks(t).length}`,color:'#C9A0FF',
+    life:1.2,ml:1.2,banner:true,sc:.6});
+}
+
+/* ---- bộ hệ số dùng chung ---- */
+/* Chạy trong statusTick() SAU gnStatus / drStatus / supStatus: gnStatus GÁN ĐÈ mấy hệ số
+   nên phải nằm sau nó, còn Murak thì phải có tiếng nói CUỐI CÙNG — nó miễn nhiễm khống chế
+   nên mọi thứ làm chậm của người khác đều bị nó gạt đi. */
+function beaStatus(f,dt){
+  if(f.beaSlow>0) f.beaSlow=Math.max(0,f.beaSlow-dt);
+  if(f.beaWeak>0) f.beaWeak=Math.max(0,f.beaWeak-dt);
+  if(f.beaRipple>0) f.beaRipple=Math.max(0,f.beaRipple-dt);
+  if(f.beaSlow>0) f.moveMul*=BEA.slowMul;
+  /* Shamac Weakness ăn vào dmgOut nên nó phủ đòn thường, chiêu, ultimate và cả sát thương
+     duy trì do mục tiêu tạo ra; gnOut nhân theo cho mấy chiêu của chính Ginyu. */
+  if(f.beaWeak>0){ f.dmgOut*=(1-BEA.shamacWeak); f.gnOut*=(1-BEA.shamacWeak); }
+
+  if(f.key!=='beatrice'||f.swapAs)return;
+  if(f.beaEmt>0) f.beaEmt=Math.max(0,f.beaEmt-dt);
+  if(f.beaMurak>0){
+    f.beaMurak=Math.max(0,f.beaMurak-dt);
+    /* Miễn khống chế 100%: rũ sạch mọi thứ trói chân MỖI NHỊP, và mọi hệ số làm chậm do
+       người khác gây ra đều bị gạt về 1. Vẫn đi lại được, vẫn đánh thường được, vẫn tung
+       chiêu khác được — nên quãng khoá của CHÍNH chiêu cô đang tung phải giữ nguyên,
+       nếu không Al Shamac và El Minya tự cắt ngang mình. */
+    const own=(f.beaShamac||f.beaUlt)?f.lock:0;
+    beaCleanse(f);
+    f.lock=own;
+    f.moveMul=Math.max(f.moveMul,1);
+    f.castMul=Math.max(f.castMul,1);
+    /* Giảm 20% sát thương nhận vào, NHÂN chồng chứ không cộng phần trăm — hai lớp giảm
+       sát thương không bao giờ được cộng lại thành miễn thương 100%. dmgTake là lớp nhân
+       cuối cùng trong hurt(). */
+    f.dmgTake*=BEA.murakRes;
+  }
+  // bay nhẹ lên khỏi mặt đất trong lúc Murak Protection còn, rồi hạ lại từ từ
+  f.beaLift+=clamp((f.beaMurak>0?BEA.murakLift:0)-f.beaLift,-60*dt,60*dt);
+}
+
+/* ---- nhịp riêng của Beatrice ---- */
+/* Murak và E.M.T tự dùng lên bản thân nên nằm ở đây chứ không nằm trong think(): think()
+   không chạy khi f.stun>0, mà Murak thì bắt buộc phải phá được choáng. Hàm này chạy TRƯỚC
+   vòng think() trong step(), nên thứ tự ưu tiên người dùng chốt —
+   Murak → E.M.T → Al Shamac → El Minya → Minya — tự đúng mà không phải dựng hàng đợi. */
+function beatriceTick(f,dt){
+  if(f.beaEntry){ beaEntryTick(f,dt); return; }
+  if(f.beaShamac) beaShamacTick(f,dt);
+  if(f.beaUlt) beaUltTick(f,dt);
+  if(f.beaLog) while(f.beaLog.length&&G.t-f.beaLog[0].t>BEA_HURT_MEM) f.beaLog.shift();
+  /* Chỉ MÀN RA MẮT mới chặn được hai chiêu tự dùng lên bản thân — lúc đó cả sàn đứng chờ.
+     TUYỆT ĐỐI đừng gác ở `f.lock`: Frozen của Superman và mấy chiêu trói chân khác đều đặt
+     `lock` mỗi nhịp, gác ở đó thì Murak không bao giờ phá nổi đúng mấy thứ nó sinh ra để
+     phá — đo được: bị đóng băng là cô đứng chịu trận tới hết. */
+  if(introOn())return;
+  if(f.cds.s3<=0){ beaMurak(f); return; }            // hồi xong là dùng ngay, kể cả đang choáng
+  if(f.cds.s5<=0) beaEmtOn(f);
+}
+
+/* ---- AI: giữ mục tiêu trong tầm 5R, không bao giờ tự xáp vào cự ly cận chiến ----
+   Người dùng chốt: ngoài tầm thì tiến tới cho đến khi mục tiêu nằm trong 5R, vào tầm rồi
+   thì dừng lại đánh xa. Bị áp sát thì cô KHÔNG tự chạy trốn — Al Shamac mới là thứ đẩy đối
+   phương ra, và cô cũng không bao giờ tự dịch chuyển bản thân. Không cho bay lượn vòng
+   quanh sàn để né đòn: quãng bay nhẹ của Murak chỉ là hiệu ứng nhìn (f.beaLift). */
+function beaVec(f,e){
+  const d=dist(f,e)||1, ux=(e.x-f.x)/d, uy=(e.y-f.y)/d;
+  const wd=Math.hypot(f.wx-f.x,f.wy-f.y)||1;
+  let x=0,y=0;
+  const want=BEA.want;                       // quãng cô muốn giữ, nằm gọn trong 5R
+  /* Vector này được CHUẨN HOÁ trong step() rồi mới nhân tốc chạy, nên mấy con số ở đây chỉ
+     là TRỌNG SỐ bỏ phiếu — hướng của TỔNG mới quyết định đi đâu. Vì vậy lúc sắp trôi ra
+     khỏi tầm thì lực kéo vào phải ÁP ĐẢO hẳn và đám nhiễu phải tắt bớt: để lực kéo ngang
+     ngửa chúng là cô trôi hẳn ra ngoài tầm rồi đứng đó không bắn được ai (đo được đỉnh
+     290px trên tầm 255, trong khi lực kéo 1.15 còn hướng lượn + bước nhiễu cộng lại
+     cũng đúng 1.15). */
+  let pull=0, noise=1;
+  if(d>BEA.range*.88){ pull=3.4; noise=.25; }      // sắp ra khỏi tầm: bám riết, gần như thôi lượn
+  else if(d>want){ pull=.7; noise=.7; }
+  else if(d<want-55){ pull=-.7; }                  // hơi giãn ra, nhưng không bỏ chạy
+  x+=ux*pull; y+=uy*pull;
+  x+=((f.wx-f.x)/wd*.45 - uy*f.strafe*.45 + f.jx*.25)*noise;
+  y+=((f.wy-f.y)/wd*.45 + ux*f.strafe*.45 + f.jy*.25)*noise;
+  const dv=dodgeVec(f); x+=dv.x*1.3; y+=dv.y*1.3;
+  return {x,y};
+}
+
 /* ---------- AI ---------- */
 /* Cận chiến thì đứng cách nhau một quãng chứ đừng dán vào người ta. Tầm tay của cả
    ChiChi lẫn Horikita là r+r+16 = 68, nên điểm lượn phải nằm DƯỚI mốc đó mới ra đòn
@@ -7828,6 +8516,8 @@ function aiVec(f,e){
   }
   // Doraemon giữ quãng trung bình để rút bảo bối; hoảng thì lùi, hết bảo bối mới xáp vào
   if(f.key==='dora'&&!f.summon) return doraVec(f,e);
+  // Beatrice giữ mục tiêu trong tầm 5R nhưng không bao giờ tự xáp vào cự ly cận chiến
+  if(f.key==='beatrice'&&!f.summon) return beaVec(f,e);
   // Superman đang bay: bay là để ĐUỔI, nên nhắm thẳng vào địch chứ không lượn vòng
   if(f.key==='superman'&&!f.summon&&f.supFly>0) return supFlyVec(f,e);
   if(f.role==='ranged'){
@@ -7951,6 +8641,7 @@ function step(dt){
     if(f.key==='kono'&&!f.summon&&f.alive&&!f.swapAs) konoTick(f,dt);
     if(f.key==='dora'&&!f.summon&&f.alive&&!f.swapAs) doraTick(f,dt);
     if(f.key==='superman'&&!f.summon&&f.alive&&!f.swapAs) supermanTick(f,dt);
+    if(f.key==='beatrice'&&!f.summon&&f.alive&&!f.swapAs) beatriceTick(f,dt);
     // người khiêu khích rời sàn thì đối thủ nhắm lại vào mục tiêu thật
     if(f.tauntBy&&(!f.tauntBy.alive||f.tauntBy.hp<=0||f.tauntBy.leaving>0||G.fighters.indexOf(f.tauntBy)<0)) f.tauntBy=null;
     if(f.outCut>0&&!(foeOf(f)&&foeOf(f).domain)) f.outCut=0;
@@ -7994,7 +8685,7 @@ function step(dt){
       G.cam.x+=(tx-G.cam.x)*Math.min(1,dt*3);
       G.cam.y+=(ty-G.cam.y)*Math.min(1,dt*3);
       // Doraemon thắng thì ngồi xuống ăn dorayaki chứ không đứng thủ thế
-      if(w.alive) setPose(w,(w.key==='dora'||w.key==='superman')&&!w.swapAs?'win':'idle',0);
+      if(w.alive) setPose(w,(w.key==='dora'||w.key==='superman'||w.key==='beatrice')&&!w.swapAs?'win':'idle',0);
       /* Superman thắng: nhìn quanh sàn một lượt rồi TỪ TỪ bay lên khỏi mặt đất, chống
          hai tay vào hông, áo choàng tung sau lưng. Không phá gì của sàn đấu cả. */
       if(w.alive&&w.key==='superman'&&!w.swapAs){
@@ -8385,6 +9076,11 @@ function step(dt){
       // luồng khí nén xuyên được tối đa hai người rồi mới tan
       if(p.type==='aircan'){ if(hitsBody(p,f)&&drAcHit(p,f)){ dead=true; break; } continue; }
       if(p.type==='decision'&&hitsBody(p,f)){ suzDecisionHit(p,f); dead=true; break; }
+      /* Hai loại đạn của Beatrice dừng lại ở người ĐẦU TIÊN chúng chạm, không xuyên qua ai
+         để đi tìm mục tiêu ban đầu — nên người vô tình đứng chắn đường vẫn ăn đủ phần của
+         mình. Xác suất choáng của Minya bốc bên trong beaMinyaHit(), đúng lúc chạm. */
+      if(p.type==='minya'&&hitsBody(p,f)){ beaMinyaHit(p,f); dead=true; break; }
+      if(p.type==='elminya'&&hitsBody(p,f)){ beaUltHit(p,f); dead=true; break; }
       if(p.type==='kunai'&&hitsBody(p,f)){ explode(p); dead=true; break; }
       if((p.type==='ball'||p.type==='drive'||p.type==='twin')&&hitsBody(p,f)){ ballHit(p,f); dead=true; break; }
       if(hitsBody(p,f)){
@@ -8939,6 +9635,8 @@ function vector(f){
     doraVector(f);
   }else if(f.key==='superman'){
     supVector(f);
+  }else if(f.key==='beatrice'){
+    beaVector(f);
   }else if(f.key==='ayanokouji'){
     const guard=(f.pose==='guard'), strike=(f.pose==='strike');
     const kk=strike?Math.sin(clamp(f.poseT||0,0,1)*Math.PI):0;
@@ -9134,6 +9832,12 @@ function sprite(f){
     else if(pk==='freeze') arr=set.heat||set.idle;
     else if(pk==='meteor') arr=set.fly||set.idle;
     else if(pk==='ko') arr=set.down||set.injured||set.hurt||set.idle;
+    // Beatrice: thiếu ảnh dáng nào thì lùi về ô gần nghĩa nhất
+    else if(pk==='minya') arr=set.elminya||set.idle;
+    else if(pk==='elminya') arr=set.minya||set.idle;
+    else if(pk==='shamac') arr=set.minya||set.idle;
+    else if(pk==='murak') arr=set.emt||set.idle;
+    else if(pk==='emt') arr=set.murak||set.idle;
     // Ginyu: thiếu ảnh dáng nào thì lùi về ô gần nghĩa nhất, đừng lùi thẳng về ô đứng
     else if(pk==='dance1'||pk==='dance2'||pk==='dance3') arr=set.idle;
     else if(pk==='fly') arr=set.idle;
@@ -9160,6 +9864,7 @@ function drawFighter(f){
   if(f.hidden)return;                          // đang thay bằng mô hình sút đôi
   if(f.drHide)return;                          // Doraemon còn trong lòng Anywhere Door
   if(f.supHide)return;                         // Superman còn là bóng người trên cao
+  if(f.beaHide)return;                         // Beatrice còn ở trong Forbidden Library
   const img=sprite(f);
   const mv=f.moveAmt!==undefined?clamp(f.moveAmt,0,1):(f.moving?1:0);
   const hop = Math.abs(Math.sin(G.t*7.5))*7*mv + Math.sin(G.t*2.4)*2.5*(1-mv);
@@ -9187,7 +9892,7 @@ function drawFighter(f){
   // Take-copter: bay là là, đủ thấy chân rời đất chứ không bay lên trời.
   // Superman thì bay thật: supAir là độ cao đang treo (bay vào sân, Kryptonian Flight,
   // quãng vọt lên của Meteor Strike, và lúc ăn mừng).
-  const fly=(f.copter>0?DORA.copHover*(1+Math.sin(G.t*9)*.12):0)+(f.supAir||0);
+  const fly=(f.copter>0?DORA.copHover*(1+Math.sin(G.t*9)*.12):0)+(f.supAir||0)+(f.beaLift||0);
   const shA=fly?clamp(1-fly/300,.22,.75):1;    // càng lên cao bóng dưới chân càng mờ và nhỏ
   const shR=fly?clamp(1-fly/520,.5,1):1;
 
@@ -9658,6 +10363,7 @@ function fireText(txt,cx,y,size,seed){
 }
 function drawBars(f){
   if(f.summon&&!f.ally)return;
+  if(f.beaHide)return;                          // Beatrice còn ở trong Forbidden Library
   if(f.drHide)return;                          // Doraemon còn trong lòng Anywhere Door
   if(f.supHide)return;                         // Superman còn là bóng người trên cao
   if(f.ally){
@@ -10285,6 +10991,184 @@ function doraVector(f){
   }
   ctx.restore();
 }
+/* Beatrice vẽ tay. Giữ đúng hình tượng Re:Zero: THÂN NHỎ (spriteH 104, thấp hơn cả bảng),
+   tóc vàng với HAI LỌN XOẮN LỚN hai bên, váy hồng - trắng - đỏ, gương mặt nghiêm nghị hơi
+   khó chịu, và quyển sách phép cầm trên tay lúc ra chiêu. Ba điều bắt buộc:
+     · KHÔNG biến cô thành người trưởng thành — đầu to so với thân, chân ngắn, giữ nguyên
+       tỉ lệ trẻ con;
+     · KHÔNG để váy, tóc hay hiệu ứng phép che khuất toàn bộ cơ thể — hai lọn tóc vẽ SAU
+       thân nhưng TRƯỚC đầu, còn váy chỉ xoè tới ngang đùi;
+     · lúc đứng yên cô KHOANH TAY, mặt hơi quay đi với thái độ kiêu kỳ.
+   Tay chân là đoạn chi xoay quanh gốc vai / hông (góc 0 là chỉ thẳng xuống, âm là đưa ra
+   trước), nên đổi dáng chỉ việc đổi mấy con số góc ở đầu hàm. Gọi từ vector(). */
+function beaVector(f){
+  const y=-14;
+  const hair='#F2D06B', hairD='#C9A63C', dressP='#F6A8C8', dressW='#FBF3F7',
+        dressR='#C0304A', skin='#FBE0CC', bookC='#7A2E4E', bookE='#E7C55C', mag='#C77DFF';
+  const P=f.pose||'idle';
+  const t=G.t*10, sw=f.moving?Math.sin(t)*2.4:0;
+  const arms=(P==='idle'||P==='win');            // khoanh tay: đứng yên và lúc ăn mừng
+  /* Đoạn chi: một nét bo tròn từ gốc vai ra, kèm bàn tay nhỏ ở đầu. */
+  /* Góc 0 là chỉ thẳng xuống, góc ÂM là đưa ra TRƯỚC (cùng chiều mặt) — nên `-sin`.
+     Để `+sin` là tay vươn ra sau lưng và bị hai lọn tóc xoắn che kín, nhìn như cụt tay. */
+  const limb=(x0,y0,ang,len,col,wid)=>{
+    const x1=x0-Math.sin(ang)*len, y1=y0+Math.cos(ang)*len;
+    ctx.strokeStyle='#C89880'; ctx.lineWidth=(wid||5)+1.6; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();   // viền cho nổi trên áo trắng
+    ctx.strokeStyle=col||skin; ctx.lineWidth=wid||5;
+    ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+    ctx.fillStyle=col||skin;
+    ctx.beginPath(); ctx.arc(x1,y1,(wid||5)*.52,0,7); ctx.fill();          // bàn tay nhỏ ở đầu
+    return {x:x1,y:y1};
+  };
+  /* Quyển sách phép: bìa sẫm, gáy vàng. Mở ra thì thành hai trang trắng. */
+  const grimoire=(x,yy,open,rot)=>{
+    ctx.save(); ctx.translate(x,yy); ctx.rotate(rot||0);
+    if(open){
+      ctx.fillStyle=dressW; ctx.strokeStyle=bookC; ctx.lineWidth=1.3;
+      ctx.beginPath(); ctx.moveTo(-11,-7); ctx.lineTo(0,-4); ctx.lineTo(0,7); ctx.lineTo(-11,4); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(11,-7); ctx.lineTo(0,-4); ctx.lineTo(0,7); ctx.lineTo(11,4); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle=bookE; ctx.lineWidth=1.6;
+      ctx.beginPath(); ctx.moveTo(0,-4); ctx.lineTo(0,7); ctx.stroke();
+    }else{
+      ctx.fillStyle=bookC; ctx.strokeStyle=bookE; ctx.lineWidth=1.4;
+      if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(-6,-8,12,16,2); ctx.fill(); ctx.stroke(); }
+      else { ctx.fillRect(-6,-8,12,16); ctx.strokeRect(-6,-8,12,16); }
+      ctx.fillStyle=bookE; ctx.fillRect(-6,-8,2.6,16);
+    }
+    ctx.restore();
+  };
+
+  // góc hai tay theo từng dáng (0 = chỉ thẳng xuống, âm = đưa ra trước)
+  let aL=.3, aR=-.3, legL=.12+sw*.02, legR=-.12-sw*.02, lean=0, tilt=0;
+  let armL=13, armR=13;
+  if(P==='minya'){ aL=.45; aR=-1.62; armR=17; lean=-.06; }   // giơ một tay, tinh thể hiện trước lòng bàn tay
+  else if(P==='shamac'){ aL=.5; aR=-1.72; armR=18; lean=-.1; } // giơ thẳng tay về phía mục tiêu
+  else if(P==='murak'){ aL=.72; aR=-.72; armL=armR=15; legL=.34; legR=-.34; }
+  else if(P==='emt'){ aL=.95; aR=-.95; armL=armR=15; }
+  else if(P==='elminya'){ aL=-1.35; aR=-1.42; armL=armR=16; lean=-.04; }  // hai tay ra trước, sách mở
+  else if(P==='win'){ tilt=-.12; }                           // quay nhẹ mặt sang một bên, kiêu kỳ
+  else if(P==='down'){ aL=1.25; aR=-1.25; armL=armR=15; lean=.62; legL=1.1; legR=-.9; }
+  else if(P==='hurt'||P==='injured'){ aL=.75; aR=-.5; lean=.12; }
+
+  ctx.save();
+  ctx.rotate(lean);
+  if(P==='down') ctx.translate(0,12);
+
+  // hai chân ngắn, tất trắng cao và giày đỏ
+  for(const [lx,la] of [[-5,legL],[5,legR]]){
+    const fx=lx+Math.sin(la)*14, fy=y+16+Math.cos(la)*14;
+    ctx.strokeStyle=dressW; ctx.lineWidth=6; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(lx,y+14); ctx.lineTo(fx,fy); ctx.stroke();
+    ctx.fillStyle=dressR;
+    ctx.beginPath(); ctx.ellipse(fx,fy+2,4.6,3,0,0,7); ctx.fill();
+  }
+  // tay sau vẽ trước thân
+  if(!arms) limb(-7,y-14,aL,armL);
+
+  // váy xoè: hồng ở ngoài, viền trắng, dải đỏ ngang eo. Chỉ tới ngang đùi, không phủ kín chân.
+  ctx.fillStyle=dressP; ctx.strokeStyle=dressR; ctx.lineWidth=1.3;
+  ctx.beginPath();
+  ctx.moveTo(-8,y-6); ctx.lineTo(8,y-6);
+  ctx.lineTo(15,y+15); ctx.quadraticCurveTo(0,y+19,-15,y+15);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle=dressW;                                   // diềm trắng dưới gấu váy
+  ctx.beginPath();
+  ctx.moveTo(-15,y+15); ctx.quadraticCurveTo(0,y+19,15,y+15);
+  ctx.lineTo(14,y+11); ctx.quadraticCurveTo(0,y+15,-14,y+11);
+  ctx.closePath(); ctx.fill();
+  // thân trên: áo trắng, nơ đỏ ở cổ
+  ctx.fillStyle=dressW; ctx.strokeStyle=dressR; ctx.lineWidth=1.2;
+  ctx.beginPath();
+  if(ctx.roundRect){ ctx.roundRect(-8,y-16,16,11,3); } else { ctx.rect(-8,y-16,16,11); }
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle=dressR; ctx.fillRect(-9,y-7,18,3);        // dải đỏ ngang eo
+  ctx.beginPath();                                        // nơ đỏ dưới cổ
+  ctx.moveTo(0,y-15); ctx.lineTo(-4.4,y-18); ctx.lineTo(-4.4,y-12.6); ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(0,y-15); ctx.lineTo(4.4,y-18); ctx.lineTo(4.4,y-12.6); ctx.closePath(); ctx.fill();
+
+  /* HAI LỌN TÓC XOẮN LỚN — nét nhận dạng số một. Vẽ SAU thân nhưng TRƯỚC đầu, và chỉ
+     buông xuống hai BÊN nên không bao giờ che mất mặt hay thân người. Mỗi lọn là ba vòng
+     tròn to dần xuống dưới, đúng kiểu tóc khoan. */
+  for(const sgn of [-1,1]){
+    const bx=sgn*15, sway=Math.sin(G.t*2.2+sgn)*1.6;
+    for(let i=0;i<3;i++){
+      const rr=6.2-i*1.4, yy=y-28+i*7.6;
+      ctx.fillStyle=i%2?hairD:hair;
+      ctx.beginPath(); ctx.ellipse(bx+sgn*i*1.1+sway*(i+1)*.4,yy,rr,rr*.86,0,0,7); ctx.fill();
+    }
+  }
+
+  ctx.save(); ctx.rotate(tilt);
+  // đầu to so với thân — giữ đúng tỉ lệ trẻ con, đừng kéo dài người ra
+  ctx.fillStyle=skin; ctx.beginPath(); ctx.arc(0,y-27,11.5,0,7); ctx.fill();
+  // tóc vàng: vòm trên đầu + mái ngang trán
+  ctx.fillStyle=hair;
+  ctx.beginPath(); ctx.arc(0,y-29,12.2,Math.PI,2*Math.PI); ctx.fill();
+  ctx.fillRect(-12.2,y-31,24.4,4.6);
+  ctx.fillStyle=hairD; ctx.fillRect(-12.2,y-27.4,24.4,1.4);
+  /* Gương mặt nghiêm nghị hơi khó chịu: chân mày chau xuống giữa, mắt hẹp, miệng một nét
+     phẳng hơi trễ. Gục xuống thì hai mắt nhắm lại. */
+  ctx.strokeStyle='#3A2418'; ctx.lineWidth=1.3; ctx.lineCap='round';
+  if(P==='down'){
+    ctx.beginPath(); ctx.moveTo(-7,y-26); ctx.lineTo(-2,y-26); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(2,y-26); ctx.lineTo(7,y-26); ctx.stroke();
+  }else{
+    ctx.beginPath(); ctx.moveTo(-7.4,y-29.4); ctx.lineTo(-2.4,y-27.8); ctx.stroke();   // chân mày chau
+    ctx.beginPath(); ctx.moveTo(7.4,y-29.4); ctx.lineTo(2.4,y-27.8); ctx.stroke();
+    ctx.fillStyle='#4C6FD8';                                                            // mắt xanh, hẹp
+    ctx.beginPath(); ctx.ellipse(-4.6,y-25.4,2.2,2.6,0,0,7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(4.6,y-25.4,2.2,2.6,0,0,7); ctx.fill();
+    ctx.fillStyle='#1B1428';
+    ctx.beginPath(); ctx.arc(-4.6,y-25.4,1,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(4.6,y-25.4,1,0,7); ctx.fill();
+  }
+  ctx.strokeStyle='#8A5A4A'; ctx.lineWidth=1.2;                 // miệng một nét phẳng, hơi trễ
+  ctx.beginPath(); ctx.moveTo(-2.6,y-20.4); ctx.lineTo(2.6,y-21); ctx.stroke();
+  ctx.restore();
+
+  // tay trước vẽ sau thân, kèm quyển sách và tinh thể đang gọi ra
+  if(arms){
+    /* Khoanh tay trước ngực: hai đoạn chi bắt chéo. Đây là dáng đứng yên của cô, và cũng
+       là dáng ăn mừng — sách đã đóng, kẹp dưới một bên tay. */
+    for(const pass of [0,1]){
+      ctx.strokeStyle=pass?skin:'#C89880'; ctx.lineWidth=pass?5:6.6; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-10,y-15); ctx.lineTo(9,y-8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(10,y-15); ctx.lineTo(-9,y-8); ctx.stroke();
+    }
+    if(P==='win') grimoire(-13,y-4,false,.35);
+  }else{
+    const h=limb(7,y-14,aR,armR);
+    if(P==='minya'||P==='shamac'){
+      /* Mũi tinh thể tím đen hiện ra NGAY TRƯỚC lòng bàn tay — đúng chỗ viên đạn xuất phát.
+         Không phải nắm đấm, không phải súng, không phải tia laser. */
+      const ax=Math.sin(aR), ay=Math.cos(aR);
+      ctx.save(); ctx.translate(h.x+ax*7,h.y+ay*7); ctx.rotate(-aR);
+      ctx.fillStyle=P==='shamac'?'#9B4DE0':mag;
+      ctx.beginPath(); ctx.moveTo(0,-6); ctx.lineTo(3.4,0); ctx.lineTo(0,6); ctx.lineTo(-3.4,0); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha=.5; ctx.fillStyle='#2B0B3F';
+      ctx.beginPath(); ctx.moveTo(0,-3.4); ctx.lineTo(1.9,0); ctx.lineTo(0,3.4); ctx.lineTo(-1.9,0); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }else if(P==='elminya'){
+      grimoire(h.x+3,h.y+1,true,.12);                // sách MỞ, hai tay đưa ra trước
+    }else if(P!=='down'&&P!=='hurt'&&P!=='injured'){
+      grimoire(h.x+2,h.y+2,false,-.2);               // bình thường thì kẹp sách đã đóng
+    }
+  }
+  /* Gục xuống: sách rơi khỏi tay và nằm dưới đất. Không máu me, không hiệu ứng tử vong. */
+  if(P==='down') grimoire(-20,y+16,false,1.35);
+
+  if(f.injured){
+    ctx.strokeStyle='#8E1023'; ctx.lineWidth=2.1; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-6,y-11); ctx.lineTo(-1,y-6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(4,y-31); ctx.lineTo(8,y-28); ctx.stroke();
+    ctx.fillStyle='#E8E2F0'; ctx.fillRect(-11,y-15,7,2.4);      // băng quấn vai
+    ctx.fillStyle=dressR;                                        // gấu váy rách một góc
+    ctx.beginPath(); ctx.moveTo(-13,y+15); ctx.lineTo(-8,y+9); ctx.lineTo(-4,y+15); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
 /* Superman vẽ tay. Giữ đúng hình tượng quen thuộc: bộ đồ xanh, biểu tượng chữ "S" đỏ
    trên nền vàng giữa ngực, áo choàng đỏ, giày đỏ, tóc đen với lọn xoăn trước trán.
    Áo choàng vẽ ĐẦU TIÊN nên luôn nằm phía sau, và chỉ trải về phía sau lưng — lúc
@@ -10491,6 +11375,209 @@ function drawSupHeat(){
 }
 /* Freeze Breath — luồng hơi trắng xanh hình NÓN kèm tinh thể băng nhỏ. Không bao giờ
    được vẽ thành một tia laser mảnh. */
+/* ---- hiệu ứng phép của Beatrice ---- */
+/* Cánh cửa gỗ dẫn vào Forbidden Library. Dùng chung cho màn ra mắt và màn ăn mừng:
+   khung gỗ sẫm, ánh tím hắt ra từ bên trong lúc mở. open = 0 (đóng kín) tới 1 (mở toang),
+   a = độ đậm. Cùng lối drawDoorAt() của Doraemon. */
+function drawBeaDoor(x,y,open,a,scale){
+  if(a<=.02)return;
+  const S=scale||1, w=34*S, h=64*S, top=y+18-h;
+  ctx.save();
+  ctx.globalAlpha=a;
+  // ánh tím hắt ra từ trong thư viện, càng mở càng sáng
+  if(open>.02){
+    ctx.save(); ctx.globalAlpha=a*open*.55;
+    ctx.drawImage(glowSprite(),x-w*1.5,top-h*.25,w*3,h*1.5);
+    ctx.restore();
+  }
+  // khung cửa gỗ sẫm
+  ctx.fillStyle='#4A2E1E'; ctx.strokeStyle='#2A1810'; ctx.lineWidth=2;
+  ctx.beginPath();
+  if(ctx.roundRect){ ctx.roundRect(x-w/2,top,w,h,3); } else { ctx.rect(x-w/2,top,w,h); }
+  ctx.fill(); ctx.stroke();
+  // lòng cửa: đóng thì là ván gỗ, mở thì là một khoảng tím sâu hút
+  const iw=(w-8)*(1-open*.86);
+  ctx.fillStyle='#2A0E3C';
+  ctx.fillRect(x-w/2+4,top+4,w-8,h-8);
+  if(iw>1){
+    ctx.fillStyle='#6B412A';
+    ctx.fillRect(x-w/2+4,top+4,iw,h-8);
+    ctx.strokeStyle='#4A2E1E'; ctx.lineWidth=1.2;
+    for(let i=1;i<3;i++){
+      const yy=top+4+(h-8)*i/3;
+      ctx.beginPath(); ctx.moveTo(x-w/2+4,yy); ctx.lineTo(x-w/2+4+iw,yy); ctx.stroke();
+    }
+    ctx.fillStyle='#E7C55C';                             // tay nắm đồng
+    ctx.beginPath(); ctx.arc(x-w/2+4+iw-4,y-10,2.2,0,7); ctx.fill();
+  }
+  // vài trang sách bay ra từ khe cửa lúc nó đang mở
+  if(open>.3){
+    ctx.globalAlpha=a*open*.7; ctx.fillStyle='#FBF3F7';
+    for(let i=0;i<4;i++){
+      const q=((i*.27)+G.t*.5)%1;
+      ctx.save();
+      ctx.translate(x+Math.sin(i*2.1+G.t*2)*12, top+8+q*(h-16));
+      ctx.rotate(G.t*1.4+i);
+      ctx.fillRect(-3,-2.2,6,4.4);
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+/* Màn ra mắt: cửa hiện ra, mở, cô bước ra, cửa đóng rồi biến mất. Vẽ TRƯỚC nhân vật để cô
+   bước ra từ phía sau cánh cửa. */
+function drawBeaEntry(){
+  for(const f of G.fighters){
+    const E=f.beaEntry; if(!E)continue;
+    drawBeaDoor(E.x,E.y,E.doorOpen,E.doorA,1);
+  }
+}
+/* Cánh cửa hiện phía sau lúc cô ăn mừng — cô nhìn lại sàn đấu một lượt rồi bước vào. */
+function drawBeaWin(){
+  if(!G.over||!G.winner)return;
+  const w=G.winner;
+  if(w.key!=='beatrice'||w.swapAs||!w.alive)return;
+  const a=clamp((G.endT-1.6)*1.4,0,1);
+  drawBeaDoor(w.x-(w.face<0?-1:1)*40,w.y,clamp((G.endT-2.4)*.9,0,1),a,1);
+}
+/* Al Shamac: không gian quanh mục tiêu bị bóp méo rồi họ biến mất và hiện ra chỗ khác.
+   Vẽ SAU nhân vật để lớp méo phủ lên người, đúng lối drawSupFreeze(). */
+function drawBeaWarp(){
+  for(const f of G.fighters){
+    const Wp=f.beaWarp; if(!Wp)continue;
+    const out=Wp.ph==='out';
+    const q=clamp(out?Wp.t/BEA.shamacWarp:(Wp.t-BEA.shamacWarp)/BEA.shamacBack,0,1);
+    const a=out?q:1-q;                       // méo đậm dần lúc biến mất, nhạt dần lúc hiện ra
+    const cx=f.x, cy=bodyCY(f);
+    ctx.save();
+    ctx.globalAlpha=.55*a;
+    ctx.strokeStyle='#9B4DE0'; ctx.lineWidth=2.2;
+    for(let i=0;i<5;i++){                    // mấy vòng méo xoắn quanh người
+      const rr=BEA.R*(.42+i*.20)*(out?1-q*.35:.65+q*.35);
+      const sq=1+Math.sin(G.t*7+i*1.3)*.24;
+      ctx.beginPath(); ctx.ellipse(cx,cy,rr*sq,rr/sq,G.t*1.6+i,0,7); ctx.stroke();
+    }
+    ctx.globalAlpha=.30*a; ctx.fillStyle='#2B0B3F';
+    ctx.beginPath(); ctx.ellipse(cx,cy,BEA.R*.9,BEA.R*1.05,0,0,7); ctx.fill();
+    ctx.globalAlpha=.7*a; ctx.strokeStyle='#E3B8FF'; ctx.lineWidth=1.4; ctx.lineCap='round';
+    for(let i=0;i<8;i++){                    // tia méo bắn ra từ tâm
+      const ang=i*.785+G.t*2.2, L=BEA.R*(.5+Math.sin(G.t*9+i)*.3);
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(ang)*L*.4,cy+Math.sin(ang)*L*.4);
+      ctx.lineTo(cx+Math.cos(ang)*L,cy+Math.sin(ang)*L);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+/* Murak: vòng phép tím dưới chân và một lớp năng lượng tím nhạt bọc quanh người. Phải đủ
+   rõ để người xem nhận ra cô đang MIỄN KHỐNG CHẾ, nhưng không được che mất thân người —
+   nên vòng phép nằm dưới chân, còn lớp bọc chỉ là một viền sáng mảnh. */
+function drawBeaMurak(){
+  for(const f of G.fighters){
+    if(!(f.beaMurak>0)||f.beaHide)continue;
+    const a=clamp(f.beaMurak/BEA.murakT,0,1)*.85+.15;
+    const cx=f.x, foot=f.y+20, gy=foot-f.spriteH*.5-(f.beaLift||0);
+    ctx.save();
+    // vòng phép dưới chân: hai vòng tròn xoay ngược chiều nhau kèm nét khắc
+    ctx.globalAlpha=.55*a;
+    ctx.strokeStyle='#C77DFF'; ctx.lineWidth=2.2;
+    ctx.beginPath(); ctx.ellipse(cx,foot+4,BEA.R*.62,BEA.R*.2,0,0,7); ctx.stroke();
+    ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.ellipse(cx,foot+4,BEA.R*.44,BEA.R*.14,0,0,7); ctx.stroke();
+    ctx.globalAlpha=.7*a; ctx.lineWidth=1.6; ctx.lineCap='round';
+    for(let i=0;i<8;i++){
+      const ang=i*.785+G.t*1.4;
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(ang)*BEA.R*.46,foot+4+Math.sin(ang)*BEA.R*.15);
+      ctx.lineTo(cx+Math.cos(ang)*BEA.R*.64,foot+4+Math.sin(ang)*BEA.R*.21);
+      ctx.stroke();
+    }
+    // lớp năng lượng tím nhạt bọc quanh người
+    ctx.globalAlpha=.22*a;
+    const gr=BEA.R*1.1;
+    ctx.drawImage(glowSprite(),cx-gr,gy-gr,gr*2,gr*2);
+    ctx.globalAlpha=.4*a;
+    ctx.strokeStyle='#E3B8FF'; ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.ellipse(cx,gy,BEA.R*.52,f.spriteH*.46,0,0,7); ctx.stroke();
+    ctx.restore();
+  }
+}
+/* E.M.T: lớp kén kết giới tròn bọc kín người, DI CHUYỂN CÙNG cô chứ không đứng lại chỗ
+   kích hoạt. Mặt kén trong suốt; mỗi lần chặn được một đòn thì gợn sóng (f.beaRipple), và
+   lúc phản đòn thì phát ra một xung tròn (ring của beaReflect). Vẽ SAU nhân vật để lớp
+   kén nằm trên người, đúng lối drawSupFreeze(). */
+function drawBeaEmt(){
+  for(const f of G.fighters){
+    if(!(f.beaEmt>0)||f.beaHide)continue;
+    const life=clamp(f.beaEmt/BEA.emtT,0,1);
+    const grow=clamp((BEA.emtT-f.beaEmt)/gs(.2),0,1);      // bung ra rất nhanh lúc mới hiện
+    const rip=clamp((f.beaRipple||0)/.32,0,1);
+    const cx=f.x, cy=f.y+20-f.spriteH*.5-(f.beaLift||0);
+    const rx=BEA.R*.78*grow, ry=f.spriteH*.56*grow;
+    ctx.save();
+    // lòng kén: một lớp tím trắng rất nhạt, đủ để thấy có kết giới mà vẫn nhìn xuyên qua
+    ctx.globalAlpha=(.16+rip*.14)*(.4+life*.6);
+    ctx.fillStyle='#E3B8FF';
+    ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,7); ctx.fill();
+    // mặt kết giới: hai đường viền, gợn sóng theo nhịp và bật hẳn lên mỗi lần chặn được đòn
+    ctx.globalAlpha=(.55+rip*.45)*(.35+life*.65);
+    ctx.strokeStyle='#FBF3F7'; ctx.lineWidth=1.8+rip*1.8;
+    ctx.beginPath();
+    for(let i=0;i<=40;i++){
+      const a=i/40*Math.PI*2;
+      const wob=1+Math.sin(a*6+G.t*8)*(.02+rip*.06);
+      const px=cx+Math.cos(a)*rx*wob, py=cy+Math.sin(a)*ry*wob;
+      if(i) ctx.lineTo(px,py); else ctx.moveTo(px,py);
+    }
+    ctx.closePath(); ctx.stroke();
+    ctx.globalAlpha=(.3+rip*.3)*life;
+    ctx.strokeStyle='#C77DFF'; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.ellipse(cx,cy,rx*.86,ry*.86,0,0,7); ctx.stroke();
+    // vài đốm sáng trôi trên mặt kén
+    ctx.globalAlpha=.5*life; ctx.fillStyle='#FFFFFF';
+    for(let i=0;i<6;i++){
+      const a=i*1.047+G.t*1.6;
+      ctx.beginPath(); ctx.arc(cx+Math.cos(a)*rx*.92,cy+Math.sin(a)*ry*.92,1.6,0,7); ctx.fill();
+    }
+    /* Hết 2 giây thì kén vỡ thành những hạt sáng rồi biến mất — KHÔNG gây thêm sát thương
+       nào lúc hết giờ, và cũng không để lại khiên nào. */
+    if(life<.18){
+      ctx.globalAlpha=(1-life/.18)*.8; ctx.fillStyle='#E3B8FF';
+      for(let i=0;i<10;i++){
+        const a=i*.628+G.t*2, q=1+(1-life/.18)*.5;
+        ctx.beginPath(); ctx.arc(cx+Math.cos(a)*rx*q,cy+Math.sin(a)*ry*q,1.8,0,7); ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+}
+/* Vòng phép tím đen mở ra sau lưng cô lúc tung El Minya. */
+function drawBeaUlt(){
+  for(const f of G.fighters){
+    const U=f.beaUlt; if(!U||f.beaHide)continue;
+    const a=clamp(U.t/BEA.ultAim,0,1)*clamp((U.span-U.t)/gs(.3),0,1);
+    if(a<=.02)continue;
+    const cx=f.x-(f.face<0?-1:1)*10, cy=f.y+20-f.spriteH*.62;
+    const rr=BEA.R*.72*a;
+    ctx.save();
+    ctx.globalAlpha=.5*a; ctx.strokeStyle='#9B4DE0'; ctx.lineWidth=2.4;
+    ctx.beginPath(); ctx.arc(cx,cy,rr,0,7); ctx.stroke();
+    ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.arc(cx,cy,rr*.66,0,7); ctx.stroke();
+    ctx.globalAlpha=.28*a; ctx.fillStyle='#2B0B3F';
+    ctx.beginPath(); ctx.arc(cx,cy,rr*.9,0,7); ctx.fill();
+    ctx.globalAlpha=.75*a; ctx.strokeStyle='#E3B8FF'; ctx.lineWidth=1.5; ctx.lineCap='round';
+    for(let i=0;i<6;i++){                       // nét khắc xoay quanh vòng phép
+      const ang=i*1.047+G.t*1.8;
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(ang)*rr*.7,cy+Math.sin(ang)*rr*.7);
+      ctx.lineTo(cx+Math.cos(ang)*rr*.98,cy+Math.sin(ang)*rr*.98);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
 function drawSupFreeze(){
   for(const f of G.fighters){
     const C=f.supCone; if(!C)continue;
@@ -10701,6 +11788,35 @@ function drawDoraGhosts(f){
 }
 function drawProj(p){
   ctx.save();
+  /* Minya và El Minya: mũi tinh thể ma thuật TÍM ĐEN bay thẳng, đuôi để lại vệt sáng.
+     Không phải đạn súng, không phải tia laser — một tinh thể có cạnh rõ ràng. El Minya
+     chỉ là bản to hơn và sáng hơn, vẫn phải nhìn ra ba mũi TÁCH BIỆT. */
+  if(p.type==='minya'||p.type==='elminya'){
+    const big=p.type==='elminya';
+    const L=big?17:12, Wd=big?7.5:5.4;
+    ctx.translate(p.x,p.y); ctx.rotate(p.ang);
+    // vệt sáng kéo dài phía sau
+    ctx.globalAlpha=.34; ctx.fillStyle=big?'#9B4DE0':'#C77DFF';
+    ctx.beginPath(); ctx.moveTo(-L*2.6,0); ctx.lineTo(0,-Wd*.8); ctx.lineTo(0,Wd*.8); ctx.closePath(); ctx.fill();
+    // quầng sáng quanh mũi tinh thể
+    ctx.globalAlpha=.5;
+    const gr=big?26:18;
+    ctx.drawImage(glowSprite(),-gr,-gr,gr*2,gr*2);
+    // thân tinh thể: hình thoi tím, lõi sẫm gần như đen
+    ctx.globalAlpha=1; ctx.fillStyle=big?'#C77DFF':'#B366F0';
+    ctx.strokeStyle='#FBF3F7'; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.moveTo(L,0); ctx.lineTo(0,-Wd); ctx.lineTo(-L*.55,0); ctx.lineTo(0,Wd); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#2B0B3F';
+    ctx.beginPath(); ctx.moveTo(L*.5,0); ctx.lineTo(0,-Wd*.5); ctx.lineTo(-L*.28,0); ctx.lineTo(0,Wd*.5); ctx.closePath(); ctx.fill();
+    // mấy mảnh tinh thể nhỏ xoay quanh mũi lớn
+    ctx.globalAlpha=.7; ctx.fillStyle='#E3B8FF';
+    for(let i=0;i<(big?3:2);i++){
+      const a=G.t*6+i*2.1, o=(big?9:6.5);
+      ctx.beginPath(); ctx.arc(-L*.5+Math.cos(a)*o*.5,Math.sin(a)*o,big?2:1.5,0,7); ctx.fill();
+    }
+    ctx.restore(); return;
+  }
   if(p.type==='aircan'){                      // Air Cannon: một VÒNG khí nén, không phải tia
     ctx.translate(p.x,p.y); ctx.rotate(p.ang);
     const pu=1+Math.sin(G.t*18+p.wob)*.07;
@@ -11284,6 +12400,8 @@ function draw(){
   }
   for(const m of G.mates) drawMate(m);
   groundShadows();
+  drawBeaEntry();                       // cánh cửa Forbidden Library: cô bước ra từ SAU nó
+  drawBeaWin();
   const order=[...G.fighters].filter(f=>f.alive).sort((a,b)=>a.y-b.y);
   for(const f of order){
     if(f.fade!==undefined&&f.fade<1){ ctx.save(); ctx.globalAlpha=f.fade; drawFighter(f); ctx.restore(); }
@@ -11297,6 +12415,10 @@ function draw(){
   drawSupHeat();
   drawSupFreeze();
   drawDoraLight();
+  drawBeaMurak();
+  drawBeaWarp();
+  drawBeaUlt();
+  drawBeaEmt();                         // kén kết giới vẽ SAU cùng để nó bọc lên người
   for(const f of order) drawDoraGhosts(f);
   if(!G.flashback) for(const f of order) drawBars(f);   // hồi tưởng thì giấu thanh máu cho sạch hình
 
@@ -11539,6 +12661,7 @@ function winnerBanner(){
   // Doraemon có dòng ăn mừng riêng theo đúng yêu cầu, thay cho cặp WINNER + tên
   const dora=w.key==='dora'&&!w.swapAs;
   const sup=w.key==='superman'&&!w.swapAs;
+  const bea=w.key==='beatrice'&&!w.swapAs;
   const head=G.mode==='team'?'WINNING TEAM':'WINNER';
   ctx.font='900 15px "Space Mono",monospace';
   ctx.lineWidth=6; ctx.strokeStyle='#000'; ctx.strokeText(head,0,-42);
@@ -11548,8 +12671,8 @@ function winnerBanner(){
   const team=G.mode==='team'&&G.winTeam!==null&&G.winTeam!==undefined
     ? G.fighters.filter(f=>f&&!f.summon&&f.team===G.winTeam) : null;
   const big=(team&&team.length>1)?team.map(f=>f.name.toUpperCase()).join(' + ')
-    :(dora?'DORAEMON WINS!':(sup?'SUPERMAN WINS!':w.name.toUpperCase()));
-  let bsize=(team&&team.length>1)?34:(dora||sup?38:46);
+    :(dora?'DORAEMON WINS!':(sup?'SUPERMAN WINS!':(bea?'BEATRICE WINS!':w.name.toUpperCase())));
+  let bsize=(team&&team.length>1)?34:(dora||sup||bea?38:46);
   ctx.font=`900 ${bsize}px "Be Vietnam Pro",sans-serif`;
   const room=W-56;
   if(ctx.measureText(big).width>room){
@@ -12428,6 +13551,45 @@ function testSupMeteor(){
   supermanMeteor(f,e);
   say('[Thử nghiệm] Ép Superman tung Meteor Strike.','m');
 }
+function findBeatrice(){
+  const f=findFighter('beatrice');
+  if(!f){ say('Cần có Beatrice trong trận mới thử được.','m'); return null; }
+  if(G.over){ newGame(); return findFighter('beatrice'); }
+  ac(); musicStart();
+  if(!running){ running=true; el('play').textContent=t('pause'); }
+  if(f.beaEntry){ f.beaEntry=null; f.beaHide=false; f.pose='idle'; f.lock=0; }
+  return f;
+}
+function testBeaShamac(){
+  const f=findBeatrice(); if(!f)return;
+  const e=beaTarget(f);
+  if(!e){ say('Không có mục tiêu nào để dịch chuyển.','m'); return; }
+  f.cds.s2=BEA.shamacCd; f.beaUlt=null; f.lock=0;
+  beaShamac(f,e);
+  say('[Thử nghiệm] Ép Beatrice tung Al Shamac.','m');
+}
+function testBeaMurak(){
+  const f=findBeatrice(); if(!f)return;
+  beaMurak(f);
+  say('[Thử nghiệm] Ép Beatrice bật Murak Protection.','m');
+}
+function testBeaEmt(){
+  const f=findBeatrice(); if(!f)return;
+  beaEmtOn(f);
+  say('[Thử nghiệm] Ép Beatrice dựng kết giới E.M.T.','m');
+}
+function testBeaUlt(){
+  const f=findBeatrice(); if(!f)return;
+  const e=beaTarget(f);
+  if(!e){ say('Không có mục tiêu nào để tung El Minya.','m'); return; }
+  f.cds.s4=BEA.ultCd; f.beaShamac=null; f.lock=0;
+  beaElMinya(f,e);
+  say('[Thử nghiệm] Ép Beatrice tung El Minya.','m');
+}
+el('testBeaShamac').addEventListener('click',testBeaShamac);
+el('testBeaMurak').addEventListener('click',testBeaMurak);
+el('testBeaEmt').addEventListener('click',testBeaEmt);
+el('testBeaUlt').addEventListener('click',testBeaUlt);
 el('testSupFly').addEventListener('click',testSupFly);
 el('testSupResolve').addEventListener('click',testSupResolve);
 el('testSupFreeze').addEventListener('click',testSupFreeze);

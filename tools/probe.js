@@ -82,6 +82,14 @@ window.__supKbTake=supKbTake; window.__supCC=supCC; window.__supFreezeOn=supFree
 window.__supChill=supChill; window.__supIceBreak=supIceBreak; window.__supBurn=supBurn;
 window.__supInterrupt=supInterrupt; window.__supermanTick=supermanTick; window.__supVector=supVector;
 window.__supEyeY=f=>supEyeY(f); window.__bindTick=bindTick; window.__supStatus=supStatus;
+window.__BEA=BEA; window.__beatriceEnter=beatriceEnter; window.__beatriceTick=beatriceTick;
+window.__beaTarget=beaTarget; window.__beaMinya=beaMinya; window.__beaMinyaHit=beaMinyaHit;
+window.__beaShamac=beaShamac; window.__beaShamacSpot=beaShamacSpot; window.__beaWeaken=beaWeaken;
+window.__beaMurak=beaMurak; window.__beaCleanse=beaCleanse;
+window.__beaEmtOn=beaEmtOn; window.__beaEmtBlock=beaEmtBlock; window.__beaReflect=beaReflect;
+window.__beaElMinya=beaElMinya; window.__beaUltHit=beaUltHit; window.__beaErode=beaErode;
+window.__beaSlowOn=beaSlowOn; window.__beaStatus=beaStatus; window.__beaVector=beaVector;
+window.__beaVec=beaVec; window.__aiVec=aiVec; window.__beaEroStacks=beaEroStacks;
 /* nạp hàng loạt ảnh / tiếng */
 window.__bulkSprMatch=bulkSprMatch; window.__bulkSfxMatch=bulkSfxMatch;
 window.__bulkSprites=bulkSprites; window.__bulkSfxFiles=bulkSfxFiles;
