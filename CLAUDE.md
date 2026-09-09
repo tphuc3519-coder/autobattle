@@ -1463,6 +1463,21 @@ là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa 
 - **Hiệu số đo bằng SÁT THƯƠNG**, không phải bàn thắng: `gf` = sát thương mình gây ra trong
   trận đó (`f.dmgDealt`), `ga` = sát thương phải chịu. Đây là thứ gần "bàn thắng" nhất mà
   game có, và nó phân định được hai người cùng điểm.
+  - **`hurt()` ghi công viện binh cho CHỦ** (`src.summon ? src.master : src`). Người dùng
+    soi ra chỗ này: trận ChiChi vs Doraemon đọc `369–851` trong khi Doraemon kết trận với
+    32 máu — tức anh mất gần 800 mà sổ chỉ ghi cho ChiChi có 369. Lý do: cả Kamehameha 400
+    lẫn năm đợt Masenko đều do object của **Goku / Gohan** bắn ra, mà dòng cộng dồn cũ gác
+    ở `!src.summon` nên **không ghi cho ai cả**. Đo được: cú Kamehameha 400 dmg trước sửa
+    cộng cho ChiChi **0**, sau sửa cộng đúng **400**. Phân thân của Konohamaru thì chưa
+    bao giờ dính lỗi này — nó là viên đạn mang `owner: k`, tức chính cậu.
+  - **Đòn thừa lúc kết liễu không tính**: cộng `Math.min(amt, t.hp)` chứ không cộng cả
+    `amt`. Đo được: đấm 400 vào người còn 30 máu, trước sửa ghi **400**, sau sửa ghi **30**.
+    Không chặn thì một cú ultimate vào người sắp gục đẩy hiệu số lên cả trăm điểm oan.
+  - **Hiệu số vẫn KHÔNG bằng "800 − máu còn lại"**, và đó không phải lỗi: Horikita hồi máu
+    theo đòn, Doraemon tua ngược Time Machine, nên tổng sát thương phải chịu lớn hơn quãng
+    máu đã tụt. Cột này đo *sát thương*, không đo *máu*.
+  - Cột `HIỆU SỐ` có `title` giải thích đúng ba luật trên (`lgDiffTip`, song ngữ) — hỏi
+    "tính kiểu gì" thì rê chuột vào là ra, không phải thêm dòng chữ nào lên bảng.
 - **Trần thời gian `COMP_MAXT` = 90 giây trong trận (180 giây người chơi).** Hai người cùng
   có cửa hồi máu thì về lý thuyết đánh nhau mãi không xong; giải mà kẹt một trận là kẹt cả
   giải. `compTick()` gọi ở đầu `step()`, hết giờ thì ai còn nhiều **phần trăm** máu hơn thì
@@ -2508,6 +2523,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Dán ảnh, xuất gói, commit `pack.json` lên repo mà trang XƯỞNG vẫn hiện model vector | `packLoad()` / `voicePack()` gọi thẳng `fetch('assets/…')`, mà trang xưởng trên Pages nằm trong `/studio/` ⇒ đường dẫn thành `/studio/assets/…` và **404 im lặng** (`try{}` nuốt lỗi) | mọi cú fetch vào assets đi qua `fetchAsset()`: thử `''` → `'../'` → `'../../'` rồi nhớ mức ăn. Test dựng hẳn bản giống Pages rồi kiểm cả hai trang |
 | Thả `sup_resolve.mp3` vào `assets/voice` thì `mk_manifest.py` báo "không đoán ra tên ô" | `slot_keys()` bắt cả tên khoá lẫn nhãn bằng mẫu `\['(\w+)','([^']*)'`, mà nhãn của ô đó có dấu nháy đơn (`"Last Son's Resolve bùng lên"`) nên viết bằng nháy kép và cả dòng bị bỏ sót — 82 ô đọc ra thay vì 83 | chỉ bắt **tên khoá** (`\['(\w+)'`), đừng đòi luôn cái nhãn phía sau |
 | Trận đấu gương (kono vs kono) treo ở màn chọn, `t_reg` đổ | `tapTwice()` tính theo TÊN NHÂN VẬT, mà đấu gương thì bấm kono ở lưới trái rồi kono ở lưới phải là hai cú liên tiếp cùng tên ⇒ hiểu nhầm thành chạm hai lần, bảng thông số bật lên chặn mất nút Vào trận | mốc gồm **cả lưới lẫn tên** (`parentNode.id + '/' + key`). Đừng lấy chính phần tử làm mốc: mỗi cú bấm ở lưới đội hình dựng lại cả lưới |
+| Hiệu số của giải hụt mất mấy trăm điểm | dòng cộng dồn `dmgDealt` trong `hurt()` gác ở `!src.summon`, nên Kamehameha / Masenko do object Goku-Gohan bắn ra **không ghi cho ai cả** — trận ChiChi vs Doraemon ra `369–851` trong khi Doraemon kết trận với 32 máu | ghi công cho `src.master` khi `src` là viện binh, và chỉ cộng phần máu THẬT SỰ mất (`min(amt, t.hp)`) để đòn thừa lúc kết liễu không tính. Đo lại: Kamehameha 400 dmg 0 → **400**, đấm 400 vào người còn 30 máu 400 → **30** |
 | Hiệu ứng trượt hàng của bảng xếp hạng không chạy, đo ra 0px | `compOpen()` gọi `compPaint()` TRƯỚC khi bỏ lớp `off`, nên `lgPlay()` đo `offsetTop` bên trong một khối `display:none` — mọi hàng cùng ra 0 nên độ lệch cũng bằng 0 | hiện bảng ra trước rồi mới vẽ; đo lại hàng trượt xa nhất 105px |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
