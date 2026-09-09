@@ -2612,6 +2612,45 @@ Kiểm bằng `node tools/t_voice.js`.
 5. `sfx()` có chặn trùng 45 ms — test gọi liên tiếp thì phải giãn ≥70 ms.
 6. Cặp tiếng "lúc tung" / "lúc trúng" là mẫu chuẩn: `shika_stab` + `shika_stab_hit`,
    `shika_bind` + `shika_grab`. Tiếng "trúng" đặt **sau** nhánh né, địch né được thì im.
+7. **Tiếng chạy theo thanh tốc độ** — xem mục ngay dưới.
+
+### Tiếng chạy theo thanh tốc độ
+
+Người dùng: *"âm thanh khi chúng ta chọn x1.5 hay x2 thì âm thanh cũng phải nhanh x1.5 x2…
+để âm thanh k bị lạc quẻ"*. Đúng: chọn **Nhanh 2x** thì một giây trong trận chỉ còn nửa
+giây thật, nên bong bóng thoại, băng-rôn và cả trận đều trôi nhanh gấp đôi — tiếng giữ
+nhịp cũ là lạc hẳn quẻ, mà tiếng nói còn **sống lâu hơn bong bóng đi kèm**, phạm đúng
+luật số 1 ở trên.
+
+Một cửa duy nhất: **`sfxRate()`** (khai ngay trên `tone()`), trả về `speedMul/BASE_SPEED`
+kẹp trong `[.25, 4]` — tức **0.7 · 1 · 1.5 · 2** đúng bốn mốc của thanh tốc độ. Ở mốc gốc
+nó trả về **đúng 1**, nên mọi phép chia bên dưới thành vô hiệu và bản gốc không đổi một ly.
+
+| Đường tiếng | Đi theo cách nào |
+|---|---|
+| **file thu sẵn** (`playBuffer`) | `src.playbackRate = R` — nhanh lên thì cao giọng lên, đúng kiểu tua băng |
+| **tiếng tự tạo** (`tone()` / `noise()`, cả ô `cheer` tự dựng buffer) | rút ngắn `dur` và `delay` đi `R` lần, **giữ nguyên cao độ** cho khỏi chói ở 2x |
+| **nhạc nền file** (`<audio>`) | `bgmRate()` đặt `playbackRate`, gọi lại ở `bgmEl()`, `bgmPlay()` và ở listener của `#speed` |
+| **nhạc tự sinh** | chia `R` cho nhịp `MUSIC.next+=.62` và mấy quãng ngân của nốt |
+
+**Hai đơn vị thời gian nằm sát nhau trong `playBuffer()`, đừng trộn:**
+- `off` / `len` / `dur` cùng `SFX_MAXLEN` và `SFX_SEG` đo bằng **giây CỦA FILE** — chúng
+  **không** chia `R`. Cùng bấy nhiêu nội dung tiếng, chỉ là đọc nhanh hơn; bong bóng đi
+  kèm cũng ngắn lại đúng `R` lần nên hai bên vẫn khớp. Cắt bớt `len` nữa là **nuốt mất chữ
+  cuối của câu thoại**.
+- mấy mốc lên/xuống âm lượng đo bằng **giây THẬT** của `AudioContext` nên phải chia `R`:
+  phát `len` giây file ở tốc độ `R` chỉ tốn `len/R` giây thật.
+- Sau `start(t,off,len)` còn chốt thêm `src.stop(t+len/R)`: tham số thứ ba của `start()`
+  mỗi trình duyệt hiểu một kiểu (giây file hay giây thật), có cú dừng đó thì đường nào
+  cũng ra đúng `len` giây file.
+
+Đo được (`t_speed.js`): tiếng tự tạo `rasengan` ngân 0.58s ở 1x → **0.30s ở 2x**; ô có trần
+`kame` giữ nguyên **5.00 giây nội dung** nhưng quãng phát thật tụt từ 5.00s xuống **2.50s**;
+file thu sẵn ra đúng `playbackRate` 1 / 1.5 / 2; nhạc nền đổi ngay khi kéo thanh tốc độ.
+
+> **Nhạc nền cũng chạy theo, kể cả lúc đang ở màn chọn.** Đây là chỗ tôi tự chốt: người
+> dùng chỉ nói "âm thanh", nhưng trận chạy gấp đôi mà nhạc vẫn lê thê nhịp cũ là đúng cái
+> "lạc quẻ" họ than. Muốn nhạc đứng ngoài thì bỏ ba chỗ gọi `bgmRate()`.
 
 ---
 
@@ -2923,6 +2962,10 @@ node tools/t_voice.js   # bộ giọng máy: file khớp lời thoại trong ind
                         # đoán đúng tên ô, file sai tên thì báo ra, ô tiếng thường (không phải
                         # ô giọng) tha vào assets/voice cũng nạp được
 node tools/t_bubble.js  # bong bóng thoại nằm trên băng-rôn tên chiêu và băng-rôn giữa màn
+node tools/t_speed.js   # tiếng chạy theo thanh tốc độ: bốn mốc ra đúng hệ số 0.7/1/1.5/2,
+                        # tiếng tự tạo rút ngắn đúng bấy nhiêu lần, file thu sẵn đọc bằng
+                        # playbackRate, ô có trần độ dài giữ nguyên nội dung mà quãng phát
+                        # thật ngắn đi một nửa ở 2x, và nhạc nền đổi nhịp ngay khi kéo thanh
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
                         # khiêu khích kéo địch ở mọi khoảng cách, anh miễn nhiễm Sexy no Jutsu,
                         # ba ô giọng của anh + hai ô xuất hiện + bảng tiếng chia nhóm,
