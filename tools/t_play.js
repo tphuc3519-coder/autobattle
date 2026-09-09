@@ -114,7 +114,30 @@ function wavUrl() {
 
   await page.click('#stageList .sTile[data-stage="space"]');
   await page.click('#cselGo');
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(400);
+  /* ---------- màn VS trước trận ----------
+     Người dùng gửi ảnh màn chọn của Street Fighter II: "icon nhân vật rồi VS rõ ràng rồi
+     mới vào". Trận phải ĐỨNG YÊN suốt lúc đó, kể cả màn ra mắt của Ginyu. */
+  const vsm = await page.evaluate(() => ({
+    hien: !document.getElementById('arcVs').classList.contains('off'),
+    mat: document.querySelectorAll('#arcVs .vsFace').length,
+    vs: document.querySelectorAll('#arcVs .vsBig').length,
+    ten: [...document.querySelectorAll('#arcVs .vsName')].map(e => e.textContent).join('/'),
+    san: (document.getElementById('vsStage') || {}).textContent,
+    t: window.__G().t
+  }));
+  ok(vsm.hien, 'bam vao tran thi mo man VS truoc');
+  ok(vsm.mat === 2 && vsm.vs === 1, `hai mat nhan vat va mot chu VS (${vsm.mat} mat / ${vsm.vs} VS)`);
+  ok(/GINYU/i.test(vsm.ten) && /DORA/i.test(vsm.ten), `du ten hai ben (${vsm.ten})`);
+  ok(vsm.san === 'DEEP SPACE', `co ten man dau (${vsm.san})`);
+  await page.waitForTimeout(600);
+  const tVs = await page.evaluate(() => window.__G().t);
+  ok(tVs === vsm.t, `tran dung yen suot man VS (${vsm.t} -> ${tVs})`);
+  await page.click('#arcVs');                       // chạm là vào ngay
+  await page.waitForTimeout(400);
+  ok(await page.evaluate(() => document.getElementById('arcVs').classList.contains('off')),
+     'cham vao man VS la vao tran ngay');
+
   const vao = await page.evaluate(() => ({ stage: window.__STAGE(), chay: window.__running(), t: window.__G().t,
     cap: window.__G().fighters.filter(f => !f.summon).map(f => f.key).join(' vs ') }));
   ok(vao.stage === 'space', `vao tran dung man vua chon (${vao.stage})`);
@@ -123,6 +146,37 @@ function wavUrl() {
   await page.waitForTimeout(600);
   const t2 = await page.evaluate(() => window.__G().t);
   ok(t2 > vao.t, `dong ho tran chay that (${vao.t.toFixed(2)} -> ${t2.toFixed(2)})`);
+
+  /* ---------- hết trận: GIỮ màn WINNER rồi mới hiện dải nút ----------
+     Người dùng chốt: "lúc thắng rồi thì hold lại để hiện winner, xong sau đó cho người
+     chơi nút". Mốc là `G.endT >= 2` — đúng lúc băng-rôn và pháo giấy bung ra.
+     Đo Ở ĐÂY, TRƯỚC lượt chờ nạp gói: giải mã 89 ảnh làm nghẹt luồng chính và đồng hồ
+     trận bò rất chậm (đo được `G.t` mới có 0.28 sau cả chục giây), lúc đó mốc endT 2 mất
+     hàng phút mới tới và cú bấm cũng không dispatch nổi. */
+  await page.evaluate(() => { const g = window.__G(); window.__finish(g.fighters[0]); });
+  await page.waitForTimeout(250);
+  ok(!await page.locator('#arcOver').isVisible(),
+     'vua thang thi CHUA hien nut, con dang giu man WINNER');
+  /* Đẩy đồng hồ kết trận BẰNG TAY thay vì ngồi chờ nhịp khung hình: máy chạy test lúc
+     nghẹt thì `G.t` bò rất chậm (đo được 0.72 sau 30 giây thật), chờ theo đồng hồ thật là
+     đổ oan. Đây là phép đo bám hằng số cân bằng nên gọi thẳng hàm, đúng lối `t_dora` đã
+     làm với Time Machine (mục 8). */
+  await page.evaluate(() => {
+    for (let i = 0; i < 2000 && window.__G().endT < 2.05; i++) window.__step(1 / 120);
+  });
+  /* Dải nút bật lên trong một `setInterval` 250ms. Máy chạy test lúc nghẹt thì chính cái
+     timer đó cũng bị trễ, nên chờ theo TRẠNG THÁI chứ đừng chờ theo một quãng cố định. */
+  await page.waitForFunction(() => { const e = document.getElementById('arcOver');
+                                     return e && !e.classList.contains('off'); },
+                             null, { timeout: 30000 }).catch(() => {});
+  ok(await page.locator('#arcOver').isVisible(), 'giu man WINNER xong moi hien dai nut');
+  ok(await page.evaluate(() => window.__G().endT >= 2),
+     `dai nut hien sau moc endT 2 (${await page.evaluate(() => +window.__G().endT.toFixed(2))})`);
+  await page.click('#arcAgain');
+  await page.waitForTimeout(300);
+  await page.click('#arcVs').catch(() => {});       // bỏ qua màn VS của trận mới
+  await page.waitForTimeout(400);
+  ok(await page.evaluate(() => window.__running() && !window.__G().over), 'bam Danh lai thi vao tran moi');
 
   /* gói phát hành: ảnh và tiếng trong pack.json phải vào đúng ô.
      Chờ hẳn bằng waitForFunction — nạp gói còn phải giải mã ảnh và âm thanh. */
@@ -134,13 +188,6 @@ function wavUrl() {
   ok(pack.anh === 1, `anh trong goi phat hanh vao dung o (${pack.anh})`);
   ok(pack.tieng, 'tieng trong goi phat hanh cung duoc nap');
 
-  /* hết trận thì hiện dải nút chơi lại */
-  await page.evaluate(() => { const g = window.__G(); window.__finish(g.fighters[0]); });
-  await page.waitForTimeout(600);
-  ok(await page.locator('#arcOver').isVisible(), 'het tran thi hien dai nut Danh lai / Doi nhan vat');
-  await page.click('#arcAgain');
-  await page.waitForTimeout(400);
-  ok(await page.evaluate(() => window.__running() && !window.__G().over), 'bam Danh lai thi vao tran moi');
 
   /* ---------- 3b. ĐÁNH ĐỘI cũng đi từng đội một, đúng quy trình 1v1 ----------
      Người dùng: "theo đội cũng vậy — chọn đội 1 trước đội 2 sau, quy trình như 1v1 chứ". */

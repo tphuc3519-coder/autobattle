@@ -154,6 +154,23 @@
   .arc{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;
     background:radial-gradient(circle at 50% 40%,#241A52,#07061A 70%);padding:20px;text-align:center}
   .arc.off{display:none}
+  /* Màn VS. Mọi chuyển động ở đây chỉ đổi `opacity` và bóng chữ, KHÔNG dùng `transform`:
+     Playwright coi phần tử đang biến đổi là "chưa đứng yên" và không bấm được (mục 9). */
+  .vsRow{display:flex;align-items:center;justify-content:center;gap:clamp(10px,4vw,42px);flex-wrap:wrap}
+  .vsSide{display:flex;flex-direction:column;align-items:center;gap:8px;animation:vsIn .45s ease-out both}
+  .vsSide.b{animation-delay:.12s}
+  .vsFace{width:clamp(78px,22vw,148px);height:clamp(78px,22vw,148px);border-radius:18px;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    font-size:clamp(38px,11vw,72px);background:#120E30;border:3px solid currentColor;
+    box-shadow:0 10px 30px rgba(0,0,0,.55),0 0 0 6px rgba(255,255,255,.04)}
+  .vsFace img{width:100%;height:100%;object-fit:cover;object-position:top center}
+  .vsName{font-weight:900;letter-spacing:.04em;font-size:clamp(13px,3.4vw,22px)}
+  .vsBig{font-family:"Space Mono",monospace;font-weight:700;color:var(--gold);
+    font-size:clamp(30px,9vw,64px);letter-spacing:.06em;text-shadow:0 4px 0 #6B3A00,0 0 26px rgba(255,197,66,.7);
+    animation:vsPulse 1s ease-in-out infinite}
+  .vsStage{margin-top:16px;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.24em;color:var(--mute)}
+  @keyframes vsIn{from{opacity:0}to{opacity:1}}
+  @keyframes vsPulse{0%,100%{opacity:.82}50%{opacity:1}}
   .arcLogo{font-size:clamp(30px,9vw,64px);font-weight:900;line-height:.95;letter-spacing:-.03em;
     color:var(--paper);text-shadow:0 6px 0 #1B1440,0 12px 34px rgba(0,0,0,.6)}
   .arcLogo b{display:block;color:var(--gold)}
@@ -690,9 +707,20 @@
     <div class="arcLoad" id="arcLoad" style="display:none"></div>
   </div>
 </div>
+<!-- Màn VS trước trận, kiểu Street Fighter: mặt hai bên rõ ràng rồi mới vào đánh.
+     Chạm là vào ngay, không chạm thì tự vào sau VS_HOLD giây. Chỉ có ở TRANG CHƠI. -->
+<div class="arc off" id="arcVs" style="z-index:66">
+  <div style="width:100%">
+    <div class="vsRow" id="vsRow"></div>
+    <div class="vsStage" id="vsStage"></div>
+    <div class="arcHint" id="vsHint" data-i18n="vsTap">Chạm để vào trận</div>
+  </div>
+</div>
 <div class="arcOver off" id="arcOver">
   <button id="arcAgain" class="primary" type="button" data-i18n="again">↻ Đánh lại</button>
   <button id="arcPick" type="button" data-i18n="repick">⚔ Đổi nhân vật / màn</button>
+  <!-- Giữa giải thì hai nút trên nhường chỗ cho đúng một nút đi tiếp. -->
+  <button id="arcComp" class="primary" type="button" style="display:none" data-i18n="arcBoard">▶ Bảng xếp hạng</button>
 </div>
 
 <!-- Bảng xếp hạng / sơ đồ nhánh, hiện GIỮA hai trận của giải. Dùng lại vỏ .csel của màn
@@ -802,6 +830,10 @@ const clamp=(v,a,b)=>v<a?a:(v>b?b:v), dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const BASE_SPEED=0.5, RT=1/BASE_SPEED;
 const rts=sec=>String(+(sec*RT).toFixed(2));
 let G=null, running=false, speedMul=BASE_SPEED, mode='auto', autoSkill=true;
+/* Màn VS trước trận (xem `vsShow()` ở khối arcade cuối file). Khai cờ Ở ĐÂY chứ không
+   khai chung với `vsShow()`: `step()` đọc nó, mà `step()` nằm mãi phía trên — để dưới là
+   đúng cái bẫy TDZ ở mục 9. */
+let vsOn=false, vsTimer=0;
 const keys={};
 
 /* ---------- sprite slots ---------- */
@@ -871,6 +903,7 @@ const L={
     lgDiffTip:'Hiệu số = máu còn lại của người thắng: thắng mà còn 32 máu thì +32, người thua −32. Trận hết giờ thì lấy máu của người còn nhiều phần trăm hơn.',
     cupQF:'Tứ kết', cupSF:'Bán kết', cupFinal:'Chung kết', cupThird:'Tranh hạng ba',
     compNext:'Trận kế tiếp', compGo:'▶ Đánh trận này', compTable:'Bảng xếp hạng',
+    vsTap:'Chạm để vào trận', arcBoard:'▶ Bảng xếp hạng',
     compBracket:'Sơ đồ nhánh', compResults:'Kết quả đã đá', compPick:'⚔ Đổi đội hình',
     compQuit:'✕ Bỏ giải', compChamp:'Vô địch', compOver:'Giải đã xong',
     compLeagueT:'GIẢI <span>VÒNG TRÒN</span>', compCupT:'GIẢI <span>LOẠI TRỰC TIẾP</span>',
@@ -933,6 +966,7 @@ const L={
     lgDiffTip:'Diff = the winner HP left: win with 32 HP and you get +32, the loser gets −32. On a time-out the winner is whoever has the higher HP percentage.',
     cupQF:'Quarter-finals', cupSF:'Semi-finals', cupFinal:'Final', cupThird:'Third place',
     compNext:'Next match', compGo:'▶ Play this match', compTable:'Standings',
+    vsTap:'Tap to start', arcBoard:'▶ Standings',
     compBracket:'Bracket', compResults:'Played', compPick:'⚔ Change line-up',
     compQuit:'✕ Quit competition', compChamp:'Champion', compOver:'Competition over',
     compLeagueT:'<span>LEAGUE</span> TABLE', compCupT:'<span>KNOCKOUT</span> BRACKET',
@@ -4243,8 +4277,11 @@ function compResult(win){
   }
   COMP.cur=null;
   compSave();
-  /* Chờ một nhịp cho xem cú hạ gục rồi mới bật bảng lên — bật ngay thì che mất pha KO. */
-  setTimeout(()=>{ if(COMP&&!compLive) compOpen(); },2600);
+  /* TRANG CHƠI thì DỪNG LẠI ở màn WINNER, người chơi tự bấm `#arcComp` để sang bảng xếp
+     hạng rồi bấm tiếp ▶ cho trận sau — người dùng chốt: "cho người chơi nút tự chuyển".
+     Xưởng không có dải nút arcade nên vẫn tự mở như cũ sau một nhịp cho xem cú hạ gục.
+     Đọc `window.ARCADE` chứ đừng đọc hằng `ARCADE`: hằng đó khai mãi cuối file. */
+  if(!window.ARCADE) setTimeout(()=>{ if(COMP&&!compLive) compOpen(); },2600);
 }
 /* Trần thời gian: gọi mỗi nhịp trong step(). Hết giờ thì ai còn nhiều % máu hơn thì thắng. */
 function compTick(){
@@ -7596,6 +7633,7 @@ function aiVec(f,e){
 
 /* ---------- step ---------- */
 function step(dt){
+  if(vsOn) return;              // còn đứng ở màn VS thì trận chưa bắt đầu, kể cả màn ra mắt
   G.t+=dt;
   if(G.flashScreen>0)G.flashScreen-=dt;
   compTick();                       // trận của giải có trần thời gian, xem COMP_MAXT
@@ -12944,7 +12982,50 @@ function pickRowPaint(){
 function arcFight(){
   ac(); musicStart();
   running=true; el('play').textContent=t('pause');
+  vsShow();
 }
+/* ---------- màn VS trước trận ----------
+   Người dùng gửi ảnh màn chọn của Street Fighter II và chốt: "icon nhân vật rồi VS rõ ràng
+   rồi mới vào". `vsOn` chặn `step()` nên trận đứng yên hẳn — kể cả mấy màn ra mắt (Ginyu
+   bay vào, Anywhere Door, Superman đáp xuống) cũng chờ, vì chúng đo bằng giây TRONG TRẬN.
+   Chạm là vào ngay; không chạm thì tự vào sau VS_HOLD giây THẬT, nên bộ test cũ không phải
+   bấm thêm nút nào — chỉ chờ lâu hơn một nhịp. Chỉ có ở TRANG CHƠI: xưởng vào thẳng như cũ
+   vì mọi test hiện có bấm `#cselGo` một phát là vào trận. */
+const VS_HOLD=2.4;
+function vsSides(){
+  const mains=G.fighters.filter(f=>f&&!f.summon), out=[];
+  const nt=mains.reduce((m,f)=>Math.max(m,f.team+1),0);
+  for(let i=0;i<nt;i++){ const side=mains.filter(f=>f.team===i); if(side.length) out.push(side); }
+  return out;
+}
+function vsShow(){
+  if(!ARCADE) return;
+  const box=document.getElementById('arcVs'), row=document.getElementById('vsRow');
+  if(!box||!row) return;
+  const sides=vsSides();
+  if(sides.length<2) return;                    // không có ai để đối đầu thì thôi
+  row.innerHTML=sides.map((side,i)=>{
+    const mat=side.map(f=>{
+      const src=avaSrc(f.key);
+      const face=src?`<img alt="" src="${src}">`:((CHARS[f.key]&&CHARS[f.key].emoji)||'?');
+      return `<div class="vsSide${i?' b':''}" style="color:${f.color}">`+
+        `<div class="vsFace">${face}</div>`+
+        `<div class="vsName">${(f.name||'').toUpperCase()}</div></div>`;
+    }).join('');
+    return (i?'<div class="vsBig">VS</div>':'')+mat;
+  }).join('');
+  const st=document.getElementById('vsStage');
+  if(st) st.textContent=stageOf(STAGE).name;    // tên màn giữ nguyên ở cả hai ngôn ngữ
+  vsOn=true; box.classList.remove('off');
+  clearTimeout(vsTimer); vsTimer=setTimeout(vsGo,VS_HOLD*1000);
+}
+function vsGo(){
+  if(!vsOn) return;
+  vsOn=false; clearTimeout(vsTimer);
+  const box=document.getElementById('arcVs'); if(box) box.classList.add('off');
+}
+if(document.getElementById('arcVs'))
+  document.getElementById('arcVs').addEventListener('click',vsGo);
 /* Ba nút của màn giải đấu. Đặt ở đây vì phải dùng arcFight() ngay bên trên. */
 if(document.getElementById('compGo'))
   document.getElementById('compGo').addEventListener('click',()=>{
@@ -13067,11 +13148,26 @@ if(ARCADE){
   el('arcPick').addEventListener('click',()=>{ cselPage=cselSteps()[0]; openCsel(); });
   /* Trận xong thì hiện dải nút chơi lại — kiểm mỗi khung hình cho khỏi phải cắm thêm
      móc vào finish(), vì finish() còn được gọi từ nhiều đường khác nhau. */
+  el('arcComp').addEventListener('click',()=>{ compOpen(); });
+  /* Trận xong thì hiện dải nút — kiểm mỗi khung hình cho khỏi phải cắm thêm móc vào
+     finish(), vì finish() còn được gọi từ nhiều đường khác nhau.
+     GIỮ LẠI MÀN WINNER trước đã: chỉ hiện nút khi `G.endT` qua mốc `ARC_OVER_T`, đúng
+     lúc băng-rôn và pháo giấy đã bung ra (`G.announced` cũng mở ở mốc 2). Người dùng
+     chốt: "lúc thắng rồi thì hold lại để hiện winner, xong sau đó cho người chơi nút". */
+  const ARC_OVER_T=2;
+  const show=(e,on)=>{ const v=on?'':'none'; if(e&&e.style.display!==v) e.style.display=v; };
   setInterval(()=>{
-    const done=!!(G&&G.over), open=!el('charSelect').classList.contains('off');
-    /* Đang có giải thì dải nút "Đánh lại / Đổi nhân vật" phải nhường chỗ cho bảng xếp
-       hạng — bấm Đánh lại giữa giải là đá lại đúng trận vừa xong, vô nghĩa. */
-    el('arcOver').classList.toggle('off',!done||open||compOn());
+    const done=!!(G&&G.over&&G.endT>=ARC_OVER_T);
+    const open=!el('charSelect').classList.contains('off');
+    const board=!(document.getElementById('compBoard')||{classList:{contains:()=>true}})
+      .classList.contains('off');
+    el('arcOver').classList.toggle('off',!done||open||board||vsOn);
+    /* Đang có giải thì "Đánh lại / Đổi nhân vật" nhường chỗ cho đúng MỘT nút đi tiếp —
+       bấm Đánh lại giữa giải là đá lại đúng trận vừa xong, vô nghĩa. */
+    const giai=compOn();
+    /* Chỉ gán khi ĐỔI. Gán lại `style.display` mỗi 250ms là bắt trình duyệt tính lại kiểu
+       liên tục, và Playwright coi phần tử là "chưa đứng yên" nên không bấm được (mục 9). */
+    show(el('arcAgain'),!giai); show(el('arcPick'),!giai); show(el('arcComp'),giai);
   },250);
 }else{
   openCsel();                     // xưởng: mở màn chọn nhân vật ngay khi vào

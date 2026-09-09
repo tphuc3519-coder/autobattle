@@ -1741,6 +1741,32 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
     màn chờ sang màn tiêu đề là liền mạch chứ không giật sang một nền khác. Hai lớp phủ đó
     **bắt buộc có `pointer-events:none`** — thiếu thì nút `PRESS START` nằm dưới không bấm
     được, kể cả người lẫn Playwright.
+- **MÀN VS TRƯỚC TRẬN** (`#arcVs`, `vsShow()` / `vsGo()`). Người dùng gửi ảnh màn chọn của
+  Street Fighter II và chốt: *"icon nhân vật rồi VS rõ ràng rồi mới vào"*. Mặt hai bên lấy từ
+  chính ảnh đã dán (`avaSrc()`, chưa dán thì emoji), tên tô màu của nhân vật, chữ `VS` vàng ở
+  giữa, tên màn đấu bên dưới.
+  - **Cờ `vsOn` chặn thẳng `step()`** nên trận đứng yên hẳn — kể cả mấy màn ra mắt (Ginyu bay
+    vào, Anywhere Door, Superman đáp xuống), vì chúng đo bằng giây TRONG TRẬN. Đo được: `G.t`
+    đứng nguyên ở 0 suốt màn VS rồi mới chạy.
+  - **Khai `let vsOn` ngay cạnh `let G, running`**, không khai chung với `vsShow()` mãi cuối
+    file: `step()` đọc nó mà `step()` nằm phía trên — để dưới là đúng cái bẫy TDZ ở mục 9.
+  - **Chạm là vào ngay; không chạm thì tự vào sau `VS_HOLD` = 2.4 giây THẬT.** Có cái tự vào
+    đó nên bộ test cũ không phải bấm thêm nút nào, chỉ chờ lâu hơn một nhịp.
+  - Gọi trong **`arcFight()`** — một cửa duy nhất cho cả ba đường vào trận (`#cselGo`,
+    `#arcAgain`, `#compGo`). Thêm đường vào trận mới thì gọi `arcFight()`, đừng gọi tay.
+  - Chỉ có ở **TRANG CHƠI** (`ARCADE`): xưởng vào thẳng như cũ vì mọi test hiện có bấm
+    `#cselGo` một phát là vào trận.
+  - Chuyển động chỉ đổi `opacity`, **không dùng `transform`** (mục 9).
+- **GIỮ MÀN WINNER RỒI MỚI HIỆN DẢI NÚT.** Người dùng chốt: *"lúc thắng rồi thì hold lại để
+  hiện winner, xong sau đó cho người chơi nút tự chuyển"*. `#arcOver` chỉ bật khi
+  **`G.endT >= 2`** — đúng lúc `G.announced` mở ra băng-rôn và pháo giấy. Trước đó nút nhảy ra
+  ngay trong khung hình người ta vừa gục.
+- **Giữa giải, dải nút đổi thành đúng MỘT nút đi tiếp** (`#arcComp` → `compOpen()`): "Đánh
+  lại / Đổi nhân vật" bị giấu vì bấm Đánh lại giữa giải là đá lại đúng trận vừa xong. Và
+  `compResult()` **không tự mở bảng xếp hạng nữa** ở trang chơi — người chơi tự bấm, rồi bấm
+  tiếp ▶ trong bảng cho trận sau. Xưởng không có dải nút arcade nên vẫn tự mở như cũ sau 2.6
+  giây; nhánh đó đọc **`window.ARCADE`** chứ không đọc hằng `ARCADE` (hằng khai mãi cuối file).
+  `t_comp.js` vì vậy có hai hàm con `boQuaVs()` / `sangBang()` đi qua đúng hai chỗ này.
 - **Dòng đếm MB phải hiện ở HAI chỗ**: `#arcLoad` trong màn tiêu đề, và `#loadChip` **đè lên
   sàn đấu**. Dòng trong màn tiêu đề biến mất ngay khi bấm PRESS START, mà gói thì còn tải cả
   chục giây nữa — người chơi vào trận thấy model vector và tưởng mất ảnh. Đo được trên mạng
@@ -2416,7 +2442,9 @@ node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4
                         # lượt đi lượt về
                         # (mặc định một lượt, bật lên thì nhân đôi số trận và ĐẢO SÂN),
                         # hiệu ứng bảng sau mỗi trận (hàng trượt thật, số đếm dần, mũi tên
-                        # đổi hạng, và ảnh chụp chỉ dùng một lần),
+                        # đổi hạng, và ảnh chụp chỉ dùng một lần), mỗi trận của giải cũng mở
+                        # màn VS trước và thắng xong thì DỪNG ở màn WINNER chờ người chơi bấm
+                        # nút đi tiếp chứ không tự nhảy sang bảng,
                         # và cả hai giải chạy từ trận đầu tới lúc có nhà vô địch
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
@@ -2452,7 +2480,9 @@ node tools/t_play.js    # hai trang: play.html đúng bằng bản dựng từ i
                         # đúng bước trước), ĐÁNH ĐỘI cũng từng đội một (t0 → t1 → màn, mỗi
                         # bước một khung, hàng chọn số đội chỉ có ở bước đầu, đổi sang 3 đội
                         # thì danh sách bước dài thêm),
-                        # gói phát hành được nạp, hết trận hiện dải nút, và xưởng vẫn vào
+                        # MÀN VS trước trận (hai mặt + chữ VS + tên màn, trận đứng yên tới
+                        # khi chạm), hết trận thì GIỮ màn WINNER rồi mới hiện dải nút,
+                        # gói phát hành được nạp, và xưởng vẫn vào
                         # trận bằng MỘT cú bấm #cselGo; MÀN CHỜ không còn nút "vào luôn khỏi
                         # chờ" — tải đứt thì hiện nút tải lại và vẫn đứng trong màn chờ, bấm
                         # tải lại thì về đủ ảnh mới cho vào, site không có pack thì vào thẳng
