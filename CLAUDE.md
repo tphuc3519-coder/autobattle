@@ -1438,6 +1438,61 @@ thành một cụm — đo được: quãng xa nhất trong cùng một đội v
 
 Kiểm bằng `node tools/t_modes.js`.
 
+## 2c-bis. Hai chế độ GIẢI ĐẤU — league và tournament
+
+Người dùng: *"league là các nhân vật vào cùng 1 bxh — mỗi người đánh với các nhân vật tuần
+tự, như các giải league bóng đá thế giới bình thường"*, và *"tournament thì chia bracket…
+cứ đánh loại trực tiếp đến khi chung kết và tranh 3-4"*, kèm *"xoay bracket có 2 option là
+random và tự xếp"* và *"giao diện cần rất dễ nhìn, đừng bị rối"*.
+
+**Cả hai chỉ là một CHUỖI TRẬN 1v1.** Mỗi trận vẫn dựng qua `PICK.a` / `PICK.b` rồi
+`newGame()` y hệt đấu tay đôi — engine không phải sửa một dòng nào. Thứ duy nhất thêm vào
+là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa hai trận.
+
+| | `league` | `cup` |
+|---|---|---|
+| bao nhiêu người | `LG_MIN`–`LG_MAX` = **3–8** | **đúng 4 hoặc 8** (`CUP_SIZES`) |
+| lịch | vòng tròn một lượt, `roundRobin()` kiểu *circle method* | nhánh loại trực tiếp `cupNew()` |
+| số trận | `n(n−1)/2` | `n−1` + **1 trận tranh hạng ba** |
+| thắng được gì | **3 điểm** (`LG_WIN`), không có hoà | đi tiếp một vòng |
+| xếp hạng | điểm → hiệu số → tổng sát thương gây ra → tên | vô địch = người thắng chung kết |
+
+- **Không có trận HOÀ.** Game đối kháng thì luôn có người gục; chỗ duy nhất có thể hoà là
+  hết giờ, mà chỗ đó đã xử bằng "ai còn nhiều % máu hơn thì thắng". Vì vậy bảng chỉ có
+  `P · W · L · Hiệu số · Điểm`, đừng thêm cột D cho rối.
+- **Hiệu số đo bằng SÁT THƯƠNG**, không phải bàn thắng: `gf` = sát thương mình gây ra trong
+  trận đó (`f.dmgDealt`), `ga` = sát thương phải chịu. Đây là thứ gần "bàn thắng" nhất mà
+  game có, và nó phân định được hai người cùng điểm.
+- **Trần thời gian `COMP_MAXT` = 90 giây trong trận (180 giây người chơi).** Hai người cùng
+  có cửa hồi máu thì về lý thuyết đánh nhau mãi không xong; giải mà kẹt một trận là kẹt cả
+  giải. `compTick()` gọi ở đầu `step()`, hết giờ thì ai còn nhiều **phần trăm** máu hơn thì
+  thắng. Khai bằng số thẳng chứ **đừng gọi `gs()`** — hàm đó khai mãi dưới khối Shikamaru.
+- **Dàn đấu thủ bấm là BẬT/TẮT, không có bản sao** (`modeGroups()` gắn cờ `toggle`): bảng xếp
+  hạng mà có hai Konohamaru thì đọc không ra ai với ai.
+- **`tmpReady()` chặn riêng cho `cup`**: 5 người vẫn nằm trong khoảng 4~8 nên vòng kiểm
+  chung không bắt được, phải hỏi thẳng `CUP_SIZES.indexOf(n)>=0`.
+- **Xếp nhánh hai lối** (`CUPSEED`, hàng `#cupSeed`): `random` bấm là xáo lại ngay cho thấy
+  liền; `manual` thì **thứ tự trong dàn CHÍNH LÀ thứ tự nhánh** — chip đánh số, bấm hai
+  người là tráo chỗ cho nhau (`swapAt`).
+- **Trận tranh hạng ba đánh TRƯỚC chung kết**, đúng lối World Cup. `cupFill()` đẩy người
+  thắng lên vòng sau và lấy hai người thua bán kết xuống trận đó.
+- `finish()` gọi `compResult(win)` **ngay tại chỗ** — ra khỏi hàm đó là mấy con số
+  `dmgDealt` không đọc lại được nữa. Xong thì hẹn **2.6 giây** rồi mới bật bảng lên, bật
+  ngay thì che mất pha KO.
+- **Dải nút `#arcOver` phải nhường chỗ khi có giải** (`compOn()`): bấm "Đánh lại" giữa giải
+  là đá lại đúng trận vừa xong, vô nghĩa.
+- **Giải đá dở được lưu** ở khoá `cfg_comp`; bấm PRESS START mà còn giải chưa xong thì vào
+  thẳng bảng xếp hạng chứ không bắt chọn lại dàn đấu thủ. Khoá đó đọc bằng `.then()` chứ
+  **đừng `await`** — thêm một nhịp IndexedDB vào giữa `loadSaved()` là dính đúng lỗi ở mục 9.
+- **Giao diện chỉ có ĐÚNG BA khối xếp dọc**: *trận kế tiếp* to nhất ở trên, *bảng điểm hoặc
+  sơ đồ nhánh* ở giữa, *kết quả đã đá* ở dưới. Không thêm gì nữa — người dùng đã dặn "đừng
+  bị rối". Sơ đồ nhánh **cuộn ngang** khi màn hẹp chứ đừng ép chữ bé lại.
+
+`duelLike(m)` gộp `duel | league | cup`: `buildRoster()` và `spawnSpots()` đọc qua nó để mỗi
+trận của giải vẫn là hai người đứng hai đầu sàn y như đấu tay đôi.
+
+Kiểm bằng `node tools/t_comp.js`.
+
 ## 2d. Sáu màn đấu và sàn đấu đã tân trang
 
 Người dùng: *"thiết kế như game street fighter… có screen chọn màn với chọn nhân vật luôn"*
@@ -2262,6 +2317,12 @@ node tools/t_modes.js   # ba chế độ đấu: 1v1 vẫn y như cũ (hai ngư�
                         # đánh đội 3 đội (đồng đội đứng túm một cụm, quét sạch một đội mà
                         # còn hai đội thì trận vẫn chạy) và 4 đội (trần 4 đội / 8 người),
                         # và một trận hỗn chiến 6 người chạy thật
+node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4/5/8 người, ai cũng gặp ai
+                        # đúng một lượt), bảng xếp hạng cộng điểm và xếp thứ tự đúng, dàn đấu
+                        # thủ bấm là bật/tắt chứ không có bản sao, sơ đồ nhánh 8 người đủ ba
+                        # vòng + trận tranh hạng ba, 5 người thì khoá nút vào giải, xếp nhánh
+                        # bốc thăm / tự xếp (bấm hai người là tráo chỗ), và cả hai giải chạy
+                        # từ trận đầu tới lúc có nhà vô địch
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ nổ là AoE nhạt dần
@@ -2418,6 +2479,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Vào trận trên điện thoại thấy model vector, tưởng mất ảnh | gói 24 MB còn đang tải; dòng đếm MB chỉ nằm trong màn tiêu đề nên bấm PRESS START là mất, không còn gì nói cho người chơi biết là phải chờ | thêm `#loadChip` đè lên sàn đấu, `packNote()` bắn ra cả hai chỗ; đo ở 8 Mbps thì lúc vào trận có 0/89 ảnh, đủ 89 ảnh sau ~25 giây |
 | Dán ảnh, xuất gói, commit `pack.json` lên repo mà trang XƯỞNG vẫn hiện model vector | `packLoad()` / `voicePack()` gọi thẳng `fetch('assets/…')`, mà trang xưởng trên Pages nằm trong `/studio/` ⇒ đường dẫn thành `/studio/assets/…` và **404 im lặng** (`try{}` nuốt lỗi) | mọi cú fetch vào assets đi qua `fetchAsset()`: thử `''` → `'../'` → `'../../'` rồi nhớ mức ăn. Test dựng hẳn bản giống Pages rồi kiểm cả hai trang |
 | Thả `sup_resolve.mp3` vào `assets/voice` thì `mk_manifest.py` báo "không đoán ra tên ô" | `slot_keys()` bắt cả tên khoá lẫn nhãn bằng mẫu `\['(\w+)','([^']*)'`, mà nhãn của ô đó có dấu nháy đơn (`"Last Son's Resolve bùng lên"`) nên viết bằng nháy kép và cả dòng bị bỏ sót — 82 ô đọc ra thay vì 83 | chỉ bắt **tên khoá** (`\['(\w+)'`), đừng đòi luôn cái nhãn phía sau |
+| Trận đấu gương (kono vs kono) treo ở màn chọn, `t_reg` đổ | `tapTwice()` tính theo TÊN NHÂN VẬT, mà đấu gương thì bấm kono ở lưới trái rồi kono ở lưới phải là hai cú liên tiếp cùng tên ⇒ hiểu nhầm thành chạm hai lần, bảng thông số bật lên chặn mất nút Vào trận | mốc gồm **cả lưới lẫn tên** (`parentNode.id + '/' + key`). Đừng lấy chính phần tử làm mốc: mỗi cú bấm ở lưới đội hình dựng lại cả lưới |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---

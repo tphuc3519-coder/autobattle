@@ -1,0 +1,192 @@
+/* Hai chế độ giải đấu: LEAGUE (vòng tròn tính điểm) và TOURNAMENT (loại trực tiếp).
+   Kiểm: lịch vòng tròn ai cũng gặp ai đúng một lượt, bảng xếp hạng cộng điểm và xếp
+   thứ tự đúng, sơ đồ nhánh đủ vòng + trận tranh hạng ba, xếp nhánh bốc thăm / tự xếp,
+   và cả hai giải chạy được từ trận đầu tới lúc có nhà vô địch. */
+const path = require('path');
+const { buildPlay, playwright } = require('./probe');
+
+let loi = [];
+const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if (!dk) loi.push(msg); };
+
+/* Đá cho hết một giải: mỗi trận cứ ép bên A thắng ngay, khỏi ngồi xem đủ mấy chục giây. */
+async function daHet(page, tran) {
+  for (let i = 0; i < tran + 2; i++) {
+    if (!await page.evaluate(() => !!window.__compNext())) break;
+    await page.click('#compGo');
+    await page.waitForTimeout(320);
+    const cap = await page.evaluate(() => window.__G().fighters.filter(f => !f.summon).map(f => f.key));
+    await page.evaluate(k => window.__compWin(k), cap[0]);
+    await page.waitForTimeout(2900);
+  }
+}
+
+(async () => {
+  const { chromium } = playwright();
+  const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
+  const page = await browser.newPage({ viewport: { width: 880, height: 1200 } });
+  await page.route('**://fonts.*/**', r => r.abort());
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto('file://' + buildPlay(), { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(700);
+  const doc = (fn, a) => page.evaluate(fn, a);
+
+  /* ---------- lịch vòng tròn ---------- */
+  const lich = await doc(() => {
+    const out = {};
+    for (const n of [3, 4, 5, 8]) {
+      const rs = window.__roundRobin(n);
+      const dem = {}, cap = new Set();
+      let tran = 0;
+      for (const vong of rs) for (const [a, b] of vong) {
+        tran++; cap.add([a, b].sort().join('-'));
+        dem[a] = (dem[a] || 0) + 1; dem[b] = (dem[b] || 0) + 1;
+      }
+      out[n] = { vong: rs.length, tran, rieng: cap.size, du: Object.keys(dem).length,
+                 deu: Object.values(dem).every(v => v === n - 1) };
+    }
+    return out;
+  });
+  for (const n of [3, 4, 5, 8]) {
+    const L = lich[n], can = n * (n - 1) / 2;
+    ok(L.tran === can && L.rieng === can, `${n} nguoi: ${can} tran, khong cap nao gap lai (${L.tran}/${L.rieng})`);
+    ok(L.deu && L.du === n, `${n} nguoi: ai cung da dung ${n - 1} tran (${L.du} nguoi)`);
+    ok(L.vong === (n % 2 ? n : n - 1), `${n} nguoi: ${L.vong} vong`);
+  }
+
+  await page.click('#arcStart');
+  await page.waitForTimeout(400);
+
+  /* ---------- LEAGUE ---------- */
+  await page.click('#mTabLeague');
+  await page.waitForTimeout(350);
+  const lp = await doc(() => ({
+    h2: document.querySelector('#charSelect h2').textContent,
+    go: document.getElementById('cselGo').textContent,
+    n: window.__TMP().comp.length
+  }));
+  ok(/LEAGUE/i.test(lp.h2), `tieu de doi sang chon dan dau thu (${lp.h2})`);
+
+  /* Bấm vào một ô đang có trong dàn thì BỎ RA, bấm lại thì thêm vào — không có bản sao.
+     Hai cú phải giãn hơn DBL_TAP (380ms), không thì game hiểu là chạm hai lần và mở bảng
+     thông số thay vì bật/tắt. */
+  await page.click('#grpList0 .cTile[data-key="kono"]');
+  await page.waitForTimeout(500);
+  const bo = await doc(() => window.__TMP().comp.slice());
+  await page.click('#grpList0 .cTile[data-key="kono"]');
+  await page.waitForTimeout(500);
+  const them = await doc(() => window.__TMP().comp.slice());
+  ok(bo.indexOf('kono') < 0, `bam lan nua thi BO RA khoi dan (${bo.join(',')})`);
+  ok(them.filter(k => k === 'kono').length === 1, `bam lai thi them dung mot lan (${them.join(',')})`);
+
+  await page.click('#cselGo'); await page.waitForTimeout(250);
+  await page.click('#cselGo'); await page.waitForTimeout(500);
+  const lb = await doc(() => ({
+    mo: !document.getElementById('compBoard').classList.contains('off'),
+    hang: document.querySelectorAll('#compBody .lgTab tbody tr').length,
+    cot: document.querySelectorAll('#compBody .lgTab thead th').length,
+    tong: window.__compTotal(), da: window.__compPlayed(),
+    lab: document.querySelector('#compBody .nextLab').textContent
+  }));
+  ok(lb.mo, 'khai mac xong thi hien BANG XEP HANG chu khong vao tran luon');
+  ok(lb.hang === 4 && lb.tong === 6, `bon nguoi: bang bon hang, sau tran (${lb.hang}/${lb.tong})`);
+  ok(lb.cot === 7, `bang du bay cot: hang, ten, P, W, L, hieu so, diem (${lb.cot})`);
+  ok(/1\/3/.test(lb.lab), `tran ke tiep ghi ro vong may (${lb.lab})`);
+
+  /* một trận thật: điểm và hiệu số phải nhảy đúng */
+  await page.click('#compGo');
+  await page.waitForTimeout(350);
+  const cap = await doc(() => window.__G().fighters.filter(f => !f.summon).map(f => f.key));
+  await doc(k => window.__compWin(k), cap[1]);            // cho bên B thắng
+  await page.waitForTimeout(2900);
+  const sau = await doc(k => ({
+    mo: !document.getElementById('compBoard').classList.contains('off'),
+    thang: window.__COMP().tab[k[1]], thua: window.__COMP().tab[k[0]],
+    dau: window.__lgOrder()[0], da: window.__compPlayed()
+  }), cap);
+  ok(sau.mo, 'da xong mot tran thi bang tu bat lai len');
+  ok(sau.thang.w === 1 && sau.thang.pts === 3 && sau.thua.l === 1 && sau.thua.pts === 0,
+     `thang duoc 3 diem, thua duoc 0 (${sau.thang.pts}/${sau.thua.pts})`);
+  ok(sau.dau === cap[1], `nguoi thang len dau bang (${sau.dau})`);
+  ok(sau.da === 1, `moi da mot tran (${sau.da})`);
+
+  await daHet(page, 6);
+  const lx = await doc(() => ({ het: window.__compDone(), vd: window.__compChampion(),
+    da: window.__compPlayed(), diem: window.__lgOrder().map(k => window.__COMP().tab[k].pts) }));
+  ok(lx.het && lx.da === 6, `da het sau tran (${lx.da})`);
+  ok(!!lx.vd, `co nha vo dich (${lx.vd})`);
+  ok(lx.diem.every((v, i) => i === 0 || lx.diem[i - 1] >= v), `bang xep theo diem giam dan (${lx.diem.join(',')})`);
+  ok(!await page.locator('#compGo').isVisible(), 'giai xong thi giau nut danh tran ke tiep');
+
+  /* ---------- TOURNAMENT ---------- */
+  await page.click('#compPick'); await page.waitForTimeout(300);
+  await page.click('#mTabCup'); await page.waitForTimeout(350);
+  ok(await page.locator('#cupSeed').isVisible(), 'che do loai truc tiep co hang chon cach xep nhanh');
+  const seed = await doc(() => [...document.querySelectorAll('#cupSeed button')].map(b => b.dataset.seed));
+  ok(seed.join(',') === 'random,manual', `du hai lua chon: boc tham va tu xep (${seed.join(',')})`);
+
+  /* 5 người thì nhánh lệch — nút vào giải phải khoá lại */
+  await page.click('#grpList0 .cTile[data-key="suzune"]');
+  await page.waitForTimeout(250);
+  const nam = await doc(() => ({ n: window.__TMP().comp.length, khoa: document.getElementById('cselGo').disabled }));
+  ok(nam.n === 5 && nam.khoa, `nam nguoi thi khoa nut vao giai (${nam.n})`);
+  await page.click('#grpList0 .cTile[data-key="ginyu"]');
+  await page.waitForTimeout(420);
+  await page.click('#grpList0 .cTile[data-key="dora"]');
+  await page.waitForTimeout(420);
+  await page.click('#grpList0 .cTile[data-key="superman"]');
+  await page.waitForTimeout(420);
+  ok(await doc(() => window.__TMP().comp.length) === 8 && !await doc(() => document.getElementById('cselGo').disabled),
+     'du tam nguoi thi mo khoa');
+
+  /* tự xếp nhánh: bấm hai người trong dàn là tráo chỗ cho nhau */
+  await page.click('#cupSeed button[data-seed="manual"]');
+  await page.waitForTimeout(250);
+  const truoc = await doc(() => window.__TMP().comp.slice());
+  await page.click('#grpSlots0 .cChip:nth-of-type(1)');
+  await page.click('#grpSlots0 .cChip:nth-of-type(3)');
+  await page.waitForTimeout(250);
+  const traoRoi = await doc(() => window.__TMP().comp.slice());
+  ok(traoRoi[0] === truoc[2] && traoRoi[2] === truoc[0],
+     `tu xep: bam hai nguoi la trao cho (${truoc.slice(0,3).join(',')} -> ${traoRoi.slice(0,3).join(',')})`);
+
+  /* bốc thăm thì xáo lại thứ tự */
+  const trrand = await doc(() => {
+    const cu = window.__TMP().comp.slice();
+    document.querySelector('#cupSeed button[data-seed="random"]').click();
+    return { cu, moi: window.__TMP().comp.slice() };
+  });
+  await page.waitForTimeout(250);
+  ok(trrand.cu.slice().sort().join() === trrand.moi.slice().sort().join(),
+     'boc tham chi xao thu tu chu khong doi nguoi');
+
+  await page.click('#cselGo'); await page.waitForTimeout(250);
+  await page.click('#cselGo'); await page.waitForTimeout(500);
+  const cb = await doc(() => ({
+    cot: [...document.querySelectorAll('#compBody .brCol .brHead')].map(h => h.textContent),
+    tran: document.querySelectorAll('#compBody .bracket .brM').length,
+    ba: !!document.querySelector('#compBody .brThird'),
+    tong: window.__compTotal(),
+    lab: document.querySelector('#compBody .nextLab').textContent
+  }));
+  ok(cb.cot.length === 3, `tam nguoi thi co ba vong (${cb.cot.join(' / ')})`);
+  ok(cb.tran === 7, `so do co bay tran: 4 tu ket + 2 ban ket + 1 chung ket (${cb.tran})`);
+  ok(cb.ba, 'co san o cho tran tranh hang ba');
+  ok(cb.tong === 8, `tong tam tran ke ca tranh hang ba (${cb.tong})`);
+  ok(/Quarter/i.test(cb.lab), `tran dau tien la tu ket (${cb.lab})`);
+
+  await daHet(page, 8);
+  const cx = await doc(() => {
+    const C = window.__COMP(), R = C.rounds.length;
+    return { het: window.__compDone(), vd: window.__compChampion(), da: window.__compPlayed(),
+             ba: C.third.w, ck: C.rounds[R - 1][0] };
+  });
+  ok(cx.het && cx.da === 8, `da du tam tran (${cx.da})`);
+  ok(!!cx.vd && cx.vd === cx.ck.w, `nha vo dich la nguoi thang chung ket (${cx.vd})`);
+  ok(!!cx.ba && cx.ba !== cx.vd, `tranh hang ba co ket qua rieng (${cx.ba})`);
+
+  ok(errors.length === 0, `khong co loi trang (${errors.slice(0, 2).join(' | ')})`);
+  await browser.close();
+
+  console.log(loi.length ? `\nHONG ${loi.length} muc` : '\nDAT het');
+  process.exit(loi.length ? 1 : 0);
+})();
