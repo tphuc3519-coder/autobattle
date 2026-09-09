@@ -399,6 +399,19 @@
   .lgTab tr.top td.r{color:var(--gold);font-weight:700}
   .lgAva{display:inline-flex;width:22px;height:22px;border-radius:6px;overflow:hidden;
     align-items:center;justify-content:center;background:#0C0920;vertical-align:middle;margin-right:6px;font-size:13px}
+  /* ---- hiệu ứng bảng xếp hạng sau mỗi trận ----
+     Hàng trượt từ chỗ cũ về chỗ mới, điểm đếm dần lên, mũi tên chỉ ai vừa vượt ai.
+     Phần dịch chuyển do JS gán thẳng `transform` nên ở đây chỉ lo mấy thứ tô màu. */
+  .lgTab td.r i{font-style:normal;font-family:"Space Mono",monospace;font-size:9px;margin-left:4px}
+  .lgTab td.r i.up{color:#5BE39A}
+  .lgTab td.r i.dn{color:#FF8FA3}
+  /* Không dùng `forwards`: hết hiệu ứng là nền trả về đúng màu CSS, hàng đầu bảng vẫn giữ
+     được vệt vàng của nó. */
+  .lgTab tr.just td{animation:lgJust 1.6s ease-out 1}
+  @keyframes lgJust{0%{background:rgba(255,197,66,.30)}100%{background:transparent}}
+  .brM.fresh{animation:brPop 1.2s ease-out 1}
+  @keyframes brPop{0%{box-shadow:0 0 0 2px var(--gold) inset,0 0 22px rgba(255,197,66,.45)}
+    100%{box-shadow:0 0 0 0 rgba(255,197,66,0) inset,0 0 0 rgba(255,197,66,0)}}
   .lgAva img{width:100%;height:100%;object-fit:contain;display:block}
 
   /* Sơ đồ nhánh: mỗi vòng một cột, cuộn ngang khi màn hẹp chứ đừng ép chữ bé lại. */
@@ -4000,6 +4013,9 @@ const LG_LEGS_MAX=2;             // một lượt, hoặc lượt đi lượt v�
    là dính TDZ. */
 const COMP_MAXT=90;
 let COMP=null;                   // giải đang chạy; null là không có giải nào
+/* Ảnh chụp bảng NGAY TRƯỚC trận vừa xong, để chạy hiệu ứng "hàng trượt về chỗ mới,
+   điểm đếm dần lên". Dùng đúng một lần rồi xoá. */
+let lgAnim=null, cupAnim=null;
 let compLive=false;              // đang ở TRONG một trận của giải
 
 const duelLike=m=>m==='duel'||m==='league'||m==='cup';
@@ -4135,6 +4151,12 @@ function compResult(win){
   compLive=false;
   const m=COMP&&COMP.cur;
   if(!m) return;
+  /* Chụp bảng TRƯỚC khi cộng điểm — hiệu ứng cần cả thứ hạng cũ lẫn con số cũ. */
+  if(COMP.kind==='league'){
+    const cu={};
+    for(const k of COMP.keys) cu[k]=Object.assign({},COMP.tab[k]);
+    lgAnim={ord:lgOrder(),tab:cu,pair:[m.a,m.b]};
+  }else cupAnim=m.ref;
   const mains=G.fighters.filter(f=>f&&!f.summon);
   const A=mains.find(f=>f.key===m.a)||mains[0], B=mains.find(f=>f.key===m.b)||mains[1];
   const ga=Math.round((A&&A.dmgDealt)||0), gb=Math.round((B&&B.dmgDealt)||0);
@@ -12552,8 +12574,11 @@ function startPicked(){
    dưới. Không có gì khác. */
 function compOpen(){
   if(!COMP) return;
-  compPaint();
+  /* HIỆN BẢNG RA TRƯỚC rồi mới vẽ: `lgPlay()` phải đo `offsetTop` của từng hàng, mà đo bố
+     cục bên trong một khối `display:none` thì mọi thứ trả về 0 — hàng không trượt được một
+     pixel nào. Đã dính đúng một lần. */
   const b=document.getElementById('compBoard'); if(b) b.classList.remove('off');
+  compPaint();
 }
 function compBoardClose(){
   const b=document.getElementById('compBoard'); if(b) b.classList.add('off');
@@ -12597,20 +12622,66 @@ function compNextHtml(){
   return `<div class="nextM compWin"><i>🏆</i>`+
     `<b style="color:${CHARS[k].color}">${CHARS[k].name}</b><em>${t('compChamp')}</em></div>`;
 }
+const lgSign=v=>(v>0?'+':'')+v;
+/* Có `lgAnim` (vừa đá xong một trận) thì bảng vẽ ra mang theo cả SỐ CŨ và THỨ HẠNG CŨ:
+   `lgPlay()` đọc mấy thuộc tính đó rồi cho hàng trượt về chỗ mới và đếm số lên. Không có
+   thì vẽ thẳng số cuối như thường. */
 function lgTableHtml(){
-  const ord=lgOrder();
+  const ord=lgOrder(), truoc=lgAnim, cu=truoc?truoc.tab:null;
   const rows=ord.map((k,i)=>{
     const st=COMP.tab[k], gd=st.gf-st.ga, C=CHARS[k], src=avaSrc(k);
-    return `<tr class="${i===0?'top':''}"><td class="r">${i+1}</td>`+
+    const o=cu?cu[k]:null, oj=truoc?truoc.ord.indexOf(k):-1;
+    const so=(v,ov,cls)=>`<td class="${cls||''}"${o?` data-a="${ov}" data-b="${v}"`:''}>${o?ov:v}</td>`;
+    const ogd=o?o.gf-o.ga:gd;
+    const hieu=`<td class="${gd>0?'up':gd<0?'dn':''}"${o?` data-a="${ogd}" data-b="${gd}" data-sign="1"`:''}>`+
+      `${lgSign(o?ogd:gd)}</td>`;
+    /* Mũi tên lên xuống chỉ hiện đúng lượt vẽ ngay sau trận — nhìn là biết ai vừa vượt ai. */
+    const mui=(oj>=0&&oj!==i)?`<i class="${oj>i?'up':'dn'}">${oj>i?'▲':'▼'}${Math.abs(oj-i)}</i>`:'';
+    const vua=(truoc&&truoc.pair.indexOf(k)>=0)?' just':'';
+    return `<tr class="${i===0?'top':''}${vua}" data-old="${oj}">`+
+      `<td class="r">${i+1}${mui}</td>`+
       `<td class="n"><span class="lgAva">${src?`<img alt="" src="${src}">`:C.emoji}</span>`+
       `<b style="color:${C.color}">${C.short||C.name}</b></td>`+
-      `<td>${st.p}</td><td>${st.w}</td><td>${st.l}</td>`+
-      `<td class="${gd>0?'up':gd<0?'dn':''}">${gd>0?'+':''}${gd}</td>`+
-      `<td class="pt">${st.pts}</td></tr>`;
+      so(st.p,o&&o.p)+so(st.w,o&&o.w)+so(st.l,o&&o.l)+hieu+so(st.pts,o&&o.pts,'pt')+`</tr>`;
   }).join('');
   return `<table class="lgTab"><thead><tr><th></th><th style="text-align:left">${t('lgTeam')}</th>`+
     `<th>${t('lgP')}</th><th>${t('lgW')}</th><th>${t('lgL')}</th>`+
     `<th>${t('lgDiff')}</th><th>${t('lgPts')}</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+/* Lối FLIP: bảng đã vẽ ở thứ hạng MỚI rồi, giờ dịch ngược từng hàng về chỗ CŨ, ép trình
+   duyệt tính lại bố cục, xong mới thả cho chúng trượt về. Số thì đếm dần trong 0.7 giây. */
+function lgPlay(){
+  if(!lgAnim) return;
+  const box=document.getElementById('compBody');
+  const rows=box?[].slice.call(box.querySelectorAll('.lgTab tbody tr')):[];
+  lgAnim=null;                       // chạy đúng MỘT lần cho mỗi trận
+  if(!rows.length) return;
+  const cho=rows.map(r=>r.offsetTop);
+  for(let i=0;i<rows.length;i++){
+    const j=+rows[i].dataset.old;
+    if(!(j>=0)||j>=cho.length||j===i) continue;
+    rows[i].style.transition='none';
+    rows[i].style.transform='translateY('+(cho[j]-cho[i])+'px)';
+  }
+  void box.offsetHeight;             // thiếu dòng này thì hai lần gán bị gộp làm một, hàng không trượt
+  requestAnimationFrame(()=>{
+    for(const r of rows){
+      r.style.transition='transform .55s cubic-bezier(.22,.9,.24,1)';
+      r.style.transform='translateY(0)';
+    }
+  });
+  const o=[].slice.call(box.querySelectorAll('.lgTab td[data-b]'));
+  if(!o.length) return;
+  const T=700, t0=(window.performance||Date).now();
+  const buoc=()=>{
+    const p=Math.min(1,(((window.performance||Date).now())-t0)/T), e=1-Math.pow(1-p,3);
+    for(const c of o){
+      const a=+c.dataset.a, b=+c.dataset.b, v=Math.round(a+(b-a)*e);
+      c.textContent=c.dataset.sign?lgSign(v):String(v);
+    }
+    if(p<1) requestAnimationFrame(buoc);
+  };
+  requestAnimationFrame(buoc);
 }
 function brSlotHtml(k,win){
   if(!k) return `<span class="brSlot empty"><i>·</i><b>—</b></span>`;
@@ -12620,7 +12691,8 @@ function brSlotHtml(k,win){
     `<b>${C.short||C.name}</b></span>`;
 }
 function brMatchHtml(m){
-  return `<div class="brM">${brSlotHtml(m.a,m.w&&m.w===m.a)}${brSlotHtml(m.b,m.w&&m.w===m.b)}</div>`;
+  const vua=(m===cupAnim)?' fresh':'';   // trận vừa đá xong thì nháy một cái cho thấy
+  return `<div class="brM${vua}">${brSlotHtml(m.a,m.w&&m.w===m.a)}${brSlotHtml(m.b,m.w&&m.w===m.b)}</div>`;
 }
 function bracketHtml(){
   cupFill(COMP);
@@ -12655,6 +12727,8 @@ function compPaint(){
     `<div class="compHead">${t('compResults')}</div>`+compResultsHtml();
   const go=document.getElementById('compGo');
   if(go){ go.textContent=t('compGo'); go.style.display=compDone()?'none':''; }
+  lgPlay();                          // đọc DOM vừa dựng nên phải gọi SAU khi gán innerHTML
+  cupAnim=null;                      // sơ đồ nhánh cũng chỉ nháy một lần
 }
 /* ---------- vỏ arcade ----------
    Cùng MỘT engine chạy cho hai trang: `index.html` là xưởng, `play.html` là trang chơi

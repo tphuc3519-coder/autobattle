@@ -123,7 +123,41 @@ async function daHet(page, tran) {
   await page.waitForTimeout(350);
   const cap = await doc(() => window.__G().fighters.filter(f => !f.summon).map(f => f.key));
   await doc(k => window.__compWin(k), cap[1]);            // cho bên B thắng
-  await page.waitForTimeout(2900);
+  /* ---------- hiệu ứng bảng xếp hạng ----------
+     Người dùng: "làm hiệu ứng khi 1 người thắng trận rồi movement thay đổi vị trí và điểm
+     số trên bxh cho nó hay". Rình đúng lúc bảng bật lên: style nội tuyến bị đặt về 0 ngay
+     từ đầu nên phải đọc `getComputedStyle` mới thấy hàng đang trên đường trượt. */
+  await page.waitForTimeout(2400);
+  const hieuUng = await doc(() => new Promise(res => {
+    let xa = 0, soCu = 0, n = 0;
+    const xem = () => {
+      for (const r of document.querySelectorAll('#compBody .lgTab tbody tr')) {
+        const m = getComputedStyle(r).transform;
+        if (m && m !== 'none') { const y = Math.abs(parseFloat(m.split(',')[5] || 0)); if (y > xa) xa = y; }
+      }
+      for (const c of document.querySelectorAll('#compBody .lgTab td[data-b]'))
+        if (c.textContent.replace('+', '') !== c.dataset.b) soCu++;
+      if (++n < 90) requestAnimationFrame(xem); else res({ xa, soCu });
+    };
+    requestAnimationFrame(xem);
+  }));
+  ok(hieuUng.xa > 4, `hang truot that tu cho cu ve cho moi (${hieuUng.xa.toFixed(1)}px)`);
+  ok(hieuUng.soCu > 0, `so dem dan len chu khong nhay thang sang so moi (${hieuUng.soCu} khung)`);
+  const dep = await doc(() => ({
+    mui: document.querySelectorAll('#compBody .lgTab td.r i').length,
+    vua: document.querySelectorAll('#compBody .lgTab tr.just').length,
+    dung: [...document.querySelectorAll('#compBody .lgTab td[data-b]')]
+            .every(c => c.textContent.replace('+', '') === c.dataset.b),
+    con: [...document.querySelectorAll('#compBody .lgTab tbody tr')]
+            .filter(r => r.style.transform && r.style.transform !== 'translateY(0px)').length,
+    anh: !!window.__lgAnim()
+  }));
+  ok(dep.vua === 2, `hai nguoi vua da duoc to sang (${dep.vua})`);
+  ok(dep.mui >= 1, `co mui ten len xuong cho ai doi thu hang (${dep.mui})`);
+  ok(dep.dung && dep.con === 0, 'chay xong thi so dung va moi hang ve dung cho');
+  ok(!dep.anh, 'anh chup bang da duoc xoa, khong chay lai lan hai');
+
+  await page.waitForTimeout(400);
   const sau = await doc(k => ({
     mo: !document.getElementById('compBoard').classList.contains('off'),
     thang: window.__COMP().tab[k[1]], thua: window.__COMP().tab[k[0]],
