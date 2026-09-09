@@ -1102,6 +1102,28 @@ const PREWING_CAST=1.5;           // Pre-Wings: hồi chiêu trôi nhanh gấp r
 const PREWING_STUN=.6;            // Pre-Wings: choáng chỉ còn 60% thời gian
 const EAGLE_BURN=3.75;            // Wings of the Eagle cháy hết máu trong bấy nhiêu giây trong trận (7.5 giây người chơi)
 const MASENKO_SPD=330;            // Masenko bay nhanh hơn hẳn mức cũ 205
+/* Ba thứ cùng lên 150% một lượt — người dùng chốt: "tăng tỉ lệ ra overhead kick, tăng
+   tốc độ bóng bay, tăng tốc độ đá bóng từ hiện tại lên 150% hiện tại". Nhân vật CŨ nên
+   mọi mốc thời gian ở đây viết thẳng bằng giây TRONG TRẬN (`gs()` khai mãi dưới khối
+   Shikamaru — viết ở đây là dính TDZ). */
+const TSU_UP=1.5;                 // hệ số 150% dùng chung cho cả ba
+const BIC_ODDS=.10*TSU_UP;        // tỉ lệ một cú sút thành Overhead Kick (cũ .10)
+const BALL_SPD=305*TSU_UP;        // tốc bóng của cú sút thường (cũ 305)
+const BIC_SPD=345*TSU_UP;         // tốc bóng của Overhead Kick (cũ 345)
+const TSU_SHOT_CD=1.35/TSU_UP;    // nhịp giữa hai cú sút, hệ số thô để bọc cm() (cũ 1.35)
+const BIC_DMG=Math.round(40*1.15);// Overhead Kick +15% sát thương (cũ 40)
+const DRIVE_DMG=90;               // Drive Shot +10 sát thương gốc (cũ 80)
+const DRIVE_KB_DIST=.20;          // và hất lùi 20% chiều dài sàn — trước đây chỉ là lực 200
+const TWIN_STUN=2.25;             // Twin Shot choáng: 4 -> 4.5 giây người chơi
+const TWIN_VULN=4.5;              // và thủng giáp: 6 -> 9 giây người chơi
+const EAGLE_HEAL=.065;            // bật Wings of the Eagle thì hồi 6.5% máu tối đa
+/* Bị dồn vào góc: đứng sát mép sàn mà địch dí trong tầm này suốt TSU_PIN_T thì Tsubasa
+   vọt hẳn tốc độ lên để thoát. Đo bằng giây TRONG TRẬN, tức 2 giây người chơi. */
+const TSU_PIN_T=1;                // 2 giây người chơi bị ép mới mở cửa thoát
+const TSU_PIN_EDGE=96;            // cách mép sàn dưới bấy nhiêu thì coi như đã bị dồn
+const TSU_PIN_NEAR=250;           // và địch phải đứng trong tầm này
+const TSU_PIN_MUL=2.1;            // thoát thân: tốc chạy gấp bấy nhiêu
+const TSU_PIN_RUN=1.6;            // giữ được bấy nhiêu giây trong trận
 const EAGLE_CD=1/4;               // tốc độ ra chiêu gấp 4: hồi chiêu chỉ còn một phần tư
 const EAGLE_DRIVE=.5;             // riêng Drive Shot còn ra nhanh gấp đôi nữa
 const EAGLE_DRIVE_SPD=420;        // lúc Wings of the Eagle: drive bay thẳng vào địch, nhanh hơn cú sút thường
@@ -1154,6 +1176,15 @@ const CHICHI_CALL_LOCK=1.5;       // khoá ChiChi bấy nhiêu giây sau phân c
 const CHICHI_DASH_RES=.7;         // lúc lao tới chỉ nhận 70% sát thương
 const CHICHI_KICK_DMG=45;         // Flying Kick: 45 dmg chứ không còn ăn theo cú đá chí mạng 25
 const CHICHI_KICK_STUN=1;         // và choáng 2 giây người chơi
+/* Chí mạng của ChiChi. Nội tại cứ 5 đòn cộng thêm CHICHI_CRIT_STEP và KHÔNG có trần —
+   `chance(p)` chỉ là `Math.random()<p` nên tỉ lệ vượt 1 thì đòn nào cũng chí mạng.
+   Người dùng chốt: "crit rate cơ bản từ 10->30%", "đá có crit từ 25->30 dmg",
+   "crit ko giới hạn". Đừng bọc `Math.min` vào `critBonus` ở `counters()`. */
+const CHICHI_CRIT=.30;            // chí mạng cơ bản của đòn tay (cũ .10)
+const CHICHI_CRIT_DMG=30;         // cú đá chí mạng (cũ 25)
+const CHICHI_HIT_DMG=5;           // đòn thường
+const CHICHI_CRIT_STEP=.05;       // cứ 5 đòn thì cộng thêm bấy nhiêu, không trần
+const SCOLD_CRIT=.20;             // câu mắng có thang chí mạng riêng, vẫn ăn theo critBonus
 const EXHAUST_T=4;                // phân thân gây kiệt sức bấy nhiêu giây trong trận
 const SEXY_DPS=15;                // khói hồng: nhịp nửa giây một lần, 4 nhịp x 7.5 = 30 dmg
 const SEXY_STUN=1.25;             // Sexy no Jutsu choáng nhân vật nam (2.5 giây người chơi)
@@ -1204,13 +1235,17 @@ const SUZ={
   f1:{hit:10, cp:0, healOdds:0, healPct:0, decHealPct:0, decOdds:0, decLo:0, decHi:0},
   f1Slow:1.6,                // ra đòn chậm hơn form 2 thêm 1.6 lần nữa
   /* form 2: dám đánh nhưng còn sai nhiều · form 3: đã đủ bản lĩnh tự đứng */
-  f2:{hit:15, cp:15, healOdds:.25, healPct:.05, decHealPct:.03, decOdds:.65, decLo:30, decHi:80},
-  f3:{hit:20, cp:20, healOdds:.35, healPct:.08, decHealPct:.08, decOdds:.70, decLo:40, decHi:120,
-      dmgRes:.10, ccRes:.10},
-  /* form 3: mỗi 150 điểm lớp tích thêm được thì cộng dồn một bậc */
-  st:{dec:.05, healOdds:.05, healPct:.06, dmgRes:.08, ccRes:.08, max:5},
-  ayaHp:.35,                 // máu Ayanokouji = 35% máu Horikita lúc anh bước ra
-  ayaCd:gs(4.5),             // đòn đột kích mỗi 4.5 giây người chơi
+  f2:{hit:15, cp:15, healOdds:.25, healPct:.05, decHealPct:.03, decOdds:.75, decLo:30, decHi:80},
+  /* Form 3 hồi máu tính theo MÁU TỐI ĐA, không theo máu hiện tại như form 2 — người dùng
+     chốt: "lượng máu hồi sau mỗi qđinh đúng là 10% máu tối đa". `healMax` trong
+     `suzTune()` là cái cờ đổi cách đo đó, và một con số `healPct` dùng chung cho cả đòn
+     tay lẫn quyết định vì người dùng chỉ nêu MỘT mức hồi cho cả form. */
+  f3:{hit:20, cp:20, healOdds:.45, healPct:.10, decHealPct:.10, decOdds:.80, decLo:40, decHi:120,
+      dmgRes:.125, ccRes:.12},
+  /* form 3: mỗi 150 điểm lớp tích thêm được thì cộng dồn một bậc, trần 4 bậc */
+  st:{dec:.05, healOdds:.10, healPct:.06, dmgRes:.125, ccRes:.125, max:4},
+  ayaHp:.65,                 // máu Ayanokouji = 65% máu Horikita lúc anh bước ra
+  ayaCd:gs(3.6),             // đòn đột kích mỗi 3.6 giây người chơi (cũ 4.5)
   ayaDmg:40, ayaStun:gs(1.25),
   ayaSpd:150,                // anh chạy nhanh hơn Horikita để kịp chắn
   ayaCast:2,                 // đứng cạnh anh thì Horikita ra chiêu nhanh gấp đôi
@@ -1473,7 +1508,7 @@ const CHARS={
   chichi:{
     name:'ChiChi', short:'ChiChi', tag:'Housewife · Melee', emoji:'🍳', color:'#FF4D6D', alt:'#FF93A8',
     role:'melee', speed:106, dodge:.55, male:false,
-    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball / Air Cannon / Ginyu&apos;s Beam',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in for a guaranteed ${CHICHI_KICK_DMG} damage and a ${rts(CHICHI_KICK_STUN)}s stun, CC immune &amp; −30% dmg taken while dashing`,'<b>Passive</b> every 5 hits +5% crit',`<b>Below 20% HP</b> calls Goku / Gohan — Goku's Kamehameha ${KAME_DMG} dmg, stun ${rts(KAME_STUN)}s then −${Math.round((1-KAME_SLOW_MOVE)*100)}% move / −${Math.round((1-KAME_SLOW_CAST)*100)}% cast for ${rts(KAME_SLOW_T)}s · Gohan's Masenko ${MASENKO_DMG} dmg a wave, each wave stacking −${Math.round(MASENKO_STACK_MOVE*100)}% move / −${Math.round(MASENKO_STACK_CAST*100)}% cast for ${rts(MASENKO_STACK_T)}s`],
+    skills:[`<b>1</b> Punch &amp; Kick — ${Math.round(CHICHI_CRIT*100)}% base crit for ${CHICHI_CRIT_DMG}`,'<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball / Air Cannon / Ginyu&apos;s Beam',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in for a guaranteed ${CHICHI_KICK_DMG} damage and a ${rts(CHICHI_KICK_STUN)}s stun, CC immune &amp; −30% dmg taken while dashing`,`<b>Passive</b> every 5 hits +${Math.round(CHICHI_CRIT_STEP*100)}% crit — <b>no cap</b>`,`<b>Below 20% HP</b> calls Goku / Gohan — Goku's Kamehameha ${KAME_DMG} dmg, stun ${rts(KAME_STUN)}s then −${Math.round((1-KAME_SLOW_MOVE)*100)}% move / −${Math.round((1-KAME_SLOW_CAST)*100)}% cast for ${rts(KAME_SLOW_T)}s · Gohan's Masenko ${MASENKO_DMG} dmg a wave, each wave stacking −${Math.round(MASENKO_STACK_MOVE*100)}% move / −${Math.round(MASENKO_STACK_CAST*100)}% cast for ${rts(MASENKO_STACK_T)}s`],
     init(f){ f.cds={s1:0,s2:cm(3)}; f.dashCd=CHICHI_DASH_CD; f.hits=0; f.critBonus=0; },
     think(f,e,d,auto){
       if(f.cds.s1<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
@@ -1487,15 +1522,15 @@ const CHARS={
   },
   tsubasa:{
     name:'Ozora Tsubasa', short:'Tsubasa', tag:'Striker · Long shots', emoji:'⚽', color:'#2ED573', alt:'#7DEBAB',
-    role:'ranged', want:235, speed:100, dodge:.8, male:true,
-    skills:['<b>1</b> Basic Shot 25 dmg, often misses (10% Overhead Kick 40 + stun)','<b>2</b> Drive Shot 80 + burn 5×3 — cong lên trời rồi bổ xuống; trong Wings of the Eagle thì bay thẳng vào địch',`<b>${GOAL_MAX} goals</b> Victory Twin Shot 150 + stun ${rts(2)}s`,`<b>Below ${Math.round(PREWING_HP*100)}% HP</b> Pre-Wings — −35% damage taken, +50% cast speed, ${Math.round((1-PREWING_STUN)*100)}% stun resist`,`<b>Below ${Math.round(EAGLE_HP*100)}% HP</b> Wings of the Eagle — 4× attack speed, 2× drive shot rate, 2× accuracy, drive shot bay thẳng, 70% resist, CC immune, burns out in ${rts(EAGLE_BURN)}s`],
+    role:'ranged', want:235, speed:106, dodge:.8, male:true,
+    skills:[`<b>1</b> Basic Shot 25 dmg, often misses (${Math.round(BIC_ODDS*100)}% Overhead Kick ${BIC_DMG} + stun)`,`<b>2</b> Drive Shot ${DRIVE_DMG} + burn 5×3, knocks back ${Math.round(DRIVE_KB_DIST*100)}% of the arena — cong lên trời rồi bổ xuống; trong Wings of the Eagle thì bay thẳng vào địch`,`<b>${GOAL_MAX} goals</b> Victory Twin Shot 150 + stun ${rts(TWIN_STUN)}s + ${rts(TWIN_VULN)}s of +50% damage taken`,`<b>Pinned</b> held against the edge for ${rts(TSU_PIN_T)}s and he breaks away at ${TSU_PIN_MUL}× move speed`,`<b>Below ${Math.round(PREWING_HP*100)}% HP</b> Pre-Wings — −35% damage taken, +50% cast speed, ${Math.round((1-PREWING_STUN)*100)}% stun resist`,`<b>Below ${Math.round(EAGLE_HP*100)}% HP</b> Wings of the Eagle — 4× attack speed, 2× drive shot rate, 2× accuracy, drive shot bay thẳng, 70% resist, CC immune, heals ${Math.round(EAGLE_HEAL*1000)/10}% max HP on activation, burns out in ${rts(EAGLE_BURN)}s`],
     init(f){ f.cds={s1:cm(1),s2:cm(3)}; f.goals=0; },
     think(f,e,d,auto){
       const sp=f.eagle?EAGLE_CD:1;
       // lúc cháy: còn thiếu chỉ tiêu thì tung bằng được, không đợi vào tầm
       const needBic=f.eagle&&f.quota.bic>0, needDrive=f.eagle&&f.quota.drive>0;
       if(f.cds.s1<=0&&(auto?(d<520||needBic):keys['j'])){
-        f.cds.s1=cm(1.35)*sp; basicShot(f,e,needBic); if(needBic)f.quota.bic--;
+        f.cds.s1=cm(TSU_SHOT_CD)*sp; basicShot(f,e,needBic); if(needBic)f.quota.bic--;
       }
       if(f.cds.s2<=0&&(auto?(d<560||needDrive):keys['k'])){
         f.cds.s2=cm(6.5)*sp*(f.eagle?EAGLE_DRIVE:1); driveShot(f,e); if(needDrive)f.quota.drive--;
@@ -1547,7 +1582,7 @@ const CHARS={
       `<b>Form 2 · 2</b> Decision Making — she freezes to think for ${rts(SUZ.decThink)}s, fires, then waits ${rts(SUZ.decCd)}s before thinking again; <b>${Math.round(SUZ.f2.decOdds*100)}% right</b> = a verdict flies straight in for ${SUZ.f2.decLo}–${SUZ.f2.decHi} dmg and the same number of class points, ${Math.round((1-SUZ.f2.decOdds)*100)}% wrong = −${SUZ.decPenLo}~${SUZ.decPenHi} points (going negative costs her that much HP, then resets to 0)`,
       `<b>Every right call is graded</b> by the damage it deals — Form 2: ${SUZ.f2.decLo}–${SUZ_TIERS.f2[0][0]} acceptable, ${SUZ_TIERS.f2[0][0]+1}–${SUZ_TIERS.f2[1][0]} good, ${SUZ_TIERS.f2[1][0]+1}–${SUZ_TIERS.f2[2][0]} great, ${SUZ_TIERS.f2[2][0]+1}–${SUZ_TIERS.f2[3][0]} best · Form 3: ${SUZ.f3.decLo}–${SUZ_TIERS.f3[0][0]} / ${SUZ_TIERS.f3[0][0]+1}–${SUZ_TIERS.f3[1][0]} / ${SUZ_TIERS.f3[1][0]+1}–${SUZ_TIERS.f3[2][0]} / ${SUZ_TIERS.f3[2][0]+1}–${SUZ_TIERS.f3[3][0]}`,
       `<b>${SUZ.cpMax} class points</b> Ayanokouji joins for real — ${Math.round(SUZ.ayaHp*100)}% of her current HP, ambush for ${SUZ.ayaDmg} + ${rts(SUZ.ayaStun)}s stun every ${rts(SUZ.ayaCd)}s, +100% cast speed for her, body-blocks incoming damage and <b>taunts the foe onto himself the whole time he stands</b> — every attack, ultimates included, goes to him instead of her (a domain like Nara Clan Forest is the one thing a taunt cannot pull: it grips both of them and splits its damage between them) — and he is <b>immune to Sexy no Jutsu</b>`,
-      `<b>Form 3</b> He walks away (never dies) — hits ${SUZ.f3.hit} / +${SUZ.f3.cp} points, decisions ${Math.round(SUZ.f3.decOdds*100)}% right and hit for ${SUZ.f3.decLo}–${SUZ.f3.decHi}, ${Math.round(SUZ.f3.healOdds*100)}% to heal ${Math.round(SUZ.f3.healPct*100)}%, +${Math.round(SUZ.f3.dmgRes*100)}% damage resist &amp; ${Math.round(SUZ.f3.ccRes*100)}% CC resist`,
+      `<b>Form 3</b> He walks away (never dies) — hits ${SUZ.f3.hit} / +${SUZ.f3.cp} points, decisions ${Math.round(SUZ.f3.decOdds*100)}% right and hit for ${SUZ.f3.decLo}–${SUZ.f3.decHi}, ${Math.round(SUZ.f3.healOdds*100)}% to heal ${Math.round(SUZ.f3.healPct*100)}% of <b>max</b> HP, +${Math.round(SUZ.f3.dmgRes*100)}% damage resist &amp; ${Math.round(SUZ.f3.ccRes*100)}% CC resist`,
       `<b>Form 3 · stacking</b> every ${SUZ.cpMax} class points: +${Math.round(SUZ.st.dec*100)}% decision accuracy, +${Math.round(SUZ.st.healOdds*100)}% heal chance, +${Math.round(SUZ.st.healPct*100)}% heal amount, +${Math.round(SUZ.st.dmgRes*100)}% damage resist, +${Math.round(SUZ.st.ccRes*100)}% CC resist (up to ×${SUZ.st.max})`],
     init(f){
       f.cds={s1:SUZ.atkCd*SUZ.f1Slow,s2:SUZ.decThink+SUZ.decCd};
@@ -1793,12 +1828,13 @@ const DEX={
        en:'At 20 rage he charges in with the spinning sphere.'}
     ]},
   chichi:{ role:{vi:'Nội trợ · Cận chiến',en:'Housewife · Melee'}, st:{pow:4,spd:4,rng:1,def:3},
-    pw:{dmg:78,dur:46,mob:74,as:82,rng:24,cc:56,uti:60,con:70,cmb:92},
+    pw:{dmg:90,dur:46,mob:74,as:84,rng:24,cc:56,uti:60,con:78,cmb:92},
     bio:{vi:'Đấm đá dồn dập, chửi bật cả đạn về, và khi dồn tới đường cùng thì gọi chồng con ra đánh hộ.',
          en:'Relentless melee, a scolding that reflects projectiles, and when cornered she calls her family in.'},
     skills:[
-      {tag:'1',name:'Punch & Kick',vi:'Đòn tay nhanh, cứ 5 đòn lại cộng thêm tỉ lệ chí mạng.',
-       en:'Fast hands; every 5 hits raise her crit chance.'},
+      {tag:'1',name:'Punch & Kick',
+       vi:`Đòn tay nhanh: ${Math.round(CHICHI_CRIT*100)}% chí mạng ${CHICHI_CRIT_DMG} dmg, cứ 5 đòn lại cộng thêm ${Math.round(CHICHI_CRIT_STEP*100)}% và KHÔNG có trần.`,
+       en:`Fast hands: ${Math.round(CHICHI_CRIT*100)}% to crit for ${CHICHI_CRIT_DMG}, rising ${Math.round(CHICHI_CRIT_STEP*100)}% every 5 hits with no cap.`},
       {tag:'2',name:'Scolding',vi:'Năm đợt sóng xung kích, phản ngược shuriken, kunai, bóng, vòng khí Air Cannon và luồng khí tím của Ginyu về phía địch.',
        en:'Five shockwaves that reflect shuriken, kunai, footballs, the Air Cannon ring and Ginyu\'s Beam back at the sender.'},
       {tag:'3',name:'Flying Kick',
@@ -1809,21 +1845,27 @@ const DEX={
        en:`Below 20% HP she calls for help: Kamehameha for ${KAME_DMG} then a heavy slow, Masenko for ${MASENKO_DMG} a wave with stacking slows.`}
     ]},
   tsubasa:{ role:{vi:'Tiền đạo · Sút xa',en:'Striker · Long shots'}, st:{pow:4,spd:3,rng:4,def:2},
-    pw:{dmg:72,dur:40,mob:50,as:62,rng:84,cc:44,uti:38,con:52,cmb:96},
+    pw:{dmg:84,dur:44,mob:66,as:80,rng:88,cc:62,uti:42,con:60,cmb:98},
     bio:{vi:'Sút bóng thay cho đánh nhau. Càng ghi bàn càng mạnh, và khi sắp gục thì đôi cánh đại bàng bùng lên.',
          en:'He kicks footballs instead of fists. Goals make him stronger, and at the brink the eagle wings flare up.'},
     skills:[
-      {tag:'1',name:'Basic Shot',vi:'Sút 25 dmg, 10% ra Overhead Kick 40 dmg kèm choáng.',
-       en:'A 25 damage shot; 10% come out as an Overhead Kick for 40 and a stun.'},
-      {tag:'2',name:'Drive Shot',vi:'Bóng vọt lên trời rồi bổ xuống: 80 dmg và cháy thêm 5 dmg/s trong 3s.',
-       en:'The ball arcs up and drops in: 80 damage plus 5 dmg/s burning for 3s.'},
-      {tag:'3',name:'Victory Twin Shot',vi:`Đủ ${GOAL_MAX} bàn thắng thì cùng đồng đội sút đôi: 150 dmg và choáng.`,
-       en:`At ${GOAL_MAX} goals he and a team-mate fire the twin shot: 150 damage and a stun.`},
+      {tag:'1',name:'Basic Shot',
+       vi:`Sút 25 dmg, ${Math.round(BIC_ODDS*100)}% ra Overhead Kick ${BIC_DMG} dmg kèm choáng.`,
+       en:`A 25 damage shot; ${Math.round(BIC_ODDS*100)}% come out as an Overhead Kick for ${BIC_DMG} and a stun.`},
+      {tag:'2',name:'Drive Shot',
+       vi:`Bóng vọt lên trời rồi bổ xuống: ${DRIVE_DMG} dmg, hất văng ${Math.round(DRIVE_KB_DIST*100)}% sàn và cháy thêm 5 dmg/s trong 3s.`,
+       en:`The ball arcs up and drops in: ${DRIVE_DMG} damage, ${Math.round(DRIVE_KB_DIST*100)}% arena knockback plus 5 dmg/s burning for 3s.`},
+      {tag:'3',name:'Victory Twin Shot',
+       vi:`Đủ ${GOAL_MAX} bàn thắng thì cùng đồng đội sút đôi: 150 dmg, choáng ${rts(TWIN_STUN)}s rồi thủng giáp 50% trong ${rts(TWIN_VULN)}s.`,
+       en:`At ${GOAL_MAX} goals he and a team-mate fire the twin shot: 150 damage, a ${rts(TWIN_STUN)}s stun and ${rts(TWIN_VULN)}s of +50% damage taken.`},
+      {tag:'P',name:'Break Away',
+       vi:`Bị dồn sát mép sàn suốt ${rts(TSU_PIN_T)}s thì bứt tốc ${TSU_PIN_MUL}× trong ${rts(TSU_PIN_RUN)}s để thoát ra.`,
+       en:`Held against the edge for ${rts(TSU_PIN_T)}s and he bolts free at ${TSU_PIN_MUL}× speed for ${rts(TSU_PIN_RUN)}s.`},
       {tag:'P',name:'Pre-Wings',vi:`Dưới ${Math.round(PREWING_HP*100)}% máu: −35% sát thương nhận, +50% tốc ra chiêu, kháng choáng 40%.`,
        en:`Below ${Math.round(PREWING_HP*100)}% HP: −35% damage taken, +50% cast speed, 40% stun resist.`},
       {tag:'U',name:'Wings of the Eagle',
-       vi:`Dưới ${Math.round(EAGLE_HP*100)}% máu: tốc đánh ×4, kháng 70%, miễn khống chế — nhưng cháy hết máu trong ${rts(EAGLE_BURN)}s.`,
-       en:`Below ${Math.round(EAGLE_HP*100)}% HP: 4× attack speed, 70% resist, CC immune — but it burns his last HP away in ${rts(EAGLE_BURN)}s.`}
+       vi:`Dưới ${Math.round(EAGLE_HP*100)}% máu: hồi ${Math.round(EAGLE_HEAL*1000)/10}% máu tối đa, tốc đánh ×4, kháng 70%, miễn khống chế — nhưng cháy hết máu trong ${rts(EAGLE_BURN)}s.`,
+       en:`Below ${Math.round(EAGLE_HP*100)}% HP: heals ${Math.round(EAGLE_HEAL*1000)/10}% of max HP, 4× attack speed, 70% resist, CC immune — but it burns his last HP away in ${rts(EAGLE_BURN)}s.`}
     ]},
   shika:{ role:{vi:'Ninja · Bóng',en:'Ninja · Shadows'}, st:{pow:3,spd:2,rng:4,def:4},
     pw:{dmg:48,dur:64,mob:32,as:34,rng:66,cc:88,uti:70,con:44,cmb:90},
@@ -1844,7 +1886,7 @@ const DEX={
        en:`Below ${Math.round(SHIKA.domainHp*100)}% HP the domain opens: foes are exhausted, deal half damage and get shelled. Duration = chakra ÷ 100.`}
     ]},
   suzune:{ role:{vi:'Lớp trưởng · Cận chiến',en:'Class rep · Melee'}, st:{pow:3,spd:3,rng:1,def:3},
-    pw:{dmg:54,dur:70,mob:58,as:40,rng:18,cc:26,uti:78,con:48,cmb:88},
+    pw:{dmg:62,dur:84,mob:58,as:40,rng:18,cc:26,uti:88,con:60,cmb:96},
     bio:{vi:'Ba form: rụt rè, dám đánh, rồi tự đứng một mình. Ayanokouji bước ra đỡ đòn giúp cô ở bước ngoặt đầu tiên.',
          en:'Three forms: timid, fighting back, then standing alone. Ayanokouji steps in to shield her at the first turning point.'},
     skills:[
@@ -1855,8 +1897,9 @@ const DEX={
        en:`She freezes for ${rts(SUZ.decThink)}s and commits: right, and the verdict flies straight at the foe; wrong, and it costs her class points.`},
       {tag:'P',name:'Class Points',vi:`Đủ ${SUZ.cpMax} điểm ở form 2 thì Ayanokouji vào sân sát cánh; ở form 3 thì đổi thành một bậc cộng dồn.`,
        en:`At ${SUZ.cpMax} points in form 2 Ayanokouji joins the fight; in form 3 each ${SUZ.cpMax} becomes a permanent stack.`},
-      {tag:'U',name:'Standing Alone',vi:'Ayanokouji rời sàn ⇒ form 3: mạnh hơn, hồi máu nhiều hơn, +10% miễn thương và kháng hiệu ứng.',
-       en:'When Ayanokouji leaves she reaches form 3: stronger hits, better healing, +10% damage reduction and CC resist.'}
+      {tag:'U',name:'Standing Alone',
+       vi:`Ayanokouji rời sàn ⇒ form 3: quyết định đúng ${Math.round(SUZ.f3.decOdds*100)}%, ${Math.round(SUZ.f3.healOdds*100)}% hồi ${Math.round(SUZ.f3.healPct*100)}% máu tối đa, +${Math.round(SUZ.f3.dmgRes*1000)/10}% miễn thương và ${Math.round(SUZ.f3.ccRes*100)}% kháng hiệu ứng. Mỗi ${SUZ.cpMax} điểm lại dày thêm một bậc, tối đa ${SUZ.st.max} bậc.`,
+       en:`When Ayanokouji leaves she reaches form 3: ${Math.round(SUZ.f3.decOdds*100)}% right decisions, ${Math.round(SUZ.f3.healOdds*100)}% to heal ${Math.round(SUZ.f3.healPct*100)}% of max HP, +${Math.round(SUZ.f3.dmgRes*1000)/10}% damage reduction and ${Math.round(SUZ.f3.ccRes*100)}% CC resist — thickening one stack per ${SUZ.cpMax} points, up to ${SUZ.st.max}.`}
     ]},
   ginyu:{ role:{vi:'Ginyu Force · Cận chiến',en:'Ginyu Force · Melee'}, st:{pow:4,spd:4,rng:3,def:3},
     pw:{dmg:70,dur:56,mob:58,as:76,rng:62,cc:80,uti:72,con:42,cmb:96},
@@ -3640,6 +3683,7 @@ function mk(o){
     foe:null, foeT:0,                   // đối thủ đang nhắm (hỗn chiến) và đồng hồ bốc lại
 
     goals:0, vuln:0, exhaust:0, prewing:false, prewingDone:false, prewingA:0,
+    tsuPin:0, tsuRun:0,                 // Tsubasa: đồng hồ bị dồn vào góc và quãng bứt tốc
     chakra:0, lazy:false, awake:false, evade:0, outCut:0, weak:false,
     /* Captain Ginyu: mấy hệ số nhân dùng chung cho MỌI nhân vật (aura của anh bám
        vào người khác), nên khai thẳng ở đây với giá trị trung tính. */
@@ -4035,8 +4079,10 @@ function counters(src,tgt){
   for(const f of [src,tgt]){
     if(!f||f.summon)continue;
     if(f.key==='kono'&&f.rage<20){ f.rage++; if(f.rage===20) say('Nộ khí đầy — RASENGAN sẵn sàng!','g'); }
-    if(f.key==='chichi'){ f.hits++; if(f.hits%5===0){ f.critBonus+=.05; setPose(f,'skill',.5);
-      say(`ChiChi hăng máu: chí mạng +5% (tổng +${Math.round(f.critBonus*100)}%)`,'c'); } }
+    /* Chí mạng KHÔNG có trần: người dùng chốt "crit ko giới hạn", nên đừng kẹp
+       `Math.min` vào đây — cứ 5 đòn lại dày thêm, đánh lâu là đòn nào cũng chí mạng. */
+    if(f.key==='chichi'){ f.hits++; if(f.hits%5===0){ f.critBonus+=CHICHI_CRIT_STEP; setPose(f,'skill',.5);
+      say(`ChiChi hăng máu: chí mạng +${Math.round(CHICHI_CRIT_STEP*100)}% (tổng ${Math.round((CHICHI_CRIT+f.critBonus)*100)}%)`,'c'); } }
   }
 }
 /* Một người gục xuống: dáng ngã, hiệu ứng riêng của từng nhân vật, rồi đẩy vào G.kos
@@ -4491,13 +4537,14 @@ function rasengan(k,e){
 }
 
 /* ---------- ChiChi ---------- */
-/* `dmg` để trống thì ăn theo bảng cũ (chí mạng 25 / thường 5). TRẢ VỀ đúng giá trị của
-   hurt() để chỗ gọi biết đòn có trúng không — mọi hiệu ứng ăn theo phải xét cái này. */
+/* `dmg` để trống thì ăn theo bảng cũ (chí mạng CHICHI_CRIT_DMG / thường CHICHI_HIT_DMG).
+   TRẢ VỀ đúng giá trị của hurt() để chỗ gọi biết đòn có trúng không — mọi hiệu ứng ăn
+   theo phải xét cái này. */
 function melee(c,e,forceCrit,dmg){
   setPose(c,'atk1',cm(.26)); aim(c,e,.85); sfx('punch');
-  const crit=forceCrit||chance(.10+c.critBonus);
-  const landed=hurt(e,dmg!==undefined?dmg:(crit?25:5),c,crit);
-  if(crit&&!forceCrit) say('Cú đá chí mạng 25 dmg!','c');
+  const crit=forceCrit||chance(CHICHI_CRIT+c.critBonus);
+  const landed=hurt(e,dmg!==undefined?dmg:(crit?CHICHI_CRIT_DMG:CHICHI_HIT_DMG),c,crit);
+  if(crit&&!forceCrit) say(`Cú đá chí mạng ${CHICHI_CRIT_DMG} dmg!`,'c');
   G.fx.push({type:'punch',x:(c.x+e.x)/2,y:(c.y+e.y)/2,life:.16,ml:.16});
   return landed;
 }
@@ -4792,7 +4839,7 @@ function scold(c,e){
   for(let i=0;i<5;i++) later(i*cm(.6),()=>{
     if(!c.alive||G.over||G.freeze>0)return;
     setPose(c,'atk2',.5);
-    const crit=chance(.20+c.critBonus);
+    const crit=chance(SCOLD_CRIT+c.critBonus);
     sfx('scold');
     G.floats.push({x:c.x+rnd(-34,34), y:c.y-96, txt:pickScold(), color:c.color,
       life:SCOLD_BUBBLE, ml:SCOLD_BUBBLE, banner:true, bubble:true, tilt:rnd(-.13,.13)});
@@ -4835,7 +4882,7 @@ function tsuBanner(t,txt){
 /* Skill 1 — Basic shot (10% thành Overhead kick) */
 function basicShot(t,e,force){
   const sp=t.eagle?EAGLE_CD:1;
-  const bic=!!force||chance(.10);
+  const bic=!!force||chance(BIC_ODDS);
   setPose(t,bic?'bicycle':'atk1',cm(bic?.62:.5)*sp);
   aim(t,e,bic?1.5:1);
   if(bic){ tsuBanner(t,'OVERHEAD KICK!'); say('Tsubasa bật người — OVERHEAD KICK!','g'); }
@@ -4853,11 +4900,11 @@ function kickBall(t,e,bic){
   const side=chance(t.eagle?.4:.2)?0:(chance(.5)?1:-1);
   const spread=(side===0?rnd(-.05,.05):side*rnd(.17,.36))*acc;
   const a=Math.atan2(e.y-t.y,e.x-t.x)+spread;
-  const spd=bic?345:305;                      // nhanh hơn phi tiêu (285) một chút
+  const spd=bic?BIC_SPD:BALL_SPD;             // đã lên 150% so với bản cũ (345 / 305)
   G.proj.push({type:'ball',bic:!!bic,team:t.team,owner:t,
     x:t.x+Math.cos(a)*26, y:t.y+Math.sin(a)*26-8,
     vx:Math.cos(a)*spd, vy:Math.sin(a)*spd,
-    r:bic?13:11, dmg:bic?40:25, kb:bic?330:180,
+    r:bic?13:11, dmg:bic?BIC_DMG:25, kb:bic?330:180,
     life:4.5, spin:0, bounce:0, maxBounce:1});
 }
 /* Skill 2 — Drive shot: vọt lên trời rồi ngoặt xuống bổ vào địch.
@@ -4877,7 +4924,7 @@ function driveShot(t,e){
       G.proj.push({type:'drive',straight:true,team:t.team,owner:t,tgt:e,
         x:t.x+Math.cos(a)*26, y:t.y+Math.sin(a)*26-8,
         vx:Math.cos(a)*EAGLE_DRIVE_SPD, vy:Math.sin(a)*EAGLE_DRIVE_SPD,
-        r:14, dmg:80, life:4.5, spin:0, rise:0, homing:false, wing:0,
+        r:14, dmg:DRIVE_DMG, life:4.5, spin:0, rise:0, homing:false, wing:0,
         bounce:0, maxBounce:1, noReflect:true});
       return;
     }
@@ -4885,7 +4932,7 @@ function driveShot(t,e){
     G.proj.push({type:'drive',team:t.team,owner:t,tgt:e,
       x:t.x+Math.cos(up)*22, y:t.y-16,
       vx:Math.cos(up)*310, vy:Math.sin(up)*310,
-      r:14, dmg:80, life:7, spin:0, rise:cm(.6), homing:false, turn:4.6, wing:0, noReflect:true});
+      r:14, dmg:DRIVE_DMG, life:7, spin:0, rise:cm(.6), homing:false, turn:4.6, wing:0, noReflect:true});
   });
 }
 /* Skill 3 — Victory Shot: Twin Shot cùng Hyuga hoặc Misaki */
@@ -4979,6 +5026,14 @@ function eagleAwaken(t){
   later(2.5,()=>{
     if(G.over||!t.alive)return;
     t.prewing=false;
+    /* Hồi máu TRƯỚC khi chốt nhịp cháy: `eagleBurn` chia đều số máu còn lại vào
+       EAGLE_BURN giây, nên hồi sau là quãng cháy vẫn tính theo máu cũ và anh chết non. */
+    const hoi=Math.min(t.maxHp-t.hp, t.maxHp*EAGLE_HEAL);
+    if(hoi>0){
+      t.hp+=hoi;
+      G.floats.push({x:t.x-34,y:t.y-52,txt:'+'+Math.round(hoi),color:'#7DEBAB',life:1.1,ml:1.1,sc:.62});
+      say(`Đôi cánh nâng anh dậy: hồi ${Math.round(hoi)} máu (${Math.round(EAGLE_HEAL*1000)/10}% máu tối đa).`,'g');
+    }
     t.eagle=true; t.eagleAcc=0; t.eagleT=0; t.eagleBurn=t.hp/EAGLE_BURN; t.goals=0;
     t.quota={drive:EAGLE_QUOTA.drive, bic:EAGLE_QUOTA.bic};
     t.cds.s1=0; t.cds.s2=0;                      // vào là tung được ngay
@@ -4991,6 +5046,32 @@ function eagleAwaken(t){
     say('WINGS OF THE EAGLE! Ra chiêu gấp 4, Drive Shot gấp đôi nữa và bay thẳng vào địch, sút chuẩn gấp đôi, miễn 70% sát thương, miễn nhiễm khống chế.','g');
     say(`Cái giá: cháy sạch máu trong ${rts(EAGLE_BURN)}s là gục, và không còn tính goal — Twin Shot vô hiệu.`,'m');
   },true);
+}
+/* Bị dồn vào góc thì vọt tốc độ mà thoát ra.
+   Điều kiện: Tsubasa đứng sát mép sàn (TSU_PIN_EDGE) VÀ có địch đứng trong TSU_PIN_NEAR,
+   giữ nguyên như vậy suốt TSU_PIN_T. Đủ thì `f.tsuRun` mở ra TSU_PIN_RUN giây tốc chạy
+   gấp TSU_PIN_MUL, và bộ đếm về 0 để không kích lại ngay.
+   Đếm Ở ĐÂY chứ đừng đếm trong `think()`: lúc bị dồn anh hay dính choáng, mà `think()`
+   không chạy khi đang choáng — đúng cái bẫy của Mini Rasengan (mục 2, Konohamaru). */
+function tsuPinTick(f,dt){
+  if(!f.alive||G.over){ f.tsuPin=0; return; }
+  if(f.tsuRun>0){ f.tsuRun=Math.max(0,f.tsuRun-dt); f.moveMul*=TSU_PIN_MUL; return; }
+  const sat=(f.x-PAD<TSU_PIN_EDGE)||(W-PAD-f.x<TSU_PIN_EDGE)||
+            (f.y-PAD<TSU_PIN_EDGE)||(H-PAD-f.y<TSU_PIN_EDGE);
+  let bi=false;
+  if(sat) for(const o of G.fighters){
+    if(!o.alive||o.team===f.team||(o.summon&&!o.ally))continue;
+    if(Math.hypot(o.x-f.x,o.y-f.y)<TSU_PIN_NEAR){ bi=true; break; }
+  }
+  if(!bi){ f.tsuPin=0; return; }
+  f.tsuPin=(f.tsuPin||0)+dt;
+  if(f.tsuPin<TSU_PIN_T)return;
+  f.tsuPin=0; f.tsuRun=TSU_PIN_RUN;
+  f.moveMul*=TSU_PIN_MUL;
+  ring(f.x,f.y,86,'#FFF3C4',.35);
+  G.floats.push({x:f.x,y:f.y-96,txt:'BREAK AWAY!',color:'#FFF3C4',life:1.1,ml:1.1,
+    banner:true,bubble:true,gold:true,tilt:rnd(-.06,.06)});
+  say('Bị dồn vào góc — Tsubasa bứt tốc thoát ra!','g');
 }
 /* Đốt máu lúc kích hoạt nội tại: chia đều số máu còn lại vào EAGLE_BURN giây, nên dù
    đối thủ không đánh thêm đòn nào thì hết ngần ấy giây Tsubasa cũng gục. */
@@ -5022,22 +5103,25 @@ function ballHit(p,f){
     ring(f.x,f.y,170,'#FFF3C4',.6);
     const twinHit=hurt(f,p.dmg,o,'TWIN SHOT!','ult');
     if(twinHit&&f.alive&&f.invuln<=0){
-      const st=stunFx(f,gnCc(o,2),'shock'); if(st) sfx('shock');  // choáng Twin Shot: điện giật
-      f.vuln=Math.max(f.vuln,3);
+      const st=stunFx(f,gnCc(o,TWIN_STUN),'shock'); if(st) sfx('shock');  // choáng Twin Shot: điện giật
+      f.vuln=Math.max(f.vuln,TWIN_VULN);
       knock(f,p.vx,p.vy,260);
-      G.floats.push({x:f.x,y:f.y-118,txt:st?`STUNNED ${rts(2)}s · +50% DMG TAKEN ${rts(3)}s`:`+50% DMG TAKEN ${rts(3)}s`,color:'#FFF3C4',
+      G.floats.push({x:f.x,y:f.y-118,txt:st?`STUNNED ${rts(TWIN_STUN)}s · +50% DMG TAKEN ${rts(TWIN_VULN)}s`:`+50% DMG TAKEN ${rts(TWIN_VULN)}s`,color:'#FFF3C4',
         life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
     }
-    say(`VICTORY SHOT xuyên thẳng — 150 dmg, thủng giáp 50% trong ${rts(3)} giây!`,'g');
+    say(`VICTORY SHOT xuyên thẳng — 150 dmg, thủng giáp 50% trong ${rts(TWIN_VULN)} giây!`,'g');
   }else if(p.type==='drive'){
     ring(f.x,f.y,120,'#FF8A2B',.5);
     const driveHit=hurt(f,p.dmg,o,'DRIVE SHOT!','big','red');   // cú nổ lửa: đỏ
     if(driveHit&&f.alive){
       f.dots.push({dps:10,left:1.5,acc:0,src:o,tint:'red'});   // thiêu đốt 5 dmg × 3 đợt
-      knock(f,p.vx,p.vy,200);
+      /* Hất lùi đúng DRIVE_KB_DIST chiều dài sàn. Lực đẩy tắt dần theo exp(-6t) nên quãng
+         đi được bằng power/6 — cùng công thức với Air Cannon của Doraemon, đừng truyền
+         thẳng một con số lực vào đây. */
+      knock(f,p.vx,p.vy,W*DRIVE_KB_DIST*6);
       for(let i=0;i<8;i++) G.fx.push({type:'dust',x:f.x+rnd(-16,16),y:f.y+rnd(-24,10),r:5,life:.45,ml:.45});
     }
-    say('DRIVE SHOT trúng đích — 80 dmg kèm thiêu đốt 5 dmg × 3 đợt.','g');
+    say(`DRIVE SHOT trúng đích — ${DRIVE_DMG} dmg, hất văng ${Math.round(DRIVE_KB_DIST*100)}% sàn kèm thiêu đốt 5 dmg × 3 đợt.`,'g');
   }else{
     const kickHit=hurt(f,p.dmg,o,p.bic?'OVERHEAD KICK!':false);
     sfx('hit');
@@ -5046,7 +5130,7 @@ function ballHit(p,f){
       knock(f,p.vx,p.vy,p.kb||180);
     }
     ring(p.x,p.y,p.bic?70:46,p.bic?'#FFB03A':'#FFFFFF',.3);
-    if(p.bic) say(`Overhead kick nổ tung — 40 dmg, hất văng và choáng ${rts(.25)} giây.`,'g');
+    if(p.bic) say(`Overhead kick nổ tung — ${BIC_DMG} dmg, hất văng và choáng ${rts(.25)} giây.`,'g');
     else say('Cú sút trúng đích — 25 dmg và hất lùi.','g');
   }
   addGoal(o);
@@ -5274,6 +5358,7 @@ function suzTune(f){
     hit:b.hit, cp:b.cp,
     decLo:b.decLo, decHi:b.decHi,
     atkCd:SUZ.atkCd*(f.form<2?SUZ.f1Slow:1),
+    healMax:f.form>=3,                 // form 3 đo lượng hồi theo MÁU TỐI ĐA
     healOdds:Math.min(.95, b.healOdds+SUZ.st.healOdds*st),
     healPct:b.healPct+SUZ.st.healPct*st,
     decHealPct:b.decHealPct+SUZ.st.healPct*st,
@@ -5283,11 +5368,14 @@ function suzTune(f){
 /* Miễn thương và kháng hiệu ứng chỉ có từ form 3, và dày lên theo từng mốc 150 điểm. */
 function suzApply(f){
   const st=f.stacks||0;
+  /* Trần .75 để miễn thương không bao giờ chạm 100%. Đủ 4 bậc thì ra .625 / .62 nên
+     trần chưa cắn vào đâu — nới `st.max` quá 4 mới phải nghĩ lại chỗ này. */
   f.dmgRes=(f.form>=3)?Math.min(.75, SUZ.f3.dmgRes+SUZ.st.dmgRes*st):0;
   f.ccRes =(f.form>=3)?Math.min(.75, SUZ.f3.ccRes +SUZ.st.ccRes *st):0;
 }
-function suzHeal(f,pct){
-  const amt=Math.min(f.maxHp-f.hp, f.hp*pct);
+/* `ofMax` bật thì `pct` đo theo MÁU TỐI ĐA (form 3), tắt thì theo máu hiện tại (form 2). */
+function suzHeal(f,pct,ofMax){
+  const amt=Math.min(f.maxHp-f.hp, (ofMax?f.maxHp:f.hp)*pct);
   if(amt<=0)return;
   f.hp+=amt;
   G.floats.push({x:f.x-34,y:f.y-52,txt:'+'+Math.round(amt),color:'#7DEBAB',life:.95,ml:.95,sc:.62});
@@ -5332,7 +5420,7 @@ function suzStrike(f,e){
   G.fx.push({type:'punch',x:(f.x+e.x)/2,y:(f.y+e.y)/2,life:.16,ml:.16});
   if(!hurt(e,T.hit,f,false))return;
   suzCp(f,T.cp);
-  if(chance(T.healOdds)) suzHeal(f,T.healPct);
+  if(chance(T.healOdds)) suzHeal(f,T.healPct,T.healMax);
 }
 
 /* Chiêu 2 — Decision Making. Cô đứng khựng lại đúng 1.5 giây người chơi (khoá cả
@@ -5402,7 +5490,7 @@ function suzDecisionHit(p,t){
   sfx('suz_hit');
   const T=suzTune(f);
   suzCp(f,p.dmg);
-  if(chance(T.healOdds)) suzHeal(f,T.decHealPct);
+  if(chance(T.healOdds)) suzHeal(f,T.decHealPct,T.healMax);
   say(`${p.tier||'DECISION'} — ${p.dmg} dmg và đúng ${p.dmg} điểm lớp.`,'s');
 }
 
@@ -7751,6 +7839,8 @@ function step(dt){
     // hệ số nhân của Ginyu và của Doraemon bám vào mọi người: dựng lại cho từng người
     // mỗi nhịp, qua đúng một cửa
     statusTick(f,dt);
+    /* SAU `statusTick`: hàm đó DỰNG LẠI `moveMul` từ đầu mỗi nhịp, nhân trước là mất trắng. */
+    if(f.key==='tsubasa'&&!f.summon&&!f.swapAs) tsuPinTick(f,dt);
     if(f.key==='shika'&&!f.summon&&f.alive&&!f.swapAs){ shikaPassive(f,dt); bindTick(f,dt); domainTick(f,dt); }
     if(f.key==='suzune'&&!f.summon&&f.alive&&!f.swapAs) suzPassive(f,dt);
     /* Chạy cho cả ba trường hợp: chính Ginyu, thân xác Ginyu do địch điều khiển, và

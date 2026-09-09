@@ -169,7 +169,18 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
   - **Đo cú đá phải chạy tay từng bước bằng `__step()`**, đừng đọc qua vòng poll: trận vẫn
     chạy nên ChiChi còn đấm thường và lao lại lần nữa xen vào, đo kiểu đó ra 90~95 thay vì
     45. Test khoá `dashCd` / `cds` của cả hai người rồi mới ép `chichiCharge()`.
-- Nội tại: cứ 5 đòn +5% chí mạng.
+- **Chí mạng — đã buff, và KHÔNG có trần.** Người dùng chốt: *"Chi-Chi có crit rate cơ bản
+  từ 10->30%"*, *"Chi-Chi đá có crit từ 25->30 dmg"*, *"Crit ko giới hạn"*.
+  | | Cũ | Mới |
+  |---|---|---|
+  | chí mạng gốc của đòn tay | 10% | **30%** (`CHICHI_CRIT`) |
+  | sát thương cú đá chí mạng | 25 | **30** (`CHICHI_CRIT_DMG`) |
+  | nội tại cứ 5 đòn | +5% | **+5%, không trần** (`CHICHI_CRIT_STEP`) |
+  - `chance(p)` chỉ là `Math.random()<p` nên tỉ lệ vượt 1 là đòn nào cũng chí mạng —
+    **đừng bọc `Math.min` vào `f.critBonus` trong `counters()`**, đó chính là cái "không
+    giới hạn" người dùng yêu cầu. Đo được: 200 đòn ⇒ +200%.
+  - **Câu mắng có thang chí mạng RIÊNG** (`SCOLD_CRIT = .20`, 30 dmg), vẫn cộng thêm
+    `critBonus` như cũ. Người dùng chỉ nêu chí mạng của đòn tay nên chỗ này giữ nguyên.
 - Dưới 20% máu: gọi **Goku / Gohan**. Có phân cảnh đóng băng (`G.freeze`) + zoom camera.
 
 **Hai chiêu viện binh — đã buff.** Hằng số khai ngay dưới `CHICHI_DASH_CD`, và vì ChiChi là
@@ -201,8 +212,48 @@ nhân vật **cũ** nên chúng viết thẳng bằng **giây trong trận** (nh
 > chiêu). Muốn khác thì sửa `MASENKO_STACK_T` / `MASENKO_STACK_MAX`.
 
 ### Ozora Tsubasa (`tsubasa`)
-- Chiêu 1 Basic Shot 25 (10% ra Overhead Kick 40 + choáng), chiêu 2 Drive Shot 80 + cháy 5×3.
+- Chiêu 1 Basic Shot 25 (**15%** ra Overhead Kick **46** + choáng), chiêu 2 Drive Shot **90**
+  + cháy 5×3 + **hất lùi 20% sàn**.
 - **5 goal** (`GOAL_MAX = 5`) mở Victory Twin Shot 150 + choáng.
+
+**Đợt buff — ba thứ cùng lên 150% một lượt.** Người dùng chốt: *"tăng tỉ lệ ra overhead
+kick — tăng tốc độ bóng bay — tăng tốc độ đá bóng từ hiện tại lên 150% hiện tại"*. Câu đó
+đọc là **một hệ số 150% cho cả ba**, nên chúng đi chung hằng `TSU_UP = 1.5`; sửa một chỗ là
+cả ba đổi theo.
+
+| | Cũ | Mới |
+|---|---|---|
+| tỉ lệ ra Overhead Kick | .10 | **.15** (`BIC_ODDS`) |
+| tốc bóng thường / overhead | 305 / 345 | **457.5 / 517.5** (`BALL_SPD` / `BIC_SPD`) |
+| nhịp giữa hai cú sút | `cm(1.35)` | **`cm(.9)`** (`TSU_SHOT_CD`) |
+| Overhead Kick | 40 | **46** — đúng +15% (`BIC_DMG`) |
+| Drive Shot | 80, lực đẩy 200 | **90** (`DRIVE_DMG`) + **hất lùi 20% sàn** (`DRIVE_KB_DIST`) |
+| Twin Shot: choáng · thủng giáp | 4s · 6s người chơi | **4.5s · 9s** (`TWIN_STUN` / `TWIN_VULN`) |
+| tốc chạy nền | 100 | **106** |
+
+- **Lực đẩy của Drive Shot đi qua công thức, đừng cắm một con số lực vào.** `knock()` nhận
+  `W * DRIVE_KB_DIST * 6` vì lực tắt dần theo `exp(-6t)`, nên quãng đi được đúng bằng
+  `power/6` — cùng lối Air Cannon của Doraemon. Đo được **117px** trên mốc 124px (phần hụt
+  là cái ngưỡng `hypot < 8` cắt đuôi lực đẩy trong `step()`, không phải lỗi).
+- **Hai con số thời gian của Twin Shot khai bằng giây TRONG TRẬN** (`TWIN_STUN = 2.25`,
+  `TWIN_VULN = 4.5`) như mọi hằng của nhân vật cũ, và mọi chỗ hiển thị bọc `rts()`. Người
+  dùng nói "+0.5s choáng, +3s chịu thêm dmg" — **hiểu là giây NGƯỜI CHƠI**, đúng cái họ đọc
+  được trên bảng kỹ năng. Đo được: 4.50s và 9.00s.
+- **Wings of the Eagle hồi 6.5% máu tối đa lúc bật** (`EAGLE_HEAL`). Phần hồi phải cộng vào
+  **TRƯỚC** dòng `t.eagleBurn = t.hp/EAGLE_BURN` — con số đó chia đều máu CÒN LẠI vào quãng
+  cháy, hồi sau là quãng cháy vẫn tính theo máu cũ và anh **gục non**. Đo được: 72 → 124 máu,
+  nhịp cháy 33/giây × 3.75s = đúng 124.
+- **Bị dồn vào góc thì bứt tốc mà thoát — `tsuPinTick()`.** Người dùng: *"khi bị áp sát vào
+  góc từ 2s → Tsubasa tăng mạnh tốc độ di chuyển lên để có thể thoát ra tình huống hiểm
+  nghèo"*. Đứng cách mép sàn dưới `TSU_PIN_EDGE` (96px) VÀ có địch trong `TSU_PIN_NEAR`
+  (250px) suốt `TSU_PIN_T` (**2 giây người chơi**) thì mở `f.tsuRun`: tốc chạy **×2.1**
+  (`TSU_PIN_MUL`) trong `TSU_PIN_RUN`.
+  - **Đếm trong `tsuPinTick()` chứ đừng đếm trong `think()`**: lúc bị dồn anh hay dính
+    choáng, mà `think()` không chạy khi đang choáng — đúng cái bẫy của Mini Rasengan.
+  - **Gọi SAU `statusTick(f,dt)`** trong `step()`: hàm đó **dựng lại `moveMul` từ đầu mỗi
+    nhịp**, nhân trước là mất trắng.
+  - Đo được: dồn sát mép đúng 2.00 giây người chơi thì cửa mở, hệ số ra đúng ×2.1, còn đứng
+    giữa sàn thì không bao giờ kích ra.
 - **Dưới 20% máu — Pre-Wings** (`PREWING_HP`): −35% sát thương nhận
   (`PREWING_RES=.65`), +50% tốc cast (`PREWING_CAST`), kháng choáng 40%
   (`PREWING_STUN=.6`). Hào quang **hiện dần dần, nhạt nhưng vẫn đủ thấy khác biệt**, kèm
@@ -379,8 +430,8 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
 **Ayanokouji làm đồng minh thật** (đủ 150 điểm ở form 2). Anh là fighter duy nhất mang cờ
 `ally:true`; `summon:true` để `hurt()` không gọi `finish()` khi anh cạn máu, nhưng
 `ally` lại cho anh **ăn được đạn** (vòng va chạm bỏ qua `f.summon&&!f.ally`).
-- Máu = **35% máu hiện tại của Horikita** lúc anh bước ra.
-- **Đột kích** mỗi 4.5 giây người chơi: 40 dmg + choáng 1.25 giây.
+- Máu = **65% máu hiện tại của Horikita** lúc anh bước ra (`SUZ.ayaHp`, cũ 35%).
+- **Đột kích** mỗi **3.6 giây người chơi** (`SUZ.ayaCd`, cũ 4.5): 40 dmg + choáng 1.25 giây.
 - Buff Horikita **+100% tốc ra chiêu** (`f.castBuff`, nhân vào nhịp trôi hồi chiêu).
 - Tự dịch chuyển chắn đạn (`ayaIntercept`) và, khi địch **cận chiến** áp sát, đứng hẳn giữa
   hai người rồi **đẩy Horikita vòng ra sau lưng địch** để cô rảnh tay đánh.
@@ -466,10 +517,21 @@ với tơi tả trong cùng một form** để chắc là có vẽ thêm dấu v
 khỏi mép sàn** và mờ dần (`a.leaving` / `a.fade`). Đi hẳn rồi Horikita mới nói *"From here on
 I fight for my own goal — alone."* và vào form 3.
 
-**Form 3**: đòn tay 20 / +20 điểm, quyết định đúng 70%, hồi máu 35% × 8% máu hiện tại,
-**+10% miễn thương** (`f.dmgRes`, ăn trong `hurt()`) và **10% kháng hiệu ứng** (`f.ccRes`,
+**Form 3**: đòn tay 20 / +20 điểm, quyết định đúng **80%**, **45%** hồi **10% MÁU TỐI ĐA**,
+**+12.5% miễn thương** (`f.dmgRes`, ăn trong `hurt()`) và **12% kháng hiệu ứng** (`f.ccRes`,
 rút ngắn thời gian choáng trong `stunFx()`). Mỗi 150 điểm lớp tích thêm được thì **+5% tỉ lệ
-quyết định đúng, +5% tỉ lệ hồi máu, +6% lượng hồi máu, +8% miễn thương, +8% kháng hiệu ứng**.
+quyết định đúng, +10% tỉ lệ hồi máu, +6% lượng hồi máu, +12.5% miễn thương, +12.5% kháng hiệu
+ứng** — **trần 4 bậc** (`SUZ.st.max`, cũ 5). Đủ bốn bậc: quyết định 98% (trần), hồi máu 85% ×
+34% máu tối đa, miễn thương 62.5%, kháng hiệu ứng 62% — vẫn dưới trần `.75` của `suzApply()`.
+
+Form 2 cũng lên: **quyết định đúng 65% → 75%**.
+
+> **Form 3 đo lượng hồi theo MÁU TỐI ĐA, form 2 vẫn theo máu HIỆN TẠI.** Người dùng chốt
+> *"lượng máu hồi sau mỗi qđinh đúng là 10% máu tối đa"*, và họ chỉ nêu **một** mức hồi cho
+> cả form (45% tỉ lệ / 10% lượng) nên đòn tay lẫn quyết định ở form 3 dùng chung con số đó.
+> Ranh giới là cờ **`healMax`** do `suzTune()` trả về, và `suzHeal(f, pct, ofMax)` đọc nó —
+> đừng để hai form dùng chung một cách đo. Đo được: form 3 với 800 máu tối đa hồi đúng 80,
+> form 2 với 200 máu hiện tại hồi đúng 10.
 
 > **Không dán chữ giải thích form lên sàn.** Người dùng đã bác: bỏ hẳn dòng
 > `FORM n · …` dưới thanh máu, bỏ băng-rôn `FORM 2 · RESOLVE` / `FORM 3 · STANDING ALONE`,
@@ -1922,6 +1984,19 @@ tất cả đều song ngữ:
 | Consistency | phát huy đều tay tới đâu, ít phụ thuộc điều kiện / may rủi |
 | Comeback Potential | thấp máu thì biến hình / buff / ultimate mạnh tới đâu |
 
+> **Buff cân bằng thì phải kéo biểu đồ lên theo.** Người dùng dặn thẳng: *"chỉnh xong hết
+> rồi thì nhớ chỉnh scale, biểu đồ dmg của các nhân vật này lên nhé — tăng dmg đồ thì cứ kéo
+> biểu đồ lên tí cho nó phù hợp"*. Đợt buff ChiChi / Tsubasa / Horikita vừa rồi kéo theo:
+>
+> | | Cũ | Mới | Vì sao |
+> |---|---|---|---|
+> | ChiChi | dmg 78 · as 82 · con 70 | **dmg 90 · as 84 · con 78** | chí mạng gốc gấp ba và không trần nên vừa nặng đòn vừa đều tay hơn hẳn |
+> | Tsubasa | dmg 72 · dur 40 · mob 50 · as 62 · rng 84 · cc 44 · con 52 · cmb 96 | **dmg 84 · dur 44 · mob 66 · as 80 · rng 88 · cc 62 · con 60 · cmb 98** | mọi cú sút nặng thêm, nhịp sút và tốc bóng lên 150%, thêm hất lùi 20% sàn, thêm cửa thoát khi bị dồn góc, và Wings of the Eagle hồi máu |
+> | Horikita | dmg 54 · dur 70 · uti 78 · con 48 · cmb 88 | **dmg 62 · dur 84 · uti 88 · con 60 · cmb 96** | form 3 hồi theo máu tối đa, miễn thương và kháng hiệu ứng dày hơn hẳn |
+>
+> `t_dex.js` chỉ kiểm khung (đủ chín trục, nằm trong 0–100, không ai copy số của ai) nên
+> **đổi cân bằng xong nhớ chấm lại tay** — không có phép đo tự động nào bắt được chỗ này.
+
 - Điểm nằm trong `DEX[key].pw`, **thang 0–100**, và đây là **bảng chấm tay** chứ không phải
   phép đo tự động từ hằng số cân bằng — khác hẳn phần số liệu của `DEX[].skills` (mục 2f) vốn
   bắt buộc đọc từ hằng số. Lý do: một con số như "sát thương" phải gộp burst, DPS và cả tần
@@ -2535,6 +2610,16 @@ node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choán
 node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ nổ là AoE nhạt dần
                         # 100%->40% rồi tắt hẳn + bén lửa 5 dmg/s trong 3s (nổ vào tường cũng
                         # lan ra), và Mini Rasengan gỡ vây 40 dmg + hất 30% sàn, hồi chiêu 12s
+node tools/t_buff.js    # đợt tăng sức mạnh ChiChi / Tsubasa / Horikita, đo THẬT trong game:
+                        # ChiChi chí mạng gốc 30% ăn đúng 30 dmg và cộng dồn KHÔNG có trần;
+                        # Tsubasa tỉ lệ overhead kick + tốc bóng + nhịp sút cùng lên 150%,
+                        # Drive Shot 90 dmg hất lùi 20% sàn, overhead kick 46, Twin Shot
+                        # choáng 4.5s + thủng giáp 9s, Wings of the Eagle hồi 6.5% máu tối
+                        # đa TRƯỚC khi chốt nhịp cháy, và cửa thoát khi bị dồn sát mép sàn
+                        # (2s người chơi ⇒ tốc chạy ×2.1, giữa sàn thì không kích);
+                        # Horikita quyết định đúng 75%/80%, form 3 hồi 10% MÁU TỐI ĐA
+                        # (form 2 vẫn theo máu hiện tại), bốn bậc cộng dồn ra 62.5% miễn
+                        # thương / 62% kháng hiệu ứng, Ayanokouji lần 2 có 65% máu
 node tools/t_chichi.js  # ChiChi: Flying Kick 45 dmg + choáng 2s, và viện binh — Kamehameha
                         # 400 dmg + choáng 2s rồi ghì chân 4s (hết choáng mới tới),
                         # Masenko 100 dmg mỗi đợt + chồng lớp −10%/−7%, và chiêu Mắng hất

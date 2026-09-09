@@ -26,6 +26,13 @@ window.__setCtx=c=>{ ctx=c; };            // ctx khai bằng let chính vì đ�
 window.__hurt=hurt; window.__stunFx=stunFx; window.__explode=explode;
 window.__sexy=sexy; window.__shadowBind=shadowBind; window.__tryEvade=tryEvade;
 window.__driveShot=driveShot; window.__eagleAwaken=eagleAwaken;
+window.__basicShot=basicShot; window.__kickBall=kickBall; window.__ballHit=ballHit;
+window.__twinShot=twinShot; window.__tsuPinTick=tsuPinTick;
+window.__TSU={up:TSU_UP,bicOdds:BIC_ODDS,ballSpd:BALL_SPD,bicSpd:BIC_SPD,shotCd:TSU_SHOT_CD,
+  bicDmg:BIC_DMG,driveDmg:DRIVE_DMG,driveKb:DRIVE_KB_DIST,twinStun:TWIN_STUN,twinVuln:TWIN_VULN,
+  heal:EAGLE_HEAL,pinT:TSU_PIN_T,pinEdge:TSU_PIN_EDGE,pinNear:TSU_PIN_NEAR,
+  pinMul:TSU_PIN_MUL,pinRun:TSU_PIN_RUN,burn:EAGLE_BURN};
+window.__CHICHI={crit:CHICHI_CRIT,critDmg:CHICHI_CRIT_DMG,hit:CHICHI_HIT_DMG,step:CHICHI_CRIT_STEP,scold:SCOLD_CRIT};
 window.__recCanvas=()=>RECV; window.__recFrame=()=>recFrame(); window.__CFR=()=>CFR;
 window.__aacRaw=aacRaw; window.__aacAsc=aacAsc; window.__mAudioEntry=mAudioEntry;
 window.__domainTargets=domainTargets; window.__domainShare=domainShare;
@@ -35,7 +42,7 @@ window.__suzForm2=suzForm2; window.__suzForm3=suzForm3; window.__suzDecide=suzDe
 window.__suzStrike=suzStrike; window.__aimTarget=aimTarget; window.__suzThink=suzThink;
 window.__SUZ_ASK=()=>SUZ_ASK;
 window.__suzDecisionHit=suzDecisionHit; window.__ayaStrike=ayaStrike; window.__suzHeal=suzHeal;
-window.__suzTier=suzTier; window.__SUZ_TIERS=SUZ_TIERS;
+window.__suzTier=suzTier; window.__SUZ_TIERS=SUZ_TIERS; window.__suzApply=suzApply;
 window.__ayaGuardKick=ayaGuardKick; window.__ayaGuardKickHit=ayaGuardKickHit;
 window.__SETS=SETS; window.__getCtx=()=>ctx; window.__sprite=sprite;
 /* pickLine() bốc lại cho tới khi ra chỉ số KHÁC lần trước, nên test ghim cứng Math.random
