@@ -151,7 +151,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     /* pickLine() boc lai cho toi khi ra chi so KHAC lan truoc, nen Math.random ghim cung
        mot hang so se TREO vong lap. Reset con tro cau thoai truoc thi lan boc dau chac an. */
     window.__resetLines();
-    const r = Math.random; Math.random = () => .1;              // .1 < .65 -> quyet dinh dung
+    const r = Math.random; Math.random = () => .1;              // .1 < decOdds -> quyet dinh dung
     window.__suzDecide(f, e);
     Math.random = r;
     const p = G.proj.find(x => x.type === 'decision');
@@ -160,7 +160,10 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
              lo: window.__suzTune(f).decLo, hi: window.__suzTune(f).decHi };
   });
   ok(dung.pose === 'right', `chot dung thi doi sang dang 'right' (dang "${dung.pose}")`);
-  gan(dung.odds, .65, 0.001, 'form 2: ti le quyet dinh dung 65%');
+  /* Đọc thẳng từ hằng `SUZ` chứ đừng ghim số: chỉnh cân bằng thì test tự đi theo. */
+  const SUZ2 = await doc(() => window.__SUZ);
+  gan(dung.odds, SUZ2.f2.decOdds, 0.001,
+      `form 2: ti le quyet dinh dung ${Math.round(SUZ2.f2.decOdds * 100)}%`);
   gan(dung.lo, 30, 0.001, 'form 2: san sat thuong quyet dinh la 30');
   gan(dung.hi, 80, 0.001, 'form 2: tran sat thuong quyet dinh la 80');
   ok(dung.co, 'quyet dinh dung sinh ra mot bong bong phong thang vao dich');
@@ -209,7 +212,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     const f = G.fighters.find(x => x.key === 'suzune'), e = G.fighters.find(x => x.key === 'kono');
     f.cp = 140; f.hp = f.maxHp;
     window.__resetLines();
-    const r = Math.random; Math.random = () => .9;              // .9 > .35 -> quyet dinh sai
+    const r = Math.random; Math.random = () => .9;              // .9 > decOdds -> quyet dinh sai
     window.__suzDecide(f, e);
     Math.random = r;
     const d = { pose: f.pose, cp: f.cp };
@@ -451,7 +454,9 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
              mong: Math.round(f.hp * window.__SUZ.ayaHp) };
   });
   ok(ally.co, 'Ayanokouji dung tren san nhu mot nhan vat that');
-  ok(ally.hp > 0 && Math.abs(ally.hp - join.mongHp) <= 2, `mau anh bang 35% mau Horikita luc do (${ally.hp} vs ${join.mongHp})`);
+  const SUZC = await doc(() => window.__SUZ);
+  ok(ally.hp > 0 && Math.abs(ally.hp - join.mongHp) <= 2,
+     `mau anh bang ${Math.round(SUZC.ayaHp * 100)}% mau Horikita luc do (${ally.hp} vs ${join.mongHp})`);
   gan(ally.cast, 2, 0.001, 'Horikita duoc buff +100% toc ra chieu');
 
   /* ---- khiêu khích: anh còn đứng đó thì mọi đòn của địch đều nhắm vào anh ---- */
@@ -550,7 +555,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     const f = G.fighters.find(x => x.key === 'suzune');
     const T = window.__suzTune(f);
     return { form: f.form, con: !!G.fighters.find(x => x.ally), cast: f.castBuff,
-             hit: T.hit, cp: T.cp, dec: T.decOdds, heal: T.healOdds, pct: T.healPct,
+             hit: T.hit, cp: T.cp, dec: T.decOdds, heal: T.healOdds, pct: T.healPct, max: !!T.healMax,
              lo: T.decLo, hi: T.decHi,
              res: f.dmgRes, cc: f.ccRes, cpNow: f.cp, stacks: f.stacks,
              thoai: G.floats.some(fl => /my\s+own\s+goal/i.test(fl.txt || '')) };
@@ -566,13 +571,16 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   gan(f3.cast, 1, 0.001, 'buff toc ra chieu tat theo anh');
   gan(f3.hit, 20, 0.001, 'form 3: don tay len 20 dmg');
   gan(f3.cp, 20, 0.001, 'form 3: moi don tich 20 diem lop');
-  gan(f3.dec, .70, 0.001, 'form 3: quyet dinh dung 70%');
-  gan(f3.lo, 40, 0.001, 'form 3: san sat thuong quyet dinh len 40');
-  gan(f3.hi, 120, 0.001, 'form 3: tran sat thuong quyet dinh len 120');
-  gan(f3.heal, .35, 0.001, 'form 3: ti le hoi mau 35%');
-  gan(f3.pct, .08, 0.001, 'form 3: hoi 8% mau hien tai');
-  gan(f3.res, .10, 0.001, 'form 3: +10% mien thuong');
-  gan(f3.cc, .10, 0.001, 'form 3: +10% khang hieu ung');
+  /* Mấy mốc dưới đây ĐỌC THẲNG từ hằng `SUZ` chứ không ghim số: chỉnh cân bằng thì sửa
+     đúng một chỗ trong index.html, test tự đi theo (cùng lối `SHIKA.lazyCap`, mục 2). */
+  gan(f3.dec, SUZC.f3.decOdds, 0.001, `form 3: quyet dinh dung ${Math.round(SUZC.f3.decOdds * 100)}%`);
+  gan(f3.lo, SUZC.f3.decLo, 0.001, `form 3: san sat thuong quyet dinh len ${SUZC.f3.decLo}`);
+  gan(f3.hi, SUZC.f3.decHi, 0.001, `form 3: tran sat thuong quyet dinh len ${SUZC.f3.decHi}`);
+  gan(f3.heal, SUZC.f3.healOdds, 0.001, `form 3: ti le hoi mau ${Math.round(SUZC.f3.healOdds * 100)}%`);
+  gan(f3.pct, SUZC.f3.healPct, 0.001, `form 3: hoi ${Math.round(SUZC.f3.healPct * 100)}% MAU TOI DA`);
+  ok(f3.max === true, 'form 3 do luong hoi theo MAU TOI DA chu khong theo mau hien tai');
+  gan(f3.res, SUZC.f3.dmgRes, 0.001, `form 3: +${SUZC.f3.dmgRes * 100}% mien thuong`);
+  gan(f3.cc, SUZC.f3.ccRes, 0.001, `form 3: +${SUZC.f3.ccRes * 100}% khang hieu ung`);
   ok(f3.stacks === 0, 'vua vao form 3 thi chua co bac cong don nao');
 
   /* ---- form 3: cứ 150 điểm lớp là lên một bậc ---- */
@@ -587,11 +595,12 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   });
   ok(bac.stacks === 1, 'du 150 diem lop o form 3 thi len mot bac');
   gan(bac.du, 10, 0.001, 'phan du duoc giu lai de tich tiep');
-  gan(bac.dec, .75, 0.001, 'moi bac +5% ti le quyet dinh dung');
-  gan(bac.heal, .40, 0.001, 'moi bac +5% ti le hoi mau');
-  gan(bac.pct, .14, 0.001, 'moi bac +6% luong hoi mau');
-  gan(bac.res, .18, 0.001, 'moi bac +8% mien thuong');
-  gan(bac.cc, .18, 0.001, 'moi bac +8% khang hieu ung');
+  const S1 = SUZC.st;
+  gan(bac.dec, SUZC.f3.decOdds + S1.dec, 0.001, `moi bac +${Math.round(S1.dec * 100)}% ti le quyet dinh dung`);
+  gan(bac.heal, SUZC.f3.healOdds + S1.healOdds, 0.001, `moi bac +${Math.round(S1.healOdds * 100)}% ti le hoi mau`);
+  gan(bac.pct, SUZC.f3.healPct + S1.healPct, 0.001, `moi bac +${Math.round(S1.healPct * 100)}% luong hoi mau`);
+  gan(bac.res, SUZC.f3.dmgRes + S1.dmgRes, 0.001, `moi bac +${S1.dmgRes * 100}% mien thuong`);
+  gan(bac.cc, SUZC.f3.ccRes + S1.ccRes, 0.001, `moi bac +${S1.ccRes * 100}% khang hieu ung`);
 
   /* ---- miễn thương và kháng hiệu ứng có ăn thật vào hurt()/stunFx() không ---- */
   const thuc = await doc(() => {

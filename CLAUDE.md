@@ -169,7 +169,18 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
   - **Đo cú đá phải chạy tay từng bước bằng `__step()`**, đừng đọc qua vòng poll: trận vẫn
     chạy nên ChiChi còn đấm thường và lao lại lần nữa xen vào, đo kiểu đó ra 90~95 thay vì
     45. Test khoá `dashCd` / `cds` của cả hai người rồi mới ép `chichiCharge()`.
-- Nội tại: cứ 5 đòn +5% chí mạng.
+- **Chí mạng — đã buff, và KHÔNG có trần.** Người dùng chốt: *"Chi-Chi có crit rate cơ bản
+  từ 10->30%"*, *"Chi-Chi đá có crit từ 25->30 dmg"*, *"Crit ko giới hạn"*.
+  | | Cũ | Mới |
+  |---|---|---|
+  | chí mạng gốc của đòn tay | 10% | **30%** (`CHICHI_CRIT`) |
+  | sát thương cú đá chí mạng | 25 | **30** (`CHICHI_CRIT_DMG`) |
+  | nội tại cứ 5 đòn | +5% | **+5%, không trần** (`CHICHI_CRIT_STEP`) |
+  - `chance(p)` chỉ là `Math.random()<p` nên tỉ lệ vượt 1 là đòn nào cũng chí mạng —
+    **đừng bọc `Math.min` vào `f.critBonus` trong `counters()`**, đó chính là cái "không
+    giới hạn" người dùng yêu cầu. Đo được: 200 đòn ⇒ +200%.
+  - **Câu mắng có thang chí mạng RIÊNG** (`SCOLD_CRIT = .20`, 30 dmg), vẫn cộng thêm
+    `critBonus` như cũ. Người dùng chỉ nêu chí mạng của đòn tay nên chỗ này giữ nguyên.
 - Dưới 20% máu: gọi **Goku / Gohan**. Có phân cảnh đóng băng (`G.freeze`) + zoom camera.
 
 **Hai chiêu viện binh — đã buff.** Hằng số khai ngay dưới `CHICHI_DASH_CD`, và vì ChiChi là
@@ -201,8 +212,48 @@ nhân vật **cũ** nên chúng viết thẳng bằng **giây trong trận** (nh
 > chiêu). Muốn khác thì sửa `MASENKO_STACK_T` / `MASENKO_STACK_MAX`.
 
 ### Ozora Tsubasa (`tsubasa`)
-- Chiêu 1 Basic Shot 25 (10% ra Overhead Kick 40 + choáng), chiêu 2 Drive Shot 80 + cháy 5×3.
+- Chiêu 1 Basic Shot 25 (**15%** ra Overhead Kick **46** + choáng), chiêu 2 Drive Shot **90**
+  + cháy 5×3 + **hất lùi 20% sàn**.
 - **5 goal** (`GOAL_MAX = 5`) mở Victory Twin Shot 150 + choáng.
+
+**Đợt buff — ba thứ cùng lên 150% một lượt.** Người dùng chốt: *"tăng tỉ lệ ra overhead
+kick — tăng tốc độ bóng bay — tăng tốc độ đá bóng từ hiện tại lên 150% hiện tại"*. Câu đó
+đọc là **một hệ số 150% cho cả ba**, nên chúng đi chung hằng `TSU_UP = 1.5`; sửa một chỗ là
+cả ba đổi theo.
+
+| | Cũ | Mới |
+|---|---|---|
+| tỉ lệ ra Overhead Kick | .10 | **.15** (`BIC_ODDS`) |
+| tốc bóng thường / overhead | 305 / 345 | **457.5 / 517.5** (`BALL_SPD` / `BIC_SPD`) |
+| nhịp giữa hai cú sút | `cm(1.35)` | **`cm(.9)`** (`TSU_SHOT_CD`) |
+| Overhead Kick | 40 | **46** — đúng +15% (`BIC_DMG`) |
+| Drive Shot | 80, lực đẩy 200 | **90** (`DRIVE_DMG`) + **hất lùi 20% sàn** (`DRIVE_KB_DIST`) |
+| Twin Shot: choáng · thủng giáp | 4s · 6s người chơi | **4.5s · 9s** (`TWIN_STUN` / `TWIN_VULN`) |
+| tốc chạy nền | 100 | **106** |
+
+- **Lực đẩy của Drive Shot đi qua công thức, đừng cắm một con số lực vào.** `knock()` nhận
+  `W * DRIVE_KB_DIST * 6` vì lực tắt dần theo `exp(-6t)`, nên quãng đi được đúng bằng
+  `power/6` — cùng lối Air Cannon của Doraemon. Đo được **117px** trên mốc 124px (phần hụt
+  là cái ngưỡng `hypot < 8` cắt đuôi lực đẩy trong `step()`, không phải lỗi).
+- **Hai con số thời gian của Twin Shot khai bằng giây TRONG TRẬN** (`TWIN_STUN = 2.25`,
+  `TWIN_VULN = 4.5`) như mọi hằng của nhân vật cũ, và mọi chỗ hiển thị bọc `rts()`. Người
+  dùng nói "+0.5s choáng, +3s chịu thêm dmg" — **hiểu là giây NGƯỜI CHƠI**, đúng cái họ đọc
+  được trên bảng kỹ năng. Đo được: 4.50s và 9.00s.
+- **Wings of the Eagle hồi 6.5% máu tối đa lúc bật** (`EAGLE_HEAL`). Phần hồi phải cộng vào
+  **TRƯỚC** dòng `t.eagleBurn = t.hp/EAGLE_BURN` — con số đó chia đều máu CÒN LẠI vào quãng
+  cháy, hồi sau là quãng cháy vẫn tính theo máu cũ và anh **gục non**. Đo được: 72 → 124 máu,
+  nhịp cháy 33/giây × 3.75s = đúng 124.
+- **Bị dồn vào góc thì bứt tốc mà thoát — `tsuPinTick()`.** Người dùng: *"khi bị áp sát vào
+  góc từ 2s → Tsubasa tăng mạnh tốc độ di chuyển lên để có thể thoát ra tình huống hiểm
+  nghèo"*. Đứng cách mép sàn dưới `TSU_PIN_EDGE` (96px) VÀ có địch trong `TSU_PIN_NEAR`
+  (250px) suốt `TSU_PIN_T` (**2 giây người chơi**) thì mở `f.tsuRun`: tốc chạy **×2.1**
+  (`TSU_PIN_MUL`) trong `TSU_PIN_RUN`.
+  - **Đếm trong `tsuPinTick()` chứ đừng đếm trong `think()`**: lúc bị dồn anh hay dính
+    choáng, mà `think()` không chạy khi đang choáng — đúng cái bẫy của Mini Rasengan.
+  - **Gọi SAU `statusTick(f,dt)`** trong `step()`: hàm đó **dựng lại `moveMul` từ đầu mỗi
+    nhịp**, nhân trước là mất trắng.
+  - Đo được: dồn sát mép đúng 2.00 giây người chơi thì cửa mở, hệ số ra đúng ×2.1, còn đứng
+    giữa sàn thì không bao giờ kích ra.
 - **Dưới 20% máu — Pre-Wings** (`PREWING_HP`): −35% sát thương nhận
   (`PREWING_RES=.65`), +50% tốc cast (`PREWING_CAST`), kháng choáng 40%
   (`PREWING_STUN=.6`). Hào quang **hiện dần dần, nhạt nhưng vẫn đủ thấy khác biệt**, kèm
@@ -379,8 +430,8 @@ hỏi mất lâu hơn 1.5 giây — mà tiếng thì không được sống lâu
 **Ayanokouji làm đồng minh thật** (đủ 150 điểm ở form 2). Anh là fighter duy nhất mang cờ
 `ally:true`; `summon:true` để `hurt()` không gọi `finish()` khi anh cạn máu, nhưng
 `ally` lại cho anh **ăn được đạn** (vòng va chạm bỏ qua `f.summon&&!f.ally`).
-- Máu = **35% máu hiện tại của Horikita** lúc anh bước ra.
-- **Đột kích** mỗi 4.5 giây người chơi: 40 dmg + choáng 1.25 giây.
+- Máu = **65% máu hiện tại của Horikita** lúc anh bước ra (`SUZ.ayaHp`, cũ 35%).
+- **Đột kích** mỗi **3.6 giây người chơi** (`SUZ.ayaCd`, cũ 4.5): 40 dmg + choáng 1.25 giây.
 - Buff Horikita **+100% tốc ra chiêu** (`f.castBuff`, nhân vào nhịp trôi hồi chiêu).
 - Tự dịch chuyển chắn đạn (`ayaIntercept`) và, khi địch **cận chiến** áp sát, đứng hẳn giữa
   hai người rồi **đẩy Horikita vòng ra sau lưng địch** để cô rảnh tay đánh.
@@ -466,10 +517,21 @@ với tơi tả trong cùng một form** để chắc là có vẽ thêm dấu v
 khỏi mép sàn** và mờ dần (`a.leaving` / `a.fade`). Đi hẳn rồi Horikita mới nói *"From here on
 I fight for my own goal — alone."* và vào form 3.
 
-**Form 3**: đòn tay 20 / +20 điểm, quyết định đúng 70%, hồi máu 35% × 8% máu hiện tại,
-**+10% miễn thương** (`f.dmgRes`, ăn trong `hurt()`) và **10% kháng hiệu ứng** (`f.ccRes`,
+**Form 3**: đòn tay 20 / +20 điểm, quyết định đúng **80%**, **45%** hồi **10% MÁU TỐI ĐA**,
+**+12.5% miễn thương** (`f.dmgRes`, ăn trong `hurt()`) và **12% kháng hiệu ứng** (`f.ccRes`,
 rút ngắn thời gian choáng trong `stunFx()`). Mỗi 150 điểm lớp tích thêm được thì **+5% tỉ lệ
-quyết định đúng, +5% tỉ lệ hồi máu, +6% lượng hồi máu, +8% miễn thương, +8% kháng hiệu ứng**.
+quyết định đúng, +10% tỉ lệ hồi máu, +6% lượng hồi máu, +12.5% miễn thương, +12.5% kháng hiệu
+ứng** — **trần 4 bậc** (`SUZ.st.max`, cũ 5). Đủ bốn bậc: quyết định 98% (trần), hồi máu 85% ×
+34% máu tối đa, miễn thương 62.5%, kháng hiệu ứng 62% — vẫn dưới trần `.75` của `suzApply()`.
+
+Form 2 cũng lên: **quyết định đúng 65% → 75%**.
+
+> **Form 3 đo lượng hồi theo MÁU TỐI ĐA, form 2 vẫn theo máu HIỆN TẠI.** Người dùng chốt
+> *"lượng máu hồi sau mỗi qđinh đúng là 10% máu tối đa"*, và họ chỉ nêu **một** mức hồi cho
+> cả form (45% tỉ lệ / 10% lượng) nên đòn tay lẫn quyết định ở form 3 dùng chung con số đó.
+> Ranh giới là cờ **`healMax`** do `suzTune()` trả về, và `suzHeal(f, pct, ofMax)` đọc nó —
+> đừng để hai form dùng chung một cách đo. Đo được: form 3 với 800 máu tối đa hồi đúng 80,
+> form 2 với 200 máu hiện tại hồi đúng 10.
 
 > **Không dán chữ giải thích form lên sàn.** Người dùng đã bác: bỏ hẳn dòng
 > `FORM n · …` dưới thanh máu, bỏ băng-rôn `FORM 2 · RESOLVE` / `FORM 3 · STANDING ALONE`,
@@ -1742,9 +1804,18 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
     **bắt buộc có `pointer-events:none`** — thiếu thì nút `PRESS START` nằm dưới không bấm
     được, kể cả người lẫn Playwright.
 - **MÀN VS TRƯỚC TRẬN** (`#arcVs`, `vsShow()` / `vsGo()`). Người dùng gửi ảnh màn chọn của
-  Street Fighter II và chốt: *"icon nhân vật rồi VS rõ ràng rồi mới vào"*. Mặt hai bên lấy từ
-  chính ảnh đã dán (`avaSrc()`, chưa dán thì emoji), tên tô màu của nhân vật, chữ `VS` vàng ở
-  giữa, tên màn đấu bên dưới.
+  Street Fighter II và chốt: *"icon nhân vật rồi VS rõ ràng rồi mới vào"*, rồi nói thêm:
+  *"đừng để nó là icon — để nó là full body với nhiều effect trông như một battle thật"*.
+  Nên mỗi bên là một **KHUNG DỌC vẽ trọn cả người** (`object-fit: contain`, canh **đáy** cho
+  hai bên đứng cùng một mặt sàn), **không** phải ô vuông cắt cúp lấy cái đầu.
+  - Hiệu ứng đi kèm: **quầng sáng** theo màu nhân vật, **vệt tốc độ** chạy phía sau, **vũng
+    sáng dưới chân**, **burst** sau chữ VS, và một **chớp màn** lúc mở. Bên phải lật ngược
+    (`scaleX(-1)`) cho hai bên **quay mặt vào nhau**.
+  - Nền ăn theo **tông màu của màn đấu** (`--vsFog` đặt từ `stageOf(STAGE).fog`) — nhìn ra
+    ngay mình sắp đánh ở đâu.
+  - Đông người (đánh đội / hỗn chiến) thì thu nhỏ khung qua biến `--k`, đừng để tràn màn.
+  - Chớp màn phải **thay hẳn nút `.vsFlash`** mỗi lần mở (`replaceWith(cloneNode)`):
+    animation chỉ chạy một lần cho mỗi lần phần tử vào cây DOM.
   - **Cờ `vsOn` chặn thẳng `step()`** nên trận đứng yên hẳn — kể cả mấy màn ra mắt (Ginyu bay
     vào, Anywhere Door, Superman đáp xuống), vì chúng đo bằng giây TRONG TRẬN. Đo được: `G.t`
     đứng nguyên ở 0 suốt màn VS rồi mới chạy.
@@ -1756,7 +1827,15 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
     `#arcAgain`, `#compGo`). Thêm đường vào trận mới thì gọi `arcFight()`, đừng gọi tay.
   - Chỉ có ở **TRANG CHƠI** (`ARCADE`): xưởng vào thẳng như cũ vì mọi test hiện có bấm
     `#cselGo` một phát là vào trận.
-  - Chuyển động chỉ đổi `opacity`, **không dùng `transform`** (mục 9).
+  - Mấy chuyển động **lặp mãi** chỉ đổi `opacity` / `background-position`, **không dùng
+    `transform`** (mục 9). Cú bay vào lúc mở màn có dùng `transform` nhưng nó **chạy một lần
+    rồi dừng**, và nó nằm trong `.vsSide` chứ không phải chính `#arcVs` — cái mà test bấm vào.
+  - **`#cselGo` KHÔNG được gọi `arcFight()` khi vừa khai mạc giải.** `startPicked()` cho
+    `league`/`cup` mở thẳng bảng xếp hạng rồi `return`, nhưng nhánh arcade phía sau vẫn gọi
+    `arcFight()` — tức bật nhạc, cho trận chạy ngầm sau lưng cái bảng, và (từ khi có màn VS)
+    chớp ra **cặp đấu của trận TRƯỚC** còn sót trong `G.fighters`. Người dùng quay được đúng
+    cảnh đó: bấm "Khai mạc giải" mà hiện ra `Captain Ginyu vs ChiChi` trong khi trận đầu của
+    giải là `ChiChi vs Konohamaru`. Gác bằng `if(!compOn()) arcFight();`.
 - **GIỮ MÀN WINNER RỒI MỚI HIỆN DẢI NÚT.** Người dùng chốt: *"lúc thắng rồi thì hold lại để
   hiện winner, xong sau đó cho người chơi nút tự chuyển"*. `#arcOver` chỉ bật khi
   **`G.endT >= 2`** — đúng lúc `G.announced` mở ra băng-rôn và pháo giấy. Trước đó nút nhảy ra
@@ -1905,6 +1984,19 @@ tất cả đều song ngữ:
 | Consistency | phát huy đều tay tới đâu, ít phụ thuộc điều kiện / may rủi |
 | Comeback Potential | thấp máu thì biến hình / buff / ultimate mạnh tới đâu |
 
+> **Buff cân bằng thì phải kéo biểu đồ lên theo.** Người dùng dặn thẳng: *"chỉnh xong hết
+> rồi thì nhớ chỉnh scale, biểu đồ dmg của các nhân vật này lên nhé — tăng dmg đồ thì cứ kéo
+> biểu đồ lên tí cho nó phù hợp"*. Đợt buff ChiChi / Tsubasa / Horikita vừa rồi kéo theo:
+>
+> | | Cũ | Mới | Vì sao |
+> |---|---|---|---|
+> | ChiChi | dmg 78 · as 82 · con 70 | **dmg 90 · as 84 · con 78** | chí mạng gốc gấp ba và không trần nên vừa nặng đòn vừa đều tay hơn hẳn |
+> | Tsubasa | dmg 72 · dur 40 · mob 50 · as 62 · rng 84 · cc 44 · con 52 · cmb 96 | **dmg 84 · dur 44 · mob 66 · as 80 · rng 88 · cc 62 · con 60 · cmb 98** | mọi cú sút nặng thêm, nhịp sút và tốc bóng lên 150%, thêm hất lùi 20% sàn, thêm cửa thoát khi bị dồn góc, và Wings of the Eagle hồi máu |
+> | Horikita | dmg 54 · dur 70 · uti 78 · con 48 · cmb 88 | **dmg 62 · dur 84 · uti 88 · con 60 · cmb 96** | form 3 hồi theo máu tối đa, miễn thương và kháng hiệu ứng dày hơn hẳn |
+>
+> `t_dex.js` chỉ kiểm khung (đủ chín trục, nằm trong 0–100, không ai copy số của ai) nên
+> **đổi cân bằng xong nhớ chấm lại tay** — không có phép đo tự động nào bắt được chỗ này.
+
 - Điểm nằm trong `DEX[key].pw`, **thang 0–100**, và đây là **bảng chấm tay** chứ không phải
   phép đo tự động từ hằng số cân bằng — khác hẳn phần số liệu của `DEX[].skills` (mục 2f) vốn
   bắt buộc đọc từ hằng số. Lý do: một con số như "sát thương" phải gộp burst, DPS và cả tần
@@ -1981,6 +2073,73 @@ Cặp nút `.vTab` (`#vSimple` / `#vFull`) nằm ngay dưới dòng phụ của 
 - Hai ô máu cũ trên thanh công cụ xưởng (`#hpK` / `#hpC`) giữ nguyên, vẫn đi qua `onHp()`.
 
 Kiểm bằng `node tools/t_dex.js`.
+
+## 2h. Tiếng của giao diện, và luật vàng khi đánh bóng CSS
+
+Người dùng: *"Thêm âm thanh cho sôi động, hiệu ứng web làm nhìn chuyên nghiệp và bắt mắt hơn"*.
+
+### Chín ô tiếng của GIAO DIỆN — nhóm `Giao diện`
+
+Đây là **tiếng của cái vỏ arcade, không phải của trận đấu**, nên chúng nằm thành một nhóm
+riêng cuối `SFX_EVENTS`, tiêu đề gắn vào ô đầu (`ui_start:'Giao diện'` trong `SFX_GROUPS`):
+
+| Ô | Kêu lúc nào |
+|---|---|
+| `ui_start` | bấm PRESS START |
+| `ui_pick` | chọn một nhân vật (`tile()`) |
+| `ui_tap` | bấm ô màn đấu / nút chế độ / nút lối xem skill |
+| `ui_next` | `#cselGo` sang bước kế tiếp |
+| `ui_back` | `#cselBack` |
+| `ui_vs` | `vsShow()` — màn VS hiện ra |
+| `ui_go` | `vsGo()` — từ màn VS lao vào trận |
+| `ui_board` | `compOpen()` — mở bảng xếp hạng |
+| `ui_rank` | `lgPlay()`, **chỉ khi có hàng đổi chỗ thật** (cờ `doiCho`) |
+
+- **Ô nào cũng có `case` riêng trong `synth()`**, đúng luật ở mục 4 — rơi vào nhánh `default`
+  thì ô nào cũng kêu giống ô nào. `t_ui.js` soi đủ chín `case`.
+- **Tiếng bấm nút phải GỌN và NHẸ**: cả chín ô đều dưới `.2` âm lượng và dưới nửa giây, trừ
+  `ui_vs` / `ui_go` vốn là một cú nhấn mạnh. Người chơi bấm cả chục lần trong một lượt chọn
+  nhân vật — để dài hay để to là nghe nhức đầu ngay.
+- Đấm đá vẫn mượn `sfx('punch')` như cũ; **đừng dựng thêm ô cho mấy nút khác**.
+
+### Luật vàng khi thêm hiệu ứng CSS: ĐỪNG cho nút nhấp nháy mãi
+
+Mọi chuyển động **lặp mãi** ở khu giao diện chỉ được đổi `opacity` / `box-shadow` /
+`background-position` / `filter`. Ngoài luật cũ "đừng đụng `transform`" (mục 9) còn một
+luật nữa, đắt hơn:
+
+> **Nút mà test phải bấm thì đừng gắn `animation … infinite` lên nó.**
+
+Đo được: gắn một vệt sáng `animation 3.6s infinite` vào `button.primary::after` thì
+`page.click('#arcAgain')` treo đủ 30 giây rồi đổ — lúc đó luồng chính đang giải mã 89 ảnh
+của gói phát hành, thêm một lượt tính lại kiểu dáng mỗi khung hình là cú bấm không bao giờ
+xong. Cùng họ với lỗi "250ms gán lại `style.display`" ở mục 9. Cách làm đúng:
+
+- **nút vàng**: vệt sáng chạy qua mặt nút **khi rê chuột**, bằng `transition:background-position`
+  — chạy một lượt rồi đứng yên;
+- **ô nhân vật đang chọn**: quầng vàng **đậm hơn, đứng yên**, không nhấp nháy;
+- một lượt `animation … 1` (chạy đúng một lần) thì không sao — `.lgTab tr.just` và `.brM.fresh`
+  vẫn giữ nguyên.
+
+### Đã đánh bóng những gì
+
+- Ô nhân vật có **quầng sáng theo màu nhân vật** phía sau (`.cTile::before`, `--c` do `tile()`
+  gắn vào từ `C.color`) và viền phát sáng quanh ô ảnh (`.cAva`); ô đang chọn thì quầng vàng đậm hẳn.
+- Ô màn đấu: ảnh sáng lên lúc rê chuột, ô đang chọn viền vàng dày gấp đôi và tên tô vàng.
+- Bảng xếp hạng: **ba hạng đầu tô ba màu** (vàng · bạc · đồng) ở cột số thứ tự, mũi tên
+  ▲▼ tô xanh/đỏ, và hai người vừa đá sáng lên một nhịp rồi tắt.
+- Dòng phụ dưới logo có một gạch vàng mảnh.
+
+> **Logo KHÔNG tô bằng gradient quét ngang.** Đã thử và bỏ hẳn: chữ phải trong suốt cho
+> `background-clip:text` ăn, mà cái bóng khối 3D của logo (`text-shadow:0 6px 0`) thì vẽ
+> theo Ô CHỮ chứ không theo phần đã tô, nên **lòi hết ra giữa mặt chữ thành sọc vằn**. Đổi
+> sang `drop-shadow` thì hết sọc nhưng nền gradient chạy ra ngoài khung và **mất luôn mấy
+> chữ cuối** — chụp màn hình ra đúng mỗi chữ `M`. Logo vốn đã có quầng sáng thở của
+> `#arcTitle::after`. **Đừng dựng lại.**
+
+Kiểm bằng `node tools/t_ui.js` (ba mục cuối: đủ chín ô, đủ chín `case`, và bấm thật vào màn
+chọn thì **có tiếng phát ra** — đếm ngay ở tầng WebAudio bằng cách bọc
+`AudioContext.prototype.createOscillator`, vì `sfx()` nằm trong IIFE nên không bọc từ ngoài được).
 
 ## 2b. Khoảng cách khi cận chiến — đừng dán vào nhau
 
@@ -2451,6 +2610,16 @@ node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choán
 node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ nổ là AoE nhạt dần
                         # 100%->40% rồi tắt hẳn + bén lửa 5 dmg/s trong 3s (nổ vào tường cũng
                         # lan ra), và Mini Rasengan gỡ vây 40 dmg + hất 30% sàn, hồi chiêu 12s
+node tools/t_buff.js    # đợt tăng sức mạnh ChiChi / Tsubasa / Horikita, đo THẬT trong game:
+                        # ChiChi chí mạng gốc 30% ăn đúng 30 dmg và cộng dồn KHÔNG có trần;
+                        # Tsubasa tỉ lệ overhead kick + tốc bóng + nhịp sút cùng lên 150%,
+                        # Drive Shot 90 dmg hất lùi 20% sàn, overhead kick 46, Twin Shot
+                        # choáng 4.5s + thủng giáp 9s, Wings of the Eagle hồi 6.5% máu tối
+                        # đa TRƯỚC khi chốt nhịp cháy, và cửa thoát khi bị dồn sát mép sàn
+                        # (2s người chơi ⇒ tốc chạy ×2.1, giữa sàn thì không kích);
+                        # Horikita quyết định đúng 75%/80%, form 3 hồi 10% MÁU TỐI ĐA
+                        # (form 2 vẫn theo máu hiện tại), bốn bậc cộng dồn ra 62.5% miễn
+                        # thương / 62% kháng hiệu ứng, Ayanokouji lần 2 có 65% máu
 node tools/t_chichi.js  # ChiChi: Flying Kick 45 dmg + choáng 2s, và viện binh — Kamehameha
                         # 400 dmg + choáng 2s rồi ghì chân 4s (hết choáng mới tới),
                         # Masenko 100 dmg mỗi đợt + chồng lớp −10%/−7%, và chiêu Mắng hất
@@ -2462,7 +2631,8 @@ node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng
 node tools/t_ui.js      # đổi tên game, hai ngôn ngữ (MẶC ĐỊNH TIẾNG ANH, nút đổi ở cả ba chỗ,
                         # chữ và mô tả chiêu đổi theo, nhớ lại lựa chọn), hồ sơ tám nhân vật
                         # đủ song ngữ + thẻ chiêu vẽ ra thật, nhạc nền mặc định tắt và chạy
-                        # theo ô nhạc tự nạp
+                        # theo ô nhạc tự nạp; và CHÍN Ô TIẾNG GIAO DIỆN: đủ ô, đủ case
+                        # trong synth(), bấm chọn nhân vật / ô màn / nút chế độ đều có tiếng
 node tools/t_dex.js     # chạm hai lần vào ô nhân vật thì bật bảng thông số (đúng người vừa chạm,
                         # hai nút xem skill nằm trong bảng và đi chung lựa chọn với cặp ngoài,
                         # một cú bấm thì chỉ chọn, X / Esc đóng được, hai cú cách xa nhau
@@ -2618,6 +2788,11 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Vòng khí Air Cannon bị hất ngược mà bay lùi với miệng vòng hướng cũ, rồi xuyên qua chính Doraemon | nhánh phản đòn chỉ đổi `p.vx/p.vy`, mà vòng khí vẽ theo `p.ang` và vẫn giữ `p.hitList` cũ | xoay luôn `p.ang` và `p.hitList.length = 0` ngay tại chỗ phản, viết chung cho MỌI loại đạn chứ đừng cắm theo từng type |
 | Phép đo "đầu đạn xoay theo hướng bay mới" đổ chừng một nửa số lần | so góc bằng phép trừ thẳng, mà `p.ang` cộng thêm nhiễu nên vọt qua π trong khi `atan2` luôn trả về trong (−π, π] — lệch nguyên 2π mà thật ra vẫn một hướng | so góc theo VÒNG: `d = |x−y| % 2π`, quá π thì lấy `2π − d` |
 | Phép đo "ăn nguyên đòn của chính mình" lúc ra 85, lúc ra 45, lúc ra 0 | 45 là cú Flying Kick của ChiChi xen vào, 0 là cú hất ngược lệch ±0.25 rad nên bắn trượt thật | dọn sạch sóng âm + khoá ChiChi rồi mới đo, và **thử tới 10 lượt** đòi có ít nhất một lượt trúng đủ dmg |
+| Bấm "Khai mạc giải" thì chớp ra màn VS của cặp đấu TRƯỚC, kèm nhạc và tiếng trận cũ chạy sau lưng bảng xếp hạng | `#cselGo` gọi `arcFight()` vô điều kiện, kể cả khi `startPicked()` vừa mở giải và `return` sớm — `arcFight()` bật nhạc, đặt `running=true` và gọi `vsShow()` với `G.fighters` còn sót của trận trước | gác `if(!compOn()) arcFight();` |
+| `page.click` treo 30 giây rồi đổ, mỗi lần một chỗ khác nhau | thêm `animation … infinite` lên `button.primary::after`, mà lúc đó luồng chính đang giải mã 89 ảnh của gói — mỗi khung hình lại một lượt tính kiểu dáng nữa | hiệu ứng nút đổi sang `transition` chạy lúc rê chuột; `.cTile.on` bỏ nhịp nhấp nháy, để quầng vàng đứng yên |
+| Logo màn tiêu đề ra **sọc vằn**, rồi sau khi "sửa" thì **mất hết chữ, còn mỗi `M`** | tô chữ bằng gradient `background-clip:text`: bóng khối `text-shadow` vẽ theo ô chữ nên lòi ra giữa mặt chữ; đổi sang `drop-shadow` + `no-repeat` thì nền gradient chạy hẳn ra ngoài khung | bỏ hẳn lối tô đó, trả logo về màu đặc (mục 2h) |
+| `openMulti('team',…)` thỉnh thoảng dựng ra một trận **tay đôi** `kono vs chichi` | `loadSaved()` chạy bất đồng bộ và kết thúc bằng một lượt `cselRefresh()`; lượt vẽ muộn đó dựng lại dải nút theo `TMP.mode` đã lưu, quét sạch cú bấm `#mTabTeam` vừa rồi | bấm nút chế độ rồi **kiểm lại `.on`, bấm lại tới khi ăn**; test đổ mỗi lần một chỗ chính vì thiếu chỗ này |
+| `openMulti` đổ ở tận `t1[1].hp` / `a.x` undefined | cú bấm ô nhân vật rơi đúng lúc lưới được vẽ lại nên mất trắng, đội hình thiếu người mà mãi sau mới lộ | bấm rồi **chờ dải đội hình dài thêm một thẻ** mới đi tiếp, và chốt lại số người ở cuối mỗi đội; lần thử lại phải **nghỉ quá 380ms** (`DBL_TAP`), không thì game hiểu là chạm hai lần và mở `#dexPop` — bảng đó phủ kín trang, chặn luôn `#cselGo` |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---

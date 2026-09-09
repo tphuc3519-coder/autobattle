@@ -26,6 +26,13 @@ window.__setCtx=c=>{ ctx=c; };            // ctx khai bằng let chính vì đ�
 window.__hurt=hurt; window.__stunFx=stunFx; window.__explode=explode;
 window.__sexy=sexy; window.__shadowBind=shadowBind; window.__tryEvade=tryEvade;
 window.__driveShot=driveShot; window.__eagleAwaken=eagleAwaken;
+window.__basicShot=basicShot; window.__kickBall=kickBall; window.__ballHit=ballHit;
+window.__twinShot=twinShot; window.__tsuPinTick=tsuPinTick;
+window.__TSU={up:TSU_UP,bicOdds:BIC_ODDS,ballSpd:BALL_SPD,bicSpd:BIC_SPD,shotCd:TSU_SHOT_CD,
+  bicDmg:BIC_DMG,driveDmg:DRIVE_DMG,driveKb:DRIVE_KB_DIST,twinStun:TWIN_STUN,twinVuln:TWIN_VULN,
+  heal:EAGLE_HEAL,pinT:TSU_PIN_T,pinEdge:TSU_PIN_EDGE,pinNear:TSU_PIN_NEAR,
+  pinMul:TSU_PIN_MUL,pinRun:TSU_PIN_RUN,burn:EAGLE_BURN};
+window.__CHICHI={crit:CHICHI_CRIT,critDmg:CHICHI_CRIT_DMG,hit:CHICHI_HIT_DMG,step:CHICHI_CRIT_STEP,scold:SCOLD_CRIT};
 window.__recCanvas=()=>RECV; window.__recFrame=()=>recFrame(); window.__CFR=()=>CFR;
 window.__aacRaw=aacRaw; window.__aacAsc=aacAsc; window.__mAudioEntry=mAudioEntry;
 window.__domainTargets=domainTargets; window.__domainShare=domainShare;
@@ -35,7 +42,7 @@ window.__suzForm2=suzForm2; window.__suzForm3=suzForm3; window.__suzDecide=suzDe
 window.__suzStrike=suzStrike; window.__aimTarget=aimTarget; window.__suzThink=suzThink;
 window.__SUZ_ASK=()=>SUZ_ASK;
 window.__suzDecisionHit=suzDecisionHit; window.__ayaStrike=ayaStrike; window.__suzHeal=suzHeal;
-window.__suzTier=suzTier; window.__SUZ_TIERS=SUZ_TIERS;
+window.__suzTier=suzTier; window.__SUZ_TIERS=SUZ_TIERS; window.__suzApply=suzApply;
 window.__ayaGuardKick=ayaGuardKick; window.__ayaGuardKickHit=ayaGuardKickHit;
 window.__SETS=SETS; window.__getCtx=()=>ctx; window.__sprite=sprite;
 /* pickLine() bốc lại cho tới khi ra chỉ số KHÁC lần trước, nên test ghim cứng Math.random
@@ -180,33 +187,69 @@ async function openMulti(mode, picks, opt) {
   page.on('crash', () => errors.push('TRANG SUP (renderer crash)'));
   await page.goto('file://' + (o.file || build()), { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
-  await page.click(mode === 'ffa' ? '#mTabFfa' : '#mTabTeam');
+  /* Bấm nút chế độ rồi KIỂM LẠI, bấm lại nếu chưa ăn. `loadSaved()` chạy bất đồng bộ và
+     kết thúc bằng một lượt `cselRefresh()`; lượt vẽ muộn đó dựng lại cả dải nút theo
+     TMP.mode đã lưu, nên cú bấm rơi trước nó bị quét sạch và cả đội hình vừa dựng thành
+     một trận tay đôi (đo được: openMulti('team',…) ra đúng "kono vs chichi"). Đây là họ
+     hàng của lỗi "một await trong loadSaved" ở mục 9. */
+  const tab = mode === 'ffa' ? '#mTabFfa' : '#mTabTeam';
+  for (let i = 0; i < 20; i++) {
+    await page.click(tab);
+    await page.waitForTimeout(120);
+    if (await page.$eval(tab, e => e.classList.contains('on'))) break;
+  }
   const sides = mode === 'ffa' ? [picks] : picks;
+  /* Mấy cú bấm dưới đây đi qua `evaluate` chứ KHÔNG dùng `page.click`. Lý do: bấm một
+     phát là màn chọn vẽ lại cả khung đội hình, phần tử vừa nhắm bị gỡ khỏi cây DOM ngay
+     giữa lượt kiểm "visible / stable" của Playwright — nó ngồi thử lại đủ 30 giây rồi đổ,
+     mỗi lần đổ một chỗ khác nhau. Đây là lối `t_comp.js` đã dùng cho #compGo. */
+  const bam = sel => page.evaluate(q => { const e = document.querySelector(q);
+                                          if (e) { e.click(); return true; } return false; }, sel);
+  const dem = sel => page.$$eval(sel, b => b.length);
   // số đội mặc định là 2; thêm hoặc bớt cho khớp đội hình muốn dựng
   if (mode === 'team') {
-    for (let i = 0; i < 6 && await page.$$eval('#multiPane .cselCol:not(.off)', b => b.length) > sides.length; i++)
-      await page.click('#multiPane .cselCol:not(.off) .grpBtn:not(.on)');
-    for (let i = 0; i < 6 && await page.$$eval('#multiPane .cselCol:not(.off)', b => b.length) < sides.length; i++)
-      await page.click('#multiPane .grpBtn.on');
+    for (let i = 0; i < 6 && await dem('#multiPane .cselCol:not(.off)') > sides.length; i++)
+      { await bam('#multiPane .cselCol:not(.off) .grpBtn:not(.on)'); await page.waitForTimeout(40); }
+    for (let i = 0; i < 6 && await dem('#multiPane .cselCol:not(.off)') < sides.length; i++)
+      { await bam('#multiPane .grpBtn.on'); await page.waitForTimeout(40); }
   }
   const groups = sides.map((keys, i) => [`#grpSlots${i}`, `#grpList${i}`, keys]);
   for (const [slots, list, keys] of groups) {
     // dọn sạch đội hình mặc định rồi mới bấm thêm đúng những người cần
     for (let i = 0; i < 12; i++) {
-      const n = await page.$$eval(slots + ' .cChip button', b => b.length);
-      if (!n) break;
-      await page.click(slots + ' .cChip button');
+      if (!await dem(slots + ' .cChip button')) break;
+      await bam(slots + ' .cChip button');
+      await page.waitForTimeout(40);
     }
     /* Đội hình cho phép chọn TRÙNG nhân vật, mà bấm hai lần liên tiếp vào CÙNG một ô thì
        game hiểu là "chạm hai lần" và mở bảng thông số (DBL_TAP = 380ms). Nên khi khoá lặp
        lại thì phải giãn nhịp ra, đúng như người thật bấm. */
-    let truoc = '';
+    let truoc = '', can = 0;
     for (const k of keys) {
       if (k === truoc) await page.waitForTimeout(420);
-      await page.click(`${list} .cTile[data-key="${k}"]`);
+      can++;
+      /* Bấm rồi CHỜ CHO TỚI KHI dải đội hình thật sự dài thêm một thẻ, chứ đừng bấm xong
+         là đi tiếp: lưới nhân vật được dựng lại sau mỗi lần bấm, cú bấm rơi đúng lúc dựng
+         lại thì mất trắng và đội hình thiếu người — lúc đó test đổ ở tận chỗ khác. */
+      for (let i = 0; i < 12 && await dem(slots + ' .cChip button') < can; i++) {
+        await bam(`${list} .cTile[data-key="${k}"]`);
+        /* Nghỉ QUÁ mốc DBL_TAP (380ms) giữa hai lần thử: bấm lại nhanh hơn thế thì game
+           hiểu là "chạm hai lần", mở bảng thông số #dexPop — bảng đó phủ kín trang và
+           chặn mọi cú bấm sau, kể cả #cselGo. Đúng cái bẫy đã làm test đổ mỗi lần một chỗ. */
+        await page.waitForTimeout(430);
+      }
       truoc = k;
     }
+    /* Chốt lại: đội này phải đủ đúng số người vừa yêu cầu. Thiếu là có cú bấm rơi mất
+       giữa lượt vẽ lại — đổ ngay ở đây cho biết chỗ, đừng để nó đi tiếp rồi đổ ở một
+       phép đo chẳng liên quan gì (đã dính: `t1[1].hp` với `a.x` undefined). */
+    const co = await dem(slots + ' .cChip button');
+    if (co !== keys.length)
+      throw new Error(`openMulti: ${slots} dựng được ${co}/${keys.length} người`);
   }
+  // lỡ có bảng thông số nào bật lên thì đóng lại: nó phủ kín trang và chặn #cselGo
+  await page.evaluate(() => { const e = document.getElementById('dexPop');
+                              if (e) e.classList.add('off'); });
   await page.click('#cselGo');
   if (o.play !== false) await page.click('#play');
   return { browser, page, errors };

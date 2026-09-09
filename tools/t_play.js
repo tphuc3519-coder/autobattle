@@ -120,14 +120,31 @@ function wavUrl() {
      mới vào". Trận phải ĐỨNG YÊN suốt lúc đó, kể cả màn ra mắt của Ginyu. */
   const vsm = await page.evaluate(() => ({
     hien: !document.getElementById('arcVs').classList.contains('off'),
-    mat: document.querySelectorAll('#arcVs .vsFace').length,
+    mat: document.querySelectorAll('#arcVs .vsPanel').length,
     vs: document.querySelectorAll('#arcVs .vsBig').length,
     ten: [...document.querySelectorAll('#arcVs .vsName')].map(e => e.textContent).join('/'),
     san: (document.getElementById('vsStage') || {}).textContent,
     t: window.__G().t
   }));
   ok(vsm.hien, 'bam vao tran thi mo man VS truoc');
-  ok(vsm.mat === 2 && vsm.vs === 1, `hai mat nhan vat va mot chu VS (${vsm.mat} mat / ${vsm.vs} VS)`);
+  ok(vsm.mat === 2 && vsm.vs === 1, `hai khung nhan vat va mot chu VS (${vsm.mat} khung / ${vsm.vs} VS)`);
+  /* Người dùng: "đừng để nó là icon — để nó là full body với nhiều effect trông như một
+     battle thật". Khung phải CAO hơn rộng và vẽ trọn cả người, kèm quầng sáng / vệt tốc độ
+     / vũng sáng dưới chân / burst sau chữ VS. */
+  const vsfx = await page.evaluate(() => {
+    const r = document.getElementById('vsRow'), pn = r.querySelector('.vsPanel');
+    const b = pn && pn.getBoundingClientRect();
+    return { cao: b ? Math.round(b.height) : 0, rong: b ? Math.round(b.width) : 0,
+             fit: getComputedStyle(r.querySelector('.vsBody')).alignItems,
+             glow: r.querySelectorAll('.vsGlow').length, lines: r.querySelectorAll('.vsLines').length,
+             floor: r.querySelectorAll('.vsFloor').length, burst: r.querySelectorAll('.vsBurst').length,
+             lat: getComputedStyle(r.querySelector('.vsSide.b .vsBody')).transform };
+  });
+  ok(vsfx.cao > vsfx.rong * 1.2 && vsfx.cao > 150,
+     `khung doc ve tron ca nguoi chu khong phai icon vuong (${vsfx.rong}x${vsfx.cao})`);
+  ok(vsfx.fit === 'flex-end', 'canh day cho hai ben dung cung mot mat san');
+  ok(vsfx.glow === 2 && vsfx.lines === 2 && vsfx.floor === 2 && vsfx.burst === 1,
+     `du hieu ung: quang sang ${vsfx.glow} · vet toc do ${vsfx.lines} · vung sang chan ${vsfx.floor} · burst ${vsfx.burst}`);
   ok(/GINYU/i.test(vsm.ten) && /DORA/i.test(vsm.ten), `du ten hai ben (${vsm.ten})`);
   ok(vsm.san === 'DEEP SPACE', `co ten man dau (${vsm.san})`);
   await page.waitForTimeout(600);
@@ -172,9 +189,14 @@ function wavUrl() {
   ok(await page.locator('#arcOver').isVisible(), 'giu man WINNER xong moi hien dai nut');
   ok(await page.evaluate(() => window.__G().endT >= 2),
      `dai nut hien sau moc endT 2 (${await page.evaluate(() => +window.__G().endT.toFixed(2))})`);
-  await page.click('#arcAgain');
+  /* Bấm QUA `evaluate` chứ đừng `page.click`: lúc này luồng chính đang giải mã 89 ảnh của
+     gói phát hành, `page.click` dispatch xong còn ngồi chờ trang rảnh tay rồi mới trả về —
+     đo được nó treo đủ 30 giây rồi đổ, cả trên nhánh này lẫn trên bản chưa sửa gì.
+     Đây là lối `t_comp.js` đã dùng cho `#compGo` / `#arcComp`. */
+  await page.evaluate(() => document.getElementById('arcAgain').click());
   await page.waitForTimeout(300);
-  await page.click('#arcVs').catch(() => {});       // bỏ qua màn VS của trận mới
+  await page.evaluate(() => { const e = document.getElementById('arcVs');
+                              if (e && !e.classList.contains('off')) e.click(); });   // bỏ qua màn VS của trận mới
   await page.waitForTimeout(400);
   ok(await page.evaluate(() => window.__running() && !window.__G().over), 'bam Danh lai thi vao tran moi');
 
@@ -295,7 +317,10 @@ function wavUrl() {
   const goc = `http://127.0.0.1:${sv2.address().port}`;
 
   const b3 = await chromium.launch();
-  for (const [ten, u, cho] of [['trang choi', goc + '/', 3], ['xuong', goc + '/studio/', 3]]) {
+  /* Trang XƯỞNG cần rộng bụng hơn hẳn: nó đọc kho của máy TRƯỚC (hơn tám chục khoá
+     IndexedDB, mục 2e) rồi mới tới gói, mà `fetchAsset` còn phải ăn một cú 404 ở mức ''
+     trước khi dò sang '../'. Ba giây là quá sát — đo được nó đổ ngay cả khi gói vẫn về đủ. */
+  for (const [ten, u, cho] of [['trang choi', goc + '/', 4], ['xuong', goc + '/studio/', 12]]) {
     const p3 = await b3.newPage({ viewport: { width: 820, height: 980 } });
     await p3.route('**://fonts.*/**', r => r.abort());
     const e3 = []; p3.on('pageerror', e => e3.push(e.message));

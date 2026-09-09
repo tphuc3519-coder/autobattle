@@ -144,6 +144,15 @@ async function daHet(page, tran) {
     lab: document.querySelector('#compBody .nextLab').textContent
   }));
   ok(lb.mo, 'khai mac xong thi hien BANG XEP HANG chu khong vao tran luon');
+  /* Người dùng quay được đúng cảnh này: bấm "Khai mạc giải" mà chớp ra màn VS của CẶP ĐẤU
+     TRƯỚC còn sót trong `G.fighters`, kèm nhạc và tiếng của trận cũ chạy sau lưng bảng.
+     Nguyên nhân: `#cselGo` gọi `arcFight()` vô điều kiện, kể cả khi vừa mở giải. */
+  const kh = await doc(() => ({
+    vs: !document.getElementById('arcVs').classList.contains('off'),
+    chay: window.__running()
+  }));
+  ok(!kh.vs, 'khai mac giai thi KHONG chop ra man VS cua tran cu');
+  ok(!kh.chay, 'va tran cu khong chay ngam sau lung bang xep hang');
   ok(lb.hang === 4 && lb.tong === 6, `bon nguoi: bang bon hang, sau tran (${lb.hang}/${lb.tong})`);
   ok(lb.cot === 7, `bang du bay cot: hang, ten, P, W, L, hieu so, diem (${lb.cot})`);
   ok(/1\/3/.test(lb.lab), `tran ke tiep ghi ro vong may (${lb.lab})`);
