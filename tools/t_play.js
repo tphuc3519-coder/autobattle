@@ -120,14 +120,31 @@ function wavUrl() {
      mới vào". Trận phải ĐỨNG YÊN suốt lúc đó, kể cả màn ra mắt của Ginyu. */
   const vsm = await page.evaluate(() => ({
     hien: !document.getElementById('arcVs').classList.contains('off'),
-    mat: document.querySelectorAll('#arcVs .vsFace').length,
+    mat: document.querySelectorAll('#arcVs .vsPanel').length,
     vs: document.querySelectorAll('#arcVs .vsBig').length,
     ten: [...document.querySelectorAll('#arcVs .vsName')].map(e => e.textContent).join('/'),
     san: (document.getElementById('vsStage') || {}).textContent,
     t: window.__G().t
   }));
   ok(vsm.hien, 'bam vao tran thi mo man VS truoc');
-  ok(vsm.mat === 2 && vsm.vs === 1, `hai mat nhan vat va mot chu VS (${vsm.mat} mat / ${vsm.vs} VS)`);
+  ok(vsm.mat === 2 && vsm.vs === 1, `hai khung nhan vat va mot chu VS (${vsm.mat} khung / ${vsm.vs} VS)`);
+  /* Người dùng: "đừng để nó là icon — để nó là full body với nhiều effect trông như một
+     battle thật". Khung phải CAO hơn rộng và vẽ trọn cả người, kèm quầng sáng / vệt tốc độ
+     / vũng sáng dưới chân / burst sau chữ VS. */
+  const vsfx = await page.evaluate(() => {
+    const r = document.getElementById('vsRow'), pn = r.querySelector('.vsPanel');
+    const b = pn && pn.getBoundingClientRect();
+    return { cao: b ? Math.round(b.height) : 0, rong: b ? Math.round(b.width) : 0,
+             fit: getComputedStyle(r.querySelector('.vsBody')).alignItems,
+             glow: r.querySelectorAll('.vsGlow').length, lines: r.querySelectorAll('.vsLines').length,
+             floor: r.querySelectorAll('.vsFloor').length, burst: r.querySelectorAll('.vsBurst').length,
+             lat: getComputedStyle(r.querySelector('.vsSide.b .vsBody')).transform };
+  });
+  ok(vsfx.cao > vsfx.rong * 1.2 && vsfx.cao > 150,
+     `khung doc ve tron ca nguoi chu khong phai icon vuong (${vsfx.rong}x${vsfx.cao})`);
+  ok(vsfx.fit === 'flex-end', 'canh day cho hai ben dung cung mot mat san');
+  ok(vsfx.glow === 2 && vsfx.lines === 2 && vsfx.floor === 2 && vsfx.burst === 1,
+     `du hieu ung: quang sang ${vsfx.glow} · vet toc do ${vsfx.lines} · vung sang chan ${vsfx.floor} · burst ${vsfx.burst}`);
   ok(/GINYU/i.test(vsm.ten) && /DORA/i.test(vsm.ten), `du ten hai ben (${vsm.ten})`);
   ok(vsm.san === 'DEEP SPACE', `co ten man dau (${vsm.san})`);
   await page.waitForTimeout(600);

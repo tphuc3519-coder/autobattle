@@ -1742,9 +1742,18 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
     **bắt buộc có `pointer-events:none`** — thiếu thì nút `PRESS START` nằm dưới không bấm
     được, kể cả người lẫn Playwright.
 - **MÀN VS TRƯỚC TRẬN** (`#arcVs`, `vsShow()` / `vsGo()`). Người dùng gửi ảnh màn chọn của
-  Street Fighter II và chốt: *"icon nhân vật rồi VS rõ ràng rồi mới vào"*. Mặt hai bên lấy từ
-  chính ảnh đã dán (`avaSrc()`, chưa dán thì emoji), tên tô màu của nhân vật, chữ `VS` vàng ở
-  giữa, tên màn đấu bên dưới.
+  Street Fighter II và chốt: *"icon nhân vật rồi VS rõ ràng rồi mới vào"*, rồi nói thêm:
+  *"đừng để nó là icon — để nó là full body với nhiều effect trông như một battle thật"*.
+  Nên mỗi bên là một **KHUNG DỌC vẽ trọn cả người** (`object-fit: contain`, canh **đáy** cho
+  hai bên đứng cùng một mặt sàn), **không** phải ô vuông cắt cúp lấy cái đầu.
+  - Hiệu ứng đi kèm: **quầng sáng** theo màu nhân vật, **vệt tốc độ** chạy phía sau, **vũng
+    sáng dưới chân**, **burst** sau chữ VS, và một **chớp màn** lúc mở. Bên phải lật ngược
+    (`scaleX(-1)`) cho hai bên **quay mặt vào nhau**.
+  - Nền ăn theo **tông màu của màn đấu** (`--vsFog` đặt từ `stageOf(STAGE).fog`) — nhìn ra
+    ngay mình sắp đánh ở đâu.
+  - Đông người (đánh đội / hỗn chiến) thì thu nhỏ khung qua biến `--k`, đừng để tràn màn.
+  - Chớp màn phải **thay hẳn nút `.vsFlash`** mỗi lần mở (`replaceWith(cloneNode)`):
+    animation chỉ chạy một lần cho mỗi lần phần tử vào cây DOM.
   - **Cờ `vsOn` chặn thẳng `step()`** nên trận đứng yên hẳn — kể cả mấy màn ra mắt (Ginyu bay
     vào, Anywhere Door, Superman đáp xuống), vì chúng đo bằng giây TRONG TRẬN. Đo được: `G.t`
     đứng nguyên ở 0 suốt màn VS rồi mới chạy.
@@ -1756,7 +1765,15 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
     `#arcAgain`, `#compGo`). Thêm đường vào trận mới thì gọi `arcFight()`, đừng gọi tay.
   - Chỉ có ở **TRANG CHƠI** (`ARCADE`): xưởng vào thẳng như cũ vì mọi test hiện có bấm
     `#cselGo` một phát là vào trận.
-  - Chuyển động chỉ đổi `opacity`, **không dùng `transform`** (mục 9).
+  - Mấy chuyển động **lặp mãi** chỉ đổi `opacity` / `background-position`, **không dùng
+    `transform`** (mục 9). Cú bay vào lúc mở màn có dùng `transform` nhưng nó **chạy một lần
+    rồi dừng**, và nó nằm trong `.vsSide` chứ không phải chính `#arcVs` — cái mà test bấm vào.
+  - **`#cselGo` KHÔNG được gọi `arcFight()` khi vừa khai mạc giải.** `startPicked()` cho
+    `league`/`cup` mở thẳng bảng xếp hạng rồi `return`, nhưng nhánh arcade phía sau vẫn gọi
+    `arcFight()` — tức bật nhạc, cho trận chạy ngầm sau lưng cái bảng, và (từ khi có màn VS)
+    chớp ra **cặp đấu của trận TRƯỚC** còn sót trong `G.fighters`. Người dùng quay được đúng
+    cảnh đó: bấm "Khai mạc giải" mà hiện ra `Captain Ginyu vs ChiChi` trong khi trận đầu của
+    giải là `ChiChi vs Konohamaru`. Gác bằng `if(!compOn()) arcFight();`.
 - **GIỮ MÀN WINNER RỒI MỚI HIỆN DẢI NÚT.** Người dùng chốt: *"lúc thắng rồi thì hold lại để
   hiện winner, xong sau đó cho người chơi nút tự chuyển"*. `#arcOver` chỉ bật khi
   **`G.endT >= 2`** — đúng lúc `G.announced` mở ra băng-rôn và pháo giấy. Trước đó nút nhảy ra
@@ -2618,6 +2635,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Vòng khí Air Cannon bị hất ngược mà bay lùi với miệng vòng hướng cũ, rồi xuyên qua chính Doraemon | nhánh phản đòn chỉ đổi `p.vx/p.vy`, mà vòng khí vẽ theo `p.ang` và vẫn giữ `p.hitList` cũ | xoay luôn `p.ang` và `p.hitList.length = 0` ngay tại chỗ phản, viết chung cho MỌI loại đạn chứ đừng cắm theo từng type |
 | Phép đo "đầu đạn xoay theo hướng bay mới" đổ chừng một nửa số lần | so góc bằng phép trừ thẳng, mà `p.ang` cộng thêm nhiễu nên vọt qua π trong khi `atan2` luôn trả về trong (−π, π] — lệch nguyên 2π mà thật ra vẫn một hướng | so góc theo VÒNG: `d = |x−y| % 2π`, quá π thì lấy `2π − d` |
 | Phép đo "ăn nguyên đòn của chính mình" lúc ra 85, lúc ra 45, lúc ra 0 | 45 là cú Flying Kick của ChiChi xen vào, 0 là cú hất ngược lệch ±0.25 rad nên bắn trượt thật | dọn sạch sóng âm + khoá ChiChi rồi mới đo, và **thử tới 10 lượt** đòi có ít nhất một lượt trúng đủ dmg |
+| Bấm "Khai mạc giải" thì chớp ra màn VS của cặp đấu TRƯỚC, kèm nhạc và tiếng trận cũ chạy sau lưng bảng xếp hạng | `#cselGo` gọi `arcFight()` vô điều kiện, kể cả khi `startPicked()` vừa mở giải và `return` sớm — `arcFight()` bật nhạc, đặt `running=true` và gọi `vsShow()` với `G.fighters` còn sót của trận trước | gác `if(!compOn()) arcFight();` |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---
