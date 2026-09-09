@@ -1640,6 +1640,7 @@ không chạm được vào người.
 > | bản đầu | 38 | 71% | **94%** |
 > | cắt quá tay | 17 | 21% | **13%** |
 > | nới lại | 27 | 36% | **81%** |
+> | **chốt** | **21** | **27%** | **38%** |
 >
 > Hai bài học:
 > 1. **Cắt cả sát thương LẪN quãng miễn thương cùng lúc thì hai thứ NHÂN vào nhau**, không
@@ -1666,6 +1667,26 @@ không chạm được vào người.
 Kết quả: sát thương duy trì **38 → ~21 DPS** (hạ 800 máu mất ~38 giây thay vì 21), quãng có
 lớp bảo vệ **71% → ~27%** — đúng điểm giữa của hai mốc ĐÃ ĐO 13% và 81%. Đúng chất một pháp
 sư khống chế: thắng chậm bằng cách bào mòn, chứ không phải bằng cách không ai đụng được vào mình.
+
+**Đo lại bản chốt: thắng 6/16 = 38%**, trung bình còn 40% máu lúc thắng:
+
+| Đối thủ | Thắng–Thua | | Đối thủ | Thắng–Thua |
+|---|---|---|---|---|
+| Konohamaru | 0–2 | | Horikita | 2–0 |
+| ChiChi | 0–2 | | Ginyu | 2–0 |
+| Tsubasa | 0–2 | | Doraemon | 2–0 |
+| Shikamaru | 0–2 | | Superman | 0–2 |
+
+Năm người hạ được cô, ba người thì chưa. **Shikamaru từ 0–2 (cô còn 85% máu) giờ thành
+0–2 NGƯỢC LẠI** — đúng chỗ người dùng kêu nhất. Doraemon vẫn là đối thủ khó nhất của cô
+(2–0, cô còn 70%/33% máu): anh không có đòn nào xuyên được quãng E.M.T, còn cô thì cứ ném
+anh ra rìa tầm.
+
+> **38% là hơi dưới mốc 50% lý tưởng, và đó là CỐ Ý.** Đường cong quá dốc (13% → 81% chỉ
+> trong một nấc nhỏ) nên nhích lên tí nữa là rất dễ vọt lại quá mạnh. Thà để hơi yếu một
+> chút còn hơn quay lại cảnh "không ai win đc". Muốn nhích lên thì **chỉ đụng vào SÁT
+> THƯƠNG** (`minyaDmg` / `ultDmg`), đừng đụng vào `emtT` / `murakT` — chính hai con số đó
+> mới là thứ làm cô không ai đánh trúng, và cũng là thứ chơi vào thì khó chịu nhất.
 
 > **`shamacWeak` giữ nguyên −20%** — đó là debuff đặt lên ĐỊCH chứ không phải lớp bảo vệ của
 > cô, và nó chính là phần "khống chế" trong bộ chiêu. Cắt nốt chỗ đó là mất luôn tính cách
