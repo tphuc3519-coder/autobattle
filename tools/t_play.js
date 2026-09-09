@@ -189,9 +189,14 @@ function wavUrl() {
   ok(await page.locator('#arcOver').isVisible(), 'giu man WINNER xong moi hien dai nut');
   ok(await page.evaluate(() => window.__G().endT >= 2),
      `dai nut hien sau moc endT 2 (${await page.evaluate(() => +window.__G().endT.toFixed(2))})`);
-  await page.click('#arcAgain');
+  /* Bấm QUA `evaluate` chứ đừng `page.click`: lúc này luồng chính đang giải mã 89 ảnh của
+     gói phát hành, `page.click` dispatch xong còn ngồi chờ trang rảnh tay rồi mới trả về —
+     đo được nó treo đủ 30 giây rồi đổ, cả trên nhánh này lẫn trên bản chưa sửa gì.
+     Đây là lối `t_comp.js` đã dùng cho `#compGo` / `#arcComp`. */
+  await page.evaluate(() => document.getElementById('arcAgain').click());
   await page.waitForTimeout(300);
-  await page.click('#arcVs').catch(() => {});       // bỏ qua màn VS của trận mới
+  await page.evaluate(() => { const e = document.getElementById('arcVs');
+                              if (e && !e.classList.contains('off')) e.click(); });   // bỏ qua màn VS của trận mới
   await page.waitForTimeout(400);
   ok(await page.evaluate(() => window.__running() && !window.__G().over), 'bam Danh lai thi vao tran moi');
 
@@ -312,7 +317,10 @@ function wavUrl() {
   const goc = `http://127.0.0.1:${sv2.address().port}`;
 
   const b3 = await chromium.launch();
-  for (const [ten, u, cho] of [['trang choi', goc + '/', 3], ['xuong', goc + '/studio/', 3]]) {
+  /* Trang XƯỞNG cần rộng bụng hơn hẳn: nó đọc kho của máy TRƯỚC (hơn tám chục khoá
+     IndexedDB, mục 2e) rồi mới tới gói, mà `fetchAsset` còn phải ăn một cú 404 ở mức ''
+     trước khi dò sang '../'. Ba giây là quá sát — đo được nó đổ ngay cả khi gói vẫn về đủ. */
+  for (const [ten, u, cho] of [['trang choi', goc + '/', 4], ['xuong', goc + '/studio/', 12]]) {
     const p3 = await b3.newPage({ viewport: { width: 820, height: 980 } });
     await p3.route('**://fonts.*/**', r => r.abort());
     const e3 = []; p3.on('pageerror', e => e3.push(e.message));

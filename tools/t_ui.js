@@ -175,6 +175,45 @@ function fileNhac() {
   ok(e2.length === 0, `trang choi khong co loi (${e2.slice(0, 2).join(' | ')})`);
   await b2.close();
 
+  /* ---------- tiếng của GIAO DIỆN ----------
+     Chín ô mới nằm trong nhóm "Giao diện". Kiểm ba thứ: có đủ ô, ô nào cũng có tiếng tự
+     tạo riêng trong `synth()` (đừng rơi vào nhánh `default` — nghe ô nào cũng như ô nào),
+     và bấm thật vào màn chọn thì có tiếng phát ra. */
+  const UI9 = ['ui_start', 'ui_pick', 'ui_tap', 'ui_next', 'ui_back',
+               'ui_vs', 'ui_go', 'ui_board', 'ui_rank'];
+  const thieuO = UI9.filter(k => !idx.includes(`['${k}',`));
+  ok(thieuO.length === 0, `bang o tieng co du chin o giao dien (thieu: ${thieuO.join(',') || 'khong'})`);
+  const thieuCase = UI9.filter(k => !idx.includes(`case '${k}':`));
+  ok(thieuCase.length === 0,
+     `o nao cung co tieng tu tao rieng trong synth() (thieu: ${thieuCase.join(',') || 'khong'})`);
+  ok(idx.includes("ui_start:'Giao diện'"), 'bang nap tieng co tieu de nhom Giao diện');
+
+  const b3 = await playwright().chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
+  const p3 = await b3.newPage({ viewport: { width: 900, height: 1000 } });
+  await p3.route('**://fonts.*/**', r => r.abort());
+  /* Đếm ngay ở tầng WebAudio: `sfx()` nằm trong IIFE nên không bọc từ ngoài được, mà mọi
+     tiếng tự tạo đều đi qua `createOscillator`. Đếm nó là biết có kêu hay không. */
+  await p3.addInitScript(() => {
+    window.__osc = 0;
+    const A = window.AudioContext || window.webkitAudioContext;
+    const g = A.prototype.createOscillator;
+    A.prototype.createOscillator = function () { window.__osc++; return g.call(this); };
+  });
+  await p3.goto('file://' + build(), { waitUntil: 'domcontentloaded' });
+  await p3.waitForTimeout(500);
+  const dem = () => p3.evaluate(() => { const n = window.__osc; window.__osc = 0; return n; });
+  await dem();
+  await p3.click('#listA .cTile[data-key="shika"]');
+  await p3.waitForTimeout(250);
+  ok(await dem() > 0, 'bam chon nhan vat thi co tieng');
+  await p3.click('.sTile[data-stage="forest"]');
+  await p3.waitForTimeout(250);
+  ok(await dem() > 0, 'bam o man dau thi co tieng');
+  await p3.click('#mTabFfa');
+  await p3.waitForTimeout(250);
+  ok(await dem() > 0, 'bam nut che do thi co tieng');
+  await b3.close();
+
   console.log(loi.length ? `\nHONG ${loi.length} muc` : '\nDAT het');
   process.exit(loi.length ? 1 : 0);
 })();

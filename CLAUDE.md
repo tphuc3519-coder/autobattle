@@ -1999,6 +1999,73 @@ Cặp nút `.vTab` (`#vSimple` / `#vFull`) nằm ngay dưới dòng phụ của 
 
 Kiểm bằng `node tools/t_dex.js`.
 
+## 2h. Tiếng của giao diện, và luật vàng khi đánh bóng CSS
+
+Người dùng: *"Thêm âm thanh cho sôi động, hiệu ứng web làm nhìn chuyên nghiệp và bắt mắt hơn"*.
+
+### Chín ô tiếng của GIAO DIỆN — nhóm `Giao diện`
+
+Đây là **tiếng của cái vỏ arcade, không phải của trận đấu**, nên chúng nằm thành một nhóm
+riêng cuối `SFX_EVENTS`, tiêu đề gắn vào ô đầu (`ui_start:'Giao diện'` trong `SFX_GROUPS`):
+
+| Ô | Kêu lúc nào |
+|---|---|
+| `ui_start` | bấm PRESS START |
+| `ui_pick` | chọn một nhân vật (`tile()`) |
+| `ui_tap` | bấm ô màn đấu / nút chế độ / nút lối xem skill |
+| `ui_next` | `#cselGo` sang bước kế tiếp |
+| `ui_back` | `#cselBack` |
+| `ui_vs` | `vsShow()` — màn VS hiện ra |
+| `ui_go` | `vsGo()` — từ màn VS lao vào trận |
+| `ui_board` | `compOpen()` — mở bảng xếp hạng |
+| `ui_rank` | `lgPlay()`, **chỉ khi có hàng đổi chỗ thật** (cờ `doiCho`) |
+
+- **Ô nào cũng có `case` riêng trong `synth()`**, đúng luật ở mục 4 — rơi vào nhánh `default`
+  thì ô nào cũng kêu giống ô nào. `t_ui.js` soi đủ chín `case`.
+- **Tiếng bấm nút phải GỌN và NHẸ**: cả chín ô đều dưới `.2` âm lượng và dưới nửa giây, trừ
+  `ui_vs` / `ui_go` vốn là một cú nhấn mạnh. Người chơi bấm cả chục lần trong một lượt chọn
+  nhân vật — để dài hay để to là nghe nhức đầu ngay.
+- Đấm đá vẫn mượn `sfx('punch')` như cũ; **đừng dựng thêm ô cho mấy nút khác**.
+
+### Luật vàng khi thêm hiệu ứng CSS: ĐỪNG cho nút nhấp nháy mãi
+
+Mọi chuyển động **lặp mãi** ở khu giao diện chỉ được đổi `opacity` / `box-shadow` /
+`background-position` / `filter`. Ngoài luật cũ "đừng đụng `transform`" (mục 9) còn một
+luật nữa, đắt hơn:
+
+> **Nút mà test phải bấm thì đừng gắn `animation … infinite` lên nó.**
+
+Đo được: gắn một vệt sáng `animation 3.6s infinite` vào `button.primary::after` thì
+`page.click('#arcAgain')` treo đủ 30 giây rồi đổ — lúc đó luồng chính đang giải mã 89 ảnh
+của gói phát hành, thêm một lượt tính lại kiểu dáng mỗi khung hình là cú bấm không bao giờ
+xong. Cùng họ với lỗi "250ms gán lại `style.display`" ở mục 9. Cách làm đúng:
+
+- **nút vàng**: vệt sáng chạy qua mặt nút **khi rê chuột**, bằng `transition:background-position`
+  — chạy một lượt rồi đứng yên;
+- **ô nhân vật đang chọn**: quầng vàng **đậm hơn, đứng yên**, không nhấp nháy;
+- một lượt `animation … 1` (chạy đúng một lần) thì không sao — `.lgTab tr.just` và `.brM.fresh`
+  vẫn giữ nguyên.
+
+### Đã đánh bóng những gì
+
+- Ô nhân vật có **quầng sáng theo màu nhân vật** phía sau (`.cTile::before`, `--c` do `tile()`
+  gắn vào từ `C.color`) và viền phát sáng quanh ô ảnh (`.cAva`); ô đang chọn thì quầng vàng đậm hẳn.
+- Ô màn đấu: ảnh sáng lên lúc rê chuột, ô đang chọn viền vàng dày gấp đôi và tên tô vàng.
+- Bảng xếp hạng: **ba hạng đầu tô ba màu** (vàng · bạc · đồng) ở cột số thứ tự, mũi tên
+  ▲▼ tô xanh/đỏ, và hai người vừa đá sáng lên một nhịp rồi tắt.
+- Dòng phụ dưới logo có một gạch vàng mảnh.
+
+> **Logo KHÔNG tô bằng gradient quét ngang.** Đã thử và bỏ hẳn: chữ phải trong suốt cho
+> `background-clip:text` ăn, mà cái bóng khối 3D của logo (`text-shadow:0 6px 0`) thì vẽ
+> theo Ô CHỮ chứ không theo phần đã tô, nên **lòi hết ra giữa mặt chữ thành sọc vằn**. Đổi
+> sang `drop-shadow` thì hết sọc nhưng nền gradient chạy ra ngoài khung và **mất luôn mấy
+> chữ cuối** — chụp màn hình ra đúng mỗi chữ `M`. Logo vốn đã có quầng sáng thở của
+> `#arcTitle::after`. **Đừng dựng lại.**
+
+Kiểm bằng `node tools/t_ui.js` (ba mục cuối: đủ chín ô, đủ chín `case`, và bấm thật vào màn
+chọn thì **có tiếng phát ra** — đếm ngay ở tầng WebAudio bằng cách bọc
+`AudioContext.prototype.createOscillator`, vì `sfx()` nằm trong IIFE nên không bọc từ ngoài được).
+
 ## 2b. Khoảng cách khi cận chiến — đừng dán vào nhau
 
 Người dùng bác bản cũ: hai người cận chiến đứng chồng hẳn lên nhau, nhìn chỉ thấy một
@@ -2479,7 +2546,8 @@ node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng
 node tools/t_ui.js      # đổi tên game, hai ngôn ngữ (MẶC ĐỊNH TIẾNG ANH, nút đổi ở cả ba chỗ,
                         # chữ và mô tả chiêu đổi theo, nhớ lại lựa chọn), hồ sơ tám nhân vật
                         # đủ song ngữ + thẻ chiêu vẽ ra thật, nhạc nền mặc định tắt và chạy
-                        # theo ô nhạc tự nạp
+                        # theo ô nhạc tự nạp; và CHÍN Ô TIẾNG GIAO DIỆN: đủ ô, đủ case
+                        # trong synth(), bấm chọn nhân vật / ô màn / nút chế độ đều có tiếng
 node tools/t_dex.js     # chạm hai lần vào ô nhân vật thì bật bảng thông số (đúng người vừa chạm,
                         # hai nút xem skill nằm trong bảng và đi chung lựa chọn với cặp ngoài,
                         # một cú bấm thì chỉ chọn, X / Esc đóng được, hai cú cách xa nhau
@@ -2636,6 +2704,10 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Phép đo "đầu đạn xoay theo hướng bay mới" đổ chừng một nửa số lần | so góc bằng phép trừ thẳng, mà `p.ang` cộng thêm nhiễu nên vọt qua π trong khi `atan2` luôn trả về trong (−π, π] — lệch nguyên 2π mà thật ra vẫn một hướng | so góc theo VÒNG: `d = |x−y| % 2π`, quá π thì lấy `2π − d` |
 | Phép đo "ăn nguyên đòn của chính mình" lúc ra 85, lúc ra 45, lúc ra 0 | 45 là cú Flying Kick của ChiChi xen vào, 0 là cú hất ngược lệch ±0.25 rad nên bắn trượt thật | dọn sạch sóng âm + khoá ChiChi rồi mới đo, và **thử tới 10 lượt** đòi có ít nhất một lượt trúng đủ dmg |
 | Bấm "Khai mạc giải" thì chớp ra màn VS của cặp đấu TRƯỚC, kèm nhạc và tiếng trận cũ chạy sau lưng bảng xếp hạng | `#cselGo` gọi `arcFight()` vô điều kiện, kể cả khi `startPicked()` vừa mở giải và `return` sớm — `arcFight()` bật nhạc, đặt `running=true` và gọi `vsShow()` với `G.fighters` còn sót của trận trước | gác `if(!compOn()) arcFight();` |
+| `page.click` treo 30 giây rồi đổ, mỗi lần một chỗ khác nhau | thêm `animation … infinite` lên `button.primary::after`, mà lúc đó luồng chính đang giải mã 89 ảnh của gói — mỗi khung hình lại một lượt tính kiểu dáng nữa | hiệu ứng nút đổi sang `transition` chạy lúc rê chuột; `.cTile.on` bỏ nhịp nhấp nháy, để quầng vàng đứng yên |
+| Logo màn tiêu đề ra **sọc vằn**, rồi sau khi "sửa" thì **mất hết chữ, còn mỗi `M`** | tô chữ bằng gradient `background-clip:text`: bóng khối `text-shadow` vẽ theo ô chữ nên lòi ra giữa mặt chữ; đổi sang `drop-shadow` + `no-repeat` thì nền gradient chạy hẳn ra ngoài khung | bỏ hẳn lối tô đó, trả logo về màu đặc (mục 2h) |
+| `openMulti('team',…)` thỉnh thoảng dựng ra một trận **tay đôi** `kono vs chichi` | `loadSaved()` chạy bất đồng bộ và kết thúc bằng một lượt `cselRefresh()`; lượt vẽ muộn đó dựng lại dải nút theo `TMP.mode` đã lưu, quét sạch cú bấm `#mTabTeam` vừa rồi | bấm nút chế độ rồi **kiểm lại `.on`, bấm lại tới khi ăn**; test đổ mỗi lần một chỗ chính vì thiếu chỗ này |
+| `openMulti` đổ ở tận `t1[1].hp` / `a.x` undefined | cú bấm ô nhân vật rơi đúng lúc lưới được vẽ lại nên mất trắng, đội hình thiếu người mà mãi sau mới lộ | bấm rồi **chờ dải đội hình dài thêm một thẻ** mới đi tiếp, và chốt lại số người ở cuối mỗi đội; lần thử lại phải **nghỉ quá 380ms** (`DBL_TAP`), không thì game hiểu là chạm hai lần và mở `#dexPop` — bảng đó phủ kín trang, chặn luôn `#cselGo` |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---

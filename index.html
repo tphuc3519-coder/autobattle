@@ -561,6 +561,64 @@
   .grpBtn+.grpBtn{margin-left:5px}
   .grpBtn:hover{background:#241D4C;border-color:#4A3F8C;color:var(--paper)}
   .grpBtn.on{border-color:var(--gold);color:var(--gold)}
+
+  /* ---------- đánh bóng giao diện ----------
+     LUẬT DUY NHẤT của khu này: mọi chuyển động LẶP MÃI chỉ được đổi
+     `opacity` / `box-shadow` / `background-position` / `filter`. ĐỪNG đụng tới `transform`
+     — Playwright coi phần tử đang biến đổi khung bao là "chưa đứng yên" và không bao giờ
+     bấm được nút nằm trong đó (mục 9, đã treo test đúng 30 giây một lần). Mấy khu này
+     đầy nút mà test phải bấm: #arcStart, .cTile, .sTile, #cselGo, #compGo. */
+
+  /* Logo: KHÔNG tô chữ bằng gradient quét ngang. Đã thử và bỏ — chữ phải trong suốt cho
+     `background-clip:text` ăn, mà cái bóng khối 3D của logo thì vẽ theo ô chữ nên lòi hết
+     ra giữa mặt chữ thành sọc vằn; đổi sang `drop-shadow` thì hết sọc nhưng nền gradient
+     chạy ra ngoài khung và mất luôn mấy chữ cuối (chụp màn hình ra đúng mỗi chữ "M").
+     Logo vốn đã có quầng sáng thở của `#arcTitle::after` rồi, đủ rồi. Đừng dựng lại. */
+  .arcTag{position:relative}
+  .arcTag::after{content:'';position:absolute;left:50%;right:auto;bottom:-7px;width:96px;height:1px;
+    margin-left:-48px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.6}
+
+  /* Nút vàng: một vệt sáng quét qua mặt nút KHI RÊ CHUỘT. Cố ý dùng `transition` chứ
+     KHÔNG dùng `animation ... infinite`: mấy nút này (#cselGo, #compGo, #arcAgain) bị test
+     bấm liên tục, mà lúc đó luồng chính đang giải mã 89 ảnh của gói phát hành — thêm một
+     lượt tính lại kiểu dáng mỗi khung hình là cú bấm treo luôn 30 giây (cùng họ với lỗi
+     "250ms gán lại style.display" ở mục 9). Rê chuột thì vệt chạy một lượt rồi đứng yên. */
+  button.primary{position:relative;overflow:hidden;isolation:isolate}
+  button.primary::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:-1;
+    background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.5) 48%,transparent 58%);
+    background-size:260% 100%;background-repeat:no-repeat;background-position:150% 0;
+    transition:background-position .55s ease-out}
+  button.primary:hover::after{background-position:-50% 0}
+
+  /* Ô nhân vật: quầng sáng theo màu nhân vật lúc rê chuột, và ô đang chọn thì thở nhẹ.
+     Cả hai chỉ đổi box-shadow nên khung bao đứng yên. */
+  .cTile{position:relative;overflow:hidden}
+  .cTile::before{content:'';position:absolute;left:50%;top:-14px;width:74px;height:74px;margin-left:-37px;
+    border-radius:50%;pointer-events:none;opacity:0;transition:opacity .18s;
+    background:radial-gradient(circle,var(--c,var(--gold)),transparent 68%)}
+  .cTile:hover::before{opacity:.13}
+  .cTile.on::before{opacity:.2}
+  /* Ô đang chọn: quầng vàng ĐẬM HƠN, đứng yên. Đừng cho nó nhấp nháy bằng `animation
+     ... infinite` — cả lưới này bị test bấm hàng chục lần một lượt, xem ghi chú ở nút vàng. */
+  .cTile.on{box-shadow:0 0 0 1px var(--gold) inset,0 6px 26px rgba(255,197,66,.34)}
+  .cAva{box-shadow:0 0 12px -3px currentColor}
+
+  /* Ô màn đấu: ảnh sáng lên lúc rê chuột, ô đang chọn có viền vàng dày hơn và một dải
+     vàng chạy dọc mép trên cho dễ thấy giữa sáu ô. */
+  .sTile img{transition:filter .18s}
+  .sTile:hover img{filter:brightness(1.14) saturate(1.12)}
+  .sTile.on{box-shadow:0 0 0 2px var(--gold) inset,0 8px 22px rgba(255,197,66,.2)}
+  .sTile.on img{filter:brightness(1.08) saturate(1.1)}
+  .sTile.on b{color:var(--gold)}
+
+  /* Bảng xếp hạng: ba hạng đầu có màu riêng, hai người vừa đá thì sáng lên một nhịp. */
+  .lgTab tbody tr:nth-child(1) td.r{color:#FFD766}
+  .lgTab tbody tr:nth-child(2) td.r{color:#D6DCEA}
+  .lgTab tbody tr:nth-child(3) td.r{color:#E2A268}
+  .lgTab tbody tr.just td{animation:uiJust 1.6s ease-out 1}
+  @keyframes uiJust{0%{background:rgba(255,197,66,.30)}100%{background:rgba(255,197,66,0)}}
+  .lgTab td.r i{font-style:normal;font-size:9px;margin-left:2px}
+  .lgTab td.r i.up{color:#5BE39A} .lgTab td.r i.dn{color:#FF8FA3}
 </style>
 </head>
 <body>
@@ -2213,7 +2271,8 @@ async function loadSaved(){
 const SFX_GROUPS={
   crit:'Chung', throw:'Konohamaru', punch:'ChiChi', kick:'Ozora Tsubasa',
   shika_lazy:'Shikamaru', suz_think:'Horikita Suzune', aya_appear:'Ayanokouji',
-  ginyu_fly:'Captain Ginyu', dora_door:'Doraemon', sup_enter:'Superman'
+  ginyu_fly:'Captain Ginyu', dora_door:'Doraemon', sup_enter:'Superman',
+  ui_start:'Giao diện'
 };
 const SFX_EVENTS=[
   ['crit','Chí mạng'],['stun','Choáng'],['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt'],
@@ -2281,7 +2340,20 @@ const SFX_EVENTS=[
   ['sup_meteor','Meteor Strike lao xuống'],
   ['sup_impact','Meteor Strike chạm đất'],
   ['sup_win','Superman ăn mừng'],
-  ['sup_down','Superman bị hạ gục']
+  ['sup_down','Superman bị hạ gục'],
+
+  /* Ô của GIAO DIỆN, không phải của trận đấu: tiếng bấm nút, tiếng lật bước, tiếng màn VS
+     và tiếng bảng xếp hạng. Chín ô này chỉ kêu lúc người chơi bấm tay nên đừng để chúng
+     ồn — âm lượng gốc trong `synth()` đều dưới .2. */
+  ['ui_start','Bấm PRESS START'],
+  ['ui_pick','Chọn một nhân vật'],
+  ['ui_tap','Bấm ô màn đấu / chế độ / lối xem'],
+  ['ui_next','Sang bước kế tiếp'],
+  ['ui_back','Quay lại bước trước'],
+  ['ui_vs','Màn VS hiện ra'],
+  ['ui_go','Từ màn VS lao vào trận'],
+  ['ui_board','Mở bảng xếp hạng'],
+  ['ui_rank','Bảng xếp hạng đổi thứ tự']
 ];
 const SFXBUF={};
 let AC=null, volume=.6, muted=false, lastSfx={};
@@ -2553,6 +2625,25 @@ function synth(name,c,g){
     case 'sup_win':   [523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(c,g,{type:'triangle',f0:f,f1:f,dur:i===3?.8:.16,vol:.16,delay:i*.14})); break;
     case 'sup_down':  tone(c,g,{type:'sine',f0:300,f1:70,dur:.9,vol:.22});
                       noise(c,g,{dur:.6,f0:800,f1:120,vol:.16,type:'lowpass'}); break;
+    /* ---- giao diện ----
+       Tiếng bấm nút thì phải GỌN và NHẸ: người chơi bấm cả chục lần trong một lượt chọn
+       nhân vật, để dài hay để to là nghe nhức đầu ngay. Cả chín ô đều dưới .2 âm lượng
+       và dưới nửa giây, trừ hai ô của màn VS vốn là một cú nhấn mạnh. */
+    case 'ui_tap':   tone(c,g,{type:'sine',f0:900,f1:1400,dur:.06,vol:.09}); break;
+    case 'ui_pick':  tone(c,g,{type:'triangle',f0:760,f1:1180,dur:.08,vol:.13});
+                     tone(c,g,{type:'sine',f0:1520,f1:1900,dur:.09,vol:.06,delay:.04}); break;
+    case 'ui_next':  [0,.07].forEach((d,i)=>tone(c,g,{type:'square',f0:660+i*280,f1:660+i*280,dur:.08,vol:.1,delay:d})); break;
+    case 'ui_back':  [0,.07].forEach((d,i)=>tone(c,g,{type:'square',f0:660-i*200,f1:660-i*200,dur:.08,vol:.08,delay:d})); break;
+    case 'ui_start': [523.25,783.99,1046.5].forEach((f,i)=>tone(c,g,{type:'triangle',f0:f,f1:f,dur:i===2?.34:.1,vol:.16,delay:i*.08}));
+                     noise(c,g,{dur:.3,f0:2600,f1:700,vol:.07}); break;
+    case 'ui_vs':    tone(c,g,{type:'sawtooth',f0:110,f1:330,dur:.5,vol:.17});
+                     noise(c,g,{dur:.5,f0:600,f1:2800,vol:.12,q:1.2});
+                     tone(c,g,{type:'square',f0:1300,f1:520,dur:.16,vol:.08,delay:.24}); break;
+    case 'ui_go':    tone(c,g,{type:'sawtooth',f0:420,f1:90,dur:.34,vol:.2});
+                     noise(c,g,{dur:.26,f0:3000,f1:400,vol:.16,q:.8}); break;
+    case 'ui_board': [0,.08,.16].forEach((d,i)=>tone(c,g,{type:'sine',f0:520+i*200,f1:640+i*220,dur:.22,vol:.1,delay:d})); break;
+    case 'ui_rank':  tone(c,g,{type:'triangle',f0:1050,f1:1500,dur:.1,vol:.1});
+                     tone(c,g,{type:'sine',f0:1600,f1:2100,dur:.12,vol:.05,delay:.06}); break;
     default:        noise(c,g,{dur:.1,f0:1200,vol:.2});
   }
 }
@@ -12336,6 +12427,7 @@ function tile(key,onClick,on){
   const o=document.createElement('button');
   o.className='cTile'+(on?' on':'');
   o.dataset.key=key; o.type='button';
+  o.style.setProperty('--c',C.color);      // quầng sáng sau ô ăn theo màu nhân vật
   o.title=C.name+' — '+nhac;
   o.innerHTML=`<span class="cAva" style="color:${C.color}">${avaHtml(key)}</span>`+
               `<span class="cName" style="color:${C.color}">${C.short||C.name}</span>`;
@@ -12344,6 +12436,7 @@ function tile(key,onClick,on){
        đội, chạm vào ô là THÊM MỘT BẢN SAO, nên cú thứ hai phải biết đường mà không thêm
        nữa — không thì chạm hai lần vừa nhét hai người vào đội vừa mở bảng. */
     const hai=tapTwice(((o.parentNode&&o.parentNode.id)||'')+'/'+key);
+    sfx('ui_pick');
     onClick(e,hai);                  // cú bấm đầu vẫn CHỌN người đó như cũ
     if(hai) dexPopOpen(key);
   });
@@ -12692,7 +12785,7 @@ function buildStages(){
     const t=document.createElement('button');
     t.type='button'; t.className='sTile'+(st.key===TMP.stage?' on':''); t.dataset.stage=st.key;
     t.innerHTML=`<img alt="" src="${stageThumb(st.key)}"><b>${st.name}</b><i>${tr(st.sub)||st.vn}</i>`;
-    t.addEventListener('click',()=>{ TMP.stage=st.key; cselRefresh(); });
+    t.addEventListener('click',()=>{ sfx('ui_tap'); TMP.stage=st.key; cselRefresh(); });
     box.appendChild(t);
   }
 }
@@ -12703,7 +12796,7 @@ function buildCsel(){
     for(const key of CKEYS) list.appendChild(tile(key,()=>{ TMP[slot]=key; cselRefresh(); }));
   }
   for(const t of document.querySelectorAll('.mTab'))
-    t.addEventListener('click',()=>{ TMP.mode=t.dataset.mode; cselRefresh(); });
+    t.addEventListener('click',()=>{ sfx('ui_tap'); TMP.mode=t.dataset.mode; cselRefresh(); });
   buildStages();
   cselRefresh();
 }
@@ -12747,6 +12840,7 @@ function compOpen(){
      cục bên trong một khối `display:none` thì mọi thứ trả về 0 — hàng không trượt được một
      pixel nào. Đã dính đúng một lần. */
   const b=document.getElementById('compBoard'); if(b) b.classList.remove('off');
+  sfx('ui_board');
   compPaint();
 }
 function compBoardClose(){
@@ -12826,12 +12920,15 @@ function lgPlay(){
   lgAnim=null;                       // chạy đúng MỘT lần cho mỗi trận
   if(!rows.length) return;
   const cho=rows.map(r=>r.offsetTop);
+  let doiCho=false;                  // có ai vượt ai không, để kêu đúng một tiếng
   for(let i=0;i<rows.length;i++){
     const j=+rows[i].dataset.old;
     if(!(j>=0)||j>=cho.length||j===i) continue;
+    doiCho=true;
     rows[i].style.transition='none';
     rows[i].style.transform='translateY('+(cho[j]-cho[i])+'px)';
   }
+  if(doiCho) sfx('ui_rank');
   void box.offsetHeight;             // thiếu dòng này thì hai lần gán bị gộp làm một, hàng không trượt
   requestAnimationFrame(()=>{
     for(const r of rows){
@@ -13075,11 +13172,12 @@ function vsShow(){
   if(st) st.textContent=S.name;                 // tên màn giữ nguyên ở cả hai ngôn ngữ
   box.style.setProperty('--vsFog',S.fog);       // nền màn VS ăn theo tông màu của sàn đấu
   vsOn=true; box.classList.remove('off');
+  sfx('ui_vs');
   clearTimeout(vsTimer); vsTimer=setTimeout(vsGo,VS_HOLD*1000);
 }
 function vsGo(){
   if(!vsOn) return;
-  vsOn=false; clearTimeout(vsTimer);
+  vsOn=false; clearTimeout(vsTimer); sfx('ui_go');
   const box=document.getElementById('arcVs'); if(box) box.classList.add('off');
 }
 if(document.getElementById('arcVs'))
@@ -13103,7 +13201,7 @@ el('pick').addEventListener('click',openCsel);
 el('cselGo').addEventListener('click',()=>{
   if(ARCADE){
     const st=cselSteps(), i=st.indexOf(cselPage);
-    if(i<st.length-1){ if(!stepReady())return; cselPage=st[i+1]; cselPaint(); return; }
+    if(i<st.length-1){ if(!stepReady())return; sfx('ui_next'); cselPage=st[i+1]; cselPaint(); return; }
   }
   startPicked();
   /* Khai mạc giải thì `startPicked()` mở thẳng BẢNG XẾP HẠNG chứ không vào trận, nên ĐỪNG
@@ -13114,12 +13212,14 @@ el('cselGo').addEventListener('click',()=>{
   if(ARCADE){ cselPage=cselSteps()[0]; cselPaint(); if(!compOn()) arcFight(); }
 });
 el('cselBack').addEventListener('click',()=>{
+  sfx('ui_back');
   const st=cselSteps(), i=st.indexOf(cselPage);
   cselPage=st[Math.max(0,i-1)]; cselPaint();
 });
 /* Hai nút lối xem skill. Đổi lối xem thì chỉ vẽ lại mấy thẻ hồ sơ, đừng gọi `cselRefresh()`
    nguyên bàn — nó dựng lại cả lưới chọn nhân vật, cuộn trang nhảy về đầu. */
 function dexView(v){
+  sfx('ui_tap');
   DEXVIEW=v;
   for(const b of document.querySelectorAll('.vTab')) b.classList.toggle('on',b.dataset.view===v);
   paintDex();
@@ -13201,6 +13301,7 @@ if(ARCADE){
   el('arcTitle').classList.remove('off');
   el('arcStart').addEventListener('click',()=>{
     ac();                                    // cú bấm đầu tiên mở đường cho âm thanh
+    sfx('ui_start');
     el('arcTitle').classList.add('off');
     /* Còn giải đá dở (mở lại trang giữa chừng) thì vào thẳng bảng xếp hạng, đừng bắt
        người ta chọn lại dàn đấu thủ từ đầu. */
