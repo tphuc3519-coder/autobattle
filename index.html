@@ -1251,7 +1251,11 @@ const GN={
      đang ở nhánh nào; giờ chỉ còn một cặp hằng. */
   swapCut:.25,               // sát thương của cả hai bên còn 25%
   swapCcCut:.25,             // ... thời lượng hiệu ứng cũng còn 25%
-  aimOff:1.05,               // Ginyu trong thân xác lạ: đạn mượn lệch tới hơn 60 độ
+  /* Ginyu mượn tay chân người khác thì ngắm hỏng — nhưng ĐỪNG để thành "đánh mãi không
+     trúng". Người dùng bác bản cũ (55% hụt + lệch 60 độ): cộng với mức cắt 25% sát thương
+     thì cả cú đấm chỉ còn ~11% sức, anh đứng vung tay cả trận mà chẳng ăn thua gì. */
+  swapMiss:.20,              // thân xác cận chiến: 20% số đòn tay hụt (cũ 55%)
+  aimOff:.45,                // thân xác hệ ném: đạn mượn lệch tới ~26 độ (cũ 60 độ)
   panicMove:[2.5,3.0],       // bắn trượt: máu về 1, chạy nhanh gấp 2.5~3 lần
   panicCut:.30               // ... đổi lại dmg và hiệu ứng chỉ còn 30%
 };
@@ -1431,7 +1435,7 @@ const CHARS={
   chichi:{
     name:'ChiChi', short:'ChiChi', tag:'Housewife · Melee', emoji:'🍳', color:'#FF4D6D', alt:'#FF93A8',
     role:'melee', speed:106, dodge:.55, male:false,
-    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in for a guaranteed ${CHICHI_KICK_DMG} damage and a ${rts(CHICHI_KICK_STUN)}s stun, CC immune &amp; −30% dmg taken while dashing`,'<b>Passive</b> every 5 hits +5% crit',`<b>Below 20% HP</b> calls Goku / Gohan — Goku's Kamehameha ${KAME_DMG} dmg, stun ${rts(KAME_STUN)}s then −${Math.round((1-KAME_SLOW_MOVE)*100)}% move / −${Math.round((1-KAME_SLOW_CAST)*100)}% cast for ${rts(KAME_SLOW_T)}s · Gohan's Masenko ${MASENKO_DMG} dmg a wave, each wave stacking −${Math.round(MASENKO_STACK_MOVE*100)}% move / −${Math.round(MASENKO_STACK_CAST*100)}% cast for ${rts(MASENKO_STACK_T)}s`],
+    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball / Air Cannon',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in for a guaranteed ${CHICHI_KICK_DMG} damage and a ${rts(CHICHI_KICK_STUN)}s stun, CC immune &amp; −30% dmg taken while dashing`,'<b>Passive</b> every 5 hits +5% crit',`<b>Below 20% HP</b> calls Goku / Gohan — Goku's Kamehameha ${KAME_DMG} dmg, stun ${rts(KAME_STUN)}s then −${Math.round((1-KAME_SLOW_MOVE)*100)}% move / −${Math.round((1-KAME_SLOW_CAST)*100)}% cast for ${rts(KAME_SLOW_T)}s · Gohan's Masenko ${MASENKO_DMG} dmg a wave, each wave stacking −${Math.round(MASENKO_STACK_MOVE*100)}% move / −${Math.round(MASENKO_STACK_CAST*100)}% cast for ${rts(MASENKO_STACK_T)}s`],
     init(f){ f.cds={s1:0,s2:cm(3)}; f.dashCd=CHICHI_DASH_CD; f.hits=0; f.critBonus=0; },
     think(f,e,d,auto){
       if(f.cds.s1<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
@@ -1757,8 +1761,8 @@ const DEX={
     skills:[
       {tag:'1',name:'Punch & Kick',vi:'Đòn tay nhanh, cứ 5 đòn lại cộng thêm tỉ lệ chí mạng.',
        en:'Fast hands; every 5 hits raise her crit chance.'},
-      {tag:'2',name:'Scolding',vi:'Năm đợt sóng xung kích, phản ngược shuriken, kunai và bóng về phía địch.',
-       en:'Five shockwaves that reflect shuriken, kunai and footballs back at the sender.'},
+      {tag:'2',name:'Scolding',vi:'Năm đợt sóng xung kích, phản ngược shuriken, kunai, bóng và cả vòng khí Air Cannon về phía địch.',
+       en:'Five shockwaves that reflect shuriken, kunai, footballs and even the Air Cannon ring back at the sender.'},
       {tag:'3',name:'Flying Kick',
        vi:`Mỗi ${rts(CHICHI_DASH_CD)}s lao tới: ${CHICHI_KICK_DMG} dmg + choáng ${rts(CHICHI_KICK_STUN)}s, lúc lao miễn khống chế và chỉ nhận 70% sát thương.`,
        en:`Every ${rts(CHICHI_DASH_CD)}s she dashes in for ${CHICHI_KICK_DMG} damage and a ${rts(CHICHI_KICK_STUN)}s stun — CC immune and −30% damage taken while dashing.`},
@@ -4204,6 +4208,9 @@ function compPlayNext(){
   newGame();
   return true;
 }
+/* Ai là ai trong sổ giải đấu: HỒN, không phải thân xác. `gnSoul` chỉ khác `key` sau khi
+   Ginyu tung CHANGE. */
+const compSoul=f=>f?(f.gnSoul||f.key):null;
 /* Ghi kết quả một trận. Gọi từ cuối finish(), nên G vẫn còn nguyên đội hình vừa đánh. */
 function compResult(win){
   compLive=false;
@@ -4215,15 +4222,19 @@ function compResult(win){
     for(const k of COMP.keys) cu[k]=Object.assign({},COMP.tab[k]);
     lgAnim={ord:lgOrder(),tab:cu,pair:[m.a,m.b]};
   }else cupAnim=m.ref;
+  /* Đọc theo HỒN chứ đừng đọc theo THÂN XÁC. Sau cú CHANGE của Ginyu, object mang
+     `key:'ginyu'` có thể đang do hồn Superman điều khiển — người dùng bác đúng chỗ này:
+     "Superman trong xác Ginyu win, nhưng vẫn tính Ginyu win là sai". Thanh máu và băng-rôn
+     WINNER vốn đã đọc `f.name` nên chúng ra đúng sẵn; chỉ mỗi sổ giải đấu đọc `f.key`. */
   const mains=G.fighters.filter(f=>f&&!f.summon);
-  const A=mains.find(f=>f.key===m.a)||mains[0], B=mains.find(f=>f.key===m.b)||mains[1];
+  const A=mains.find(f=>compSoul(f)===m.a)||mains[0], B=mains.find(f=>compSoul(f)===m.b)||mains[1];
   /* Hiệu số = MÁU CÒN LẠI CỦA NGƯỜI THẮNG, người dùng chốt: "winner có 32 máu thì +32,
      còn loser −32". Không phải sát thương, không phải máu của kẻ thua — một trận cho ra
      đúng một con số, cộng cho người thắng và trừ đúng bấy nhiêu của người thua. Dòng kết
      quả thì in máu còn lại của CẢ HAI bên (`0–32`), thua vì cạn máu nên vế kia là 0; chỉ
      trận hết giờ mới có hai số cùng dương. */
   const ga=Math.max(0,Math.round((A&&A.hp)||0)), gb=Math.max(0,Math.round((B&&B.hp)||0));
-  const wk=(win&&win.key===m.b)?m.b:m.a;    // không đọc ra được thì mặc định bên A
+  const wk=(win&&compSoul(win)===m.b)?m.b:m.a;   // không đọc ra được thì mặc định bên A
   m.ref.w=wk; m.ref.ga=ga; m.ref.gb=gb;
   if(COMP.kind==='league'){
     const T=COMP.tab, lk=wk===m.a?m.b:m.a, con=wk===m.a?ga:gb;
@@ -4719,8 +4730,11 @@ function scold(c,e){
    (cả basic shot lẫn overhead kick — cùng là type 'ball').
    Kame / masenko là tia và cầu năng lượng nên không hất được.
    Drive shot và twin shot tuy là bóng nhưng cố ý miễn nhiễm với đòn phản:
-   vừa không nằm trong tập này, vừa mang cờ noReflect ngay lúc tạo. */
-const PHYSICAL=new Set(['shuriken','kunai','ball']);
+   vừa không nằm trong tập này, vừa mang cờ noReflect ngay lúc tạo.
+   VÒNG KHÍ NÉN của Air Cannon thì hất ngược được — người dùng chốt: "ChiChi có skill mắng
+   phản được air cannon nhé". Nó là một khối khí bay tới chứ không phải tia năng lượng, nên
+   nằm đúng nhóm này; hất ngược rồi thì Doraemon ăn nguyên 85 dmg + choáng của chính mình. */
+const PHYSICAL=new Set(['shuriken','kunai','ball','aircan']);
 const canReflect=p=>PHYSICAL.has(p.type)&&!p.noReflect;
 
 /* ---------- Ozora Tsubasa ---------- */
@@ -6022,7 +6036,7 @@ function ginyuPossess(g,t){
   const projBody=GN_PROJ_BODY.has(t.key);
   t.gnBodyProj=projBody;
   t.gnSelfCut=GN.swapCut; t.gnCcCut=GN.swapCcCut;
-  t.missOdds=projBody?0:.55;
+  t.missOdds=projBody?0:GN.swapMiss;
   t.aimOff=projBody?GN.aimOff:0;
   t.cds={s1:0,s2:GN.beamCd,s3:GN.flashCd};
   t.gnState=null; t.gnStateT=0; t.gnAura=Infinity; t.gnFlash=null; t.gnPanic=false;
@@ -7953,10 +7967,16 @@ function step(dt){
         p.vx=Math.cos(a)*sp*1.15; p.vy=Math.sin(a)*sp*1.15;
         p.team=w.team; p.owner=w.owner; p.bounced=true; p.life=Math.max(p.life,2);
         if(p.type==='ball'){ p.bounce=0; p.spin=0; }   // bóng bị hất ngược thì được nảy lại từ đầu
+        /* Vòng khí nén vẽ theo `p.ang` chứ không theo vận tốc, nên quay đầu rồi phải xoay
+           luôn cái vòng — không thì nó bay lùi mà miệng vòng vẫn hướng cũ. Và `hitList`
+           phải xoá sạch, nếu không viên đạn vẫn nhớ là đã trúng Doraemon rồi và bay xuyên
+           qua chính anh. */
+        if(p.type==='aircan'){ p.ang=a; if(p.hitList) p.hitList.length=0; }
         G.fx.push({type:'ring',x:p.x,y:p.y,r:4,max:26,color:'#FFE100',life:.25,ml:.25});
         const back=w.owner?foeOf(w.owner):null;
         const who=back?back.name:'đối thủ';
-        const what=p.type==='kunai'?'kunai nổ':(p.type==='ball'?'trái bóng':'phi tiêu');
+        const what=p.type==='kunai'?'kunai nổ':p.type==='ball'?'trái bóng'
+                  :p.type==='aircan'?'vòng khí nén':'phi tiêu';
         say(`Sóng âm hất ngược ${what} về phía ${who}!`,'c');
       }
     }

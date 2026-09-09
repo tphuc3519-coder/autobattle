@@ -151,6 +151,53 @@ function ok(name, pass, note) {
   ok('không lỗi trang', errors.length === 0, errors.slice(0, 2).join(' | '));
   await browser.close();
 
+  /* ---------- Mắng phản được cả Air Cannon ----------
+     Người dùng chốt: "ChiChi có skill mắng phản được air cannon nhé". Vòng khí nén là một
+     khối khí bay tới chứ không phải tia năng lượng, nên nó vào đúng nhóm PHYSICAL. */
+  {
+    const g2 = await openGame('dora', 'chichi');
+    await g2.page.selectOption('#speed', '1');
+    await g2.page.waitForTimeout(500);
+    const r2 = await g2.page.evaluate(() => {
+      const G = window.__G(), o = {};
+      const d = G.fighters.find(f => f.key === 'dora'), c = G.fighters.find(f => f.key === 'chichi');
+      d.drHide = false; d.drEntry = null; d.lock = 0; c.lock = 0;
+      o.nhom = window.__canReflect({ type: 'aircan' });
+      d.x = 200; d.y = 300; c.x = 560; c.y = 300; d.hp = d.maxHp; c.hp = c.maxHp;
+      G.proj.length = 0; G.waves.length = 0;
+      window.__doraAirCannon(d, c);
+      for (let i = 0; i < 200 && !G.proj.some(p => p.type === 'aircan'); i++) window.__step(1 / 120);
+      const p = G.proj.find(x => x.type === 'aircan');
+      if (!p) return o;
+      o.teamTruoc = p.team;
+      // một đợt sóng xung kích của chiêu Mắng, lan ra từ chỗ ChiChi đứng
+      G.waves.push({ x: c.x, y: c.y, r: 12, max: 195, spd: 330, dmg: 10, crit: false,
+                     owner: c, team: c.team, hit: [] });
+      d.edCd = 999;                       // khoá cửa thần kỳ cho phép đo sạch
+      for (let i = 0; i < 400 && !p.bounced; i++) window.__step(1 / 120);
+      o.bat = !!p.bounced; o.teamSau = p.team; o.chu = p.owner && p.owner.key;
+      o.goc = Math.abs(Math.atan2(p.vy, p.vx) - p.ang) < .01;
+      /* Đo CÚ SỤT LỚN NHẤT trong một nhịp, đừng cộng dồn — trận vẫn chạy nên ChiChi còn
+         đấm thường xen vào (mục 9 của CLAUDE.md). */
+      let sut = 0, choang = false;
+      for (let i = 0; i < 600; i++) {
+        const truoc = d.hp; d.edCd = 999; window.__step(1 / 120);
+        const m = truoc - d.hp; if (m > sut) { sut = m; choang = d.stun > 0; }
+      }
+      o.mat = Math.round(sut); o.choang = choang;
+      return o;
+    });
+    ok('vòng khí nén nằm trong nhóm phản ngược được', r2.nhom === true);
+    ok('sóng âm hất ngược vòng khí về phía Doraemon',
+      r2.bat === true && r2.teamSau !== r2.teamTruoc && r2.chu === 'chichi',
+      `phe ${r2.teamTruoc} -> ${r2.teamSau}, chủ mới ${r2.chu}`);
+    ok('miệng vòng xoay theo hướng bay mới', r2.goc === true);
+    ok('Doraemon ăn nguyên phát Air Cannon của chính mình',
+      r2.mat >= 40 && r2.choang === true, `${r2.mat} dmg, choáng ${r2.choang}`);
+    ok('không lỗi trang (trận phản đòn)', g2.errors.length === 0, g2.errors.slice(0, 2).join(' | '));
+    await g2.browser.close();
+  }
+
   console.log(out.join('\n'));
   console.log(fail ? `HONG ${fail} muc` : `DAT tat ca ${out.length} muc`);
   process.exit(fail ? 1 : 0);

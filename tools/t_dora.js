@@ -477,6 +477,10 @@ async function waitGame(page, body, limit) {
       G.proj.push({ type: 'aircan', owner: f, x: f.x, y: f.y, vx: 100, vy: 0, r: 22, dmg: 10, life: 3, ang: 0, hitList: [] });
       const projMine0 = G.proj.filter(p => p.owner === f).length;
       const t0 = G.t;
+      /* Khoá địch NGAY TỪ TRƯỚC cú chết, đừng đợi nhịp interval đầu tiên: giữa hai mốc đó
+         anh vẫn kịp nhích đi hoặc ăn một đòn, và phép đo "đối thủ giữ nguyên máu và vị trí"
+         đổ oan (đã đổ đúng một lần rồi lần sau chạy lại thì đạt). */
+      e.lock = Math.max(e.lock, 9);
       window.__hurt(f, 99999, e);
       const inCine = { tm: !!f.tm, alive: f.alive, over: G.over, warp: !!G.timeWarp,
                        theme: window.__MUSIC.theme,

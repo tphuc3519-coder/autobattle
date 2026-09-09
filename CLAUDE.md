@@ -141,7 +141,16 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
 - Rage 20: Rasengan Dash.
 
 ### ChiChi (`chichi`)
-- Chiêu 1 cận chiến, chiêu 2 **Mắng** — 5 đợt sóng xung kích, phản lại shuriken / kunai / bóng.
+- Chiêu 1 cận chiến, chiêu 2 **Mắng** — 5 đợt sóng xung kích, phản lại shuriken / kunai /
+  bóng / **vòng khí Air Cannon**.
+  > **Air Cannon hất ngược được** — người dùng chốt: *"ChiChi có skill mắng phản được air
+  > cannon nhé"*. Nó là một **khối khí bay tới** chứ không phải tia năng lượng, nên chỉ việc
+  > thêm `'aircan'` vào tập `PHYSICAL`. Hai thứ phải sửa kèm ở nhánh phản đòn, thiếu là hỏng:
+  > **xoay luôn `p.ang`** (vòng khí vẽ theo góc đó chứ không theo vận tốc, không xoay thì nó
+  > bay lùi mà miệng vòng vẫn hướng cũ) và **xoá sạch `p.hitList`** (không thì viên đạn vẫn
+  > nhớ là đã trúng Doraemon và bay xuyên qua chính anh). Đo được: Doraemon ăn nguyên **85
+  > dmg** và dính choáng của chính mình. Kamehameha / Masenko vẫn không phản được — chúng là
+  > tia năng lượng; Drive Shot và Twin Shot vẫn mang cờ `noReflect`.
 - **Flying Kick**: đồng hồ riêng `f.dashCd`, **không** nằm trong `f.cds` — cố định
   `CHICHI_DASH_CD = 5` giây-trong-trận = **10 giây người chơi**, nên hiệu ứng Kiệt sức
   không kéo dài được nó. Lúc lao: miễn khống chế, chỉ nhận 70% sát thương
@@ -684,9 +693,15 @@ thương, `GN.swapCcCut = .25` thời lượng hiệu ứng — đòn tay tính 
   bằng Ginyu là khi change thì cả 2 thân xác có lượng máu ngang nhau (20%) chứ đừng lệch
   máu". Hai hằng `changeKeep` / `changeGain` gộp thành một `changeHp`.)*
 - **Đòn tay mượn** gọi thẳng chiêu 1 gốc của thân xác đó (`gnBorrowBasic`). Thân xác **hệ
-  ném / sút** (`GN_PROJ_BODY` = kono / tsubasa / shika) thì ngắm hỏng bét: `f.aimOff` làm đạn
-  vẹo đi tới ±1.05 rad ngay khi rời tay và **mất luôn khả năng dò tìm** (`p.noHome`). Thân
-  xác cận chiến thì `f.missOdds = .55`, `hurt()` in chữ `MISS`. `GN_PROJ_BODY` giờ **chỉ còn
+  ném / sút** (`GN_PROJ_BODY` = kono / tsubasa / shika) thì đạn vẹo đi `GN.aimOff` = **±0.45
+  rad** ngay khi rời tay và **mất luôn khả năng dò tìm** (`p.noHome`). Thân xác cận chiến thì
+  `GN.swapMiss` = **20%** số đòn hụt, `hurt()` in chữ `MISS`.
+  > **Đừng để thành "đánh mãi không trúng".** Bản đầu là **55% hụt + lệch 1.05 rad**; cộng
+  > với mức cắt 25% sát thương thì cú đấm chỉ còn ~11% sức, Ginyu đứng vung tay cả trận mà
+  > chẳng ăn thua gì — người dùng bác: *"fix lỗi sao mà Ginyu vào thân xác người ta đánh
+  > toàn miss vậy"*. Hạ xuống **20% / 0.45 rad**; muốn chỉnh nữa thì sửa đúng hai hằng
+  > `GN.swapMiss` / `GN.aimOff`, đừng ghim số vào `ginyuPossess()`. *(Hai con số cụ thể là
+  > chỗ tôi tự chốt — người dùng chỉ nói là quá nhiều, không nêu mức mới.)* `GN_PROJ_BODY` giờ **chỉ còn
   quyết định KIỂU ngắm hỏng**, không còn miễn trừ phần cắt sát thương nữa — mức cắt là một
   con số chung. Hai lớp ngắm hỏng này **chỉ áp cho Ginyu**: hồn đối thủ dùng chiêu của chính
   mình nên `g.missOdds = g.aimOff = 0`.
@@ -1506,6 +1521,13 @@ là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa 
   người là tráo chỗ cho nhau (`swapAt`).
 - **Trận tranh hạng ba đánh TRƯỚC chung kết**, đúng lối World Cup. `cupFill()` đẩy người
   thắng lên vòng sau và lấy hai người thua bán kết xuống trận đó.
+- **Thắng thua tính theo HỒN, không theo THÂN XÁC** (`compSoul(f)` = `f.gnSoul || f.key`).
+  Sau cú CHANGE của Ginyu, object mang `key:'ginyu'` có thể đang do hồn Superman điều khiển;
+  người dùng bác đúng chỗ này: *"Superman trong xác Ginyu win, nhưng vẫn tính Ginyu win là
+  sai"*. Thanh máu và băng-rôn WINNER vốn đã đọc `f.name` nên chúng ra đúng sẵn — **chỉ mỗi
+  sổ giải đấu đọc `f.key`**. `compResult()` vì vậy tra cả `A`/`B` lẫn người thắng qua
+  `compSoul()`, nên máu còn lại cũng lấy đúng thân xác mà hồn đó đang ngồi. Đo được: thân xác
+  Ginyu đứng cuối trận với 210 máu ⇒ Superman **+3 điểm / +210 hiệu số**, Ginyu **−210**.
 - `finish()` gọi `compResult(win)` **ngay tại chỗ** — ra khỏi hàm đó là mấy con số
   `dmgDealt` không đọc lại được nữa. Xong thì hẹn **2.6 giây** rồi mới bật bảng lên, bật
   ngay thì che mất pha KO.
@@ -2396,7 +2418,9 @@ node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ 
                         # lan ra), và Mini Rasengan gỡ vây 40 dmg + hất 30% sàn, hồi chiêu 12s
 node tools/t_chichi.js  # ChiChi: Flying Kick 45 dmg + choáng 2s, và viện binh — Kamehameha
                         # 400 dmg + choáng 2s rồi ghì chân 4s (hết choáng mới tới),
-                        # Masenko 100 dmg mỗi đợt + chồng lớp −10%/−7%
+                        # Masenko 100 dmg mỗi đợt + chồng lớp −10%/−7%, và chiêu Mắng hất
+                        # ngược cả vòng khí Air Cannon (Doraemon ăn đúng 85 dmg của chính
+                        # mình, miệng vòng xoay theo hướng bay mới)
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
@@ -2447,7 +2471,9 @@ node tools/t_ginyu.js   # Captain Ginyu: bay vào sân đúng 1.5s và địch b
                         # bên cùng một mức cắt 25% dmg + 25% hiệu ứng (hồn đối thủ tung
                         # được cả chiêu 2 lẫn chiêu 3 của chính mình, phân thân bay ra thật
                         # từ thân xác Ginyu, đấm đá Ginyu ăn đúng 5.5 dmg trên mốc 22),
-                        # bắn trượt thì 1 máu + hoảng loạn, luật ba người thì luôn thăm dò
+                        # bắn trượt thì 1 máu + hoảng loạn, luật ba người thì luôn thăm dò,
+                        # và thắng thua tính theo HỒN: thân xác Ginyu thắng thì giải ghi
+                        # điểm cho Superman, kèm mức ngắm hỏng 20% / 0.45 rad
 node tools/t_dora.js    # Doraemon: Anywhere Door đúng 1.5s bốn pha và địch chỉ đứng chờ,
                         # cửa thần kỳ né được cả tia CHANGE cướp xác của Ginyu (trận 4),
                         # combo 15/15/20 cách nhau 0.6s, Air Cannon (ba dải chính xác, đẩy
@@ -2550,6 +2576,9 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Trận đấu gương (kono vs kono) treo ở màn chọn, `t_reg` đổ | `tapTwice()` tính theo TÊN NHÂN VẬT, mà đấu gương thì bấm kono ở lưới trái rồi kono ở lưới phải là hai cú liên tiếp cùng tên ⇒ hiểu nhầm thành chạm hai lần, bảng thông số bật lên chặn mất nút Vào trận | mốc gồm **cả lưới lẫn tên** (`parentNode.id + '/' + key`). Đừng lấy chính phần tử làm mốc: mỗi cú bấm ở lưới đội hình dựng lại cả lưới |
 | Hiệu số của giải hụt mất mấy trăm điểm | dòng cộng dồn `dmgDealt` trong `hurt()` gác ở `!src.summon`, nên Kamehameha / Masenko do object Goku-Gohan bắn ra **không ghi cho ai cả** — trận ChiChi vs Doraemon ra `369–851` trong khi Doraemon kết trận với 32 máu | ghi công cho `src.master` khi `src` là viện binh, và chỉ cộng phần máu THẬT SỰ mất (`min(amt, t.hp)`) để đòn thừa lúc kết liễu không tính. Đo lại: Kamehameha 400 dmg 0 → **400**, đấm 400 vào người còn 30 máu 400 → **30** |
 | Hiệu ứng trượt hàng của bảng xếp hạng không chạy, đo ra 0px | `compOpen()` gọi `compPaint()` TRƯỚC khi bỏ lớp `off`, nên `lgPlay()` đo `offsetTop` bên trong một khối `display:none` — mọi hàng cùng ra 0 nên độ lệch cũng bằng 0 | hiện bảng ra trước rồi mới vẽ; đo lại hàng trượt xa nhất 105px |
+| Giải đấu ghi sai người thắng sau cú CHANGE | `compResult()` đọc `f.key`, tức đọc THÂN XÁC — Superman thắng trong xác Ginyu thì điểm về tay Ginyu | tra qua `compSoul(f)` = `f.gnSoul || f.key`. Băng-rôn và thanh máu vốn đã đọc `f.name` nên chúng đúng sẵn, chỉ sổ giải đấu sai |
+| Ginyu vào thân xác người khác đánh mãi không trúng | 55% hụt đòn + lệch 1.05 rad, cộng thêm mức cắt 25% sát thương ⇒ cú đấm chỉ còn ~11% sức | hạ xuống `GN.swapMiss = .20` và `GN.aimOff = .45`; đừng ghim số vào `ginyuPossess()` |
+| Vòng khí Air Cannon bị hất ngược mà bay lùi với miệng vòng hướng cũ, rồi xuyên qua chính Doraemon | nhánh phản đòn chỉ đổi `p.vx/p.vy`, mà vòng khí vẽ theo `p.ang` và vẫn giữ `p.hitList` cũ | xoay luôn `p.ang` và `p.hitList.length = 0` ngay tại chỗ phản |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---
