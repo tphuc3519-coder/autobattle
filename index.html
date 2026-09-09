@@ -273,7 +273,10 @@
   body.arcade #charSelect[data-step="stage"] #teamNum,
   body.arcade #charSelect[data-step="pick"] #cupSeed,
   body.arcade #charSelect[data-step="stage"] #cupSeed,
-  #charSelect[data-page="stage"] #cupSeed{display:none}
+  #charSelect[data-page="stage"] #cupSeed,
+  body.arcade #charSelect[data-step="pick"] #lgLegs,
+  body.arcade #charSelect[data-step="stage"] #lgLegs,
+  #charSelect[data-page="stage"] #lgLegs{display:none}
   body.arcade #charSelect[data-step="pick0"] #stageSub,
   body.arcade #charSelect[data-step="pick0"] #stageList,
   body.arcade #charSelect[data-step="pick"] #stageSub,
@@ -717,6 +720,8 @@
     <div class="teamNum off" id="teamNum"></div>
     <!-- Xếp nhánh cho giải loại trực tiếp: bốc thăm hay tự xếp. -->
     <div class="teamNum off" id="cupSeed"></div>
+    <!-- Giải vòng tròn: đá một lượt hay có cả lượt về. -->
+    <div class="teamNum off" id="lgLegs"></div>
     <div class="cselBody">
       <div class="cselCols" id="duelPane">
         <div class="cselCol" id="colA">
@@ -837,9 +842,12 @@ const L={
     mCup:'🥇 Giải loại trực tiếp', mCupSub:'4 hoặc 8 người · bracket',
     cselLeague:'CHỌN <span>DÀN ĐẤU THỦ</span>', cselCup:'XẾP <span>NHÁNH ĐẤU</span>',
     subLeague:'Giải vòng tròn — chọn {lo}–{hi} người, ai cũng gặp ai đúng một lượt',
+    subLeague2:'Giải vòng tròn — chọn {lo}–{hi} người, ai cũng gặp ai hai lượt đi và về',
     subCup:'Giải loại trực tiếp — chọn đúng {a} hoặc {b} người, đánh loại tới khi có vô địch',
     goComp:'⚔ Khai mạc giải', seedLab:'Xếp nhánh', seedRandom:'🎲 Bốc thăm', seedManual:'✋ Tự xếp',
     seedHint:'Bấm vào hai người trong dàn để tráo chỗ cho nhau',
+    legsLab:'Thể thức', legs1:'Một lượt', legs2:'Lượt đi lượt về',
+    legsHint:'{n} trận · {v} vòng', leg1:'Lượt đi', leg2:'Lượt về',
     lgRound:'Vòng {n}/{t}', lgTeam:'Đấu thủ', lgP:'Trận', lgW:'Thắng', lgL:'Thua',
     lgDiff:'Hiệu số', lgPts:'Điểm',
     cupQF:'Tứ kết', cupSF:'Bán kết', cupFinal:'Chung kết', cupThird:'Tranh hạng ba',
@@ -895,9 +903,12 @@ const L={
     mCup:'🥇 Tournament', mCupSub:'4 or 8 fighters · bracket',
     cselLeague:'PICK THE <span>LEAGUE</span>', cselCup:'SEED THE <span>BRACKET</span>',
     subLeague:'League — pick {lo}–{hi} fighters, everyone plays everyone once',
+    subLeague2:'League — pick {lo}–{hi} fighters, everyone plays everyone twice, home and away',
     subCup:'Knockout — pick exactly {a} or {b} fighters, last one standing takes the cup',
     goComp:'⚔ Start the competition', seedLab:'Bracket', seedRandom:'🎲 Random draw', seedManual:'✋ Set it myself',
     seedHint:'Tap two fighters in the line-up to swap their slots',
+    legsLab:'Format', legs1:'Single round', legs2:'Home and away',
+    legsHint:'{n} matches · {v} rounds', leg1:'First leg', leg2:'Second leg',
     lgRound:'Round {n}/{t}', lgTeam:'Fighter', lgP:'P', lgW:'W', lgL:'L',
     lgDiff:'Diff', lgPts:'Pts',
     cupQF:'Quarter-finals', cupSF:'Semi-finals', cupFinal:'Final', cupThird:'Third place',
@@ -1020,6 +1031,7 @@ const TEAM_MIN=1, TEAM_MAX=3, TEAM_MIN_N=2, TEAM_MAX_N=4, TEAM_TOTAL=8;
 const ROSTERS={ffa:['kono','chichi','tsubasa'], teams:[['kono','chichi'],['tsubasa','shika']],
                 comp:['kono','chichi','tsubasa','shika']};   // dàn đấu thủ của giải đấu
 let CUPSEED='random';               // xếp nhánh: 'random' bốc thăm, 'manual' tự xếp
+let LGLEGS=1;                       // giải vòng tròn: 1 = một lượt, 2 = lượt đi lượt về
 /* Màu nhận dạng của từng đội. Đánh đội từ ba đội trở lên thì nhìn nhân vật không đoán
    ra ai cùng phe với ai, nên mỗi đội có một vòng sáng dưới chân theo màu này. */
 const TEAM_TINT=['#63B4FF','#FF4D6D','#2ED573','#FFC542'];
@@ -1920,6 +1932,7 @@ async function loadSaved(){
       if(CHARS[p.a])PICK.a=p.a; if(CHARS[p.b])PICK.b=p.b; dirty=true;
       if(['ffa','team','duel','league','cup'].indexOf(p.mode)>=0) PMODE=p.mode;
       if(p.seed==='random'||p.seed==='manual') CUPSEED=p.seed;
+      if(p.legs===1||p.legs===2) LGLEGS=p.legs;
       if(p.stage&&STAGE_KEYS.indexOf(p.stage)>=0) STAGE=p.stage;
       if(p.rosters){
         const ok=a=>Array.isArray(a)&&a.length&&a.every(k=>!!CHARS[k]);
@@ -3979,6 +3992,7 @@ function finish(w){
 const LG_MIN=3, LG_MAX=8;        // vòng tròn tính điểm: 3~8 người
 const CUP_SIZES=[4,8];           // loại trực tiếp: đúng 4 hoặc 8 người, không thì lệch nhánh
 const LG_WIN=3;                  // điểm mỗi trận thắng, đúng lối bóng đá
+const LG_LEGS_MAX=2;             // một lượt, hoặc lượt đi lượt về
 /* Trần thời gian một trận trong giải, tính bằng giây TRONG TRẬN (= 180 giây người chơi).
    Hai người cùng có cửa hồi máu thì về lý thuyết đánh nhau mãi không xong; giải mà kẹt
    một trận là kẹt cả giải, nên hết giờ thì ai còn nhiều PHẦN TRĂM máu hơn người đó thắng.
@@ -4013,12 +4027,20 @@ function shuffled(a){
   for(let i=o.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=o[i]; o[i]=o[j]; o[j]=t; }
   return o;
 }
-function leagueNew(keys){
+/* `legs` = 1 đá một lượt (mặc định), = 2 thì có LƯỢT VỀ: đá lại đúng bấy nhiêu vòng nữa
+   nhưng ĐẢO SÂN — ai đứng bên A lượt đi thì lượt về đứng bên B. Số vòng nhân đôi theo,
+   nên dòng "Vòng 3/14" vẫn tự đúng mà không phải sửa chỗ nào khác. */
+function leagueNew(keys,legs){
   const tab={};
   for(const k of keys) tab[k]={p:0,w:0,l:0,gf:0,ga:0,pts:0};
   const vong=roundRobin(keys.length), fix=[];
-  vong.forEach((cap,r)=>cap.forEach(pair=>fix.push({r,a:keys[pair[0]],b:keys[pair[1]],w:null,ga:0,gb:0})));
-  return {kind:'league',keys:keys.slice(),tab,fix,nr:vong.length,cur:null};
+  const n=Math.max(1,Math.min(LG_LEGS_MAX,legs|0||1));
+  for(let L=0;L<n;L++)
+    vong.forEach((cap,r)=>cap.forEach(pair=>{
+      const a=keys[pair[L%2]], b=keys[pair[(L+1)%2]];
+      fix.push({r:r+L*vong.length,a,b,w:null,ga:0,gb:0,leg:L+1});
+    }));
+  return {kind:'league',keys:keys.slice(),tab,fix,nr:vong.length*n,legs:n,cur:null};
 }
 function cupNew(keys){
   const n=keys.length, r1=[];
@@ -4049,10 +4071,16 @@ function cupRoundName(r,R){
   return so>=4?t('cupQF'):so===2?t('cupSF'):t('cupFinal');
 }
 /* Trận kế tiếp phải đánh, hoặc null khi giải đã xong. */
+/* Nhãn một vòng của giải vòng tròn. Đá lượt về thì ghi thêm "Lượt đi / Lượt về" — chỉ nhìn
+   số vòng thì không đoán ra vòng 9/14 là lượt nào. */
+function lgLabel(m){
+  const v=tf('lgRound',{n:m.r+1,t:COMP.nr});
+  return (COMP.legs===2&&m.leg)?v+' · '+t(m.leg===2?'leg2':'leg1'):v;
+}
 function compNextMatch(){
   if(!COMP) return null;
   if(COMP.kind==='league'){
-    for(const m of COMP.fix) if(!m.w) return {a:m.a,b:m.b,ref:m,label:tf('lgRound',{n:m.r+1,t:COMP.nr})};
+    for(const m of COMP.fix) if(!m.w) return {a:m.a,b:m.b,ref:m,label:lgLabel(m)};
     return null;
   }
   cupFill(COMP);
@@ -4082,8 +4110,8 @@ function compChampion(){
 }
 /* Mở một giải mới. `seed` chỉ có nghĩa với loại trực tiếp: 'random' thì xáo lại nhánh,
    'manual' thì giữ nguyên đúng thứ tự người dùng đã xếp. */
-function compStart(kind,keys,stage,seed){
-  COMP=kind==='league'?leagueNew(keys):cupNew(seed==='random'?shuffled(keys):keys);
+function compStart(kind,keys,stage,seed,legs){
+  COMP=kind==='league'?leagueNew(keys,legs):cupNew(seed==='random'?shuffled(keys):keys);
   COMP.stage=stage||STAGE;
   COMP.seed=seed||'manual';
   compLive=false;
@@ -12051,7 +12079,7 @@ el('testForest').addEventListener('click',testForest);
    hai chế độ nhiều người. Bấm "Vào trận" mới chép sang PICK / PMODE / ROSTERS.
    TMP.teams là MẢNG các đội — số đội cũng do người chơi chọn (TEAM_MIN_N~TEAM_MAX_N). */
 const TMP={a:PICK.a,b:PICK.b,mode:PMODE,stage:STAGE,ffa:ROSTERS.ffa.slice(),
-           teams:ROSTERS.teams.map(a=>a.slice()),comp:ROSTERS.comp.slice(),seed:CUPSEED};
+           teams:ROSTERS.teams.map(a=>a.slice()),comp:ROSTERS.comp.slice(),seed:CUPSEED,legs:LGLEGS};
 /* Chế độ đang chọn cần mấy nhóm đội hình: 'ffa' đúng một nhóm gộp chung, 'team' thì mỗi
    đội một nhóm. Mỗi nhóm trỏ vào một mảng trong TMP qua hàm list(). */
 function modeGroups(m){
@@ -12369,7 +12397,8 @@ function cselRefresh(){
       :`<b>${t('notEnough')}</b>`;
   }else if(TMP.mode==='league'||TMP.mode==='cup'){
     if(sub) sub.textContent=ARCADE?cselSubText()
-      :(TMP.mode==='league'?tf('subLeague',{lo:LG_MIN,hi:LG_MAX}):tf('subCup',{a:CUP_SIZES[0],b:CUP_SIZES[1]}));
+      :(TMP.mode==='league'?tf(TMP.legs===2?'subLeague2':'subLeague',{lo:LG_MIN,hi:LG_MAX})
+                           :tf('subCup',{a:CUP_SIZES[0],b:CUP_SIZES[1]}));
     if(vs) vs.innerHTML=TMP.comp.map(k=>`<b>${nm(k)}</b>`).join(' · ')||`<b>${t('notEnough')}</b>`;
   }else{
     if(sub) sub.textContent=ARCADE?cselSubText():tf('subTeam',{n:TMP.teams.length,lo:TEAM_MIN_N,hi:TEAM_MAX_N,
@@ -12378,6 +12407,28 @@ function cselRefresh(){
       `<b style="color:${teamTint(t)}">${side.map(nm).join(' + ')||'—'}</b>`).join(' vs ');
   }
   if(go){ const ok=tmpReady(); go.disabled=!ok; go.style.opacity=ok?'':'.5'; go.style.cursor=ok?'':'not-allowed'; }
+  /* Hàng chọn thể thức — chỉ có ở giải vòng tròn. Kèm luôn số trận và số vòng, vì
+     8 người đá lượt về là 56 trận, người chơi phải biết trước mình đang chọn cái gì. */
+  const lg=document.getElementById('lgLegs');
+  if(lg){
+    const hien=TMP.mode==='league';
+    lg.classList.toggle('off',!hien);
+    lg.innerHTML='';
+    if(hien){
+      const lab=document.createElement('span'); lab.textContent=t('legsLab'); lg.appendChild(lab);
+      const n=TMP.comp.length, vong=n>1?roundRobin(n).length:0;
+      for(const [v,k] of [[1,'legs1'],[2,'legs2']]){
+        const b=document.createElement('button');
+        b.type='button'; b.dataset.legs=String(v); b.textContent=t(k);
+        if(v===TMP.legs) b.className='on';
+        b.addEventListener('click',()=>{ TMP.legs=v; cselRefresh(); });
+        lg.appendChild(b);
+      }
+      const h=document.createElement('span'); h.style.opacity='.7';
+      h.textContent=tf('legsHint',{n:n*(n-1)/2*TMP.legs,v:vong*TMP.legs});
+      lg.appendChild(h);
+    }
+  }
   /* Hàng chọn cách xếp nhánh — chỉ có ở giải loại trực tiếp. */
   const cs=document.getElementById('cupSeed');
   if(cs){
@@ -12468,7 +12519,7 @@ function buildCsel(){
 function openCsel(){
   TMP.a=PICK.a; TMP.b=PICK.b; TMP.mode=PMODE; TMP.stage=STAGE;
   TMP.ffa=ROSTERS.ffa.slice(); TMP.teams=ROSTERS.teams.map(a=>a.slice());
-  TMP.comp=ROSTERS.comp.slice(); TMP.seed=CUPSEED; swapAt=-1;
+  TMP.comp=ROSTERS.comp.slice(); TMP.seed=CUPSEED; TMP.legs=LGLEGS; swapAt=-1;
   cselRefresh();
   el('charSelect').classList.remove('off');
   running=false; el('play').textContent=t('play');
@@ -12478,15 +12529,15 @@ function startPicked(){
   if(!tmpReady())return;
   PICK.a=TMP.a; PICK.b=TMP.b; PMODE=TMP.mode; STAGE=TMP.stage||STAGE;
   ROSTERS.ffa=TMP.ffa.slice(); ROSTERS.teams=TMP.teams.map(a=>a.slice());
-  ROSTERS.comp=TMP.comp.slice(); CUPSEED=TMP.seed||'random';
+  ROSTERS.comp=TMP.comp.slice(); CUPSEED=TMP.seed||'random'; LGLEGS=TMP.legs===2?2:1;
   Store.set('cfg_picks',JSON.stringify({a:PICK.a,b:PICK.b,mode:PMODE,stage:STAGE,
-    rosters:ROSTERS,seed:CUPSEED})).catch(()=>{});
+    rosters:ROSTERS,seed:CUPSEED,legs:LGLEGS})).catch(()=>{});
   applyColors(); applyHp();
   closeCsel();
   /* Giải đấu KHÔNG vào trận ngay: mở giải rồi hiện bảng xếp hạng / sơ đồ nhánh, người
      chơi bấm "đánh trận này" thì mới vào. */
   if(PMODE==='league'||PMODE==='cup'){
-    compStart(PMODE,ROSTERS.comp.slice(),STAGE,CUPSEED);
+    compStart(PMODE,ROSTERS.comp.slice(),STAGE,CUPSEED,LGLEGS);
     newGame(); running=false; el('play').textContent=t('play');
     compOpen();
     return;
@@ -12524,8 +12575,7 @@ function compPlayed(){
 /* Mọi trận của giải kèm tên vòng, đúng thứ tự sẽ đá. */
 function compMatches(){
   if(!COMP) return [];
-  if(COMP.kind==='league')
-    return COMP.fix.map(m=>({m,lab:tf('lgRound',{n:m.r+1,t:COMP.nr})}));
+  if(COMP.kind==='league') return COMP.fix.map(m=>({m,lab:lgLabel(m)}));
   const R=COMP.rounds.length, out=[];
   for(let r=0;r<R-1;r++) for(const m of COMP.rounds[r]) out.push({m,lab:cupRoundName(r,R)});
   out.push({m:COMP.third,lab:t('cupThird')});
@@ -12660,7 +12710,8 @@ function cselSubText(){
   const i=teamStep();
   if(i>=0) return tf('subTeamStep',{n:i+1,lo:TEAM_MIN,hi:TEAM_MAX,cur:tmpTotal(),max:TEAM_TOTAL});
   if(ARCADE&&cselPage==='chars'&&TMP.mode==='ffa') return tf('subFfa',{lo:FFA_MIN,hi:FFA_MAX});
-  if(ARCADE&&TMP.mode==='league') return tf('subLeague',{lo:LG_MIN,hi:LG_MAX});
+  if(ARCADE&&TMP.mode==='league')
+    return tf(TMP.legs===2?'subLeague2':'subLeague',{lo:LG_MIN,hi:LG_MAX});
   if(ARCADE&&TMP.mode==='cup') return tf('subCup',{a:CUP_SIZES[0],b:CUP_SIZES[1]});
   return tf('subDuel',{n:CKEYS.length});
 }

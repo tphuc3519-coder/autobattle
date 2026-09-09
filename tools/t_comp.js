@@ -78,6 +78,32 @@ async function daHet(page, tran) {
   ok(bo.indexOf('kono') < 0, `bam lan nua thi BO RA khoi dan (${bo.join(',')})`);
   ok(them.filter(k => k === 'kono').length === 1, `bam lai thi them dung mot lan (${them.join(',')})`);
 
+  /* ---------- một lượt hay lượt đi lượt về ----------
+     Người dùng hỏi lại: "đánh vòng tròn này chưa có lượt đi lượt về đúng không?" — mặc định
+     đúng là MỘT LƯỢT, giờ có thêm lựa chọn đá lại lượt về đảo sân. */
+  ok(await page.locator('#lgLegs').isVisible(), 'giai vong tron co hang chon the thuc');
+  const luot = await doc(() => [...document.querySelectorAll('#lgLegs button')]
+    .map(b => b.dataset.legs + (b.className === 'on' ? '*' : '')).join(','));
+  ok(luot === '1*,2', `mac dinh la mot luot (${luot})`);
+
+  const hai = await doc(() => {
+    const mot = window.__leagueNew(['kono', 'chichi', 'tsubasa', 'shika'], 1);
+    const hai = window.__leagueNew(['kono', 'chichi', 'tsubasa', 'shika'], 2);
+    const cap = f => f.fix.map(m => m.a + '>' + m.b);
+    const c1 = cap(mot), c2 = cap(hai);
+    return { n1: mot.fix.length, n2: hai.fix.length, nr1: mot.nr, nr2: hai.nr,
+             dau: c2.slice(0, c1.length).join() === c1.join(),
+             daoSan: c2.slice(c1.length).every(x => c1.indexOf(x.split('>').reverse().join('>')) >= 0),
+             trung: new Set(c2).size === c2.length,
+             leg: hai.fix[hai.fix.length - 1].leg };
+  });
+  ok(hai.n1 === 6 && hai.n2 === 12, `luot ve nhan doi so tran (${hai.n1} -> ${hai.n2})`);
+  ok(hai.nr1 === 3 && hai.nr2 === 6, `so vong cung nhan doi (${hai.nr1} -> ${hai.nr2})`);
+  ok(hai.dau, 'nua dau cua lich luot ve giong het lich mot luot');
+  ok(hai.daoSan, 'nua sau DAO SAN: ai o ben A luot di thi luot ve o ben B');
+  ok(hai.trung, 'khong cap nao bi lap y nguyen ca hai luot');
+  ok(hai.leg === 2, `tran cuoi mang co luot ve (${hai.leg})`);
+
   await page.click('#cselGo'); await page.waitForTimeout(250);
   await page.click('#cselGo'); await page.waitForTimeout(500);
   const lb = await doc(() => ({

@@ -1452,8 +1452,8 @@ là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa 
 | | `league` | `cup` |
 |---|---|---|
 | bao nhiêu người | `LG_MIN`–`LG_MAX` = **3–8** | **đúng 4 hoặc 8** (`CUP_SIZES`) |
-| lịch | vòng tròn một lượt, `roundRobin()` kiểu *circle method* | nhánh loại trực tiếp `cupNew()` |
-| số trận | `n(n−1)/2` | `n−1` + **1 trận tranh hạng ba** |
+| lịch | vòng tròn, `roundRobin()` kiểu *circle method*; **một lượt hoặc lượt đi lượt về** | nhánh loại trực tiếp `cupNew()` |
+| số trận | `n(n−1)/2` × số lượt | `n−1` + **1 trận tranh hạng ba** |
 | thắng được gì | **3 điểm** (`LG_WIN`), không có hoà | đi tiếp một vòng |
 | xếp hạng | điểm → hiệu số → tổng sát thương gây ra → tên | vô địch = người thắng chung kết |
 
@@ -1467,6 +1467,16 @@ là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa 
   có cửa hồi máu thì về lý thuyết đánh nhau mãi không xong; giải mà kẹt một trận là kẹt cả
   giải. `compTick()` gọi ở đầu `step()`, hết giờ thì ai còn nhiều **phần trăm** máu hơn thì
   thắng. Khai bằng số thẳng chứ **đừng gọi `gs()`** — hàm đó khai mãi dưới khối Shikamaru.
+- **Lượt đi lượt về là TUỲ CHỌN, mặc định MỘT LƯỢT** (`LGLEGS`, hàng `#lgLegs`). Người dùng
+  hỏi lại: *"đánh vòng tròn này chưa có lượt đi lượt về đúng không? chỉ có mới đánh 1 turn
+  thôi mà đúng k"* — đúng, và giờ có thêm lựa chọn.
+  - `leagueNew(keys, legs)`: lượt về đá lại **đúng bấy nhiêu vòng nữa nhưng ĐẢO SÂN** — ai
+    đứng bên A lượt đi thì lượt về đứng bên B (`keys[pair[L%2]]`). Số vòng nhân đôi theo nên
+    dòng "Vòng 9/14" tự đúng, không phải sửa chỗ nào khác.
+  - Nhãn vòng đi qua `lgLabel(m)` và ghi thêm **Lượt đi / Lượt về** khi `legs===2`: chỉ nhìn
+    số vòng thì không đoán ra vòng 9/14 là lượt nào.
+  - Hàng chọn **in sẵn số trận và số vòng** (`legsHint`): 8 người đá lượt về là **56 trận**,
+    phải cho người chơi biết trước mình đang chọn cái gì.
 - **Dàn đấu thủ bấm là BẬT/TẮT, không có bản sao** (`modeGroups()` gắn cờ `toggle`): bảng xếp
   hạng mà có hai Konohamaru thì đọc không ra ai với ai.
 - **`tmpReady()` chặn riêng cho `cup`**: 5 người vẫn nằm trong khoảng 4~8 nên vòng kiểm
@@ -2321,8 +2331,9 @@ node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4
                         # đúng một lượt), bảng xếp hạng cộng điểm và xếp thứ tự đúng, dàn đấu
                         # thủ bấm là bật/tắt chứ không có bản sao, sơ đồ nhánh 8 người đủ ba
                         # vòng + trận tranh hạng ba, 5 người thì khoá nút vào giải, xếp nhánh
-                        # bốc thăm / tự xếp (bấm hai người là tráo chỗ), và cả hai giải chạy
-                        # từ trận đầu tới lúc có nhà vô địch
+                        # bốc thăm / tự xếp (bấm hai người là tráo chỗ), lượt đi lượt về
+                        # (mặc định một lượt, bật lên thì nhân đôi số trận và ĐẢO SÂN),
+                        # và cả hai giải chạy từ trận đầu tới lúc có nhà vô địch
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ nổ là AoE nhạt dần

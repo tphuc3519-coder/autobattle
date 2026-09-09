@@ -99,6 +99,7 @@ window.__compPlayNext=()=>compPlayNext(); window.__compChampion=()=>compChampion
 window.__lgOrder=()=>lgOrder(); window.__roundRobin=roundRobin; window.__compPaint=()=>compPaint();
 window.__compTotal=()=>compTotal(); window.__compPlayed=()=>compPlayed();
 window.__COMP_MAXT=COMP_MAXT; window.__compLive=()=>compLive;
+window.__leagueNew=leagueNew;
 /* Ép trận đang đá kết thúc ngay với người thắng chỉ định — khỏi phải ngồi xem đủ mấy chục
    giây mỗi trận khi test cả một giải. */
 window.__compWin=key=>{ const f=G.fighters.find(x=>!x.summon&&x.key===key); finish(f||G.k); };
