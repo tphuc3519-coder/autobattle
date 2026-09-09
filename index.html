@@ -1618,23 +1618,23 @@ const BEA={
   doorT:gs(1.5), doorPh:[gs(.4),gs(.8),gs(1.2),gs(1.5)],
   /* 1 · Minya — mũi tinh thể tím đen, một đòn mỗi giây người chơi.
      KHÔNG chí mạng, không sát thương theo phần trăm máu. */
-  minyaDmg:15, minyaCd:gs(1), minyaSpd:430, minyaWind:gs(.18),
-  minyaStunOdds:.20, minyaStun:gs(.5),
+  minyaDmg:9, minyaCd:gs(1), minyaSpd:430, minyaWind:gs(.18),
+  minyaStunOdds:.12, minyaStun:gs(.5),
   /* 2 · Al Shamac — bóp méo không gian rồi ném mục tiêu ra sát rìa tầm đánh. */
-  shamacDmg:10, shamacCd:gs(5),
+  shamacDmg:8, shamacCd:gs(10),
   shamacWarp:gs(.3),                   // quãng không gian méo trước khi biến mất
   shamacBack:gs(.3),                   // hiện ra ở chỗ mới — cả chiêu vừa đúng 0.6s
   shamacStun:gs(1), shamacWeakT:gs(4), shamacWeak:.20,
   shamacRim:.94,                       // đích ngắm: sát rìa tầm, chừa một chút cho khỏi rơi ra ngoài
   /* 3 · Murak — giải khống chế rồi miễn khống chế, dùng được cả khi đang bị choáng. */
-  murakCd:gs(7), murakT:gs(3), murakRes:.80, murakLift:14,
+  murakCd:gs(13), murakT:gs(1.8), murakRes:.90, murakLift:14,
   /* 4 · E.M.T — kén kết giới chặn sạch sát thương và phản lại 20% chỗ vừa chặn. */
-  emtCd:gs(7), emtT:gs(2), emtRefl:.20,
+  emtCd:gs(16), emtT:gs(1.2), emtRefl:.10,
   /* 5 · El Minya — ba mũi tinh thể bắn lần lượt, mỗi mũi 50 dmg. */
-  ultCd:gs(8), ultAim:gs(.65), ultGap:gs(.25), ultN:3, ultDmg:50, ultSpd:470,
+  ultCd:gs(13), ultAim:gs(.65), ultGap:gs(.25), ultN:3, ultDmg:30, ultSpd:470,
   ultBreak:gs(.4), ultBreakCut:.50,    // choáng trong 0.4 giây đầu ⇒ huỷ, chờ nửa hồi chiêu
   slowT:gs(3), slowMul:.50,            // Minya Slow — không cộng dồn, chỉ làm mới
-  eroT:gs(3), eroDps:2*RT, eroMax:3,   // Mana Erosion — 2 HP mỗi giây NGƯỜI CHƠI, cộng dồn
+  eroT:gs(3), eroDps:1*RT, eroMax:3,   // Mana Erosion — 1 HP mỗi giây NGƯỜI CHƠI, cộng dồn
   /* AI: giữ mục tiêu trong tầm nhưng không xáp vào cự ly cận chiến. */
   want:BEA_R*4.2
 };
@@ -2150,8 +2150,8 @@ const DEX={
      bức và một debuff giảm 20% sát thương của địch. LẬT KÈO thì thấp — bộ chiêu của cô
      không có ngưỡng máu nào cả, đánh đầu trận thế nào thì cuối trận vẫn thế; đổi lại ỔN
      ĐỊNH rất cao vì mọi chiêu đều tự bung đúng nhịp hồi chiêu, không phụ thuộc may rủi. */
-  beatrice:{ role:{vi:'Pháp sư · Khống chế tầm xa',en:'Mage · Ranged control'}, st:{pow:2,spd:3,rng:4,def:4},
-    pw:{dmg:52,dur:82,mob:44,as:36,rng:76,cc:86,uti:84,con:80,cmb:34},
+  beatrice:{ role:{vi:'Pháp sư · Khống chế tầm xa',en:'Mage · Ranged control'}, st:{pow:1,spd:2,rng:4,def:3},
+    pw:{dmg:34,dur:56,mob:44,as:30,rng:76,cc:64,uti:66,con:70,cmb:28},
     bio:{vi:'Pháp sư nhỏ người của Forbidden Library. Đòn thường nhẹ hều, nhưng cô đẩy địch ra xa liên tục, tự gỡ khống chế, dựng kết giới chặn sạch sát thương rồi hắt ngược lại.',
          en:'The small mage of the Forbidden Library. Her basic attack barely stings, but she keeps shoving the fight away, breaks her own crowd control, and raises a barrier that eats every hit and throws part of it back.'},
     skills:[

@@ -1611,6 +1611,56 @@ quanh sàn để né đòn**: quãng bay nhẹ của Murak chỉ là hiệu ứn
 > khoảng cách ra 77px — đó là hành vi của ChiChi chứ không phải của cô, và bản mô tả nói rõ
 > cô không được tự chạy trốn. `t_beatrice.js` vì vậy ghim chân đối thủ ở 440px rồi mới đo.
 
+### Đợt NERF — đọc trước khi đụng vào bất kỳ con số nào của cô
+
+Bản đầu **quá mạnh, gần như không ai hạ nổi**. Người dùng báo: *"hiện tại beatrice quá mạnh,
+cần giảm sức mạnh gấp"* và *"test k ai win đc"*. Đo bằng `tools/t_bea_balance.js` (16 trận,
+hai lượt mỗi đối thủ): **thắng 15/16 = 94%**, trung bình còn **46% máu** lúc thắng — riêng
+Shikamaru và Doraemon thì cô kết trận với **85% / 86% máu**, tức cả bộ chiêu của họ gần như
+không chạm được vào người.
+
+**Ba thứ chồng lên nhau mới ra chuyện đó, và cả ba đều phải cắt:**
+
+| Vấn đề | Bản đầu |
+|---|---|
+| E.M.T chặn 100% sát thương | **28.6%** trận đấu cô không ăn một điểm nào (2s mỗi 7s) |
+| Murak miễn khống chế | **42.9%** — cộng lại **~71%** thời gian cô có lớp bảo vệ nào đó |
+| Sát thương duy trì | **38 DPS** ⇒ hạ 800 máu trong **21 giây** |
+| Al Shamac mỗi 5s | cận chiến mất **36%** mỗi chu kỳ chỉ để đi bộ lại vào tầm |
+
+> **Chỗ chí mạng là hai chiêu phòng thủ TỰ BUNG đúng nhịp hồi chiêu** (luật "mọi skill phải
+> tự dùng ngay khi hồi chiêu xong"). Nghĩa là quãng miễn thương đó **được bảo đảm, không bao
+> giờ lỡ nhịp** — khác hẳn một chiêu phòng thủ do người chơi bấm tay. Vì vậy cắt **thời lượng
+> và nới hồi chiêu** ăn thua hơn hẳn cắt mỗi con số sát thương.
+
+| | Bản đầu | **Sau nerf** |
+|---|---|---|
+| `emtT` / `emtCd` | 2s mỗi 7s (**28.6%** miễn thương) | **1.2s mỗi 16s (7.5%)** |
+| `emtRefl` | 20% | **10%** |
+| `murakT` / `murakCd` | 3s mỗi 7s (**42.9%**) | **1.8s mỗi 13s (13.8%)** |
+| `murakRes` | −20% dmg nhận | **−10%** |
+| `shamacDmg` / `shamacCd` | 10 dmg mỗi 5s | **8 dmg mỗi 10s** |
+| `ultDmg` / `ultCd` | 50/tia mỗi 8s (150 một lượt) | **30/tia mỗi 13s (90)** |
+| `eroDps` | 2 HP/s mỗi stack (ba stack 6) | **1 HP/s (ba stack 3)** |
+| `minyaDmg` | 15 | **9** |
+| `minyaStunOdds` | 20% | **12%** |
+
+Kết quả: sát thương duy trì **38 → ~17 DPS** (hạ 800 máu mất ~46 giây thay vì 21), quãng có
+lớp bảo vệ **71% → ~21%**. Đúng chất một pháp sư khống chế: thắng chậm bằng cách bào mòn,
+chứ không phải bằng cách không ai đụng được vào mình.
+
+> **`shamacWeak` giữ nguyên −20%** — đó là debuff đặt lên ĐỊCH chứ không phải lớp bảo vệ của
+> cô, và nó chính là phần "khống chế" trong bộ chiêu. Cắt nốt chỗ đó là mất luôn tính cách
+> nhân vật. **Máu vẫn 800** như cả bảng (mục 2), đừng đụng vào.
+
+> **Nerf thì phải KÉO BIỂU ĐỒ SỨC MẠNH XUỐNG theo**, đúng luật đã chốt cho mấy đợt buff
+> trước (mục 2g): `dmg 52→34 · dur 82→56 · as 36→30 · cc 86→64 · uti 84→66 · con 80→70 ·
+> cmb 34→28`, và bốn thanh chỉ số `pow 2→1 · spd 3→2 · def 4→3`.
+
+> **Đo lại sau mỗi lần chỉnh bằng `node tools/t_bea_balance.js`** chứ đừng chỉnh theo cảm
+> tính. Nó chạy Beatrice với cả tám đối thủ và in ra tỉ lệ thắng kèm **máu còn lại lúc
+> thắng** — con số thứ hai mới nói lên trận đó sát nút hay một chiều.
+
 **Ăn mừng / gục ngã.**
 - Thắng: đóng quyển sách, **khoanh hai tay**, quay nhẹ mặt sang một bên với vẻ kiêu kỳ. Cánh
   cửa Forbidden Library hiện phía sau (`drawBeaWin()`), cô nhìn lại sàn đấu rồi bước vào.
