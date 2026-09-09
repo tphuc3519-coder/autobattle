@@ -19,8 +19,8 @@ window.__talk=talk; window.__CV=CV; window.__S=S; window.__HEADER=HEADER; window
 /* sfx() nuốt lỗi của synth(), mà switch thiếu case thì cũng không ném — nên muốn biết
    một ô có tiếng tự tạo dự phòng hay không thì phải soi thẳng thân hàm. */
 window.__synthSrc=()=>synth.toString();
-/* Tiếng chạy theo thanh tốc độ (mục "Tiếng chạy theo thanh tốc độ"). */
-window.__sfxRate=()=>sfxRate(); window.__speedMul=()=>speedMul;
+/* Thanh tốc độ trận — tiếng KHÔNG còn chạy theo nó nữa, xem mục cùng tên. */
+window.__speedMul=()=>speedMul;
 window.__playBuffer=playBuffer;   // __BGM đã có ở dưới
 window.__CHARS=CHARS; window.__hurt=hurt; window.__shikaStabHit=shikaStabHit;
 window.__gs=gs; window.__rts=rts;
