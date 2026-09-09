@@ -572,8 +572,13 @@
     <div class="arcLoad" id="bootTxt"></div>
     <div class="bootTip" id="bootTip"></div>
     <div class="arcHint" data-i18n="bootHint">Tải xong là vào chơi được ngay</div>
-    <div style="margin-top:18px"><button id="bootSkip" type="button" style="display:none"
-      data-i18n="bootSkip">Vào luôn, khỏi chờ</button></div>
+    <!-- KHÔNG có cửa vào sớm: người dùng chốt "load hết rồi mới cho vào". Khối này chỉ
+         hiện khi mạng thật sự hỏng, và nó là nút TẢI LẠI chứ không phải đường lách vào
+         game với gói còn dở. -->
+    <div id="bootFail" style="display:none;margin-top:16px">
+      <div class="arcHint" id="bootErr" style="color:#FF9A9A" data-i18n="bootErr">Mạng trục trặc, chưa tải xong gói ảnh và tiếng.</div>
+      <div style="margin-top:12px"><button id="bootRetry" type="button" data-i18n="bootRetry">↻ Thử tải lại</button></div>
+    </div>
   </div>
 </div>
 <div class="arc off" id="arcTitle">
@@ -786,7 +791,7 @@ const L={
     packLoading:'Đang tải ảnh và tiếng…', packDone:'Đã nạp {n} ảnh · {s} tiếng',
     packBytes:'Đang tải ảnh và tiếng… {a} / {b} MB', packDecode:'Đang mở gói…',
     packOpen:'Đang mở gói… {n} / {t}', bootHint:'Tải xong là vào chơi được ngay',
-    bootSkip:'Vào luôn, khỏi chờ', bootWait:'Đang chuẩn bị…',
+    bootRetry:'↻ Thử tải lại', bootErr:'Mạng trục trặc, chưa tải xong gói ảnh và tiếng.', bootWait:'Đang chuẩn bị…',
     musicNone:'Chưa có file nhạc nền nào nên đang dùng nhạc tự tạo. Muốn nhạc của bạn thì nạp file vào ô nhạc ở trang xưởng rồi xuất gói.'
   },
   en:{
@@ -848,7 +853,7 @@ const L={
     packLoading:'Loading art and sound…', packDone:'Loaded {n} images · {s} sounds',
     packBytes:'Loading art and sound… {a} / {b} MB', packDecode:'Unpacking…',
     packOpen:'Unpacking… {n} / {t}', bootHint:'The fight starts as soon as this finishes',
-    bootSkip:'Skip and play now', bootWait:'Getting ready…',
+    bootRetry:'↻ Try again', bootErr:'Network hiccup — the image and sound pack did not finish loading.', bootWait:'Getting ready…',
     musicNone:'No music file loaded yet, so the built-in track is playing. Drop your own music into the studio slots and export the pack.'
   }
 };
@@ -2583,11 +2588,25 @@ function bootShow(){
   if(txt&&!txt.textContent) txt.textContent=t('bootWait');
   bootTipI=Math.floor(Math.random()*BOOT_TIPS.length); bootTip();
   clearInterval(bootTipT); bootTipT=setInterval(bootTip,4200);
-  /* Đừng bao giờ NHỐT người chơi trong màn chờ: mạng chết giữa chừng thì packLoad() treo
-     mãi mà không ai thoát ra được. Sau 10 giây hiện nút vào luôn — bấm là chơi ngay, ảnh
-     về sau thì tự hiện, đúng như cách cũ. */
-  const s=document.getElementById('bootSkip');
-  if(s){ s.onclick=bootHide; setTimeout(()=>{ if(!bootOff) s.style.display=''; },10000); }
+  const f=document.getElementById('bootFail'); if(f) f.style.display='none';
+}
+/* Nạp gói cho TRANG CHƠI: chỉ rời màn chờ khi gói đã về đủ. Không có cửa vào sớm —
+   người dùng chốt "load hết rồi mới cho vào". Mạng hỏng thì hiện nút TẢI LẠI chứ không
+   thả người chơi vào trận với model vector; `packRead()` có đồng hồ chết máy nên cú
+   fetch treo cũng rơi xuống đây chứ không đứng im mãi. */
+async function bootLoad(){
+  for(;;){
+    const r=await packLoad(false);
+    if(r.ok) return r;
+    const f=document.getElementById('bootFail'); if(!f) return r;
+    packProg('tai',0,1);
+    f.style.display='';
+    await new Promise(ok=>{
+      const b=document.getElementById('bootRetry');
+      if(!b) return ok();
+      b.onclick=()=>{ b.onclick=null; f.style.display='none'; ok(); };
+    });
+  }
 }
 function bootHide(){
   bootOff=true;
@@ -2628,12 +2647,23 @@ function packNote(msg,xong){
 /* Đọc gói kèm ĐẾM SỐ MB đã tải. Gói là một file mấy chục MB, trên mạng chậm nó về sau khi
    trang đã mở — không đếm ra màn hình thì người chơi ngồi nhìn model vector và tưởng game
    hỏng. Trình duyệt nào không cho đọc dòng byte thì lùi về `r.json()` như cũ. */
+/* Không có nút "vào luôn" nữa, nên cú fetch treo là NHỐT người chơi thật. Vì vậy mỗi
+   lượt đọc có đồng hồ chết máy: quá PACK_STALL mà không về thêm một byte nào thì huỷ,
+   ném lỗi ra cho `bootLoad()` hiện nút TẢI LẠI. Đo theo từng lượt đọc chứ đừng đặt trần
+   cho cả cú tải — mạng chậm mà vẫn chảy thì phải để nó chảy tiếp. */
+const PACK_STALL=25000;
 async function packRead(r){
   const all=+(r.headers.get('content-length')||0);
   if(!r.body||!r.body.getReader||!all) return r.json();
   const rd=r.body.getReader(); let got=0; const parts=[];
   for(;;){
-    const {done,value}=await rd.read();
+    let tm=0;
+    const cho=new Promise((_,xau)=>{ tm=setTimeout(()=>xau(new Error('pack stalled')),PACK_STALL); });
+    let b;
+    try{ b=await Promise.race([rd.read(),cho]); }
+    catch(e){ clearTimeout(tm); try{ rd.cancel(); }catch(_){} throw e; }
+    clearTimeout(tm);
+    const {done,value}=b;
     if(done) break;
     parts.push(value); got+=value.length;
     packNote(tf('packBytes',{a:(got/1048576).toFixed(1),b:(all/1048576).toFixed(1)}));
@@ -2651,11 +2681,16 @@ async function packLoad(noi){
      trên điện thoại là chờ dài cổ và tốn dung lượng. Để trình duyệt cache như thường thì
      lần sau vào là ăn ngay bản trong máy, và GitHub Pages có ETag nên gói mới vẫn về đúng
      (nó hỏi lại rồi nhận 304 vài trăm byte). */
-  try{ const r=await fetchAsset(PACK_URL); if(r) data=await packRead(r); }catch(e){}
+  /* Phân biệt hai kiểu hỏng, đừng gộp làm một:
+       · `fetchAsset` trả null ⇒ site KHÔNG có gói (chạy file://, hoặc chưa ai xuất gói).
+         Chẳng có gì để chờ, cứ cho vào chơi — bắt bấm "tải lại" ở đây là nhốt luôn.
+       · có phản hồi rồi mà đọc/parse hỏng ⇒ cú tải ĐỨT giữa chừng. Đúng chỗ cần hỏi lại. */
+  let coFile=false;
+  try{ const r=await fetchAsset(PACK_URL); if(r){ coFile=true; data=await packRead(r); } }catch(e){}
   if(!data||!data.spr&&!data.sfx){
     packNote('');
     if(noi) status('Chưa có '+PACK_URL+' — mở trang bằng http, hoặc bấm "Xuất gói" rồi đẩy file đó lên repo.');
-    return {img:0,sfx:0};
+    return {img:0,sfx:0,ok:!coFile};   // ok=false CHỈ khi gói có thật mà tải đứt
   }
   let img=0, snd=0;
   /* Đếm TRƯỚC tổng số việc phải làm rồi mới chạy: thanh tiến độ mà cộng dồn theo kiểu
@@ -2700,7 +2735,7 @@ async function packLoad(noi){
     status(`Đã nạp gói phát hành: ${img} ảnh · ${snd} tiếng (bản ${data.at||'?'}).`);
     sfxStatus(`Đã nạp ${snd} tiếng từ gói phát hành.`);
   }
-  return {img,sfx:snd};
+  return {img,sfx:snd,ok:true};
 }
 /* Khôi phục tiếng đã lưu + gói phát hành + bộ giọng mẫu. Tách hẳn ra hàm vì TRANG CHƠI
    không có bảng dán tiếng: `buildSfx()` return sớm ở đó, mà phần này vẫn phải chạy. */
@@ -2709,7 +2744,7 @@ async function sfxRestore(){
      dán), mà lượt khôi phục kho đọc hơn 80 khoá IndexedDB nên xếp gói sau nó thì người
      chơi phải nhìn model vector mất mấy giây đầu trận. Trang xưởng thì ngược lại — file
      bạn tự nạp phải thắng, nên gói chạy sau. */
-  if(window.ARCADE){ bootShow(); await packLoad(false); bootHide(); }
+  if(window.ARCADE){ bootShow(); await bootLoad(); bootHide(); }
 
     try{ const v=await Store.get('cfg_vol'); if(v!==null&&v!==undefined){ volume=parseFloat(v); document.getElementById('vol').value=volume; } }catch(e){}
     try{

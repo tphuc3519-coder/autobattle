@@ -1676,9 +1676,24 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
     vậy thì thanh chạy đều mắt.
   - **Đếm TRƯỚC tổng số việc rồi mới chạy** (`tong` trong `packLoad`). Cộng dồn kiểu "xong
     bao nhiêu biết bấy nhiêu" thì thanh nhảy cóc, nhìn như treo.
-  - **Không bao giờ được NHỐT người chơi trong màn chờ.** Mạng chết giữa chừng thì
-    `packLoad()` treo mãi, nên sau **10 giây** hiện nút `#bootSkip` *Vào luôn, khỏi chờ* —
-    bấm là chơi ngay, ảnh về sau thì tự hiện (đúng cách cũ). Đừng bỏ nút này đi.
+  - **KHÔNG có cửa vào sớm. Nút `#bootSkip` *Vào luôn, khỏi chờ* đã BỎ HẲN** — người dùng
+    bác: *"đừng có vụ vào luôn khỏi chờ — load hết rồi mới cho vào hiểu không"*. Vào sớm là
+    thấy model vector rồi lại tưởng game hỏng, đúng cái lỗi mà màn chờ sinh ra để chữa.
+    **Đừng dựng lại nút đó.** Ba thứ thay chỗ nó, để "không có cửa vào sớm" không biến
+    thành "nhốt người chơi":
+    1. `bootLoad()` lặp cho tới khi `packLoad()` trả `ok:true` rồi mới `bootHide()`.
+    2. **`packLoad()` trả thêm cờ `ok`, và cờ đó phân biệt hai kiểu hỏng.** `fetchAsset`
+       trả null ⇒ site **không hề có gói** (chạy `file://`, hoặc chưa ai xuất gói) ⇒
+       `ok:true`, cho vào luôn — chẳng có gì để chờ, bắt bấm ở đây là nhốt thật. Có phản
+       hồi rồi mà đọc/parse hỏng ⇒ cú tải **đứt giữa chừng** ⇒ `ok:false`, hiện khối
+       `#bootFail` với nút `#bootRetry` *Thử tải lại*. Nút đó **tải lại**, không phải vào sớm.
+    3. **`packRead()` có đồng hồ chết máy `PACK_STALL` = 25 giây**, đo theo **từng lượt
+       đọc** chứ không đặt trần cho cả cú tải: quá 25 giây mà không về thêm một byte nào
+       thì huỷ reader và ném lỗi xuống nhánh `ok:false`. Không có nó thì một cú fetch treo
+       là đứng mãi trong màn chờ — mạng chậm mà vẫn chảy thì vẫn để nó chảy tiếp.
+    Đo được (`t_play.js` mục 6, dựng server tự cắt ngang thân file): tải đứt ⇒ hiện nút tải
+    lại, **0 ảnh nạp được và màn chờ vẫn đứng nguyên**; bấm tải lại ⇒ về đủ ảnh rồi mới tắt
+    màn chờ; site không có `pack.json` ⇒ vào thẳng, không bắt bấm gì.
   - Màn chờ **chỉ có ở trang chơi** (`window.ARCADE`). Xưởng thì file mình tự nạp phải
     thắng nên gói chạy sau, không chặn gì cả.
   - **Phần nhìn**: nền lưới trôi + quầng sáng thở (`#arcBoot::before/::after`), con số phần
@@ -1687,7 +1702,7 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
     thanh thì chán.
   - **Mọi chuyển động ở đây dùng `background-position` / `opacity`, KHÔNG dùng `transform`**
     — Playwright coi phần tử đang biến đổi là "chưa đứng yên" và không bấm được nút nằm
-    trong đó (mục 9). Nút `#bootSkip` nằm ngay trong màn này.
+    trong đó (mục 9). Nút `#bootRetry` nằm ngay trong màn này.
   - **`#arcTitle` dùng CHUNG nền với `#arcBoot`** (cùng cặp `::before`/`::after`), nên hết
     màn chờ sang màn tiêu đề là liền mạch chứ không giật sang một nền khác. Hai lớp phủ đó
     **bắt buộc có `pointer-events:none`** — thiếu thì nút `PRESS START` nằm dưới không bấm
@@ -2399,7 +2414,9 @@ node tools/t_play.js    # hai trang: play.html đúng bằng bản dựng từ i
                         # bước một khung, hàng chọn số đội chỉ có ở bước đầu, đổi sang 3 đội
                         # thì danh sách bước dài thêm),
                         # gói phát hành được nạp, hết trận hiện dải nút, và xưởng vẫn vào
-                        # trận bằng MỘT cú bấm #cselGo
+                        # trận bằng MỘT cú bấm #cselGo; MÀN CHỜ không còn nút "vào luôn khỏi
+                        # chờ" — tải đứt thì hiện nút tải lại và vẫn đứng trong màn chờ, bấm
+                        # tải lại thì về đủ ảnh mới cho vào, site không có pack thì vào thẳng
 node tools/t_bulk.js    # nạp hàng loạt: bảng đoán tên file (thư mục thắng tên file, alias dài
                         # thắng alias ngắn, số đuôi là số khung), nạp thật qua ô chọn file,
                         # file đoán không ra được báo tên, danh sách tên file đủ mọi ô
