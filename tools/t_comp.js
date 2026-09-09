@@ -8,15 +8,45 @@ const { buildPlay, playwright } = require('./probe');
 let loi = [];
 const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if (!dk) loi.push(msg); };
 
+/* Trang chơi giờ có màn VS trước mỗi trận và một nút đi tiếp sau khi thắng, thay cho lối
+   tự nhảy sang bảng xếp hạng. Hai hàm con này đi qua đúng hai chỗ đó. */
+/* Bấm qua `evaluate` chứ đừng `page.click`: máy chạy test lúc nghẹt thì Playwright bấm
+   xong còn ngồi chờ "trang đứng yên" và hết giờ (đã dính đúng ở nút này). */
+async function boQuaVs(page) {
+  for (let i = 0; i < 20; i++) {
+    if (!await page.evaluate(() => { const e = document.getElementById('arcVs');
+                                     return !!e && !e.classList.contains('off'); })) return;
+    await page.evaluate(() => document.getElementById('arcVs').click());
+    await page.waitForTimeout(80);
+  }
+}
+/* Đẩy đồng hồ kết trận BẰNG TAY tới mốc hiện nút (`G.endT >= 2`) rồi mới bấm: chờ theo
+   đồng hồ thật thì một giải tám trận ngồi chờ cả phút, mà máy nghẹt còn không tới mốc. */
+async function tuaHetTran(page) {
+  await page.evaluate(() => {
+    for (let i = 0; i < 3000 && window.__G().endT < 2.05; i++) window.__step(1 / 120);
+  });
+}
+async function sangBang(page) {
+  await tuaHetTran(page);
+  for (let i = 0; i < 80; i++) {
+    if (await page.evaluate(() => { const e = document.getElementById('compBoard');
+                                    return !!e && !e.classList.contains('off'); })) return;
+    await page.evaluate(() => { const b = document.getElementById('arcComp');
+                                if (b && b.offsetParent) b.click(); });
+    await page.waitForTimeout(200);
+  }
+}
 /* Đá cho hết một giải: mỗi trận cứ ép bên A thắng ngay, khỏi ngồi xem đủ mấy chục giây. */
 async function daHet(page, tran) {
   for (let i = 0; i < tran + 2; i++) {
     if (!await page.evaluate(() => !!window.__compNext())) break;
-    await page.click('#compGo');
+    await page.evaluate(() => document.getElementById('compGo').click());
+    await boQuaVs(page);
     await page.waitForTimeout(320);
     const cap = await page.evaluate(() => window.__G().fighters.filter(f => !f.summon).map(f => f.key));
     await page.evaluate(k => window.__compWin(k), cap[0]);
-    await page.waitForTimeout(2900);
+    await sangBang(page);
   }
 }
 
@@ -119,7 +149,11 @@ async function daHet(page, tran) {
   ok(/1\/3/.test(lb.lab), `tran ke tiep ghi ro vong may (${lb.lab})`);
 
   /* một trận thật: điểm và hiệu số phải nhảy đúng */
-  await page.click('#compGo');
+  await page.evaluate(() => document.getElementById('compGo').click());
+  const coVs = await page.evaluate(() => { const e = document.getElementById('arcVs');
+                                           return !!e && !e.classList.contains('off'); });
+  ok(coVs, 'moi tran cua giai cung mo man VS truoc');
+  await boQuaVs(page);
   await page.waitForTimeout(350);
   const cap = await doc(() => window.__G().fighters.filter(f => !f.summon).map(f => f.key));
   /* ---------- HIỆU SỐ = MÁU CÒN LẠI CỦA NGƯỜI THẮNG ----------
@@ -143,7 +177,22 @@ async function daHet(page, tran) {
      Người dùng: "làm hiệu ứng khi 1 người thắng trận rồi movement thay đổi vị trí và điểm
      số trên bxh cho nó hay". Rình đúng lúc bảng bật lên: style nội tuyến bị đặt về 0 ngay
      từ đầu nên phải đọc `getComputedStyle` mới thấy hàng đang trên đường trượt. */
+  /* Không còn tự nhảy sang bảng xếp hạng nữa: giữ màn WINNER rồi hiện nút, người chơi tự
+     bấm. Kiểm luôn cả hai vế đó ở đây. */
   await page.waitForTimeout(2400);
+  const tuMo = await page.evaluate(() => { const e = document.getElementById('compBoard');
+                                           return !!e && !e.classList.contains('off'); });
+  ok(!tuMo, 'thang xong thi DUNG lai o man WINNER, khong tu nhay sang bang xep hang');
+  /* Nút chỉ hiện khi `G.endT` qua mốc 2 giây TRONG TRẬN. Tua đồng hồ bằng tay rồi chờ
+     dải nút theo TRẠNG THÁI — chính cái `setInterval` 250ms bật nó cũng bị trễ khi máy nghẹt. */
+  await tuaHetTran(page);
+  await page.waitForFunction(() => { const b = document.getElementById('arcComp');
+                                     return b && b.offsetParent !== null; },
+                             null, { timeout: 25000 }).catch(() => {});
+  ok(await page.evaluate(() => { const b = document.getElementById('arcComp');
+                                 return !!b && b.offsetParent !== null; }),
+    'hien nut di tiep cho nguoi choi tu bam');
+  await sangBang(page);
   const hieuUng = await doc(() => new Promise(res => {
     let xa = 0, soCu = 0, n = 0;
     const xem = () => {

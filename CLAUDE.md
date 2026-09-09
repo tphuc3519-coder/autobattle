@@ -141,7 +141,23 @@ màn chọn nhân vật — nhớ cập nhật khi đổi số).
 - Rage 20: Rasengan Dash.
 
 ### ChiChi (`chichi`)
-- Chiêu 1 cận chiến, chiêu 2 **Mắng** — 5 đợt sóng xung kích, phản lại shuriken / kunai / bóng.
+- Chiêu 1 cận chiến, chiêu 2 **Mắng** — 5 đợt sóng xung kích, phản lại shuriken / kunai /
+  bóng / **vòng khí Air Cannon** / **luồng khí tím của Ginyu**.
+  > **Hai loại vừa thêm, người dùng chốt riêng từng cái**: *"ChiChi có skill mắng phản được
+  > air cannon nhé"*, rồi *"mắng ChiChi cản được beam Ginyu"*. Cả hai chỉ việc thêm tên type
+  > (`'aircan'`, `'gbeam'`) vào tập `PHYSICAL`. Hất ngược rồi thì **chủ cũ ăn nguyên đòn của
+  > chính mình** — đo được: Doraemon **85 dmg + choáng**, Ginyu **18 dmg mỗi luồng**, và đủ
+  > ba luồng thì chính anh dính *Worn Out*.
+  > - **Kame / Masenko vẫn KHÔNG phản được** — tia xuyên và cầu năng lượng cỡ ultimate; Drive
+  >   Shot và Twin Shot vẫn mang cờ `noReflect`.
+  > - Nhánh phản đòn phải **xoay luôn `p.ang`** và **xoá sạch `p.hitList`**, viết chung một
+  >   lần cho mọi loại chứ đừng cắm theo từng type: mấy viên vẽ theo `p.ang` chứ không theo
+  >   vận tốc, không xoay thì chúng bay lùi mà đầu đạn vẫn hướng cũ; còn `hitList` không xoá
+  >   thì viên đạn vẫn nhớ là đã trúng ai rồi và **bay xuyên qua đúng người đó**.
+  > - **Cú hất ngược lệch ±0.25 rad nên KHÔNG phải lần nào cũng trúng** — đó là cơ chế sẵn
+  >   có, không phải lỗi. `t_chichi.js` vì vậy thử tới 10 lượt và đòi có ít nhất một lượt ăn
+  >   đủ dmg (đo được: Air Cannon trúng ngay lượt 1, luồng khí tím trúng ở lượt 3), chứ đo
+  >   đúng một lượt là đổ oan.
 - **Flying Kick**: đồng hồ riêng `f.dashCd`, **không** nằm trong `f.cds` — cố định
   `CHICHI_DASH_CD = 5` giây-trong-trận = **10 giây người chơi**, nên hiệu ứng Kiệt sức
   không kéo dài được nó. Lúc lao: miễn khống chế, chỉ nhận 70% sát thương
@@ -684,9 +700,15 @@ thương, `GN.swapCcCut = .25` thời lượng hiệu ứng — đòn tay tính 
   bằng Ginyu là khi change thì cả 2 thân xác có lượng máu ngang nhau (20%) chứ đừng lệch
   máu". Hai hằng `changeKeep` / `changeGain` gộp thành một `changeHp`.)*
 - **Đòn tay mượn** gọi thẳng chiêu 1 gốc của thân xác đó (`gnBorrowBasic`). Thân xác **hệ
-  ném / sút** (`GN_PROJ_BODY` = kono / tsubasa / shika) thì ngắm hỏng bét: `f.aimOff` làm đạn
-  vẹo đi tới ±1.05 rad ngay khi rời tay và **mất luôn khả năng dò tìm** (`p.noHome`). Thân
-  xác cận chiến thì `f.missOdds = .55`, `hurt()` in chữ `MISS`. `GN_PROJ_BODY` giờ **chỉ còn
+  ném / sút** (`GN_PROJ_BODY` = kono / tsubasa / shika) thì đạn vẹo đi `GN.aimOff` = **±0.45
+  rad** ngay khi rời tay và **mất luôn khả năng dò tìm** (`p.noHome`). Thân xác cận chiến thì
+  `GN.swapMiss` = **20%** số đòn hụt, `hurt()` in chữ `MISS`.
+  > **Đừng để thành "đánh mãi không trúng".** Bản đầu là **55% hụt + lệch 1.05 rad**; cộng
+  > với mức cắt 25% sát thương thì cú đấm chỉ còn ~11% sức, Ginyu đứng vung tay cả trận mà
+  > chẳng ăn thua gì — người dùng bác: *"fix lỗi sao mà Ginyu vào thân xác người ta đánh
+  > toàn miss vậy"*. Hạ xuống **20% / 0.45 rad**; muốn chỉnh nữa thì sửa đúng hai hằng
+  > `GN.swapMiss` / `GN.aimOff`, đừng ghim số vào `ginyuPossess()`. *(Hai con số cụ thể là
+  > chỗ tôi tự chốt — người dùng chỉ nói là quá nhiều, không nêu mức mới.)* `GN_PROJ_BODY` giờ **chỉ còn
   quyết định KIỂU ngắm hỏng**, không còn miễn trừ phần cắt sát thương nữa — mức cắt là một
   con số chung. Hai lớp ngắm hỏng này **chỉ áp cho Ginyu**: hồn đối thủ dùng chiêu của chính
   mình nên `g.missOdds = g.aimOff = 0`.
@@ -1506,6 +1528,13 @@ là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa 
   người là tráo chỗ cho nhau (`swapAt`).
 - **Trận tranh hạng ba đánh TRƯỚC chung kết**, đúng lối World Cup. `cupFill()` đẩy người
   thắng lên vòng sau và lấy hai người thua bán kết xuống trận đó.
+- **Thắng thua tính theo HỒN, không theo THÂN XÁC** (`compSoul(f)` = `f.gnSoul || f.key`).
+  Sau cú CHANGE của Ginyu, object mang `key:'ginyu'` có thể đang do hồn Superman điều khiển;
+  người dùng bác đúng chỗ này: *"Superman trong xác Ginyu win, nhưng vẫn tính Ginyu win là
+  sai"*. Thanh máu và băng-rôn WINNER vốn đã đọc `f.name` nên chúng ra đúng sẵn — **chỉ mỗi
+  sổ giải đấu đọc `f.key`**. `compResult()` vì vậy tra cả `A`/`B` lẫn người thắng qua
+  `compSoul()`, nên máu còn lại cũng lấy đúng thân xác mà hồn đó đang ngồi. Đo được: thân xác
+  Ginyu đứng cuối trận với 210 máu ⇒ Superman **+3 điểm / +210 hiệu số**, Ginyu **−210**.
 - `finish()` gọi `compResult(win)` **ngay tại chỗ** — ra khỏi hàm đó là mấy con số
   `dmgDealt` không đọc lại được nữa. Xong thì hẹn **2.6 giây** rồi mới bật bảng lên, bật
   ngay thì che mất pha KO.
@@ -1712,6 +1741,32 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
     màn chờ sang màn tiêu đề là liền mạch chứ không giật sang một nền khác. Hai lớp phủ đó
     **bắt buộc có `pointer-events:none`** — thiếu thì nút `PRESS START` nằm dưới không bấm
     được, kể cả người lẫn Playwright.
+- **MÀN VS TRƯỚC TRẬN** (`#arcVs`, `vsShow()` / `vsGo()`). Người dùng gửi ảnh màn chọn của
+  Street Fighter II và chốt: *"icon nhân vật rồi VS rõ ràng rồi mới vào"*. Mặt hai bên lấy từ
+  chính ảnh đã dán (`avaSrc()`, chưa dán thì emoji), tên tô màu của nhân vật, chữ `VS` vàng ở
+  giữa, tên màn đấu bên dưới.
+  - **Cờ `vsOn` chặn thẳng `step()`** nên trận đứng yên hẳn — kể cả mấy màn ra mắt (Ginyu bay
+    vào, Anywhere Door, Superman đáp xuống), vì chúng đo bằng giây TRONG TRẬN. Đo được: `G.t`
+    đứng nguyên ở 0 suốt màn VS rồi mới chạy.
+  - **Khai `let vsOn` ngay cạnh `let G, running`**, không khai chung với `vsShow()` mãi cuối
+    file: `step()` đọc nó mà `step()` nằm phía trên — để dưới là đúng cái bẫy TDZ ở mục 9.
+  - **Chạm là vào ngay; không chạm thì tự vào sau `VS_HOLD` = 2.4 giây THẬT.** Có cái tự vào
+    đó nên bộ test cũ không phải bấm thêm nút nào, chỉ chờ lâu hơn một nhịp.
+  - Gọi trong **`arcFight()`** — một cửa duy nhất cho cả ba đường vào trận (`#cselGo`,
+    `#arcAgain`, `#compGo`). Thêm đường vào trận mới thì gọi `arcFight()`, đừng gọi tay.
+  - Chỉ có ở **TRANG CHƠI** (`ARCADE`): xưởng vào thẳng như cũ vì mọi test hiện có bấm
+    `#cselGo` một phát là vào trận.
+  - Chuyển động chỉ đổi `opacity`, **không dùng `transform`** (mục 9).
+- **GIỮ MÀN WINNER RỒI MỚI HIỆN DẢI NÚT.** Người dùng chốt: *"lúc thắng rồi thì hold lại để
+  hiện winner, xong sau đó cho người chơi nút tự chuyển"*. `#arcOver` chỉ bật khi
+  **`G.endT >= 2`** — đúng lúc `G.announced` mở ra băng-rôn và pháo giấy. Trước đó nút nhảy ra
+  ngay trong khung hình người ta vừa gục.
+- **Giữa giải, dải nút đổi thành đúng MỘT nút đi tiếp** (`#arcComp` → `compOpen()`): "Đánh
+  lại / Đổi nhân vật" bị giấu vì bấm Đánh lại giữa giải là đá lại đúng trận vừa xong. Và
+  `compResult()` **không tự mở bảng xếp hạng nữa** ở trang chơi — người chơi tự bấm, rồi bấm
+  tiếp ▶ trong bảng cho trận sau. Xưởng không có dải nút arcade nên vẫn tự mở như cũ sau 2.6
+  giây; nhánh đó đọc **`window.ARCADE`** chứ không đọc hằng `ARCADE` (hằng khai mãi cuối file).
+  `t_comp.js` vì vậy có hai hàm con `boQuaVs()` / `sangBang()` đi qua đúng hai chỗ này.
 - **Dòng đếm MB phải hiện ở HAI chỗ**: `#arcLoad` trong màn tiêu đề, và `#loadChip` **đè lên
   sàn đấu**. Dòng trong màn tiêu đề biến mất ngay khi bấm PRESS START, mà gói thì còn tải cả
   chục giây nữa — người chơi vào trận thấy model vector và tưởng mất ảnh. Đo được trên mạng
@@ -2387,7 +2442,9 @@ node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4
                         # lượt đi lượt về
                         # (mặc định một lượt, bật lên thì nhân đôi số trận và ĐẢO SÂN),
                         # hiệu ứng bảng sau mỗi trận (hàng trượt thật, số đếm dần, mũi tên
-                        # đổi hạng, và ảnh chụp chỉ dùng một lần),
+                        # đổi hạng, và ảnh chụp chỉ dùng một lần), mỗi trận của giải cũng mở
+                        # màn VS trước và thắng xong thì DỪNG ở màn WINNER chờ người chơi bấm
+                        # nút đi tiếp chứ không tự nhảy sang bảng,
                         # và cả hai giải chạy từ trận đầu tới lúc có nhà vô địch
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
@@ -2396,7 +2453,9 @@ node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ 
                         # lan ra), và Mini Rasengan gỡ vây 40 dmg + hất 30% sàn, hồi chiêu 12s
 node tools/t_chichi.js  # ChiChi: Flying Kick 45 dmg + choáng 2s, và viện binh — Kamehameha
                         # 400 dmg + choáng 2s rồi ghì chân 4s (hết choáng mới tới),
-                        # Masenko 100 dmg mỗi đợt + chồng lớp −10%/−7%
+                        # Masenko 100 dmg mỗi đợt + chồng lớp −10%/−7%, và chiêu Mắng hất
+                        # ngược cả vòng khí Air Cannon lẫn luồng khí tím của Ginyu (chủ cũ ăn
+                        # đúng 85 / 18 dmg của chính mình, đầu đạn xoay theo hướng bay mới)
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
@@ -2421,7 +2480,9 @@ node tools/t_play.js    # hai trang: play.html đúng bằng bản dựng từ i
                         # đúng bước trước), ĐÁNH ĐỘI cũng từng đội một (t0 → t1 → màn, mỗi
                         # bước một khung, hàng chọn số đội chỉ có ở bước đầu, đổi sang 3 đội
                         # thì danh sách bước dài thêm),
-                        # gói phát hành được nạp, hết trận hiện dải nút, và xưởng vẫn vào
+                        # MÀN VS trước trận (hai mặt + chữ VS + tên màn, trận đứng yên tới
+                        # khi chạm), hết trận thì GIỮ màn WINNER rồi mới hiện dải nút,
+                        # gói phát hành được nạp, và xưởng vẫn vào
                         # trận bằng MỘT cú bấm #cselGo; MÀN CHỜ không còn nút "vào luôn khỏi
                         # chờ" — tải đứt thì hiện nút tải lại và vẫn đứng trong màn chờ, bấm
                         # tải lại thì về đủ ảnh mới cho vào, site không có pack thì vào thẳng
@@ -2447,7 +2508,9 @@ node tools/t_ginyu.js   # Captain Ginyu: bay vào sân đúng 1.5s và địch b
                         # bên cùng một mức cắt 25% dmg + 25% hiệu ứng (hồn đối thủ tung
                         # được cả chiêu 2 lẫn chiêu 3 của chính mình, phân thân bay ra thật
                         # từ thân xác Ginyu, đấm đá Ginyu ăn đúng 5.5 dmg trên mốc 22),
-                        # bắn trượt thì 1 máu + hoảng loạn, luật ba người thì luôn thăm dò
+                        # bắn trượt thì 1 máu + hoảng loạn, luật ba người thì luôn thăm dò,
+                        # và thắng thua tính theo HỒN: thân xác Ginyu thắng thì giải ghi
+                        # điểm cho Superman, kèm mức ngắm hỏng 20% / 0.45 rad
 node tools/t_dora.js    # Doraemon: Anywhere Door đúng 1.5s bốn pha và địch chỉ đứng chờ,
                         # cửa thần kỳ né được cả tia CHANGE cướp xác của Ginyu (trận 4),
                         # combo 15/15/20 cách nhau 0.6s, Air Cannon (ba dải chính xác, đẩy
@@ -2550,6 +2613,11 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Trận đấu gương (kono vs kono) treo ở màn chọn, `t_reg` đổ | `tapTwice()` tính theo TÊN NHÂN VẬT, mà đấu gương thì bấm kono ở lưới trái rồi kono ở lưới phải là hai cú liên tiếp cùng tên ⇒ hiểu nhầm thành chạm hai lần, bảng thông số bật lên chặn mất nút Vào trận | mốc gồm **cả lưới lẫn tên** (`parentNode.id + '/' + key`). Đừng lấy chính phần tử làm mốc: mỗi cú bấm ở lưới đội hình dựng lại cả lưới |
 | Hiệu số của giải hụt mất mấy trăm điểm | dòng cộng dồn `dmgDealt` trong `hurt()` gác ở `!src.summon`, nên Kamehameha / Masenko do object Goku-Gohan bắn ra **không ghi cho ai cả** — trận ChiChi vs Doraemon ra `369–851` trong khi Doraemon kết trận với 32 máu | ghi công cho `src.master` khi `src` là viện binh, và chỉ cộng phần máu THẬT SỰ mất (`min(amt, t.hp)`) để đòn thừa lúc kết liễu không tính. Đo lại: Kamehameha 400 dmg 0 → **400**, đấm 400 vào người còn 30 máu 400 → **30** |
 | Hiệu ứng trượt hàng của bảng xếp hạng không chạy, đo ra 0px | `compOpen()` gọi `compPaint()` TRƯỚC khi bỏ lớp `off`, nên `lgPlay()` đo `offsetTop` bên trong một khối `display:none` — mọi hàng cùng ra 0 nên độ lệch cũng bằng 0 | hiện bảng ra trước rồi mới vẽ; đo lại hàng trượt xa nhất 105px |
+| Giải đấu ghi sai người thắng sau cú CHANGE | `compResult()` đọc `f.key`, tức đọc THÂN XÁC — Superman thắng trong xác Ginyu thì điểm về tay Ginyu | tra qua `compSoul(f)` = `f.gnSoul || f.key`. Băng-rôn và thanh máu vốn đã đọc `f.name` nên chúng đúng sẵn, chỉ sổ giải đấu sai |
+| Ginyu vào thân xác người khác đánh mãi không trúng | 55% hụt đòn + lệch 1.05 rad, cộng thêm mức cắt 25% sát thương ⇒ cú đấm chỉ còn ~11% sức | hạ xuống `GN.swapMiss = .20` và `GN.aimOff = .45`; đừng ghim số vào `ginyuPossess()` |
+| Vòng khí Air Cannon bị hất ngược mà bay lùi với miệng vòng hướng cũ, rồi xuyên qua chính Doraemon | nhánh phản đòn chỉ đổi `p.vx/p.vy`, mà vòng khí vẽ theo `p.ang` và vẫn giữ `p.hitList` cũ | xoay luôn `p.ang` và `p.hitList.length = 0` ngay tại chỗ phản, viết chung cho MỌI loại đạn chứ đừng cắm theo từng type |
+| Phép đo "đầu đạn xoay theo hướng bay mới" đổ chừng một nửa số lần | so góc bằng phép trừ thẳng, mà `p.ang` cộng thêm nhiễu nên vọt qua π trong khi `atan2` luôn trả về trong (−π, π] — lệch nguyên 2π mà thật ra vẫn một hướng | so góc theo VÒNG: `d = |x−y| % 2π`, quá π thì lấy `2π − d` |
+| Phép đo "ăn nguyên đòn của chính mình" lúc ra 85, lúc ra 45, lúc ra 0 | 45 là cú Flying Kick của ChiChi xen vào, 0 là cú hất ngược lệch ±0.25 rad nên bắn trượt thật | dọn sạch sóng âm + khoá ChiChi rồi mới đo, và **thử tới 10 lượt** đòi có ít nhất một lượt trúng đủ dmg |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---

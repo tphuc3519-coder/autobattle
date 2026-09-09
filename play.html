@@ -155,6 +155,23 @@
   .arc{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;
     background:radial-gradient(circle at 50% 40%,#241A52,#07061A 70%);padding:20px;text-align:center}
   .arc.off{display:none}
+  /* Màn VS. Mọi chuyển động ở đây chỉ đổi `opacity` và bóng chữ, KHÔNG dùng `transform`:
+     Playwright coi phần tử đang biến đổi là "chưa đứng yên" và không bấm được (mục 9). */
+  .vsRow{display:flex;align-items:center;justify-content:center;gap:clamp(10px,4vw,42px);flex-wrap:wrap}
+  .vsSide{display:flex;flex-direction:column;align-items:center;gap:8px;animation:vsIn .45s ease-out both}
+  .vsSide.b{animation-delay:.12s}
+  .vsFace{width:clamp(78px,22vw,148px);height:clamp(78px,22vw,148px);border-radius:18px;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    font-size:clamp(38px,11vw,72px);background:#120E30;border:3px solid currentColor;
+    box-shadow:0 10px 30px rgba(0,0,0,.55),0 0 0 6px rgba(255,255,255,.04)}
+  .vsFace img{width:100%;height:100%;object-fit:cover;object-position:top center}
+  .vsName{font-weight:900;letter-spacing:.04em;font-size:clamp(13px,3.4vw,22px)}
+  .vsBig{font-family:"Space Mono",monospace;font-weight:700;color:var(--gold);
+    font-size:clamp(30px,9vw,64px);letter-spacing:.06em;text-shadow:0 4px 0 #6B3A00,0 0 26px rgba(255,197,66,.7);
+    animation:vsPulse 1s ease-in-out infinite}
+  .vsStage{margin-top:16px;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.24em;color:var(--mute)}
+  @keyframes vsIn{from{opacity:0}to{opacity:1}}
+  @keyframes vsPulse{0%,100%{opacity:.82}50%{opacity:1}}
   .arcLogo{font-size:clamp(30px,9vw,64px);font-weight:900;line-height:.95;letter-spacing:-.03em;
     color:var(--paper);text-shadow:0 6px 0 #1B1440,0 12px 34px rgba(0,0,0,.6)}
   .arcLogo b{display:block;color:var(--gold)}
@@ -591,9 +608,20 @@
     <div class="arcLoad" id="arcLoad" style="display:none"></div>
   </div>
 </div>
+<!-- Màn VS trước trận, kiểu Street Fighter: mặt hai bên rõ ràng rồi mới vào đánh.
+     Chạm là vào ngay, không chạm thì tự vào sau VS_HOLD giây. Chỉ có ở TRANG CHƠI. -->
+<div class="arc off" id="arcVs" style="z-index:66">
+  <div style="width:100%">
+    <div class="vsRow" id="vsRow"></div>
+    <div class="vsStage" id="vsStage"></div>
+    <div class="arcHint" id="vsHint" data-i18n="vsTap">Chạm để vào trận</div>
+  </div>
+</div>
 <div class="arcOver off" id="arcOver">
   <button id="arcAgain" class="primary" type="button" data-i18n="again">↻ Đánh lại</button>
   <button id="arcPick" type="button" data-i18n="repick">⚔ Đổi nhân vật / màn</button>
+  <!-- Giữa giải thì hai nút trên nhường chỗ cho đúng một nút đi tiếp. -->
+  <button id="arcComp" class="primary" type="button" style="display:none" data-i18n="arcBoard">▶ Bảng xếp hạng</button>
 </div>
 
 <!-- Bảng xếp hạng / sơ đồ nhánh, hiện GIỮA hai trận của giải. Dùng lại vỏ .csel của màn
@@ -703,6 +731,10 @@ const clamp=(v,a,b)=>v<a?a:(v>b?b:v), dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const BASE_SPEED=0.5, RT=1/BASE_SPEED;
 const rts=sec=>String(+(sec*RT).toFixed(2));
 let G=null, running=false, speedMul=BASE_SPEED, mode='auto', autoSkill=true;
+/* Màn VS trước trận (xem `vsShow()` ở khối arcade cuối file). Khai cờ Ở ĐÂY chứ không
+   khai chung với `vsShow()`: `step()` đọc nó, mà `step()` nằm mãi phía trên — để dưới là
+   đúng cái bẫy TDZ ở mục 9. */
+let vsOn=false, vsTimer=0;
 const keys={};
 
 /* ---------- sprite slots ---------- */
@@ -772,6 +804,7 @@ const L={
     lgDiffTip:'Hiệu số = máu còn lại của người thắng: thắng mà còn 32 máu thì +32, người thua −32. Trận hết giờ thì lấy máu của người còn nhiều phần trăm hơn.',
     cupQF:'Tứ kết', cupSF:'Bán kết', cupFinal:'Chung kết', cupThird:'Tranh hạng ba',
     compNext:'Trận kế tiếp', compGo:'▶ Đánh trận này', compTable:'Bảng xếp hạng',
+    vsTap:'Chạm để vào trận', arcBoard:'▶ Bảng xếp hạng',
     compBracket:'Sơ đồ nhánh', compResults:'Kết quả đã đá', compPick:'⚔ Đổi đội hình',
     compQuit:'✕ Bỏ giải', compChamp:'Vô địch', compOver:'Giải đã xong',
     compLeagueT:'GIẢI <span>VÒNG TRÒN</span>', compCupT:'GIẢI <span>LOẠI TRỰC TIẾP</span>',
@@ -834,6 +867,7 @@ const L={
     lgDiffTip:'Diff = the winner HP left: win with 32 HP and you get +32, the loser gets −32. On a time-out the winner is whoever has the higher HP percentage.',
     cupQF:'Quarter-finals', cupSF:'Semi-finals', cupFinal:'Final', cupThird:'Third place',
     compNext:'Next match', compGo:'▶ Play this match', compTable:'Standings',
+    vsTap:'Tap to start', arcBoard:'▶ Standings',
     compBracket:'Bracket', compResults:'Played', compPick:'⚔ Change line-up',
     compQuit:'✕ Quit competition', compChamp:'Champion', compOver:'Competition over',
     compLeagueT:'<span>LEAGUE</span> TABLE', compCupT:'<span>KNOCKOUT</span> BRACKET',
@@ -1152,7 +1186,11 @@ const GN={
      đang ở nhánh nào; giờ chỉ còn một cặp hằng. */
   swapCut:.25,               // sát thương của cả hai bên còn 25%
   swapCcCut:.25,             // ... thời lượng hiệu ứng cũng còn 25%
-  aimOff:1.05,               // Ginyu trong thân xác lạ: đạn mượn lệch tới hơn 60 độ
+  /* Ginyu mượn tay chân người khác thì ngắm hỏng — nhưng ĐỪNG để thành "đánh mãi không
+     trúng". Người dùng bác bản cũ (55% hụt + lệch 60 độ): cộng với mức cắt 25% sát thương
+     thì cả cú đấm chỉ còn ~11% sức, anh đứng vung tay cả trận mà chẳng ăn thua gì. */
+  swapMiss:.20,              // thân xác cận chiến: 20% số đòn tay hụt (cũ 55%)
+  aimOff:.45,                // thân xác hệ ném: đạn mượn lệch tới ~26 độ (cũ 60 độ)
   panicMove:[2.5,3.0],       // bắn trượt: máu về 1, chạy nhanh gấp 2.5~3 lần
   panicCut:.30               // ... đổi lại dmg và hiệu ứng chỉ còn 30%
 };
@@ -1332,7 +1370,7 @@ const CHARS={
   chichi:{
     name:'ChiChi', short:'ChiChi', tag:'Housewife · Melee', emoji:'🍳', color:'#FF4D6D', alt:'#FF93A8',
     role:'melee', speed:106, dodge:.55, male:false,
-    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in for a guaranteed ${CHICHI_KICK_DMG} damage and a ${rts(CHICHI_KICK_STUN)}s stun, CC immune &amp; −30% dmg taken while dashing`,'<b>Passive</b> every 5 hits +5% crit',`<b>Below 20% HP</b> calls Goku / Gohan — Goku's Kamehameha ${KAME_DMG} dmg, stun ${rts(KAME_STUN)}s then −${Math.round((1-KAME_SLOW_MOVE)*100)}% move / −${Math.round((1-KAME_SLOW_CAST)*100)}% cast for ${rts(KAME_SLOW_T)}s · Gohan's Masenko ${MASENKO_DMG} dmg a wave, each wave stacking −${Math.round(MASENKO_STACK_MOVE*100)}% move / −${Math.round(MASENKO_STACK_CAST*100)}% cast for ${rts(MASENKO_STACK_T)}s`],
+    skills:['<b>1</b> Punch &amp; Kick (crit 25)','<b>2</b> Scolding — 5 shockwaves, reflects shuriken / kunai / ball / Air Cannon / Ginyu&apos;s Beam',`<b>Every ${rts(CHICHI_DASH_CD)}s</b> Flying Kick — dash in for a guaranteed ${CHICHI_KICK_DMG} damage and a ${rts(CHICHI_KICK_STUN)}s stun, CC immune &amp; −30% dmg taken while dashing`,'<b>Passive</b> every 5 hits +5% crit',`<b>Below 20% HP</b> calls Goku / Gohan — Goku's Kamehameha ${KAME_DMG} dmg, stun ${rts(KAME_STUN)}s then −${Math.round((1-KAME_SLOW_MOVE)*100)}% move / −${Math.round((1-KAME_SLOW_CAST)*100)}% cast for ${rts(KAME_SLOW_T)}s · Gohan's Masenko ${MASENKO_DMG} dmg a wave, each wave stacking −${Math.round(MASENKO_STACK_MOVE*100)}% move / −${Math.round(MASENKO_STACK_CAST*100)}% cast for ${rts(MASENKO_STACK_T)}s`],
     init(f){ f.cds={s1:0,s2:cm(3)}; f.dashCd=CHICHI_DASH_CD; f.hits=0; f.critBonus=0; },
     think(f,e,d,auto){
       if(f.cds.s1<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])){ f.cds.s1=cm(.25); melee(f,e); }
@@ -1658,8 +1696,8 @@ const DEX={
     skills:[
       {tag:'1',name:'Punch & Kick',vi:'Đòn tay nhanh, cứ 5 đòn lại cộng thêm tỉ lệ chí mạng.',
        en:'Fast hands; every 5 hits raise her crit chance.'},
-      {tag:'2',name:'Scolding',vi:'Năm đợt sóng xung kích, phản ngược shuriken, kunai và bóng về phía địch.',
-       en:'Five shockwaves that reflect shuriken, kunai and footballs back at the sender.'},
+      {tag:'2',name:'Scolding',vi:'Năm đợt sóng xung kích, phản ngược shuriken, kunai, bóng, vòng khí Air Cannon và luồng khí tím của Ginyu về phía địch.',
+       en:'Five shockwaves that reflect shuriken, kunai, footballs, the Air Cannon ring and Ginyu\'s Beam back at the sender.'},
       {tag:'3',name:'Flying Kick',
        vi:`Mỗi ${rts(CHICHI_DASH_CD)}s lao tới: ${CHICHI_KICK_DMG} dmg + choáng ${rts(CHICHI_KICK_STUN)}s, lúc lao miễn khống chế và chỉ nhận 70% sát thương.`,
        en:`Every ${rts(CHICHI_DASH_CD)}s she dashes in for ${CHICHI_KICK_DMG} damage and a ${rts(CHICHI_KICK_STUN)}s stun — CC immune and −30% damage taken while dashing.`},
@@ -4105,6 +4143,9 @@ function compPlayNext(){
   newGame();
   return true;
 }
+/* Ai là ai trong sổ giải đấu: HỒN, không phải thân xác. `gnSoul` chỉ khác `key` sau khi
+   Ginyu tung CHANGE. */
+const compSoul=f=>f?(f.gnSoul||f.key):null;
 /* Ghi kết quả một trận. Gọi từ cuối finish(), nên G vẫn còn nguyên đội hình vừa đánh. */
 function compResult(win){
   compLive=false;
@@ -4116,15 +4157,19 @@ function compResult(win){
     for(const k of COMP.keys) cu[k]=Object.assign({},COMP.tab[k]);
     lgAnim={ord:lgOrder(),tab:cu,pair:[m.a,m.b]};
   }else cupAnim=m.ref;
+  /* Đọc theo HỒN chứ đừng đọc theo THÂN XÁC. Sau cú CHANGE của Ginyu, object mang
+     `key:'ginyu'` có thể đang do hồn Superman điều khiển — người dùng bác đúng chỗ này:
+     "Superman trong xác Ginyu win, nhưng vẫn tính Ginyu win là sai". Thanh máu và băng-rôn
+     WINNER vốn đã đọc `f.name` nên chúng ra đúng sẵn; chỉ mỗi sổ giải đấu đọc `f.key`. */
   const mains=G.fighters.filter(f=>f&&!f.summon);
-  const A=mains.find(f=>f.key===m.a)||mains[0], B=mains.find(f=>f.key===m.b)||mains[1];
+  const A=mains.find(f=>compSoul(f)===m.a)||mains[0], B=mains.find(f=>compSoul(f)===m.b)||mains[1];
   /* Hiệu số = MÁU CÒN LẠI CỦA NGƯỜI THẮNG, người dùng chốt: "winner có 32 máu thì +32,
      còn loser −32". Không phải sát thương, không phải máu của kẻ thua — một trận cho ra
      đúng một con số, cộng cho người thắng và trừ đúng bấy nhiêu của người thua. Dòng kết
      quả thì in máu còn lại của CẢ HAI bên (`0–32`), thua vì cạn máu nên vế kia là 0; chỉ
      trận hết giờ mới có hai số cùng dương. */
   const ga=Math.max(0,Math.round((A&&A.hp)||0)), gb=Math.max(0,Math.round((B&&B.hp)||0));
-  const wk=(win&&win.key===m.b)?m.b:m.a;    // không đọc ra được thì mặc định bên A
+  const wk=(win&&compSoul(win)===m.b)?m.b:m.a;   // không đọc ra được thì mặc định bên A
   m.ref.w=wk; m.ref.ga=ga; m.ref.gb=gb;
   if(COMP.kind==='league'){
     const T=COMP.tab, lk=wk===m.a?m.b:m.a, con=wk===m.a?ga:gb;
@@ -4133,8 +4178,11 @@ function compResult(win){
   }
   COMP.cur=null;
   compSave();
-  /* Chờ một nhịp cho xem cú hạ gục rồi mới bật bảng lên — bật ngay thì che mất pha KO. */
-  setTimeout(()=>{ if(COMP&&!compLive) compOpen(); },2600);
+  /* TRANG CHƠI thì DỪNG LẠI ở màn WINNER, người chơi tự bấm `#arcComp` để sang bảng xếp
+     hạng rồi bấm tiếp ▶ cho trận sau — người dùng chốt: "cho người chơi nút tự chuyển".
+     Xưởng không có dải nút arcade nên vẫn tự mở như cũ sau một nhịp cho xem cú hạ gục.
+     Đọc `window.ARCADE` chứ đừng đọc hằng `ARCADE`: hằng đó khai mãi cuối file. */
+  if(!window.ARCADE) setTimeout(()=>{ if(COMP&&!compLive) compOpen(); },2600);
 }
 /* Trần thời gian: gọi mỗi nhịp trong step(). Hết giờ thì ai còn nhiều % máu hơn thì thắng. */
 function compTick(){
@@ -4620,8 +4668,13 @@ function scold(c,e){
    (cả basic shot lẫn overhead kick — cùng là type 'ball').
    Kame / masenko là tia và cầu năng lượng nên không hất được.
    Drive shot và twin shot tuy là bóng nhưng cố ý miễn nhiễm với đòn phản:
-   vừa không nằm trong tập này, vừa mang cờ noReflect ngay lúc tạo. */
-const PHYSICAL=new Set(['shuriken','kunai','ball']);
+   vừa không nằm trong tập này, vừa mang cờ noReflect ngay lúc tạo.
+   VÒNG KHÍ NÉN của Air Cannon và LUỒNG KHÍ TÍM của Ginyu thì hất ngược được — người dùng
+   chốt riêng hai chỗ đó ("mắng phản được air canon nhé", rồi "mắng ChiChi cản được beam
+   Ginyu"). Hất ngược rồi thì chủ cũ ăn nguyên đòn của chính mình: Doraemon 85 dmg + choáng,
+   Ginyu 18 dmg mỗi luồng + hất lùi, và đủ ba luồng thì chính anh dính Worn Out.
+   Kame / masenko vẫn KHÔNG hất được — đó là tia xuyên và cầu năng lượng cỡ ultimate. */
+const PHYSICAL=new Set(['shuriken','kunai','ball','aircan','gbeam']);
 const canReflect=p=>PHYSICAL.has(p.type)&&!p.noReflect;
 
 /* ---------- Ozora Tsubasa ---------- */
@@ -5923,7 +5976,7 @@ function ginyuPossess(g,t){
   const projBody=GN_PROJ_BODY.has(t.key);
   t.gnBodyProj=projBody;
   t.gnSelfCut=GN.swapCut; t.gnCcCut=GN.swapCcCut;
-  t.missOdds=projBody?0:.55;
+  t.missOdds=projBody?0:GN.swapMiss;
   t.aimOff=projBody?GN.aimOff:0;
   t.cds={s1:0,s2:GN.beamCd,s3:GN.flashCd};
   t.gnState=null; t.gnStateT=0; t.gnAura=Infinity; t.gnFlash=null; t.gnPanic=false;
@@ -7481,6 +7534,7 @@ function aiVec(f,e){
 
 /* ---------- step ---------- */
 function step(dt){
+  if(vsOn) return;              // còn đứng ở màn VS thì trận chưa bắt đầu, kể cả màn ra mắt
   G.t+=dt;
   if(G.flashScreen>0)G.flashScreen-=dt;
   compTick();                       // trận của giải có trần thời gian, xem COMP_MAXT
@@ -7854,10 +7908,17 @@ function step(dt){
         p.vx=Math.cos(a)*sp*1.15; p.vy=Math.sin(a)*sp*1.15;
         p.team=w.team; p.owner=w.owner; p.bounced=true; p.life=Math.max(p.life,2);
         if(p.type==='ball'){ p.bounce=0; p.spin=0; }   // bóng bị hất ngược thì được nảy lại từ đầu
+        /* Mấy loại đạn vẽ theo `p.ang` chứ không theo vận tốc (vòng khí Air Cannon, luồng
+           khí của Ginyu), nên quay đầu rồi phải xoay luôn cái hình — không thì nó bay lùi
+           mà đầu đạn vẫn hướng cũ. Và `hitList` phải xoá sạch, nếu không viên đạn vẫn nhớ
+           là đã trúng ai rồi và bay xuyên qua đúng người đó. */
+        if(p.ang!==undefined) p.ang=a;
+        if(p.hitList) p.hitList.length=0;
         G.fx.push({type:'ring',x:p.x,y:p.y,r:4,max:26,color:'#FFE100',life:.25,ml:.25});
         const back=w.owner?foeOf(w.owner):null;
         const who=back?back.name:'đối thủ';
-        const what=p.type==='kunai'?'kunai nổ':(p.type==='ball'?'trái bóng':'phi tiêu');
+        const what=p.type==='kunai'?'kunai nổ':p.type==='ball'?'trái bóng'
+                  :p.type==='aircan'?'vòng khí nén':p.type==='gbeam'?'luồng khí tím':'phi tiêu';
         say(`Sóng âm hất ngược ${what} về phía ${who}!`,'c');
       }
     }
@@ -12822,7 +12883,50 @@ function pickRowPaint(){
 function arcFight(){
   ac(); musicStart();
   running=true; el('play').textContent=t('pause');
+  vsShow();
 }
+/* ---------- màn VS trước trận ----------
+   Người dùng gửi ảnh màn chọn của Street Fighter II và chốt: "icon nhân vật rồi VS rõ ràng
+   rồi mới vào". `vsOn` chặn `step()` nên trận đứng yên hẳn — kể cả mấy màn ra mắt (Ginyu
+   bay vào, Anywhere Door, Superman đáp xuống) cũng chờ, vì chúng đo bằng giây TRONG TRẬN.
+   Chạm là vào ngay; không chạm thì tự vào sau VS_HOLD giây THẬT, nên bộ test cũ không phải
+   bấm thêm nút nào — chỉ chờ lâu hơn một nhịp. Chỉ có ở TRANG CHƠI: xưởng vào thẳng như cũ
+   vì mọi test hiện có bấm `#cselGo` một phát là vào trận. */
+const VS_HOLD=2.4;
+function vsSides(){
+  const mains=G.fighters.filter(f=>f&&!f.summon), out=[];
+  const nt=mains.reduce((m,f)=>Math.max(m,f.team+1),0);
+  for(let i=0;i<nt;i++){ const side=mains.filter(f=>f.team===i); if(side.length) out.push(side); }
+  return out;
+}
+function vsShow(){
+  if(!ARCADE) return;
+  const box=document.getElementById('arcVs'), row=document.getElementById('vsRow');
+  if(!box||!row) return;
+  const sides=vsSides();
+  if(sides.length<2) return;                    // không có ai để đối đầu thì thôi
+  row.innerHTML=sides.map((side,i)=>{
+    const mat=side.map(f=>{
+      const src=avaSrc(f.key);
+      const face=src?`<img alt="" src="${src}">`:((CHARS[f.key]&&CHARS[f.key].emoji)||'?');
+      return `<div class="vsSide${i?' b':''}" style="color:${f.color}">`+
+        `<div class="vsFace">${face}</div>`+
+        `<div class="vsName">${(f.name||'').toUpperCase()}</div></div>`;
+    }).join('');
+    return (i?'<div class="vsBig">VS</div>':'')+mat;
+  }).join('');
+  const st=document.getElementById('vsStage');
+  if(st) st.textContent=stageOf(STAGE).name;    // tên màn giữ nguyên ở cả hai ngôn ngữ
+  vsOn=true; box.classList.remove('off');
+  clearTimeout(vsTimer); vsTimer=setTimeout(vsGo,VS_HOLD*1000);
+}
+function vsGo(){
+  if(!vsOn) return;
+  vsOn=false; clearTimeout(vsTimer);
+  const box=document.getElementById('arcVs'); if(box) box.classList.add('off');
+}
+if(document.getElementById('arcVs'))
+  document.getElementById('arcVs').addEventListener('click',vsGo);
 /* Ba nút của màn giải đấu. Đặt ở đây vì phải dùng arcFight() ngay bên trên. */
 if(document.getElementById('compGo'))
   document.getElementById('compGo').addEventListener('click',()=>{
@@ -12945,11 +13049,26 @@ if(ARCADE){
   el('arcPick').addEventListener('click',()=>{ cselPage=cselSteps()[0]; openCsel(); });
   /* Trận xong thì hiện dải nút chơi lại — kiểm mỗi khung hình cho khỏi phải cắm thêm
      móc vào finish(), vì finish() còn được gọi từ nhiều đường khác nhau. */
+  el('arcComp').addEventListener('click',()=>{ compOpen(); });
+  /* Trận xong thì hiện dải nút — kiểm mỗi khung hình cho khỏi phải cắm thêm móc vào
+     finish(), vì finish() còn được gọi từ nhiều đường khác nhau.
+     GIỮ LẠI MÀN WINNER trước đã: chỉ hiện nút khi `G.endT` qua mốc `ARC_OVER_T`, đúng
+     lúc băng-rôn và pháo giấy đã bung ra (`G.announced` cũng mở ở mốc 2). Người dùng
+     chốt: "lúc thắng rồi thì hold lại để hiện winner, xong sau đó cho người chơi nút". */
+  const ARC_OVER_T=2;
+  const show=(e,on)=>{ const v=on?'':'none'; if(e&&e.style.display!==v) e.style.display=v; };
   setInterval(()=>{
-    const done=!!(G&&G.over), open=!el('charSelect').classList.contains('off');
-    /* Đang có giải thì dải nút "Đánh lại / Đổi nhân vật" phải nhường chỗ cho bảng xếp
-       hạng — bấm Đánh lại giữa giải là đá lại đúng trận vừa xong, vô nghĩa. */
-    el('arcOver').classList.toggle('off',!done||open||compOn());
+    const done=!!(G&&G.over&&G.endT>=ARC_OVER_T);
+    const open=!el('charSelect').classList.contains('off');
+    const board=!(document.getElementById('compBoard')||{classList:{contains:()=>true}})
+      .classList.contains('off');
+    el('arcOver').classList.toggle('off',!done||open||board||vsOn);
+    /* Đang có giải thì "Đánh lại / Đổi nhân vật" nhường chỗ cho đúng MỘT nút đi tiếp —
+       bấm Đánh lại giữa giải là đá lại đúng trận vừa xong, vô nghĩa. */
+    const giai=compOn();
+    /* Chỉ gán khi ĐỔI. Gán lại `style.display` mỗi 250ms là bắt trình duyệt tính lại kiểu
+       liên tục, và Playwright coi phần tử là "chưa đứng yên" nên không bấm được (mục 9). */
+    show(el('arcAgain'),!giai); show(el('arcPick'),!giai); show(el('arcComp'),giai);
   },250);
 }else{
   openCsel();                     // xưởng: mở màn chọn nhân vật ngay khi vào

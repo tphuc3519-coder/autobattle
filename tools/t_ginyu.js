@@ -426,6 +426,7 @@ async function waitGame(page, fnBody, limit) {
         eBody: e.key, eShows: e.name, eHp: e.hp, eWant: Math.round(e.maxHp * GN.changeHp), eAs: e.swapAs,
         eHp0,
         eProj: e.gnBodyProj, eMiss: e.missOdds, eAim: e.aimOff, eCut: e.gnSelfCut, eCc: e.gnCcCut,
+        aimHang: window.__GN.aimOff, missHang: window.__GN.swapMiss,
         gCut: g.gnSelfCut, gCc: g.gnCcCut, gSoul: g.gnSoul, gCds: Object.keys(g.cds).sort().join(','),
         cut: GN.swapCut, ccCut: GN.swapCcCut
       };
@@ -452,9 +453,14 @@ async function waitGame(page, fnBody, limit) {
       `Ginyu-body ${swap.gCut}/${swap.gCc} · thân xác cướp được ${swap.eCut}/${swap.eCc}`);
     ok('mức cắt đúng bằng 25%', Math.abs(swap.cut - .25) < .001 && Math.abs(swap.ccCut - .25) < .001,
       `${swap.cut} / ${swap.ccCut}`);
+    /* Thân xác hệ ném thì ĐẠN VẸO chứ không phải đấm hụt. Đọc thẳng hằng số chứ đừng ghim
+       số: mức lệch đã hạ 1.05 → 0.45 vì bản cũ làm Ginyu đánh mãi không trúng. */
     ok('thân xác hệ ném (Konohamaru): ngắm hỏng hẳn thay vì đấm hụt',
-      swap.eProj === true && swap.eMiss === 0 && swap.eAim > 1,
+      swap.eProj === true && swap.eMiss === 0 && swap.eAim === swap.aimHang && swap.eAim > 0,
       `độ lệch ±${swap.eAim} rad`);
+    ok('mức ngắm hỏng đã hạ khỏi mốc cũ (55% hụt / 1.05 rad)',
+      swap.aimHang === .45 && swap.missHang === .20,
+      `lệch ${swap.aimHang} rad · hụt ${Math.round(swap.missHang * 100)}%`);
     /* Người dùng chốt: "đối thủ Ginyu khi bị change vẫn có thể dùng skill bản thân". */
     ok('hồn đối thủ nhớ mình là ai và mang theo bộ chiêu của chính mình',
       swap.gSoul === 'kono' && swap.gCds === 's1,s2,s3',
@@ -640,6 +646,48 @@ async function waitGame(page, fnBody, limit) {
     ok(`hồn ${soul} trong thân xác Ginyu không đứng hình vĩnh viễn`,
       !run.none && !run.timeout && run.free > 0, JSON.stringify(run));
     ok(`hồn ${soul}: trận chạy sạch lỗi trang`, errors.length === 0, errors.join(' | '));
+    await browser.close();
+  }
+
+  /* ---------- trận 5: thắng thua tính theo HỒN, và mức ngắm hỏng ----------
+     Người dùng bác: "Superman trong xác Ginyu win, nhưng vẫn tính Ginyu win là sai". Thanh
+     máu và băng-rôn WINNER vốn đã đọc `f.name` nên chúng đúng sẵn; chỉ sổ giải đấu đọc
+     `f.key`, tức đọc THÂN XÁC. Kèm luôn mức ngắm hỏng — 55% hụt đòn là quá tay. */
+  {
+    const { browser, page, errors } = await openGame('ginyu', 'superman');
+    await page.selectOption('#speed', '1');
+    await page.waitForTimeout(400);
+    const r = await page.evaluate(() => {
+      const G = window.__G(), o = {};
+      const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f.key === 'superman');
+      g.gnEntry = null; g.lock = 0;
+      e.supEntry = null; e.supHide = false; e.supAir = 0; e.lock = 0;
+      window.__ginyuPossess(g, e);
+      o.hon = g.gnSoul + '/' + e.gnSoul;
+      o.ten = g.name;
+      o.miss = e.missOdds; o.swapMiss = window.__GN.swapMiss; o.aimOff = window.__GN.aimOff;
+      /* Dựng một giải hai người rồi cho chính THÂN XÁC GINYU đứng cuối trận. */
+      const C = window.__leagueNew(['ginyu', 'superman'], 1);
+      C.cur = Object.assign({ ref: C.fix[0] }, C.fix[0]);
+      window.__setComp(C, true);
+      g.hp = 210; e.hp = 0;
+      window.__finish(g);
+      const T = window.__COMP().tab;
+      o.thang = T.superman.w + '/' + T.ginyu.w;
+      o.diem = T.superman.pts + '/' + T.ginyu.pts;
+      o.hieu = (T.superman.gf - T.superman.ga) + '/' + (T.ginyu.gf - T.ginyu.ga);
+      o.banner = String(G.over);
+      return o;
+    });
+    ok('CHANGE đổi hồn mà thân xác đứng yên', r.hon === 'superman/ginyu', `${r.hon} · thân xác Ginyu mang tên "${r.ten}"`);
+    ok('thân xác Ginyu thắng thì giải ghi cho SUPERMAN', r.thang === '1/0', `superman/ginyu = ${r.thang} trận thắng`);
+    ok('điểm cũng về đúng người', r.diem === '3/0', r.diem);
+    ok('hiệu số +210 cho hồn thắng, −210 cho hồn thua', r.hieu === '210/-210', r.hieu);
+    ok('băng-rôn WINNER vẫn đúng như cũ', /SUPERMAN/.test(r.banner), r.banner);
+    ok('thân xác cận chiến: hụt đòn 20% chứ không phải 55%',
+      r.miss === r.swapMiss && r.swapMiss === .20, `${Math.round(r.miss * 100)}%`);
+    ok('thân xác hệ ném: lệch góc 0.45 rad chứ không phải 1.05', r.aimOff === .45, String(r.aimOff));
+    ok('trận đổi hồn chạy sạch lỗi trang', errors.length === 0, errors.join(' | '));
     await browser.close();
   }
 
