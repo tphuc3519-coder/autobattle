@@ -410,6 +410,85 @@ function wavUrl() {
   await q3.close();
   await b4.close(); sv3.close();
 
+  /* ---------- 7. GÓI CHẺ NHỎ (bản 2): index.json + nhiều mảnh ----------
+     Một file 25 MB làm repo phồng mỗi lần xuất, Chrome không cache nổi, và đụng trần
+     100 MB của GitHub. Giờ `tools/split_pack.py` chẻ ra mỗi nhân vật / mỗi ô tiếng một
+     mảnh, `index.json` là danh mục. Ba thứ phải đúng: chẻ ra đọc được, thiếu một mảnh
+     thì HỎNG CẢ LƯỢT (thà hiện nút tải lại còn hơn để người chơi thấy một nhân vật
+     trơ model vector), và site chưa chẻ thì vẫn lùi về pack.json một file như cũ. */
+  const site3 = fs.mkdtempSync(path.join(os.tmpdir(), 'she-'));
+  const pk3 = path.join(site3, 'assets', 'pack');
+  fs.mkdirSync(pk3, { recursive: true });
+  fs.copyFileSync(buildPlay(), path.join(site3, 'index.html'));
+  const gocPack = path.join(site3, 'goc.json');
+  fs.writeFileSync(gocPack, JSON.stringify({
+    v: 1, at: '2026-09-09',
+    spr: { kono: { idle: [PNG] }, chichi: { idle: [PNG] } },
+    sfx: { punch: wavUrl(), hit: wavUrl() }
+  }));
+  execFileSync('python3', [path.join(ROOT, 'tools', 'split_pack.py'), gocPack, '-o', pk3], { stdio: 'pipe' });
+  const manh = fs.readdirSync(pk3).filter(f => f.endsWith('.json') && f !== 'index.json');
+  ok(manh.length === 4, `split_pack: 2 anh + 2 tieng ra ${manh.length} manh rieng`);
+  const idx3 = JSON.parse(fs.readFileSync(path.join(pk3, 'index.json'), 'utf8'));
+  ok(idx3.v === 2 && idx3.parts.length === 4, 'index.json khai du 4 manh, ban 2');
+  ok(idx3.parts.every(x => x.b > 0), 'moi manh co san so byte cho thanh tien do');
+
+  /* Chẻ lại y hệt thì mảnh phải KHÔNG ĐỔI MỘT BYTE — đó chính là cái làm git thấy
+     "không có gì thay đổi" và repo thôi phồng. Ngày tháng chỉ nằm trong index.json. */
+  const truocByte = manh.map(f => fs.readFileSync(path.join(pk3, f)));
+  execFileSync('python3', [path.join(ROOT, 'tools', 'split_pack.py'), gocPack, '-o', pk3], { stdio: 'pipe' });
+  ok(manh.every((f, i) => truocByte[i].equals(fs.readFileSync(path.join(pk3, f)))),
+    'che lai lan hai: manh giong het tung byte (git nhin ra la khong doi)');
+
+  let thieu = null;                  // tên mảnh cố tình cho 404
+  const sv4 = http.createServer((rq, rs) => {
+    const rel = decodeURIComponent(rq.url.split('?')[0]).replace(/\/$/, '/index.html');
+    if (thieu && rel.endsWith(thieu)) { rs.statusCode = 404; rs.end(); return; }
+    const f = path.join(site3, rel);
+    if (!f.startsWith(site3) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { rs.statusCode = 404; rs.end(); return; }
+    rs.setHeader('content-type', mime(f)); rs.end(fs.readFileSync(f));
+  });
+  await new Promise(r => sv4.listen(0, '127.0.0.1', r));
+  const goc4 = `http://127.0.0.1:${sv4.address().port}/`;
+  const b5 = await chromium.launch();
+  const moShe = async () => {
+    const q = await b5.newPage({ viewport: { width: 820, height: 980 } });
+    await q.route('**://fonts.*/**', r => r.abort());
+    await q.goto(goc4, { waitUntil: 'domcontentloaded' });
+    return q;
+  };
+  const demHai = q => q.evaluate(() => [
+    ((window.__SPR.kono || {}).idle || []).length,
+    ((window.__SPR.chichi || {}).idle || []).length,
+    Object.keys(window.__SFXBUF).length
+  ]);
+
+  const r1 = await moShe();
+  let d = [0, 0, 0];
+  for (let i = 0; i < 40 && !d[1]; i++) { d = await demHai(r1); if (!d[1]) await r1.waitForTimeout(200); }
+  ok(d[0] === 1 && d[1] === 1, `goi da che: nap du anh CA HAI nhan vat (${d[0]}+${d[1]})`);
+  ok(d[2] >= 2, `goi da che: nap du ca tieng (${d[2]} o)`);
+  ok(!(await hienRa(r1, 'arcBoot')), 'goi da che: tai xong thi tat man cho');
+  await r1.close();
+
+  thieu = 'spr.chichi.json';
+  const r2 = await moShe();
+  let bao2 = false;
+  for (let i = 0; i < 60 && !bao2; i++) { bao2 = await hienRa(r2, 'bootFail'); if (!bao2) await r2.waitForTimeout(200); }
+  ok(bao2, 'thieu mot manh: hien nut tai lai chu KHONG tha vao game voi bo anh thieu');
+  ok((await demHai(r2))[0] === 0, 'thieu mot manh: khong nap nua voi (hong ca luot)');
+  await r2.close();
+
+  /* Site chưa chẻ: chỉ có pack.json một file, không có index.json — vẫn phải chạy. */
+  thieu = 'index.json';
+  fs.writeFileSync(path.join(pk3, 'pack.json'), fs.readFileSync(gocPack));
+  const r3 = await moShe();
+  let d3 = [0, 0, 0];
+  for (let i = 0; i < 40 && !d3[1]; i++) { d3 = await demHai(r3); if (!d3[1]) await r3.waitForTimeout(200); }
+  ok(d3[0] === 1 && d3[1] === 1, `site chua che: van lui ve pack.json mot file (${d3[0]}+${d3[1]})`);
+  await r3.close();
+  await b5.close(); sv4.close();
+
   console.log(loi.length ? `\nHONG ${loi.length} muc` : '\nDAT het');
   process.exit(loi.length ? 1 : 0);
 })();

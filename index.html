@@ -3043,6 +3043,21 @@ async function fetchAsset(rel,opt){
   return null;
 }
 const PACK_URL='assets/pack/pack.json';
+/* GÓI CHẺ NHỎ (bản 2). Một file 25 MB gây ba chuyện cùng lúc, nên gói giờ chia thành
+   nhiều mảnh — mỗi nhân vật một mảnh ảnh, mỗi ô tiếng / bài nhạc một mảnh:
+     1. git không delta được JSON base64, nên mỗi lần xuất lại gói là repo phồng thêm
+        nguyên 25 MB VĨNH VIỄN. Chẻ ra thì đổi ảnh một người chỉ ghi lại mảnh của người đó.
+     2. Chrome KHÔNG cache nổi một mục 25 MB (mỗi mục có trần cỡ) nên lần nào mở trang
+        cũng tải lại từ đầu — đo được 4.1 giây cả hai lần trên localhost. Mảnh vài trăm KB
+        thì cache ăn ngay.
+     3. GitHub chặn hẳn file trên 100 MB.
+   `index.json` là danh mục: mảnh nào, khoá nào, nặng bao nhiêu byte. Dựng bằng
+   `python3 tools/split_pack.py pack.json`.
+
+   VẪN GIỮ đường đọc `pack.json` một file làm bản lùi: site cũ chưa chẻ, hay ai đó chép
+   tay đúng một file vào, thì trang chơi vẫn chạy. Thứ tự là danh mục TRƯỚC, một file SAU. */
+const PACK_IDX='assets/pack/index.json';
+const PACK_PAR=6;        // tải song song mấy mảnh một lúc
 function packBuild(){
   const out={v:1, at:new Date().toISOString().slice(0,10), spr:{}, sfx:{}, bgm:{}};
   for(const set of SETS){
@@ -3185,6 +3200,51 @@ async function packRead(r){
   packNote(t('packDecode'));
   return JSON.parse(new TextDecoder().decode(buf));
 }
+/* Tải hết mảnh trong danh mục rồi ghép lại thành đúng hình dạng của gói cũ
+   (`{spr,sfx,bgm}`), nên phần ÁP VÀO GAME bên dưới không phải sửa một dòng nào.
+
+   Thanh tiến độ ở đây ĂN ĐỨT bản một file: `index.json` khai sẵn số byte của từng mảnh
+   nên biết tổng ngay từ đầu, không phải trông vào `content-length` (thứ mà máy chủ nén
+   gzip hay giấu đi).
+
+   Mảnh nào hỏng thì HỎNG CẢ LƯỢT (`loi`), đừng nuốt lẻ: nạp thiếu một mảnh là người chơi
+   thấy đúng một nhân vật hiện model vector và tưởng game lỗi — thà hiện nút TẢI LẠI. */
+async function packParts(idx){
+  const parts=(idx.parts||[]).filter(p=>p&&p.f&&p.k&&p.key);
+  if(!parts.length) return null;
+  const tong=parts.reduce((s,p)=>s+(p.b||0),0)||parts.length;
+  const data={v:idx.v,at:idx.at,spr:{},sfx:{},bgm:{}};
+  let got=0, xong=0, loi=null, i=0;
+  const doc=async p=>{
+    /* Đồng hồ chết máy cho TỪNG mảnh, cùng lý do với `packRead()`: không có nút "vào
+       luôn" nữa nên một cú fetch treo là nhốt người chơi thật. */
+    const ac=new AbortController();
+    const tm=setTimeout(()=>ac.abort(),PACK_STALL);
+    try{
+      const r=await fetchAsset('assets/pack/'+p.f,{signal:ac.signal});
+      return r?await r.json():null;
+    }catch(e){ return null; }
+    finally{ clearTimeout(tm); }
+  };
+  const chay=async()=>{
+    for(;;){
+      if(loi) return;
+      const p=parts[i++]; if(!p) return;
+      const j=await doc(p);
+      if(!j||j.d===undefined){ loi=loi||new Error('thiếu mảnh '+p.f); return; }
+      if(p.k==='spr') data.spr[p.key]=j.d;
+      else if(p.k==='sfx') data.sfx[p.key]=j.d;
+      else if(p.k==='bgm') data.bgm[p.key]=j.d;
+      got+=(p.b||0); xong++;
+      packNote(tf('packBytes',{a:(got/1048576).toFixed(1),b:(tong/1048576).toFixed(1)}));
+      packProg('tai',p.b?got:xong,tong);
+    }
+  };
+  await Promise.all(Array.from({length:Math.min(PACK_PAR,parts.length)},chay));
+  if(loi) throw loi;
+  packNote(t('packDecode'));
+  return data;
+}
 async function packLoad(noi){
   let data=null;
   packNote(t('packLoading'));
@@ -3197,10 +3257,15 @@ async function packLoad(noi){
          Chẳng có gì để chờ, cứ cho vào chơi — bắt bấm "tải lại" ở đây là nhốt luôn.
        · có phản hồi rồi mà đọc/parse hỏng ⇒ cú tải ĐỨT giữa chừng. Đúng chỗ cần hỏi lại. */
   let coFile=false;
-  try{ const r=await fetchAsset(PACK_URL); if(r){ coFile=true; data=await packRead(r); } }catch(e){}
+  try{
+    const ri=await fetchAsset(PACK_IDX);
+    if(ri){ coFile=true; data=await packParts(await ri.json()); }
+  }catch(e){ coFile=true; }
+  // chưa chẻ (hoặc danh mục rỗng) thì lùi về gói một file như cũ
+  if(!data) try{ const r=await fetchAsset(PACK_URL); if(r){ coFile=true; data=await packRead(r); } }catch(e){}
   if(!data||!data.spr&&!data.sfx){
     packNote('');
-    if(noi) status('Chưa có '+PACK_URL+' — mở trang bằng http, hoặc bấm "Xuất gói" rồi đẩy file đó lên repo.');
+    if(noi) status('Chưa có '+PACK_IDX+' — mở trang bằng http, hoặc bấm "Xuất gói" rồi chạy tools/split_pack.py và đẩy lên repo.');
     return {img:0,sfx:0,ok:!coFile};   // ok=false CHỈ khi gói có thật mà tải đứt
   }
   let img=0, snd=0;
@@ -3699,7 +3764,8 @@ function bulkZone(el,fn){
     a.href=URL.createObjectURL(blob); a.download='pack.json'; a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href),8000);
     status(`Đã xuất gói: ${n} nhân vật có ảnh · ${m} ô tiếng · ${b} bài nhạc (${(blob.size/1048576).toFixed(1)} MB). `+
-           `Chép file này vào assets/pack/pack.json của repo rồi đẩy lên là trang chơi có ngay.`);
+           `Giờ chạy: python3 tools/split_pack.py pack.json — nó chẻ ra assets/pack/, `+
+           `git chỉ ghi lại đúng mảnh nào bạn vừa đổi. Xong thì commit + push.`);
   });
   const pl=document.getElementById('packLoadBtn');
   if(pl) pl.addEventListener('click',()=>packLoad(true));

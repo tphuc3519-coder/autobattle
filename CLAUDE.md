@@ -2093,11 +2093,45 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
 - `buildSlots()` và `buildSfx()` return sớm khi không có bảng, **nhưng vẫn phải gọi
   `loadSaved()` / `sfxRestore()`** — không thì trang chơi mất sạch ảnh, tiếng và gói.
 
-**Gói phát hành `assets/pack/pack.json`** — đường duy nhất đưa ảnh/tiếng sang trang chơi:
+**Gói phát hành `assets/pack/`** — đường duy nhất đưa ảnh/tiếng sang trang chơi. **Gói đã
+CHẺ NHỎ (bản 2)**: mỗi nhân vật một mảnh ảnh, mỗi ô tiếng / bài nhạc một mảnh, cộng
+`index.json` làm danh mục (mảnh nào · khoá nào · nặng bao nhiêu byte).
 
-- Xưởng: nút **📦 Xuất gói lên web chơi** (`packBuild()`) gói cả `SPR` lẫn `SFXSRC` thành
-  một JSON; chép vào `assets/pack/pack.json` rồi commit.
-- Trang chơi: `packLoad()` `fetch` gói đó lúc mở. **Ô nào đã có nội dung thì gói không đè.**
+> **Vì sao chẻ — ba chuyện cùng một gốc "một file 25 MB":**
+> 1. **git không delta được JSON base64**, nên mỗi lần xuất lại gói là repo phồng thêm
+>    nguyên 25 MB **vĩnh viễn**. Chẻ ra thì đổi ảnh một nhân vật chỉ ghi lại mảnh của
+>    người đó.
+> 2. **Chrome không cache nổi một mục 25 MB** (mỗi mục có trần cỡ) nên lần nào mở trang
+>    cũng tải lại từ đầu — đo được 4.1 giây cả hai lần trên localhost. Đây chính là cái
+>    "muốn nhanh thật thì phải chẻ gói ra nhiều file nhỏ" ghi ở mục này từ trước.
+> 3. GitHub chặn hẳn file trên **100 MB**, nút kéo thả trên web chặn ngay ở **25 MB**.
+
+- Xưởng: nút **📦 Xuất gói lên web chơi** (`packBuild()`) vẫn ra **một** file `pack.json`
+  (trình duyệt không ghi được cả thư mục), rồi `python3 tools/split_pack.py pack.json`
+  chẻ nó vào `assets/pack/` và **tự xoá mảnh thừa** của lần chẻ trước.
+- Trang chơi: `packLoad()` đọc `index.json` rồi `packParts()` kéo các mảnh về
+  (`PACK_PAR = 6` mảnh một lúc) và **ghép lại thành đúng hình dạng `{spr,sfx,bgm}` của gói
+  cũ** — nhờ vậy phần áp vào game bên dưới không phải sửa một dòng nào.
+  **Ô nào đã có nội dung thì gói không đè.**
+- **Vẫn giữ đường lùi `pack.json` một file**: `index.json` trước, `pack.json` sau. Site cũ
+  chưa chẻ, hay ai chép tay đúng một file vào, thì trang chơi vẫn chạy — và cả bộ test cũ
+  (`t_play.js` dựng site bằng một file `pack.json`) không phải viết lại.
+
+> **Hai luật của `split_pack.py`, đừng phá:**
+> - Ghi JSON **không khoảng trắng và SẮP KHOÁ** (`sort_keys`). Mảnh nào nội dung y như cũ
+>   thì byte cũng y như cũ, git nhìn ra là không đổi — đó là toàn bộ cái lợi. Đổi cách ghi
+>   là mọi mảnh cùng "đổi" một lượt.
+> - **Ngày tháng (`at`) chỉ nằm trong `index.json`**, tuyệt đối không nhét vào mảnh. Nhét
+>   vào là lần xuất nào cũng ghi lại cả 69 file.
+
+> **Thiếu một mảnh thì HỎNG CẢ LƯỢT** (`packParts()` ném lỗi, `bootLoad()` hiện nút TẢI
+> LẠI), đừng nuốt lẻ từng mảnh. Nạp thiếu một mảnh là người chơi thấy đúng một nhân vật
+> trơ model vector rồi tưởng game lỗi — thà bắt bấm tải lại. Mỗi mảnh có đồng hồ chết máy
+> `PACK_STALL` riêng qua `AbortController`, cùng lý do với `packRead()`.
+
+> **Thanh tiến độ của bản chẻ ăn đứt bản một file**: `index.json` khai sẵn số byte từng
+> mảnh nên biết tổng ngay từ đầu, không phải trông vào `content-length` (thứ mà máy chủ
+> nén gzip hay giấu đi).
 - **Thứ tự nạp**: trang chơi lấy **gói TRƯỚC** rồi mới tới kho của máy (kho đằng nào cũng
   trống mà đọc hơn 80 khoá IndexedDB thì chậm); xưởng thì ngược lại — file bạn tự nạp thắng.
 - **Mọi cú `fetch` vào `assets` phải đi qua `fetchAsset()`, đừng gọi thẳng `fetch`.** Thư mục
@@ -2212,10 +2246,9 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
   Trình duyệt nào không cho đọc dòng byte thì lùi về `r.json()` như cũ.
 - **Đã bỏ `cache:'no-store'` khi tải gói** — cờ đó CẤM trình duyệt giữ lại, tức mở trang lần nào
   cũng kéo lại nguyên mấy chục MB. Bỏ đi thì trình duyệt được phép cache, và Pages có ETag nên
-  gói mới vẫn về đúng. **Nhưng đừng hứa là nhanh hơn**: đo thật thì Chrome *không* cất một mục
-  24 MB vào disk cache (mỗi mục có trần cỡ), nên lần hai vẫn tải lại — 4.1s cả hai lần trên
-  localhost. Muốn nhanh thật thì phải **chẻ gói ra nhiều file nhỏ** (mỗi nhân vật một file),
-  chưa làm.
+  gói mới vẫn về đúng. Hồi còn **một file 24 MB** thì Chrome *không* cất nổi nó vào disk cache
+  (mỗi mục có trần cỡ) nên lần hai vẫn tải lại — 4.1s cả hai lần trên localhost. **Giờ gói đã
+  chẻ nhỏ nên chỗ này hết vướng**: mảnh vài trăm KB thì cache ăn ngay.
 - **`const PACK_URL` phải khai TRƯỚC `sfxRestore()`.** Để nó ở dưới thì lúc `sfxRestore()`
   chạy (rất sớm), `PACK_URL` còn trong TDZ, `packLoad()` ném lỗi **ngay trong `try{}` và bị
   nuốt mất** — trang chơi im lặng không nạp gói, không một dòng lỗi nào. Mất một lượt dò mới ra.
@@ -3044,7 +3077,11 @@ node tools/t_play.js    # hai trang: play.html đúng bằng bản dựng từ i
                         # gói phát hành được nạp, và xưởng vẫn vào
                         # trận bằng MỘT cú bấm #cselGo; MÀN CHỜ không còn nút "vào luôn khỏi
                         # chờ" — tải đứt thì hiện nút tải lại và vẫn đứng trong màn chờ, bấm
-                        # tải lại thì về đủ ảnh mới cho vào, site không có pack thì vào thẳng
+                        # tải lại thì về đủ ảnh mới cho vào, site không có pack thì vào thẳng;
+                        # GÓI ĐÃ CHẺ: split_pack.py ra đúng số mảnh, chẻ lại lần hai thì
+                        # mảnh giống hệt từng byte, nạp đủ ảnh cả hai nhân vật, thiếu một
+                        # mảnh thì hỏng cả lượt và hiện nút tải lại, site chưa chẻ thì vẫn
+                        # lùi về pack.json một file
 node tools/t_bulk.js    # nạp hàng loạt: bảng đoán tên file (thư mục thắng tên file, alias dài
                         # thắng alias ngắn, số đuôi là số khung), nạp thật qua ô chọn file,
                         # file đoán không ra được báo tên, danh sách tên file đủ mọi ô

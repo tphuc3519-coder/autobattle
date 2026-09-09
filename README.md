@@ -47,14 +47,32 @@ thư mục `assets/` vào bảng tiếng bằng tay.)
 
 1. Mở **trang xưởng**, dán ảnh / tiếng / nhạc vào các ô (hoặc kéo cả thư mục thả vào — xem
    *Nạp hàng loạt* trong `CLAUDE.md`).
-2. Bấm **📦 Xuất gói lên web chơi** → được file `pack.json`.
-3. Chép nó vào `assets/pack/pack.json` rồi commit + push.
-4. Trang chơi tự `fetch` gói đó lúc mở. Ô nào người chơi chưa có gì thì lấy từ gói; gói
-   không bao giờ đè lên file người ta tự nạp.
+2. **Chờ dòng `Đã nạp gói phát hành: N ảnh · M tiếng` hiện ra** rồi mới bấm
+   **📦 Xuất gói lên web chơi** → được file `pack.json`. Bấm sớm là xuất ra gói thiếu và
+   đè mất phần cũ — xưởng không có màn chờ nên không có gì chặn tay bạn. Không chắc thì
+   bấm **📥 Nạp thử gói** ép nạp lại.
+3. **Chẻ nó ra rồi mới commit:**
+   ```bash
+   python3 tools/split_pack.py ~/Downloads/pack.json
+   git status --short assets/pack       # chỉ đổi đúng mấy mảnh bạn vừa sửa
+   git add assets/pack && git commit -m "cap nhat anh ginyu" && git push
+   ```
+4. Trang chơi tự đọc `assets/pack/index.json` lúc mở rồi kéo từng mảnh về. Ô nào người
+   chơi chưa có gì thì lấy từ gói; gói không bao giờ đè lên file người ta tự nạp.
 
-> `pack.json` là **một file JSON chứa toàn bộ ảnh dạng base64** nên nó nặng: mỗi PNG phình
-> thêm ~33%. GitHub chặn file trên 100 MB (và cảnh báo từ 50 MB), nên nếu bộ ảnh to thì
-> giảm số khung hoạt ảnh, hoặc chuyển sang backend (xem mục cuối).
+> **Vì sao phải chẻ.** Gói là JSON chứa ảnh base64 nên mỗi PNG phình thêm ~33% — bộ hiện
+> tại ra **25 MB**. Để nguyên một file thì dính ba chuyện cùng lúc: git không delta được
+> nên **mỗi lần xuất lại là repo phồng thêm 25 MB vĩnh viễn**; Chrome **không cache nổi**
+> một mục cỡ đó (mỗi mục có trần) nên lần nào mở trang cũng tải lại từ đầu; và GitHub chặn
+> file trên 100 MB, nút kéo thả trên web thì chặn ngay ở 25 MB. Chẻ ra — mỗi nhân vật một
+> mảnh, mỗi ô tiếng một mảnh — là hết cả ba.
+>
+> `split_pack.py` ghi JSON không khoảng trắng và **sắp khoá**, nên mảnh nào nội dung y như
+> cũ thì byte cũng y như cũ và git nhìn ra là không đổi. Ngày tháng chỉ nằm trong
+> `index.json`. Đổi cách ghi là mọi mảnh cùng "đổi" một lượt, mất sạch cái lợi đó.
+>
+> Site nào chỉ có `pack.json` một file (bản cũ, hoặc chép tay) thì trang chơi **vẫn đọc
+> được** — `index.json` trước, `pack.json` sau.
 
 ### Cách khác cho TIẾNG: thảy thẳng file vào repo
 
