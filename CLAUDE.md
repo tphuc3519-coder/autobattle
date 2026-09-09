@@ -28,13 +28,14 @@ File dài ~7500 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên --
 | `Doraemon` (khối hằng) | cả cụm `DORA`, `DORA_HI`, `DORA_HI_LIFE` |
 | `Superman` (khối hằng) | cả cụm `SUP` |
 | `Shikamaru` (khối hằng) | `gs()`, cả cụm `SHIKA`, các hằng tuổi thọ hình (`GRUMBLE_LIFE`…) |
-| *(kế đó)* | `CHARS` — `init` / `think` / `gauge` / mảng `skills` của tám nhân vật |
+| `Beatrice` (khối hằng) | `BEA_BODY_W/H`, `BEA_R`, cả cụm `BEA` |
+| *(kế đó)* | `CHARS` — `init` / `think` / `gauge` / mảng `skills` của chín nhân vật |
 | *(kế đó)* | `Store` — IndexedDB, khoá `spr_*` / `sfx_*`, nạp và xoá ảnh |
 | `âm thanh` | `SFX_EVENTS`, `synth()`, `SFX_FULL/MAXLEN/SEG/POS/ACTIVE`, `sfx()`, `playBuffer()` |
 | `nhạc nền` | nhạc nền tự sinh, `THEMES` / `setTheme()` — đổi sang theme du hành thời gian |
 | `state` | `mk()`, `mkChar()`, `foeOf()`, `buildRoster()`, `spawnSpots()`, `newGame()`, `later()`, `pop()`, `setPose()` |
 | `damage` | `stunFx()`, `tryEvade()`, **`hurt()`**, `counters()`, `koFx()`, `defeat()`, `finish()` |
-| `Konohamaru` / `ChiChi` / `Shikamaru` / `Ozora Tsubasa` / `Horikita Suzune` / `Captain Ginyu` / `Doraemon` / `Superman` | thân các chiêu thức |
+| `Konohamaru` / `ChiChi` / `Shikamaru` / `Ozora Tsubasa` / `Horikita Suzune` / `Captain Ginyu` / `Doraemon` / `Superman` / `Beatrice` | thân các chiêu thức |
 | `AI` | `MELEE_MIN/MAX/BAND/GAP`, `orbWant()`, `aiVec()`, `dodgeVec()`, `playerVec()` |
 | `step` | một hàm to — toàn bộ mô phỏng một bước 1/120 giây |
 | `draw` | `vector()`, `sprite()`, `drawFighter()`, `drawGarden()`, `drawForestGrip()`, `bombAt()`, `tendril()`, phân cảnh, băng-rôn |
@@ -80,9 +81,9 @@ while (acc >= 1/120) { step(1/120); acc -= 1/120; }
 
 ---
 
-## 2. Tám nhân vật và những con số đã chốt
+## 2. Chín nhân vật và những con số đã chốt
 
-**Cả tám người cùng 800 máu** — `HP_STD = 800`, người dùng chốt: *"máu setting chuẩn là 800"*.
+**Cả chín người cùng 800 máu** — `HP_STD = 800`, người dùng chốt: *"máu setting chuẩn là 800"*.
 Bảng `HP` chỉ là chỗ giữ con số của từng người để người chơi chỉnh lẻ; mọi chỗ cần một con số
 mặc định thì đọc `HP_STD` chứ đừng cắm cứng (xem mục 2g). *(Đường đi: bảy người 1000 + Superman
 800 → cả bảng 800.)* Bảng `CHARS` là nơi khai tất cả: mỗi nhân vật có
@@ -1412,6 +1413,263 @@ Kiểm bằng `node tools/t_superman.js`.
 > - Trần 3.5 giây đo theo chuỗi **liên tục**, với "liên tục" = chưa thở được 1 giây người chơi
 >   (`SUP.ccFree`). Muốn khắt khe hơn thì nới con số đó.
 
+### Beatrice (`beatrice`)
+Toàn bộ trong hằng `BEA`, khai theo lối của Shikamaru / Horikita / Ginyu / Doraemon /
+Superman (giây người chơi bọc `gs()`). Fighter kiểu **Mage — pháp sư tầm xa thiên về khống
+chế, tự bảo vệ và giữ khoảng cách**: đòn thường nhẹ hều, nhưng cô đẩy đối thủ ra xa liên
+tục, tự gỡ khống chế, chặn sạch sát thương rồi hắt ngược lại.
+
+> **Mọi chữ hiện ra trong game của nhân vật này là tiếng Anh** — tên nhân vật, tên chiêu,
+> tên buff, tên debuff, băng-rôn, dòng dưới thanh máu. Nhật ký vẫn tiếng Việt như mấy người
+> kia. `t_beatrice.js` quét cả mảng `skills` lẫn `DEX` để chắc không lẫn một chữ có dấu nào,
+> và soi đủ mười bốn cái tên người dùng liệt kê. Âm thanh thì giọng Nhật cũng được — chỉ
+> **chữ hiển thị** mới bắt buộc tiếng Anh.
+
+> **Người dùng chốt: "Không tự ý tăng sát thương, HP hoặc giảm hồi chiêu so với các thông số
+> đã cung cấp."** Mọi con số trong `BEA` là con số họ đưa, đừng cân bằng lại theo cảm tính.
+
+**Model.** Thân NHỎ (`spriteH:104`, thấp nhất bảng), tóc vàng với **hai lọn xoắn lớn** hai
+bên, váy hồng - trắng - đỏ, mặt nghiêm nghị hơi khó chịu, quyển sách phép cầm trên tay.
+Ba điều bắt buộc, đừng phá:
+- **Đừng biến cô thành người trưởng thành** — đầu to so với thân, chân ngắn, giữ tỉ lệ trẻ con.
+- **Đừng để váy, tóc hay hiệu ứng phép che khuất toàn bộ cơ thể** — hai lọn tóc vẽ SAU thân
+  nhưng TRƯỚC đầu, váy chỉ xoè tới ngang đùi.
+- **Đứng yên thì KHOANH TAY**, mặt hơi quay đi với thái độ kiêu kỳ (`arms` trong `beaVector`).
+
+### Tầm đánh đo bằng R — đọc kỹ trước khi sửa
+
+Người dùng chốt riêng cách đo: **R = bán kính vòng tròn ngoại tiếp nhỏ nhất bao quanh phần
+THÂN CHÍNH lúc đứng bình thường**, bỏ tóc bay, váy bay, quyển sách và mọi hiệu ứng phép.
+
+```js
+const BEA_BODY_W=34, BEA_BODY_H=96;
+const BEA_R=Math.round(Math.hypot(BEA_BODY_W,BEA_BODY_H)/2);   // = 51
+```
+
+Vòng tròn nhỏ nhất bao được một hình chữ nhật là vòng ngoại tiếp, bán kính bằng **nửa đường
+chéo** — nên R tính thẳng ra chứ không gõ tay con số. Từ đó:
+
+| | |
+|---|---|
+| **Basic Attack Range** | `5 × R` = **255** |
+| **Reflection Radius** (E.M.T) | `2.5 × R` = **127.5** |
+
+> **R phải là HẰNG SỐ, tuyệt đối đừng đọc `f.r`.** Small Light của Doraemon bóp `f.r` nhỏ đi
+> 15%, mà bản mô tả nói thẳng là tầm đánh KHÔNG đổi khi model bị phóng to hay thu nhỏ tạm
+> thời, khi cô cúi người, bị đánh ngã, hay lúc tóc và váy chuyển động.
+
+**Màn ra mắt — Forbidden Library.** Bấm *Bắt đầu* thì cô **chưa có mặt trên sàn**
+(`f.beaHide`, `drawFighter()` và `drawBars()` đều return sớm; `offField()` cũng đọc cờ này).
+Bốn pha, mốc nằm trong `BEA.doorPh`, tổng đúng **1.5 giây người chơi** để ghép tiếng:
+
+| Quãng | Có gì |
+|---|---|
+| 0 → 0.4s | cánh cửa gỗ hiện ra dần |
+| 0.4 → 0.8s | cửa mở, ánh sáng tím hắt ra từ bên trong |
+| 0.8 → 1.2s | Beatrice bước ra, tay cầm quyển sách |
+| 1.2 → 1.5s | cửa đóng lại và biến mất, cô quay về phía đối thủ |
+
+Suốt cả 1.5 giây, `beaEntryTick()` đặt `lock` cho mọi đối thủ mỗi nhịp — họ đứng chờ, không
+di chuyển cũng không đánh. Đo được: 90/91 nhịp bị khoá, địch dịch **0.00px** và **không mất
+một giọt máu nào**. Cánh cửa vẽ trong `drawBeaEntry()`, **TRƯỚC** nhân vật, để cô bước ra từ
+phía sau nó.
+
+**1 · Minya** — `BEA.minyaDmg = 15`, một đòn mỗi giây người chơi (`minyaCd: gs(1)`), nhắm kẻ
+địch **gần nhất trong tầm 5R**. Mũi tinh thể tím đen bay thẳng, **xuất phát từ trước bàn
+tay** — không phải đấm, không phải súng, không phải tia laser hiện đại.
+- **20% choáng 0.5 giây** (`minyaStunOdds` / `minyaStun`), tên hiệu ứng là **Minya Stun**.
+- **Xác suất bốc RIÊNG cho từng viên, ĐÚNG LÚC nó chạm người** — `beaMinyaHit()` gọi
+  `hurt()` trước, `return` ngay nếu đòn bị né hay bị chặn, rồi mới `chance()`. Bốc lúc bắn
+  là sai: đòn bị né vẫn choáng.
+- **Không cộng dồn thời gian**: `stunFx()` lấy `Math.max` nên viên thứ hai chỉ làm mới về
+  đúng 0.5 giây. **Đừng đổi chỗ đó thành phép cộng.** Đo được: đang choáng dở 0.2s, bắn thêm
+  một viên ⇒ vẫn 0.50s chứ không phải 0.70s.
+- Không chí mạng, không sát thương theo phần trăm máu.
+- Mục tiêu chết hoặc ra khỏi tầm **trước lúc bắn** thì bốc lại người gần nhất; **đã bắn ra
+  rồi** thì viên đạn cứ bay theo cơ chế cũ, không tự đổi mục tiêu giữa đường.
+
+**2 · Al Shamac** — mỗi `gs(5)`, ném mục tiêu ra **sát rìa tầm đánh thường**.
+- `beaShamacSpot()` bốc 32 điểm trên vòng tròn bán kính `5R × 0.94` rồi **lùi dần vào trong**
+  (82% → 68% → 54%) tới khi có chỗ hợp lệ: nằm hẳn trong sàn, không dính tường, không chồng
+  lên model của ai. Chấm điểm ưu tiên **vòng ngoài cùng** (thắng đậm, +1000 mỗi vòng) rồi mới
+  tới chỗ thoáng — "không dịch chuyển mục tiêu vào giữa nhiều model khác". Cùng lối
+  `drSafeSpot()` của Doraemon, chỉ khác là ở đây càng SÁT RÌA càng tốt.
+- Đo được: đứng cách 40px bị đẩy ra **247px**, đứng cách 279px bị kéo về **240px** — cả hai
+  đều bám mốc 255 và **không bao giờ vượt quá**.
+- Vòng đời: méo không gian `gs(.3)` → biến mất và hiện ra chỗ mới → `gs(.3)` nữa. Cả chiêu
+  đúng **0.6 giây**, không dài hơn.
+- **Chỉ dời `x/y`**, không đụng tới `alive`, `hp` hay `G.fighters` — mục tiêu không bao giờ
+  bị coi là đã chết hay đã rời trận, nên **thanh máu và tên vẫn hiện bình thường**.
+- Hiện ra: **10 dmg**, **choáng 1 giây**, và **Shamac Weakness 4 giây**.
+- **Shamac Weakness ăn vào `f.dmgOut`** (trong `beaStatus`) nên nó phủ được đòn thường, chiêu,
+  ultimate **và cả sát thương duy trì do mục tiêu tạo ra** — đúng bản mô tả. Nó **không đụng
+  tới hồi máu hay khiên** vì `dmgOut` chỉ nhân vào đúng lúc gây sát thương. **Không cộng
+  dồn**: `beaWeaken()` GÁN chứ không cộng.
+- Cắt ngang mấy chiêu cần đứng đúng chỗ (`drInterrupt(e)`), nhưng **projectile đã bắn ra thì
+  vẫn bay tiếp**.
+- Ba người trở lên: chọn **kẻ địch gần nhất lúc bắt đầu chiêu**, chỉ **một** người bị dịch
+  chuyển, không ảnh hưởng ai đứng gần chỗ xuất hiện.
+
+**3 · Murak** — mỗi `gs(7)`, tự dùng lên bản thân, **dùng được cả khi đang bị khống chế**.
+- **Chạy trong `beatriceTick()` chứ KHÔNG chạy trong `think()`**: `think()` không được gọi
+  khi `f.stun>0`, mà chiêu này bắt buộc phải phá được choáng ngay lập tức. Đúng cái bẫy của
+  Mini Rasengan và cú thoát góc của Tsubasa.
+- **TUYỆT ĐỐI đừng gác `beatriceTick()` ở `f.lock`** — đây là một **lỗi thật đã sửa**: Frozen
+  của Superman đặt `lock` mỗi nhịp trong `supStatus()`, mà `statusTick()` chạy TRƯỚC
+  `beatriceTick()` trong cùng vòng duyệt, nên gác ở `lock` thì bị đóng băng là cô đứng chịu
+  trận tới hết — đúng cái thứ Murak sinh ra để phá. Giờ gác ở `introOn()`: chỉ **màn ra mắt**
+  của ai đó mới chặn được, vì lúc đó cả sàn đứng chờ.
+- `beaCleanse()` rũ sạch: choáng, đóng băng, trói (kể cả **dải bóng Shadow-Neck Bind** — nó
+  nằm trên NGƯỜI KẾT ẤN chứ không nằm trên nạn nhân, nên phải đi tìm `o.bind.e===f` rồi cắt
+  từ đầu bên đó), quật ngã, hất tung (`kbx/kby`), làm chậm mọi loại, `lock`.
+- **KHÔNG xoá**: cháy, độc, chảy máu, sát thương duy trì, debuff giảm sát thương, dấu, hoán
+  đổi thân xác. Đừng nới danh sách ra.
+- Rồi **Murak Protection 3 giây**: **miễn khống chế 100%** (`stunFx()` return false ngay) và
+  **giảm 20% sát thương nhận vào**. Vẫn đi lại, vẫn đánh thường, vẫn tung chiêu khác được.
+- **`beaStatus()` chạy CUỐI trong `statusTick()`** và rũ sạch lại mỗi nhịp, kèm
+  `moveMul=Math.max(moveMul,1)` — miễn khống chế 100% nghĩa là gạt sạch mọi thứ làm chậm mà
+  `gnStatus` / `drStatus` / `supStatus` vừa nhân vào. Nhưng phải **giữ lại quãng khoá của
+  CHÍNH chiêu cô đang tung** (`const own=(f.beaShamac||f.beaUlt)?f.lock:0`), không thì Al
+  Shamac và El Minya tự cắt ngang mình.
+- **Giảm sát thương NHÂN chồng chứ không cộng phần trăm** — `f.dmgTake *= BEA.murakRes`, và
+  `dmgTake` là lớp nhân cuối cùng trong `hurt()`. Đo được: đòn 100 raw ⇒ **80**; cộng thêm
+  Shamac Weakness của chính kẻ tấn công ⇒ **64**, không phải 60 (cộng phần trăm) và không bao
+  giờ gộp lại thành miễn thương 100%.
+
+**4 · E.M.T** — mỗi `gs(7)`, kén kết giới sống `gs(2)`.
+- **Chặn 100% sát thương**: `hurt()` gọi `beaEmtBlock()` và return false. Lượng thật sự nhận
+  vào là **0**, kể cả sát thương duy trì. Cô **vẫn bị chọn làm mục tiêu**, đòn vẫn tính là ĐÃ
+  TRÚNG kết giới, và **KHÔNG** kèm miễn khống chế — choáng vẫn dính dù dmg thì không.
+- **Chỗ chặn nằm ĐÚNG một nơi trong `hurt()`**: SAU khi đã nhân hệ số sát thương của kẻ tấn
+  công (`src.dmgOut`, tức Shamac Weakness tính trong đó) nhưng **TRƯỚC** mọi lớp giảm sát
+  thương của chính cô. Người dùng chốt riêng chỗ này, và nó cũng là lý do phần phản lại tính
+  từ con số **đã bị Shamac Weakness cắt**.
+- **Phản lại 20% chỗ VỪA CHẶN** (`E.M.T Reflection`), thành sát thương vùng lên **mọi kẻ địch
+  trong 2.5R**. Kẻ tấn công đứng ngoài bán kính đó thì **không dính**; người khác đứng gần thì
+  vẫn dính dù không phải người vừa đánh. Đo được: chặn 50 ⇒ 10, chặn 100 ⇒ 20, chặn 200 ⇒ 40,
+  đứng ngoài 2.5R ⇒ 0.
+- **Vì kết giới chặn sạch nên lượng thật nhận vào là 0 — đừng lấy con số 0 đó để tính phản
+  đòn.** `beaEmtBlock()` nhận `amt` trước khi vứt bỏ chính vì thế.
+- **Mỗi lần dmg tính riêng**: một đòn nhiều nhịp, hay mỗi tick độc, đi qua `hurt()` riêng nên
+  cũng phản riêng. Đo được: tick độc 5 dmg ⇒ phản đúng 1 dmg.
+- **Đòn phản đi bằng `kind='reflect'`** và **không bao giờ được phản lại lần nữa** — hai
+  Beatrice đối đầu nhau thì bên kia vẫn CHẶN được nhưng không phản, nên không có vòng lặp vô
+  hạn. `reflect` cũng không cộng dồn tỉ lệ né của Shikamaru (cùng họ với `big`), không chí
+  mạng, không choáng, không làm chậm.
+- Hết 2 giây thì kén vỡ thành hạt sáng rồi biến mất: **không gây thêm sát thương** và
+  **không để lại khiên nào**.
+- Kén **di chuyển cùng cô**, không đứng lại chỗ kích hoạt (`drawBeaEmt()` đọc `f.x/f.y` mỗi
+  khung hình). Mỗi lần chặn được một đòn thì mặt kén gợn sóng (`f.beaRipple`).
+
+**5 · El Minya** — mỗi `gs(8)`, **ba mũi tinh thể TÁCH BIỆT** chứ không phải một luồng năng
+lượng liền mạch.
+- Mốc bắn: **0.65 / 0.90 / 1.15 giây người chơi** (`ultAim` + `ultGap`). Đo được đúng ba mốc đó.
+- **50 dmg mỗi mũi**, tổng trực tiếp **150**. Mỗi mũi có collision riêng, bay thẳng, **không
+  dò tìm**, và **dừng lại ở fighter ĐẦU TIÊN nó chạm** — không xuyên qua ai để đi tìm mục
+  tiêu ban đầu, nên người vô tình đứng chắn đường vẫn ăn đủ dmg + Minya Slow + Mana Erosion.
+- **Mỗi mũi ngắm vào chỗ mục tiêu đang đứng ĐÚNG LÚC nó rời tay**, nên mũi thứ hai và thứ ba
+  né được.
+- Mục tiêu gục giữa loạt ⇒ mấy mũi còn lại chuyển sang kẻ địch gần nhất còn sống; không còn
+  ai hợp lệ ⇒ mũi chưa bắn bị huỷ.
+- **Minya Slow** −50% tốc chạy trong 3 giây, **không cộng dồn phần trăm**: trúng cả ba mũi
+  vẫn đúng −50% chứ không phải −150%. `beaSlowOn()` GÁN chứ không cộng; hệ số nhân vào
+  `moveMul` trong `beaStatus()`.
+- **Mana Erosion** cộng dồn tới **3 stack**, mỗi stack **2 HP mỗi giây người chơi** trong 3
+  giây, **mỗi stack có đồng hồ riêng và hết hạn riêng**. Đủ ba stack là **6 HP/s**, tổng DoT
+  **18**, nên trần của một lượt El Minya là **150 + 18 = 168**.
+  - Sát thương đi đường `dots[]` của engine, mà `dots[].dps` tính theo **giây trong trận** —
+    nên hằng số khai là `2*RT` (mục 1). Không chí mạng, không theo phần trăm máu, không kích
+    hoạt cửa choáng của Minya.
+  - **Số stack ĐẾM THẲNG TỪ `f.dots`** (`beaEroStacks()`), đừng nuôi một mảng song song.
+    Có tới năm chỗ trong game xoá sạch `dots` một lượt — phân cảnh gọi Goku / Gohan, CHANGE
+    của Ginyu, Time Machine của Doraemon, Ayanokouji rời sàn — mà mảng song song thì không
+    ai xoá theo. Lệch nhau là hiện sai số stack rồi **từ chối cộng stack mới** vì tưởng đã
+    đủ trần. Đếm từ `dots` thì mỗi stack tự có `left` riêng và tự hết hạn riêng trong
+    `step()`, đúng luật "mỗi stack có thời gian tồn tại riêng" mà không phải nuôi thêm
+    đồng hồ nào.
+  - Quá trần thì **làm mới stack cũ nhất** chứ không đẩy thêm cái thứ tư. Đo được: bắn mũi
+    thứ tư vẫn đúng 3 stack.
+- Dáng ra chiêu **sống hết chiêu** (`setPose` đặt lại mỗi nhịp trong `beaUltTick`), đúng luật
+  đã chốt cho Ginyu Beam.
+- Choáng trong `gs(.4)` đầu ⇒ huỷ, chờ 50% hồi chiêu (`drInterrupt` chỉ cắt khi `fired===0`);
+  bắn mũi đầu rồi thì mấy mũi sau vẫn ra.
+
+**Thứ tự tự dùng chiêu — Murak → E.M.T → Al Shamac → El Minya → Minya.** Không phải xếp hàng
+đợi gì cả: `beatriceTick()` (Murak, E.M.T) chạy trong vòng duyệt fighter, còn `think()` (Al
+Shamac, El Minya, Minya) chạy ở vòng SAU đó trong cùng một nhịp `step()`. Thứ tự tự đúng.
+Mọi chiêu **tự bung ngay khi hồi chiêu xong**, không giữ lại chờ thời cơ. Đòn thường tạm dừng
+trong lúc chạy animation chiêu nhưng **hồi chiêu `s1` vẫn trôi** (vòng trừ `f.cds` chạy cho
+mọi người mỗi nhịp) — không bao giờ reset.
+
+**AI — `beaVec()`** thay hẳn nhánh `ranged` của `aiVec()`. Ngoài `5R` thì tiến vào cho tới khi
+bắn được; trong tầm thì giữ `BEA.want = 4.2R = 214` và đánh xa. **Bị áp sát thì cô KHÔNG tự
+chạy trốn** — người dùng chốt: Al Shamac mới là thứ đẩy đối phương ra. **Không cho bay lượn
+quanh sàn để né đòn**: quãng bay nhẹ của Murak chỉ là hiệu ứng nhìn (`f.beaLift`, đi chung
+đường độ cao với Take-copter và `supAir`), và cô **không bao giờ tự dịch chuyển bản thân**.
+
+> **Đo hành vi AI phải dùng đối thủ ĐỨNG YÊN.** Đo với ChiChi đang lao vào thì trung vị
+> khoảng cách ra 77px — đó là hành vi của ChiChi chứ không phải của cô, và bản mô tả nói rõ
+> cô không được tự chạy trốn. `t_beatrice.js` vì vậy ghim chân đối thủ ở 440px rồi mới đo.
+
+**Ăn mừng / gục ngã.**
+- Thắng: đóng quyển sách, **khoanh hai tay**, quay nhẹ mặt sang một bên với vẻ kiêu kỳ. Cánh
+  cửa Forbidden Library hiện phía sau (`drawBeaWin()`), cô nhìn lại sàn đấu rồi bước vào.
+  Băng-rôn ghi **`WINNER` + `BEATRICE WINS!`**, chữ dưới thanh máu vẫn là `Beatrice`.
+  **Đừng cho cô cười tươi hay ăn mừng năng động** — giữ đúng tính cách lạnh lùng, kiêu kỳ.
+- Thua: dáng `down` — quyển sách rơi khỏi tay và nằm dưới đất, cô lùi lại, quỳ xuống rồi ngã
+  sang một bên. Mấy hạt ma thuật tím quanh người nhạt dần rồi tắt. **Không máu me, không hiệu
+  ứng tử vong.**
+
+**Ô dán ảnh riêng**: `minya` · `shamac` · `murak` · `emt` · `elminya` · `win` · `down`, cộng
+`idle/hurt/injured`. Thiếu ảnh thì lùi về ô gần nghĩa nhất (`minya` ↔ `elminya`, `murak` ↔
+`emt`, `shamac` → `minya`).
+**Ô dán tiếng**: nhóm riêng `Beatrice` trong `SFX_GROUPS`, mười ô — `bea_door`, `bea_book`,
+`bea_minya`, `bea_shamac`, `bea_warp`, `bea_murak`, `bea_emt`, `bea_reflect`, `bea_elminya`,
+`bea_down`. Mỗi ô có `case` riêng trong `synth()`, đúng luật ở mục 4. **Trúng đòn thì mượn
+thẳng `sfx('hit')`**, đúng lối đã chốt cho Horikita / Ginyu / Doraemon / Superman — đừng dựng
+ô mới.
+
+Nút thử tay: `#testBeaShamac`, `#testBeaMurak`, `#testBeaEmt`, `#testBeaUlt`.
+Kiểm bằng `node tools/t_beatrice.js`.
+
+> **Chỗ đã tự quyết, nói rõ để sau này khỏi cãi nhau:**
+> - **R = 51** suy ra từ hộp thân **34×96** ở tư thế đứng. Bản mô tả nói cách ĐO chứ không nêu
+>   con số, nên hộp thân là chỗ tôi tự chốt (bỏ tóc, váy, sách, hiệu ứng đúng như họ dặn).
+>   Muốn đổi tầm đánh thì sửa `BEA_BODY_W` / `BEA_BODY_H`, đừng ghim số 255 vào chỗ khác.
+> - **Hằng số thời gian hiểu là giây NGƯỜI CHƠI** rồi bọc `gs()`, đúng lối mọi nhân vật mới —
+>   đó là con số người chơi đọc được trên bảng kỹ năng.
+> - **E.M.T cũng tự dùng ngay khi hồi chiêu xong dù đang bị choáng** (nó nằm trong
+>   `beatriceTick` cạnh Murak). Bản mô tả không nói nó phá được khống chế, nhưng có nói mọi
+>   chiêu phải tự bung ngay khi hồi xong và hai chiêu tự dùng lên bản thân không cần địch
+>   trong tầm — dựng một lớp kén thì không cần cử động. Muốn khắt khe hơn thì dời nhánh
+>   `cds.s5` sang `think()`.
+> - **`BEA.want = 4.2R`** là quãng cô muốn giữ khi mục tiêu đã ở trong tầm; bản mô tả chỉ nói
+>   "dừng lại và tấn công từ xa" chứ không nêu con số.
+> - **Hai câu trong bản mô tả đá nhau về Mana Erosion và phản đòn.** Một chỗ nói *"Damage
+>   theo thời gian của Mana Erosion không kích hoạt phản damage"*, chỗ khác lại nói thẳng
+>   *"Nếu một hiệu ứng poison gây 5 damage mỗi giây, mỗi tick bị chặn sẽ phản lại 1 damage"*.
+>   Tôi lấy **câu cụ thể về E.M.T**: mỗi nhịp sát thương duy trì bị kết giới chặn đều được
+>   phản lại riêng. Câu kia hiểu là Mana Erosion không tự nó kích hoạt mấy hiệu ứng ăn theo
+>   "on hit" của người mang nó — mà trong game này thì vốn không có hiệu ứng nào như vậy.
+> - **Bản mô tả nói ultimate bị huỷ khi "knockdown, silence hoặc bị đánh bại"** cắt ngang sau
+>   mũi đầu. Engine này không có knockdown hay silence tách riêng khỏi `stun` — cú quật ngã
+>   của Meteor Strike cũng đi qua `stunFx` như mọi cú choáng khác. Nên tôi lấy đúng cái luật
+>   nêu rõ ràng: **choáng trong `ultBreak` giây đầu thì huỷ, bắn được mũi đầu rồi thì loạt
+>   bắn cứ chạy tiếp**. `beatriceTick()` nằm trong vòng duyệt fighter nên nó không bị `stun`
+>   chặn, đúng như bản mô tả muốn.
+
+> **Đo bước chân của cô phải TÁCH HAI CHẶNG.** Gộp chung một cửa sổ ngắn là đo nhầm cả quãng
+> đang chạy tới: đặt địch ở 440px rồi đo ngay 9 giây đầu thì đỉnh ra 291px trên tầm 255, mà
+> lúc đó cô vẫn đang đi vào. Đo đúng thì phải chờ cô tới nơi rồi mới lấy mẫu — `t_beatrice.js`
+> đo chặng ĐI VÀO trước (mất bao nhiêu nhịp để kéo mục tiêu vào trong 5R), rồi mới đo chặng
+> ĐỨNG ĐÁNH: ổn định thì cô giữ **185~215px**, không bao giờ vượt 255.
+
+> **Vector của `beaVec()` được CHUẨN HOÁ trong `step()`** rồi mới nhân tốc chạy, nên mấy con
+> số trong đó chỉ là TRỌNG SỐ bỏ phiếu — hướng của TỔNG mới quyết định đi đâu. Vì vậy lúc
+> sắp trôi ra khỏi tầm thì lực kéo vào phải ÁP ĐẢO (3.4) và đám nhiễu phải tắt bớt (×0.25):
+> để lực kéo 1.15 ngang ngửa tổng nhiễu 1.15 là cô trôi hẳn ra ngoài tầm rồi đứng đó không
+> bắn được ai.
+
 ---
 
 ## 2c. Ba chế độ đấu — 1v1, hỗn chiến, đánh theo đội
@@ -2581,7 +2839,7 @@ nên đổi độ phân giải không phải tính lại toạ độ. `recCanvas
 Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 
 ```bash
-node tools/t_reg.js     # 36 cặp đấu, chạy theo đợt, bắt lỗi trang, xem cơ chế lớn có nổ không
+node tools/t_reg.js     # 45 cặp đấu, chạy theo đợt, bắt lỗi trang, xem cơ chế lớn có nổ không
 node tools/t_modes.js   # ba chế độ đấu: 1v1 vẫn y như cũ (hai người, đúng hai đầu sàn),
                         # hỗn chiến (mỗi người một phe, hạ một người thì trận còn chạy,
                         # người cuối cùng thắng, băng-rôn gạch tên người đã bị hạ,
@@ -2629,14 +2887,14 @@ node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Ea
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
 node tools/t_ui.js      # đổi tên game, hai ngôn ngữ (MẶC ĐỊNH TIẾNG ANH, nút đổi ở cả ba chỗ,
-                        # chữ và mô tả chiêu đổi theo, nhớ lại lựa chọn), hồ sơ tám nhân vật
+                        # chữ và mô tả chiêu đổi theo, nhớ lại lựa chọn), hồ sơ chín nhân vật
                         # đủ song ngữ + thẻ chiêu vẽ ra thật, nhạc nền mặc định tắt và chạy
                         # theo ô nhạc tự nạp; và CHÍN Ô TIẾNG GIAO DIỆN: đủ ô, đủ case
                         # trong synth(), bấm chọn nhân vật / ô màn / nút chế độ đều có tiếng
 node tools/t_dex.js     # chạm hai lần vào ô nhân vật thì bật bảng thông số (đúng người vừa chạm,
                         # hai nút xem skill nằm trong bảng và đi chung lựa chọn với cặp ngoài,
                         # một cú bấm thì chỉ chọn, X / Esc đóng được, hai cú cách xa nhau
-                        # không tính), biểu đồ sức mạnh chín trục (đủ tám nhân vật, thang 0-100, sáu bậc chữ cái,
+                        # không tính), biểu đồ sức mạnh chín trục (đủ chín nhân vật, thang 0-100, sáu bậc chữ cái,
                         # nhãn không tràn khỏi khung), hai lối xem skill (đơn giản không kèm bảng
                         # chấm điểm, chi tiết thì có đủ chín dòng — biểu đồ có ở CẢ HAI), máu chuẩn
                         # 800 và ba đường chỉnh máu chạy được ngay trên trang chơi, màn rừng đã bỏ
@@ -2703,11 +2961,35 @@ node tools/t_superman.js # Superman: màn xuất hiện 1.5s bốn pha (bóng ng
                         # trượt thì nằm 1.3s và Man of Steel còn 10%), trần khống chế cứng
                         # 3.5s, Kryptonian Flight, từng con số dmg = làm tròn(gốc × 0.75),
                         # và chữ hiển thị đều bằng tiếng Anh
+node tools/t_beatrice.js # Beatrice: cửa Forbidden Library đúng 1.5s và địch chỉ đứng chờ,
+                        # tầm đánh 5 × R suy từ hộp thân 34×96 (R = 51 ⇒ 255, phản đòn 127.5),
+                        # Minya 15 dmg + choáng 20% × 0.5s KHÔNG cộng dồn, Al Shamac ném địch
+                        # ra sát rìa 5R (quá gần thì đẩy ra, quá xa thì kéo về, không bao giờ
+                        # vượt tầm, không chồng lên model nào) + Shamac Weakness −20% dmg,
+                        # Murak tự bung DÙ ĐANG BỊ CHOÁNG và phá luôn cả đóng băng lẫn dải
+                        # bóng của Shikamaru nhưng không xoá dot, E.M.T chặn 0 dmg và phản
+                        # đúng 20% trong 2.5R (đứng ngoài thì không dính, đòn phản không phản
+                        # lại lần nữa), El Minya ba mũi ở 0.65/0.90/1.15s + Minya Slow không
+                        # cộng dồn + Mana Erosion trần 3 stack = 6 HP/s, hai lớp giảm sát
+                        # thương NHÂN chồng (80 rồi 64 chứ không phải 60), và chữ hiển thị
+                        # đều bằng tiếng Anh
 ```
 
-> **`t_reg.js` giờ chạy 36 trận** (8 nhân vật), theo đợt 5 trang một lượt. Máy test yếu thì mỗi trận trôi
+> **`t_buff.js` có một mục CHẬP CHỜN sẵn từ trước, không phải lỗi của ai mới đụng vào.**
+> Mục *"Drive Shot hất lùi khoảng 20% sàn (~124px)"* đo bằng cách bám cú dịch xa nhất
+> **trong lúc trận vẫn chạy**, lấy mẫu mỗi 10ms — mà Konohamaru thì vẫn đang đi lại, nên con
+> số nhảy theo chỗ anh đứng và theo việc lượt lấy mẫu có rơi trúng đỉnh hay không. Đo trên
+> `origin/main` (chưa có Beatrice) ra **165px** một lần rồi **đạt** lần sau; đo trên nhánh
+> Beatrice ra **91px** một lần rồi **đạt** lần sau — cùng một mục, cùng kiểu chập chờn, ở cả
+> hai bên. Thấy nó đỏ thì **chạy lại một lượt** trước khi đi tìm nguyên nhân trong code.
+>
+> Cùng họ với chuyện này: máy test không có GPU nên chạy nhiều bộ test SONG SONG là mấy phép
+> đo theo dòng thời gian lệch hẳn, và `t_suzune.js` có thể chạy quá `timeout`. Chạy từng bộ
+> một khi cần con số chính xác.
+
+> **`t_reg.js` giờ chạy 45 trận** (9 nhân vật), theo đợt 5 trang một lượt. Máy test yếu thì mỗi trận trôi
 > chậm hẳn và nhiều trận báo "còn đánh" thay vì "kết thúc" — đó là chuyện bình thường,
-> mục cần xem là dòng cuối `DAT 36/36 tran sach loi`. Muốn soi kỹ một cặp thì chạy riêng.
+> mục cần xem là dòng cuối `DAT 45/45 tran sach loi`. Muốn soi kỹ một cặp thì chạy riêng.
 
 Tất cả trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng
 hoặc tới `step()`.**

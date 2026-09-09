@@ -1,9 +1,9 @@
-/* Chạy đủ 36 cặp đấu (28 cặp khác nhau + 8 trận gương) song song, xem có trận nào
+/* Chạy đủ 45 cặp đấu (36 cặp khác nhau + 9 trận gương) song song, xem có trận nào
    ném lỗi trang không và các cơ chế lớn có thật sự nổ ra không.
    Chạy: node tools/t_reg.js */
 const { build, playwright } = require('./probe');
 
-const K = ['kono', 'chichi', 'tsubasa', 'shika', 'suzune', 'ginyu', 'dora', 'superman'];
+const K = ['kono', 'chichi', 'tsubasa', 'shika', 'suzune', 'ginyu', 'dora', 'superman', 'beatrice'];
 const MOC = 60;          // giây trong trận, đủ để một trận ngã ngũ
 
 (async () => {
@@ -92,6 +92,15 @@ const MOC = 60;          // giây trong trận, đủ để một trận ngã ng
           if (f.supCombo) seen.add('sup-combo');
           if (f.frozen > 0) seen.add('frozen');
           if (f.chill > 0) seen.add('chilled');
+          if (f.beaEntry) seen.add('bea-entry');
+          if (f.beaShamac) seen.add('bea-shamac');
+          if (f.beaWarp) seen.add('bea-warp');
+          if (f.beaWeak > 0) seen.add('bea-weak');
+          if (f.beaMurak > 0) seen.add('bea-murak');
+          if (f.beaEmt > 0) seen.add('bea-emt');
+          if (f.beaUlt) seen.add('bea-ult');
+          if (f.beaSlow > 0) seen.add('bea-slow');
+          if (f.dots && f.dots.some(d => d && d.bea)) seen.add('bea-erosion');
         }
         if (G.over || G.t - t0 > moc) { clearInterval(id); xong(); }
       }, 60);
@@ -102,7 +111,7 @@ const MOC = 60;          // giây trong trận, đủ để một trận ngã ng
     return { a, c, ...r, errors };
   };
 
-  /* Chạy theo từng đợt chứ đừng mở cả 36 trang một lúc: máy test không có GPU, mở hết
+  /* Chạy theo từng đợt chứ đừng mở cả 45 trang một lúc: máy test không có GPU, mở hết
      cùng lúc thì mỗi trận chỉ trôi được 1~2 giây trong trận và mấy cơ chế máu thấp không
      kịp nổ ra — nhìn thì vẫn "sạch lỗi" nhưng chẳng kiểm được gì. */
   const LO = 5;
