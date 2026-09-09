@@ -122,7 +122,23 @@ async function daHet(page, tran) {
   await page.click('#compGo');
   await page.waitForTimeout(350);
   const cap = await doc(() => window.__G().fighters.filter(f => !f.summon).map(f => f.key));
-  await doc(k => window.__compWin(k), cap[1]);            // cho bên B thắng
+  /* ---------- HIỆU SỐ = MÁU CÒN LẠI CỦA NGƯỜI THẮNG ----------
+     Người dùng chốt: "winner có 32 máu thì +32, còn loser −32". Ghim máu hai bên rồi mới
+     kết trận để con số đo được là số chính xác chứ không phải xấp xỉ. */
+  const hs = await doc(k => {
+    const G = window.__G();
+    const w = G.fighters.find(f => !f.summon && f.key === k);
+    const l = G.fighters.find(f => !f.summon && f.key !== k);
+    w.hp = 137; l.hp = 0;
+    window.__compWin(k);                                 // cho bên B thắng
+    const T = window.__COMP().tab, gd = x => T[x].gf - T[x].ga;
+    const tr = window.__COMP().fix.find(m => m.w);
+    return { win: gd(k), thua: gd(l.key), ga: tr.ga, gb: tr.gb, wk: k, ak: tr.a };
+  }, cap[1]);
+  ok(hs.win === 137, `nguoi thang con 137 mau thi hieu so +137 (${hs.win})`);
+  ok(hs.thua === -137, `nguoi thua bi tru dung bay nhieu (${hs.thua})`);
+  ok((hs.wk === hs.ak ? hs.ga : hs.gb) === 137 && (hs.wk === hs.ak ? hs.gb : hs.ga) === 0,
+    `dong ket qua in mau con lai cua ca hai ben (${hs.ga}-${hs.gb})`);
   /* ---------- hiệu ứng bảng xếp hạng ----------
      Người dùng: "làm hiệu ứng khi 1 người thắng trận rồi movement thay đổi vị trí và điểm
      số trên bxh cho nó hay". Rình đúng lúc bảng bật lên: style nội tuyến bị đặt về 0 ngay
@@ -243,6 +259,26 @@ async function daHet(page, tran) {
   ok(cx.het && cx.da === 8, `da du tam tran (${cx.da})`);
   ok(!!cx.vd && cx.vd === cx.ck.w, `nha vo dich la nguoi thang chung ket (${cx.vd})`);
   ok(!!cx.ba && cx.ba !== cx.vd, `tranh hang ba co ket qua rieng (${cx.ba})`);
+
+  /* ---------- giải lưu dở theo lối tính hiệu số CŨ ----------
+     Bản trước lấy sát thương làm hiệu số. Cộng tiếp số của lối mới vào đó là trộn hai đơn
+     vị, bảng đọc ra vô nghĩa — nên `loadSaved()` thấy `sc` cũ thì xoá cột hiệu số về 0 mà
+     vẫn giữ nguyên điểm / thắng / thua. */
+  const cu = await doc(async () => {
+    const c = { kind: 'league', sc: 1, keys: ['kono', 'chichi'],
+      tab: { kono: { p: 1, w: 1, l: 0, gf: 851, ga: 369, pts: 3 },
+             chichi: { p: 1, w: 0, l: 1, gf: 369, ga: 851, pts: 0 } },
+      fix: [{ r: 0, a: 'kono', b: 'chichi', w: 'kono', ga: 851, gb: 369, leg: 1 }],
+      nr: 1, legs: 1, cur: null };
+    await window.__Store.set('cfg_comp', JSON.stringify(c));
+    await window.__loadSaved();
+    await new Promise(r => setTimeout(r, 400));
+    const C = window.__COMP();
+    return { sc: C.sc, gf: C.tab.kono.gf, ga: C.tab.kono.ga, pts: C.tab.kono.pts, w: C.tab.kono.w };
+  });
+  ok(cu.gf === 0 && cu.ga === 0, `giai luu theo loi cu: cot hieu so ve 0 (${cu.gf}/${cu.ga})`);
+  ok(cu.pts === 3 && cu.w === 1, `nhung diem va so tran thang giu nguyen (${cu.pts}d / ${cu.w}t)`);
+  ok(cu.sc === 2, `danh dau lai sang loi tinh moi (sc=${cu.sc})`);
 
   ok(errors.length === 0, `khong co loi trang (${errors.slice(0, 2).join(' | ')})`);
   await browser.close();

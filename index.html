@@ -868,7 +868,7 @@ const L={
     legsHint:'{n} trận · {v} vòng', leg1:'Lượt đi', leg2:'Lượt về',
     lgRound:'Vòng {n}/{t}', lgTeam:'Đấu thủ', lgP:'Trận', lgW:'Thắng', lgL:'Thua',
     lgDiff:'Hiệu số', lgPts:'Điểm',
-    lgDiffTip:'Hiệu số = sát thương gây ra − sát thương phải chịu. Viện binh (Goku, Gohan, Ayanokouji) tính cho người gọi ra họ; đòn thừa lúc kết liễu không tính.',
+    lgDiffTip:'Hiệu số = máu còn lại của người thắng: thắng mà còn 32 máu thì +32, người thua −32. Trận hết giờ thì lấy máu của người còn nhiều phần trăm hơn.',
     cupQF:'Tứ kết', cupSF:'Bán kết', cupFinal:'Chung kết', cupThird:'Tranh hạng ba',
     compNext:'Trận kế tiếp', compGo:'▶ Đánh trận này', compTable:'Bảng xếp hạng',
     compBracket:'Sơ đồ nhánh', compResults:'Kết quả đã đá', compPick:'⚔ Đổi đội hình',
@@ -930,7 +930,7 @@ const L={
     legsHint:'{n} matches · {v} rounds', leg1:'First leg', leg2:'Second leg',
     lgRound:'Round {n}/{t}', lgTeam:'Fighter', lgP:'P', lgW:'W', lgL:'L',
     lgDiff:'Diff', lgPts:'Pts',
-    lgDiffTip:'Diff = damage dealt − damage taken. A summon (Goku, Gohan, Ayanokouji) scores for whoever called it; overkill on the finishing blow does not count.',
+    lgDiffTip:'Diff = the winner HP left: win with 32 HP and you get +32, the loser gets −32. On a time-out the winner is whoever has the higher HP percentage.',
     cupQF:'Quarter-finals', cupSF:'Semi-finals', cupFinal:'Final', cupThird:'Third place',
     compNext:'Next match', compGo:'▶ Play this match', compTable:'Standings',
     compBracket:'Bracket', compResults:'Played', compPick:'⚔ Change line-up',
@@ -1932,6 +1932,12 @@ async function saveChar(ck){
   try{ await Store.set('spr_'+ck,json); status(`Đã lưu ảnh (${(json.length/1048576).toFixed(1)} MB). Lần sau mở lại là có sẵn.`); }
   catch(err){ status('Không lưu được (ảnh quá nặng). Thử ảnh nhỏ hơn hoặc dùng nút Xuất file.'); }
 }
+/* Lối tính hiệu số của giải. Bản 1 lấy SÁT THƯƠNG, bản 2 lấy MÁU CÒN LẠI CỦA NGƯỜI
+   THẮNG. Giải lưu dở theo lối cũ mà cộng tiếp số của lối mới thì hai đơn vị trộn vào
+   nhau, nên `loadSaved()` thấy `sc` cũ là xoá cột hiệu số về 0 (giữ nguyên điểm, thắng,
+   thua). Khai ở ĐÂY chứ không khai chung với `COMP_MAXT` mãi dưới khối giải đấu:
+   `loadSaved()` chạy rất sớm, để dưới là đúng cái bẫy TDZ ở mục 9. */
+const COMP_SC=2;
 async function loadSaved(){
   try{
     let dirty=false;
@@ -1944,6 +1950,13 @@ async function loadSaved(){
         const c=JSON.parse(raw);
         if(!c||(c.kind!=='league'&&c.kind!=='cup')) return;
         if(!Array.isArray(c.keys)||!c.keys.length||!c.keys.every(k=>!!CHARS[k])) return;
+        /* Giải lưu từ bản tính hiệu số theo SÁT THƯƠNG: xoá cột đó về 0 chứ đừng cộng
+           tiếp bằng máu còn lại — hai đơn vị trộn vào nhau thì bảng đọc ra vô nghĩa.
+           Điểm / thắng / thua giữ nguyên, chỉ hiệu số bắt đầu lại. */
+        if(c.sc!==COMP_SC){
+          if(c.tab) for(const k in c.tab){ c.tab[k].gf=0; c.tab[k].ga=0; }
+          c.sc=COMP_SC;
+        }
         COMP=c; compLive=false; c.cur=null;
       }catch(e){}
     }).catch(()=>{});
@@ -4101,7 +4114,7 @@ function leagueNew(keys,legs){
       const a=keys[pair[L%2]], b=keys[pair[(L+1)%2]];
       fix.push({r:r+L*vong.length,a,b,w:null,ga:0,gb:0,leg:L+1});
     }));
-  return {kind:'league',keys:keys.slice(),tab,fix,nr:vong.length*n,legs:n,cur:null};
+  return {kind:'league',sc:COMP_SC,keys:keys.slice(),tab,fix,nr:vong.length*n,legs:n,cur:null};
 }
 function cupNew(keys){
   const n=keys.length, r1=[];
@@ -4109,7 +4122,7 @@ function cupNew(keys){
   const rs=[r1];
   for(let c=r1.length;c>1;){ c>>=1; const v=[]; for(let i=0;i<c;i++) v.push({a:null,b:null,w:null,ga:0,gb:0}); rs.push(v); }
   /* Trận tranh hạng ba đánh TRƯỚC chung kết, đúng lối World Cup. */
-  return {kind:'cup',keys:keys.slice(),rounds:rs,third:{a:null,b:null,w:null,ga:0,gb:0},cur:null};
+  return {kind:'cup',sc:COMP_SC,keys:keys.slice(),rounds:rs,third:{a:null,b:null,w:null,ga:0,gb:0},cur:null};
 }
 /* Đẩy người thắng lên vòng sau, và lấy hai người thua bán kết xuống trận tranh hạng ba. */
 function cupFill(C){
@@ -4204,12 +4217,17 @@ function compResult(win){
   }else cupAnim=m.ref;
   const mains=G.fighters.filter(f=>f&&!f.summon);
   const A=mains.find(f=>f.key===m.a)||mains[0], B=mains.find(f=>f.key===m.b)||mains[1];
-  const ga=Math.round((A&&A.dmgDealt)||0), gb=Math.round((B&&B.dmgDealt)||0);
+  /* Hiệu số = MÁU CÒN LẠI CỦA NGƯỜI THẮNG, người dùng chốt: "winner có 32 máu thì +32,
+     còn loser −32". Không phải sát thương, không phải máu của kẻ thua — một trận cho ra
+     đúng một con số, cộng cho người thắng và trừ đúng bấy nhiêu của người thua. Dòng kết
+     quả thì in máu còn lại của CẢ HAI bên (`0–32`), thua vì cạn máu nên vế kia là 0; chỉ
+     trận hết giờ mới có hai số cùng dương. */
+  const ga=Math.max(0,Math.round((A&&A.hp)||0)), gb=Math.max(0,Math.round((B&&B.hp)||0));
   const wk=(win&&win.key===m.b)?m.b:m.a;    // không đọc ra được thì mặc định bên A
   m.ref.w=wk; m.ref.ga=ga; m.ref.gb=gb;
   if(COMP.kind==='league'){
-    const T=COMP.tab, lk=wk===m.a?m.b:m.a;
-    T[m.a].gf+=ga; T[m.a].ga+=gb; T[m.b].gf+=gb; T[m.b].ga+=ga;
+    const T=COMP.tab, lk=wk===m.a?m.b:m.a, con=wk===m.a?ga:gb;
+    T[wk].gf+=con; T[lk].ga+=con;           // thắng +máu còn lại, thua −đúng bấy nhiêu
     T[wk].p++; T[lk].p++; T[wk].w++; T[lk].l++; T[wk].pts+=LG_WIN;
   }
   COMP.cur=null;

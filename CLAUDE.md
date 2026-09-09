@@ -1460,24 +1460,29 @@ là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa 
 - **Không có trận HOÀ.** Game đối kháng thì luôn có người gục; chỗ duy nhất có thể hoà là
   hết giờ, mà chỗ đó đã xử bằng "ai còn nhiều % máu hơn thì thắng". Vì vậy bảng chỉ có
   `P · W · L · Hiệu số · Điểm`, đừng thêm cột D cho rối.
-- **Hiệu số đo bằng SÁT THƯƠNG**, không phải bàn thắng: `gf` = sát thương mình gây ra trong
-  trận đó (`f.dmgDealt`), `ga` = sát thương phải chịu. Đây là thứ gần "bàn thắng" nhất mà
-  game có, và nó phân định được hai người cùng điểm.
-  - **`hurt()` ghi công viện binh cho CHỦ** (`src.summon ? src.master : src`). Người dùng
-    soi ra chỗ này: trận ChiChi vs Doraemon đọc `369–851` trong khi Doraemon kết trận với
-    32 máu — tức anh mất gần 800 mà sổ chỉ ghi cho ChiChi có 369. Lý do: cả Kamehameha 400
-    lẫn năm đợt Masenko đều do object của **Goku / Gohan** bắn ra, mà dòng cộng dồn cũ gác
-    ở `!src.summon` nên **không ghi cho ai cả**. Đo được: cú Kamehameha 400 dmg trước sửa
-    cộng cho ChiChi **0**, sau sửa cộng đúng **400**. Phân thân của Konohamaru thì chưa
-    bao giờ dính lỗi này — nó là viên đạn mang `owner: k`, tức chính cậu.
-  - **Đòn thừa lúc kết liễu không tính**: cộng `Math.min(amt, t.hp)` chứ không cộng cả
-    `amt`. Đo được: đấm 400 vào người còn 30 máu, trước sửa ghi **400**, sau sửa ghi **30**.
-    Không chặn thì một cú ultimate vào người sắp gục đẩy hiệu số lên cả trăm điểm oan.
-  - **Hiệu số vẫn KHÔNG bằng "800 − máu còn lại"**, và đó không phải lỗi: Horikita hồi máu
-    theo đòn, Doraemon tua ngược Time Machine, nên tổng sát thương phải chịu lớn hơn quãng
-    máu đã tụt. Cột này đo *sát thương*, không đo *máu*.
-  - Cột `HIỆU SỐ` có `title` giải thích đúng ba luật trên (`lgDiffTip`, song ngữ) — hỏi
-    "tính kiểu gì" thì rê chuột vào là ra, không phải thêm dòng chữ nào lên bảng.
+- **Hiệu số = MÁU CÒN LẠI CỦA NGƯỜI THẮNG.** Người dùng chốt: *"winner có 32 máu thì +32,
+  còn loser −32"*. Một trận cho ra **đúng một con số**: cộng cho người thắng, trừ đúng bấy
+  nhiêu của người thua (`T[wk].gf += con; T[lk].ga += con`). Máu của kẻ thua **không** tính —
+  thường là 0, và trận hết giờ thì cũng chỉ lấy máu của người thắng.
+  - Dòng *kết quả đã đá* in **máu còn lại của CẢ HAI bên** (`0–137`): thua vì cạn máu nên vế
+    kia là 0, chỉ trận hết giờ mới có hai số cùng dương.
+  - **Bản 1 lấy SÁT THƯƠNG, bản 2 lấy máu còn lại** — `COMP_SC = 2` đánh dấu lối tính, ghi
+    thẳng vào `COMP.sc`. `loadSaved()` thấy `sc` cũ thì **xoá cột hiệu số về 0** (giữ nguyên
+    điểm, thắng, thua): giải lưu dở tính bằng sát thương mà cộng tiếp bằng máu là trộn hai
+    đơn vị, bảng đọc ra vô nghĩa. `COMP_SC` **khai ngay trên `loadSaved()`**, không khai
+    chung với `COMP_MAXT` mãi dưới khối giải đấu — hàm đó chạy rất sớm, để dưới là đúng cái
+    bẫy TDZ ở mục 9.
+  - Đo được (`t_comp`): ghim máu người thắng 137 rồi kết trận ⇒ hiệu số **+137 / −137**, dòng
+    kết quả ra `0–137`; giải lưu theo lối cũ ⇒ hiệu số về **0/0** mà vẫn còn **3 điểm / 1 trận thắng**.
+  - Cột `HIỆU SỐ` có `title` (`lgDiffTip`, song ngữ) nói đúng luật đó — hỏi "tính kiểu gì" thì
+    rê chuột vào là ra, không phải thêm dòng chữ nào lên bảng.
+
+  > **`f.dmgDealt` vẫn phải đúng dù bảng không còn đọc nó**: `drSlTarget()` của Doraemon và
+  > `supMsTarget()` của Superman chọn mục tiêu theo nó. Hai luật đã sửa lúc còn dùng nó làm
+  > hiệu số, **giữ nguyên**: viện binh ghi công cho CHỦ (`src.summon ? src.master : src` —
+  > trước đó Kamehameha 400 dmg không ghi cho ai cả, đo được 0, sau sửa 400), và chỉ cộng
+  > phần máu THẬT SỰ mất (`min(amt, t.hp)` — đấm 400 vào người còn 30 máu ghi 30, không phải
+  > 400). Phân thân của Konohamaru chưa bao giờ dính, nó là viên đạn mang `owner: k`.
 - **Trần thời gian `COMP_MAXT` = 90 giây trong trận (180 giây người chơi).** Hai người cùng
   có cửa hồi máu thì về lý thuyết đánh nhau mãi không xong; giải mà kẹt một trận là kẹt cả
   giải. `compTick()` gọi ở đầu `step()`, hết giờ thì ai còn nhiều **phần trăm** máu hơn thì
@@ -2376,7 +2381,10 @@ node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4
                         # đúng một lượt), bảng xếp hạng cộng điểm và xếp thứ tự đúng, dàn đấu
                         # thủ bấm là bật/tắt chứ không có bản sao, sơ đồ nhánh 8 người đủ ba
                         # vòng + trận tranh hạng ba, 5 người thì khoá nút vào giải, xếp nhánh
-                        # bốc thăm / tự xếp (bấm hai người là tráo chỗ), lượt đi lượt về
+                        # bốc thăm / tự xếp (bấm hai người là tráo chỗ), hiệu số = MÁU CÒN
+                        # LẠI của người thắng (+137 / −137, dòng kết quả in 0–137) và giải
+                        # lưu theo lối tính cũ thì cột hiệu số về 0 mà giữ nguyên điểm,
+                        # lượt đi lượt về
                         # (mặc định một lượt, bật lên thì nhân đôi số trận và ĐẢO SÂN),
                         # hiệu ứng bảng sau mỗi trận (hàng trượt thật, số đếm dần, mũi tên
                         # đổi hạng, và ảnh chụp chỉ dùng một lần),
