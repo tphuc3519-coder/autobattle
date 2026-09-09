@@ -127,18 +127,19 @@ async function nhetBuffer(page, ten, giay) {
     gan(c2.that, c1.that / 2, .05, 'quang phat THAT o 2x chi con mot nua, khop voi bong bong');
   }
 
-  /* ---------- 5. nhạc nền cũng chạy theo ---------- */
-  const nhac = await page.evaluate(() => {
-    const a = document.createElement('audio');
-    window.__BGM.el = a;
-    const out = {};
-    window.__bgmRate(); out.truoc = a.playbackRate;
-    return out;
+  /* ---------- 5. nhạc nền ĐỨNG NGOÀI chuyện này ----------
+     Người dùng chốt riêng: *"bỏ nhạc nền luôn đi"*. Chỉ tiếng động chạy theo thanh tốc
+     độ, còn nhạc — cả file lẫn nhạc tự sinh — giữ nguyên nhịp gốc. */
+  const nguon = require('fs').readFileSync(require('path').join(require('./probe').ROOT, 'index.html'), 'utf8');
+  ok(!/bgmRate/.test(nguon), 'khong con ham bgmRate() nao trong game');
+  await page.evaluate(() => {
+    window.__BGM.el = document.createElement('audio');
+    window.__BGM.el.playbackRate = 1;
   });
-  ok(Math.abs(nhac.truoc - 2) < .001, `nhac nen o 2x chay voi playbackRate 2 (do duoc ${nhac.truoc})`);
-  await doiToc('0.5');
-  const nhac1 = await page.evaluate(() => window.__BGM.el.playbackRate);
-  gan(nhac1, 1, .001, 'doi thanh toc do ve 1x thi nhac nen cung ve nhip cu ngay');
+  await doiToc('1');
+  await page.evaluate(() => window.__musicStart());
+  const nhac = await page.evaluate(() => window.__BGM.el.playbackRate);
+  gan(nhac, 1, .001, 'keo thanh toc do len 2x thi nhac nen VAN giu nhip goc');
 
   const loiTrang = errors.filter(e => !/favicon|fonts/.test(e));
   ok(loiTrang.length === 0, `khong co loi trang (${loiTrang.slice(0, 2).join(' | ') || 'sach'})`);

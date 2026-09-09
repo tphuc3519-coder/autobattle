@@ -2549,7 +2549,11 @@ function ac(){
    hơn cái bong bóng đi kèm, phạm đúng luật số 1 của mục "Luật về tiếng").
    `sfxRate()` trả về hệ số so với tốc độ gốc: 0.7 · 1 · 1.5 · 2.
    File thu sẵn đi bằng `playbackRate` (nhanh lên thì cao giọng lên, đúng kiểu tua băng),
-   còn tiếng tự tạo thì rút ngắn quãng ngân và quãng chờ — giữ nguyên cao độ cho khỏi chói. */
+   còn tiếng tự tạo thì rút ngắn quãng ngân và quãng chờ — giữ nguyên cao độ cho khỏi chói.
+
+   CHỈ ăn vào TIẾNG ĐỘNG. **Nhạc nền đứng hẳn ngoài chuyện này** — người dùng chốt riêng:
+   *"bỏ nhạc nền luôn đi"*. Cả file nhạc lẫn nhạc tự sinh giữ nguyên nhịp gốc dù kéo thanh
+   tốc độ tới đâu. Đừng gắn `sfxRate()` vào `bgmEl()` / `bgmPlay()` / `startMusic()` nữa. */
 const sfxRate=()=>clamp(speedMul/BASE_SPEED,.25,4);
 function tone(c,g,o){
   const R=sfxRate();
@@ -3761,22 +3765,22 @@ function startMusic(){
   MUSIC.timer=setInterval(()=>{
     const cc=ac(); if(!cc||!MUSIC.gain)return;
     while(MUSIC.next < cc.currentTime+.9){
-      const t=MUSIC.next, R=sfxRate();     // nhạc tự sinh cũng dồn nhịp theo thanh tốc độ
+      const t=MUSIC.next;
       const TH=curTheme();
       if(MUSIC.step%16===0){
         const ch=TH.ch[(MUSIC.step/16)%TH.ch.length];
-        MUSIC.oscs.forEach((o,i)=>o.frequency.exponentialRampToValueAtTime(ch[i],t+3.2/R));
+        MUSIC.oscs.forEach((o,i)=>o.frequency.exponentialRampToValueAtTime(ch[i],t+3.2));
       }
       if(MUSIC.step%2===0 && Math.random()<.55){
         const f=TH.mel[Math.floor(Math.random()*TH.mel.length)];
         const o=cc.createOscillator(), g=cc.createGain();
         o.type='sine'; o.frequency.value=f;
         g.gain.setValueAtTime(.0001,t);
-        g.gain.linearRampToValueAtTime(.05,t+.25/R);
-        g.gain.exponentialRampToValueAtTime(.0001,t+1.6/R);
-        o.connect(g); g.connect(MUSIC.filter); o.start(t); o.stop(t+1.7/R);
+        g.gain.linearRampToValueAtTime(.05,t+.25);
+        g.gain.exponentialRampToValueAtTime(.0001,t+1.6);
+        o.connect(g); g.connect(MUSIC.filter); o.start(t); o.stop(t+1.7);
       }
-      MUSIC.next+=.62/R; MUSIC.step++;
+      MUSIC.next+=.62; MUSIC.step++;
     }
   },260);
 }
@@ -3822,13 +3826,8 @@ function bgmEl(){
     BGM.el.loop=true; BGM.el.preload='auto';
   }
   BGM.el.volume=Math.max(0,Math.min(1,MUSIC.vol));
-  bgmRate();
   return BGM.el;
 }
-/* File nhạc cũng chạy theo thanh tốc độ, cùng lý do với `sfxRate()`: trận nhanh gấp đôi
-   mà nhạc vẫn lê thê nhịp cũ thì lạc quẻ y hệt tiếng động. Gọi lại mỗi lần đổi thanh tốc
-   độ (dưới `el('speed')`) và mỗi lần lấy thẻ audio ra. */
-function bgmRate(){ if(BGM.el) try{ BGM.el.playbackRate=sfxRate(); }catch(e){} }
 /* Bài nào hợp lúc này: đang đánh thì nhạc của MÀN, không có thì nhạc chung; còn đang ở
    màn chọn thì nhạc menu. Trả về tên ô, không có gì thì null. */
 function bgmPick(){
@@ -3846,7 +3845,6 @@ function bgmPlay(){
   if(!k){ bgmStop(); return false; }
   const a=bgmEl();
   if(BGM.key!==k){ BGM.key=k; a.src=BGM.src[k]; }
-  bgmRate();
   a.play().catch(()=>{});          // trình duyệt chặn tự phát thì thôi, bấm nút là chạy
   return true;
 }
@@ -13332,7 +13330,7 @@ const NUL=document.createElement('div');
 const el=id=>document.getElementById(id)||NUL;
 el('play').addEventListener('click',()=>{ ac(); musicStart(); if(G.over)newGame(); running=!running; el('play').textContent=running?t('pause'):t('resume'); });
 el('reset').addEventListener('click',()=>{ newGame(); running=false; el('play').textContent=t('play'); });
-el('speed').addEventListener('change',e=>{ speedMul=parseFloat(e.target.value); bgmRate(); });
+el('speed').addEventListener('change',e=>speedMul=parseFloat(e.target.value));
 el('mode').addEventListener('change',e=>{ mode=e.target.value; newGame(); running=false; el('play').textContent=t('play'); });
 el('autoskill').addEventListener('change',e=>autoSkill=e.target.checked);
 addEventListener('keydown',e=>{

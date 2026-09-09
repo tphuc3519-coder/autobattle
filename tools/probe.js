@@ -21,7 +21,7 @@ window.__talk=talk; window.__CV=CV; window.__S=S; window.__HEADER=HEADER; window
 window.__synthSrc=()=>synth.toString();
 /* Tiếng chạy theo thanh tốc độ (mục "Tiếng chạy theo thanh tốc độ"). */
 window.__sfxRate=()=>sfxRate(); window.__speedMul=()=>speedMul;
-window.__bgmRate=()=>bgmRate(); window.__playBuffer=playBuffer;   // __BGM đã có ở dưới
+window.__playBuffer=playBuffer;   // __BGM đã có ở dưới
 window.__CHARS=CHARS; window.__hurt=hurt; window.__shikaStabHit=shikaStabHit;
 window.__gs=gs; window.__rts=rts;
 window.__vector=vector; window.__drawFighter=drawFighter;

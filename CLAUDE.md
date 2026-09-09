@@ -2630,8 +2630,15 @@ nó trả về **đúng 1**, nên mọi phép chia bên dưới thành vô hiệ
 |---|---|
 | **file thu sẵn** (`playBuffer`) | `src.playbackRate = R` — nhanh lên thì cao giọng lên, đúng kiểu tua băng |
 | **tiếng tự tạo** (`tone()` / `noise()`, cả ô `cheer` tự dựng buffer) | rút ngắn `dur` và `delay` đi `R` lần, **giữ nguyên cao độ** cho khỏi chói ở 2x |
-| **nhạc nền file** (`<audio>`) | `bgmRate()` đặt `playbackRate`, gọi lại ở `bgmEl()`, `bgmPlay()` và ở listener của `#speed` |
-| **nhạc tự sinh** | chia `R` cho nhịp `MUSIC.next+=.62` và mấy quãng ngân của nốt |
+| **nhạc nền** — file lẫn nhạc tự sinh | **KHÔNG đụng tới**, xem ngay dưới |
+
+> **Nhạc nền đứng hẳn ngoài chuyện này.** Bản đầu tôi có cho nhạc chạy theo (`bgmRate()`
+> đặt `playbackRate`, cộng chia `R` cho nhịp nốt của nhạc tự sinh); người dùng bác:
+> **"bỏ nhạc nền luôn đi"**. Đã gỡ sạch — không còn hàm `bgmRate()`, `bgmEl()` /
+> `bgmPlay()` / listener của `#speed` / `startMusic()` đều không đọc `sfxRate()` nữa.
+> `sfxRate()` **chỉ ăn vào tiếng động**. `t_speed.js` soi thẳng: kéo lên 2x rồi bật nhạc,
+> `playbackRate` phải vẫn là 1, và trong `index.html` không được còn chữ `bgmRate`.
+> **Đừng dựng lại.**
 
 **Hai đơn vị thời gian nằm sát nhau trong `playBuffer()`, đừng trộn:**
 - `off` / `len` / `dur` cùng `SFX_MAXLEN` và `SFX_SEG` đo bằng **giây CỦA FILE** — chúng
@@ -2646,11 +2653,7 @@ nó trả về **đúng 1**, nên mọi phép chia bên dưới thành vô hiệ
 
 Đo được (`t_speed.js`): tiếng tự tạo `rasengan` ngân 0.58s ở 1x → **0.30s ở 2x**; ô có trần
 `kame` giữ nguyên **5.00 giây nội dung** nhưng quãng phát thật tụt từ 5.00s xuống **2.50s**;
-file thu sẵn ra đúng `playbackRate` 1 / 1.5 / 2; nhạc nền đổi ngay khi kéo thanh tốc độ.
-
-> **Nhạc nền cũng chạy theo, kể cả lúc đang ở màn chọn.** Đây là chỗ tôi tự chốt: người
-> dùng chỉ nói "âm thanh", nhưng trận chạy gấp đôi mà nhạc vẫn lê thê nhịp cũ là đúng cái
-> "lạc quẻ" họ than. Muốn nhạc đứng ngoài thì bỏ ba chỗ gọi `bgmRate()`.
+file thu sẵn ra đúng `playbackRate` 1 / 1.5 / 2; nhạc nền thì kéo tới 2x vẫn giữ nhịp gốc.
 
 ---
 
@@ -2965,7 +2968,7 @@ node tools/t_bubble.js  # bong bóng thoại nằm trên băng-rôn tên chiêu 
 node tools/t_speed.js   # tiếng chạy theo thanh tốc độ: bốn mốc ra đúng hệ số 0.7/1/1.5/2,
                         # tiếng tự tạo rút ngắn đúng bấy nhiêu lần, file thu sẵn đọc bằng
                         # playbackRate, ô có trần độ dài giữ nguyên nội dung mà quãng phát
-                        # thật ngắn đi một nửa ở 2x, và nhạc nền đổi nhịp ngay khi kéo thanh
+                        # thật ngắn đi một nửa ở 2x, còn NHẠC NỀN thì kéo tới 2x vẫn giữ nhịp gốc
 node tools/t_suzune.js  # ba form của Horikita: quãng đỡ 4s, điểm lớp, Ayanokouji vào rồi rời sàn,
                         # khiêu khích kéo địch ở mọi khoảng cách, anh miễn nhiễm Sexy no Jutsu,
                         # ba ô giọng của anh + hai ô xuất hiện + bảng tiếng chia nhóm,
