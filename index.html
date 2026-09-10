@@ -1015,6 +1015,7 @@ const L={
     compQuit:'✕ Bỏ giải', compChamp:'Vô địch', compOver:'Giải đã xong',
     compLeagueT:'GIẢI <span>VÒNG TRÒN</span>', compCupT:'GIẢI <span>LOẠI TRỰC TIẾP</span>',
     compProg:'Đã đá {n}/{t} trận', compNone:'Chưa có trận nào',
+    compMore:'… và {n} trận cũ hơn',
     notEnough:'Chưa đủ người',
     stName:'Chỉ số', stPow:'Sát thương', stSpd:'Tốc độ', stRng:'Tầm đánh', stDef:'Chống chịu',
     skills:'Bộ chiêu', more:'Số liệu thô', less:'Thu gọn',
@@ -1078,6 +1079,7 @@ const L={
     compQuit:'✕ Quit competition', compChamp:'Champion', compOver:'Competition over',
     compLeagueT:'<span>LEAGUE</span> TABLE', compCupT:'<span>KNOCKOUT</span> BRACKET',
     compProg:'{n}/{t} matches played', compNone:'No match played yet',
+    compMore:'… and {n} older matches',
     notEnough:'Not enough fighters',
     stName:'Stats', stPow:'Power', stSpd:'Speed', stRng:'Range', stDef:'Defence',
     skills:'Move list', more:'Raw numbers', less:'Hide numbers',
@@ -2144,14 +2146,31 @@ const DEX={
       {tag:'U',name:'Meteor Strike',vi:`Bay lên rồi lao thẳng xuống: ${SUP.msDmg} dmg vào mục tiêu chính, cộng vùng chấn động quanh điểm rơi.`,
        en:`He rises, then drops straight down: ${SUP.msDmg} on the main target plus a shockwave around the impact.`}
     ]},
-  /* Beatrice chấm thấp ở SÁT THƯƠNG và TỐC ĐÁNH (đòn thường 15 dmg, một phát mỗi giây) nhưng
-     cao hẳn ở KHỐNG CHẾ, CHỐNG CHỊU và HỖ TRỢ: cô có cửa giải khống chế, một quãng miễn
-     khống chế, một lớp chặn sạch sát thương biết phản đòn, cộng thêm cú dịch chuyển cưỡng
-     bức và một debuff giảm 20% sát thương của địch. LẬT KÈO thì thấp — bộ chiêu của cô
-     không có ngưỡng máu nào cả, đánh đầu trận thế nào thì cuối trận vẫn thế; đổi lại ỔN
-     ĐỊNH rất cao vì mọi chiêu đều tự bung đúng nhịp hồi chiêu, không phụ thuộc may rủi. */
+  /* Beatrice chấm thấp ở SÁT THƯƠNG và TỐC ĐÁNH nhưng cao hẳn ở KHỐNG CHẾ, CHỐNG CHỊU và
+     HỖ TRỢ: cô có cửa giải khống chế, một quãng miễn khống chế, một lớp chặn sạch sát thương
+     biết phản đòn, cộng thêm cú dịch chuyển cưỡng bức và một debuff giảm 20% sát thương của
+     địch. LẬT KÈO thì thấp — bộ chiêu của cô không có ngưỡng máu nào cả, đánh đầu trận thế
+     nào thì cuối trận vẫn thế.
+
+     Hai trục người dùng bắt hạ lại (*"atk speed vs consistency cao lắm đấy"*):
+
+     - TỐC ĐÁNH **31 → 20**, thấp nhất bảng. Không phải vì nhịp bắn — mỗi giây một mũi thì
+       vẫn nhanh hơn Shikamaru — mà vì **không một hồi chiêu nào của cô đi qua `cm()`**:
+       `f.cds.s1 = BEA.minyaCd`, `s2 = BEA.shamacCd`, `s4 = BEA.ultCd` đều là hằng số thô.
+       Nghĩa là nhịp ra đòn lẫn nhịp ra chiêu của cô **trơ hẳn với mọi thứ đổi tốc thi triển**
+       — buff không kéo nhanh lên được, mà debuff cũng không bóp chậm đi. Cộng thêm bộ hồi
+       chiêu dài nhất bảng (8.5 · 11.5 · 11.5 · 13.5 giây người chơi) và quãng khoá thân lúc
+       vận chiêu (Al Shamac 0.6s, El Minya hơn 1.15s), phần lớn trận cô chỉ có đúng 10 dmg
+       mỗi giây.
+     - ỔN ĐỊNH **72 → 46**. Chỗ chấm cũ ("mọi chiêu tự bung đúng nhịp hồi chiêu") viết từ
+       thời hồi chiêu còn ngắn; sau đợt nerf (mục Beatrice trong CLAUDE.md) quãng có lớp bảo
+       vệ tụt từ 71% xuống 27% nên sức mạnh của cô dồn hết vào mấy cửa sổ ngắn rồi tắt ngóm.
+       Đo thật bằng `t_bea_balance.js`: **0–2 trước năm người, 2–0 trước ba người** — bảng
+       thành tích phân cực nhất bảng, đúng nghĩa "ăn nhau ở đối thủ" chứ không phải đều tay.
+       Thêm nữa Minya có 13% choáng bốc may rủi, còn mũi hai và mũi ba của El Minya thì né
+       được. Mốc 46 đặt cạnh Shikamaru (44) và Ginyu (42) — cùng họ phụ thuộc điều kiện. */
   beatrice:{ role:{vi:'Pháp sư · Khống chế tầm xa',en:'Mage · Ranged control'}, st:{pow:2,spd:2,rng:4,def:3},
-    pw:{dmg:38,dur:62,mob:44,as:31,rng:76,cc:69,uti:70,con:72,cmb:29},
+    pw:{dmg:38,dur:62,mob:44,as:20,rng:76,cc:69,uti:70,con:46,cmb:29},
     bio:{vi:'Pháp sư nhỏ người của Forbidden Library. Đòn thường nhẹ hều, nhưng cô đẩy địch ra xa liên tục, tự gỡ khống chế, dựng kết giới chặn sạch sát thương rồi hắt ngược lại.',
          en:'The small mage of the Forbidden Library. Her basic attack barely stings, but she keeps shoving the fight away, breaks her own crowd control, and raises a barrier that eats every hit and throws part of it back.'},
     skills:[
@@ -4482,10 +4501,18 @@ function finish(w){
    Cả hai chỉ là một CHUỖI TRẬN 1v1: mỗi trận vẫn dựng qua PICK.a / PICK.b rồi newGame()
    y hệt đấu tay đôi, engine không phải sửa một dòng nào. Thứ duy nhất thêm vào là cái sổ
    ghi kết quả (`COMP`) và màn bảng xếp hạng / sơ đồ nhánh xen giữa hai trận. */
-const LG_MIN=3, LG_MAX=8;        // vòng tròn tính điểm: 3~8 người
+/* Giải vòng tròn KHÔNG có bản sao — dàn đấu thủ bấm là bật/tắt (`modeGroups()` gắn cờ
+   `toggle`), vì bảng xếp hạng mà có hai Konohamaru thì đọc không ra ai với ai. Nên trần
+   người chơi CHÍNH LÀ số nhân vật đang có: cắm cứng 8 thì ngay hôm nay đã không xếp nổi cả
+   chín người vào một giải, mà thêm nhân vật thứ mười là lại phải nhớ sửa tay lần nữa. Đọc
+   thẳng `CKEYS` để mỗi nhân vật mới tự nới trần lên một nấc.
+   Lịch vẫn là `n(n−1)/2` trận mỗi lượt, `roundRobin()` vốn đã lo phần lẻ người bằng suất
+   trống, còn dòng "Vòng 9/17" thì tự đúng theo `COMP.nr`. */
+const LG_MIN=3, LG_MAX=CKEYS.length;
 const CUP_SIZES=[4,8];           // loại trực tiếp: đúng 4 hoặc 8 người, không thì lệch nhánh
 const LG_WIN=3;                  // điểm mỗi trận thắng, đúng lối bóng đá
 const LG_LEGS_MAX=2;             // một lượt, hoặc lượt đi lượt về
+const RS_MAX=40;                 // khối "kết quả đã đá" chỉ giữ bấy nhiêu trận gần nhất
 /* Trần thời gian một trận trong giải, tính bằng giây TRONG TRẬN (= 180 giây người chơi).
    Hai người cùng có cửa hồi máu thì về lý thuyết đánh nhau mãi không xong; giải mà kẹt
    một trận là kẹt cả giải, nên hết giờ thì ai còn nhiều PHẦN TRĂM máu hơn người đó thắng.
@@ -14238,11 +14265,17 @@ function compResultsHtml(){
   const xong=compMatches().filter(x=>x.m.w).reverse();
   if(!xong.length) return `<div class="rsRow">${t('compNone')}</div>`;
   const nm=(k,win)=>`<b style="color:${win?CHARS[k].color:'#6E659C'}">${CHARS[k].short||CHARS[k].name}</b>`;
-  return `<div class="rsList">`+xong.map(x=>{
+  /* Giải đông người thì danh sách này phình rất nhanh — vòng tròn lượt đi lượt về của một
+     dàn 12 người đã là 132 trận, mà `compPaint()` dựng lại cả khối sau MỖI trận. Chỉ giữ
+     `RS_MAX` trận gần nhất rồi ghi một dòng đếm phần còn lại: bảng điểm phía trên vốn đã là
+     chỗ tra kết quả chung cuộc, khối này chỉ để liếc xem vừa xảy ra chuyện gì. */
+  const du=Math.max(0,xong.length-RS_MAX), cat=du?xong.slice(0,RS_MAX):xong;
+  const them=du?`<div class="rsRow" style="opacity:.6">${tf('compMore',{n:du})}</div>`:'';
+  return `<div class="rsList">`+cat.map(x=>{
     const m=x.m, wa=m.w===m.a;
     return `<div class="rsRow">${nm(m.a,wa)}<span style="color:#5A5A66">vs</span>${nm(m.b,!wa)}`+
       `<s>${x.lab} · ${m.ga}–${m.gb}</s></div>`;
-  }).join('')+`</div>`;
+  }).join('')+them+`</div>`;
 }
 function compPaint(){
   if(!COMP) return;

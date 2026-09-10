@@ -1696,6 +1696,26 @@ anh ra rìa tầm.
 > trước (mục 2g): `dmg 52→38 · dur 82→62 · as 36→31 · cc 86→69 · uti 84→70 · con 80→72 ·
 > cmb 34→29`, và thanh chỉ số `spd 3→2 · def 4→3`.
 
+> **Hai trục người dùng bắt hạ THÊM một lượt nữa** sau khi xem lại biểu đồ (*"atk speed vs
+> consistency cao lắm đấy"*): **`as 31→20`** và **`con 72→46`**. Chốt cuối là
+> `dmg 38 · dur 62 · mob 44 · as 20 · rng 76 · cc 69 · uti 70 · con 46 · cmb 29`.
+>
+> - **`as` = 20, thấp nhất bảng.** KHÔNG phải vì nhịp bắn — mỗi giây một mũi thì vẫn nhanh
+>   hơn Shikamaru (`atkCd:2.7` in-battle = 5.4 giây người chơi mỗi loạt, mà anh được chấm
+>   34) — mà vì **không một hồi chiêu nào của cô đi qua `cm()`**: `f.cds.s1 = BEA.minyaCd`,
+>   `s2 = BEA.shamacCd`, `s4 = BEA.ultCd` đều là hằng số thô. Nhịp ra đòn lẫn nhịp ra chiêu
+>   của cô vì vậy **trơ hẳn với mọi thứ đổi tốc thi triển** — không buff nhanh lên được mà
+>   cũng không bị bóp chậm đi. Cộng thêm bộ hồi chiêu dài nhất bảng (8.5 · 11.5 · 11.5 ·
+>   13.5 giây người chơi) và quãng khoá thân lúc vận chiêu, phần lớn trận cô chỉ có đúng
+>   10 dmg mỗi giây. **Đụng vào `minyaCd` thì nhớ chấm lại trục này.**
+> - **`con` = 46.** Chỗ chấm cũ ("mọi chiêu tự bung đúng nhịp hồi chiêu, không phụ thuộc may
+>   rủi") viết từ thời hồi chiêu còn ngắn; sau đợt nerf ở trên, quãng có lớp bảo vệ tụt
+>   **71% → 27%** nên sức mạnh của cô dồn hết vào mấy cửa sổ ngắn rồi tắt ngóm. Bảng thành
+>   tích đo bằng `t_bea_balance.js` cũng phân cực nhất bảng: **0–2 trước năm người, 2–0
+>   trước ba người** — ăn nhau ở đối thủ chứ không phải đều tay. Thêm nữa Minya có 13% choáng
+>   bốc may rủi, còn mũi hai và mũi ba của El Minya thì né được. Mốc 46 đặt cạnh Shikamaru
+>   (44) và Ginyu (42), cùng họ phụ thuộc điều kiện.
+
 > **Đo lại sau mỗi lần chỉnh bằng `node tools/t_bea_balance.js`** chứ đừng chỉnh theo cảm
 > tính. Nó chạy Beatrice với cả tám đối thủ và in ra tỉ lệ thắng kèm **máu còn lại lúc
 > thắng** — con số thứ hai mới nói lên trận đó sát nút hay một chiều.
@@ -1882,12 +1902,28 @@ là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa 
 
 | | `league` | `cup` |
 |---|---|---|
-| bao nhiêu người | `LG_MIN`–`LG_MAX` = **3–8** | **đúng 4 hoặc 8** (`CUP_SIZES`) |
+| bao nhiêu người | `LG_MIN`–`LG_MAX` = **3 → CẢ BẢNG NHÂN VẬT** | **đúng 4 hoặc 8** (`CUP_SIZES`) |
 | lịch | vòng tròn, `roundRobin()` kiểu *circle method*; **một lượt hoặc lượt đi lượt về** | nhánh loại trực tiếp `cupNew()` |
 | số trận | `n(n−1)/2` × số lượt | `n−1` + **1 trận tranh hạng ba** |
 | thắng được gì | **3 điểm** (`LG_WIN`), không có hoà | đi tiếp một vòng |
 | xếp hạng | điểm → hiệu số → tổng sát thương gây ra → tên | vô địch = người thắng chung kết |
 
+- **`LG_MAX` ĐỌC THẲNG `CKEYS.length`, đừng cắm cứng một con số.** Người dùng: *"chỉnh chế
+  độ league cho tối đa nhiều ng chơi nha, chứ có mỗi 8 ng thì league quá kém, sau này có
+  nhiều nhân vật hơn thì k thể chỉ có 8 ng đâu"*. Giải vòng tròn **không có bản sao** (dàn
+  đấu thủ bấm là bật/tắt), nên trần người chơi CHÍNH LÀ số nhân vật đang có — con số 8 cũ
+  còn thấp hơn cả bảng chín người hiện tại, tức **không xếp nổi cả bảng vào một giải**.
+  Đọc qua `CKEYS` thì mỗi nhân vật mới tự nới trần lên một nấc, khỏi phải nhớ sửa tay.
+  - Ruột giải **không phải sửa gì**: `roundRobin()` vốn đã lo phần lẻ người bằng một suất
+    trống, dòng "Vòng 9/17" tự đúng theo `COMP.nr`, và số trận vẫn là `n(n−1)/2` × số lượt.
+    Đo được: cả bảng chín người ⇒ **36 trận / 9 vòng** một lượt, **72 trận / 18 vòng** lượt
+    đi lượt về, không cặp nào gặp lại.
+  - `t_comp.js` đọc **số ô trong lưới** chứ không ghim con số 9, nên thêm nhân vật là mục đó
+    tự đúng theo. Lịch vòng tròn cũng kiểm thêm mốc 9 và 12 người.
+  - Kéo theo: khối **"kết quả đã đá" phải CẮT BỚT** — `compPaint()` dựng lại cả khối sau MỖI
+    trận, mà cả bảng đá lượt về đã là 72 trận và bảng sẽ còn dài ra theo số nhân vật. Chỉ giữ
+    `RS_MAX = 40` trận gần nhất rồi ghi một dòng `compMore` đếm phần còn lại; bảng điểm phía
+    trên vốn đã là chỗ tra kết quả chung cuộc.
 - **Không có trận HOÀ.** Game đối kháng thì luôn có người gục; chỗ duy nhất có thể hoà là
   hết giờ, mà chỗ đó đã xử bằng "ai còn nhiều % máu hơn thì thắng". Vì vậy bảng chỉ có
   `P · W · L · Hiệu số · Điểm`, đừng thêm cột D cho rối.
@@ -2971,8 +3007,11 @@ node tools/t_modes.js   # ba chế độ đấu: 1v1 vẫn y như cũ (hai ngư�
                         # đánh đội 3 đội (đồng đội đứng túm một cụm, quét sạch một đội mà
                         # còn hai đội thì trận vẫn chạy) và 4 đội (trần 4 đội / 8 người),
                         # và một trận hỗn chiến 6 người chạy thật
-node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4/5/8 người, ai cũng gặp ai
-                        # đúng một lượt), bảng xếp hạng cộng điểm và xếp thứ tự đúng, dàn đấu
+node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4/5/8/9/12 người, ai cũng gặp ai
+                        # đúng một lượt), xếp được CẢ BẢNG nhân vật vào một giải (trần đọc
+                        # số ô trong lưới chứ không ghim số, dòng phụ và hàng thể thức đếm
+                        # đúng theo), khối kết quả đã đá bị cắt còn 40 trận gần nhất,
+                        # bảng xếp hạng cộng điểm và xếp thứ tự đúng, dàn đấu
                         # thủ bấm là bật/tắt chứ không có bản sao, sơ đồ nhánh 8 người đủ ba
                         # vòng + trận tranh hạng ba, 5 người thì khoá nút vào giải, xếp nhánh
                         # bốc thăm / tự xếp (bấm hai người là tráo chỗ), hiệu số = MÁU CÒN
