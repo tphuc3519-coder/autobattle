@@ -63,7 +63,7 @@ async function daHet(page, tran) {
   /* ---------- lịch vòng tròn ---------- */
   const lich = await doc(() => {
     const out = {};
-    for (const n of [3, 4, 5, 8]) {
+    for (const n of [3, 4, 5, 8, 9, 12]) {
       const rs = window.__roundRobin(n);
       const dem = {}, cap = new Set();
       let tran = 0;
@@ -76,7 +76,7 @@ async function daHet(page, tran) {
     }
     return out;
   });
-  for (const n of [3, 4, 5, 8]) {
+  for (const n of [3, 4, 5, 8, 9, 12]) {
     const L = lich[n], can = n * (n - 1) / 2;
     ok(L.tran === can && L.rieng === can, `${n} nguoi: ${can} tran, khong cap nao gap lai (${L.tran}/${L.rieng})`);
     ok(L.deu && L.du === n, `${n} nguoi: ai cung da dung ${n - 1} tran (${L.du} nguoi)`);
@@ -107,6 +107,48 @@ async function daHet(page, tran) {
   const them = await doc(() => window.__TMP().comp.slice());
   ok(bo.indexOf('kono') < 0, `bam lan nua thi BO RA khoi dan (${bo.join(',')})`);
   ok(them.filter(k => k === 'kono').length === 1, `bam lai thi them dung mot lan (${them.join(',')})`);
+
+  /* ---------- trần người chơi = CẢ BẢNG NHÂN VẬT ----------
+     Người dùng: "chỉnh chế độ league cho tối đa nhiều ng chơi nha, chứ có mỗi 8 ng thì
+     league quá kém, sau này có nhiều nhân vật hơn thì k thể chỉ có 8 ng đâu". Giải vòng
+     tròn không có bản sao nên trần chính là số nhân vật đang có — `LG_MAX = CKEYS.length`.
+     Test đọc số ô trong lưới chứ KHÔNG ghim con số 9: thêm nhân vật thì mục này tự đúng. */
+  const o = await doc(() => [...document.querySelectorAll('#grpList0 .cTile')].map(x => x.dataset.key));
+  for (const k of o) {
+    if (await doc(k => window.__TMP().comp.indexOf(k) >= 0, k)) continue;
+    await page.click(`#grpList0 .cTile[data-key="${k}"]`);
+    await page.waitForTimeout(430);   // giãn hơn DBL_TAP, không thì thành chạm hai lần
+  }
+  const het = await doc(() => ({
+    n: window.__TMP().comp.length,
+    khoa: document.getElementById('cselGo').disabled,
+    sub: document.querySelector('#charSelect .cselSub').textContent,
+    hint: document.querySelector('#lgLegs span:last-child').textContent
+  }));
+  ok(het.n === o.length, `xep duoc ca bang ${o.length} nhan vat vao mot giai (${het.n})`);
+  ok(!het.khoa, 'du ca bang thi nut vao giai van mo');
+  ok(het.sub.indexOf('–' + o.length) >= 0, `dong phu ghi dung tran ${o.length} nguoi (${het.sub.trim()})`);
+  ok(het.hint.indexOf(String(o.length * (o.length - 1) / 2)) === 0,
+     `hang the thuc dem dung so tran (${het.hint})`);
+
+  /* Khối "kết quả đã đá" phải CẮT BỚT khi giải đông người: cả bảng đá lượt đi lượt về là
+     hàng trăm trận, mà compPaint() dựng lại cả khối sau MỖI trận. */
+  const cat = await doc(() => {
+    const ks = window.__TMP().comp.slice();
+    const C = window.__leagueNew(ks, 2);
+    for (const m of C.fix) { m.w = m.a; m.ga = 0; m.gb = 100; }
+    window.__setComp(C, false); window.__compPaint();
+    const rows = [...document.querySelectorAll('#compBody .rsList .rsRow')];
+    return { tran: C.fix.length, rows: rows.length, cuoi: rows[rows.length - 1].textContent };
+  });
+  ok(cat.tran > cat.rows, `${cat.tran} tran nhung chi ve ${cat.rows} dong`);
+  ok(/\d/.test(cat.cuoi) && cat.rows > 10,
+     `dong cuoi dem so tran cu con lai (${cat.cuoi})`);
+  await doc(() => { window.__setComp(null, false); });
+  for (const k of o.slice(4)) {      // trả dàn về bốn người cho mấy mục sau
+    await page.click(`#grpList0 .cTile[data-key="${k}"]`);
+    await page.waitForTimeout(430);
+  }
 
   /* ---------- một lượt hay lượt đi lượt về ----------
      Người dùng hỏi lại: "đánh vòng tròn này chưa có lượt đi lượt về đúng không?" — mặc định
