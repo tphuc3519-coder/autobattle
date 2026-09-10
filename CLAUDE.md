@@ -1696,25 +1696,50 @@ anh ra rìa tầm.
 > trước (mục 2g): `dmg 52→38 · dur 82→62 · as 36→31 · cc 86→69 · uti 84→70 · con 80→72 ·
 > cmb 34→29`, và thanh chỉ số `spd 3→2 · def 4→3`.
 
-> **Hai trục người dùng bắt hạ THÊM một lượt nữa** sau khi xem lại biểu đồ (*"atk speed vs
-> consistency cao lắm đấy"*): **`as 31→20`** và **`con 72→46`**. Chốt cuối là
-> `dmg 38 · dur 62 · mob 44 · as 20 · rng 76 · cc 69 · uti 70 · con 46 · cmb 29`.
+> **TỐC ĐÁNH và ỔN ĐỊNH là hai trục S — ĐỪNG HẠ.** Chốt cuối:
+> `dmg 38 · dur 62 · mob 44 · **as 88** · rng 76 · cc 69 · uti 70 · **con 90** · cmb 29`.
 >
-> - **`as` = 20, thấp nhất bảng.** KHÔNG phải vì nhịp bắn — mỗi giây một mũi thì vẫn nhanh
->   hơn Shikamaru (`atkCd:2.7` in-battle = 5.4 giây người chơi mỗi loạt, mà anh được chấm
->   34) — mà vì **không một hồi chiêu nào của cô đi qua `cm()`**: `f.cds.s1 = BEA.minyaCd`,
->   `s2 = BEA.shamacCd`, `s4 = BEA.ultCd` đều là hằng số thô. Nhịp ra đòn lẫn nhịp ra chiêu
->   của cô vì vậy **trơ hẳn với mọi thứ đổi tốc thi triển** — không buff nhanh lên được mà
->   cũng không bị bóp chậm đi. Cộng thêm bộ hồi chiêu dài nhất bảng (8.5 · 11.5 · 11.5 ·
->   13.5 giây người chơi) và quãng khoá thân lúc vận chiêu, phần lớn trận cô chỉ có đúng
->   10 dmg mỗi giây. **Đụng vào `minyaCd` thì nhớ chấm lại trục này.**
-> - **`con` = 46.** Chỗ chấm cũ ("mọi chiêu tự bung đúng nhịp hồi chiêu, không phụ thuộc may
->   rủi") viết từ thời hồi chiêu còn ngắn; sau đợt nerf ở trên, quãng có lớp bảo vệ tụt
->   **71% → 27%** nên sức mạnh của cô dồn hết vào mấy cửa sổ ngắn rồi tắt ngóm. Bảng thành
->   tích đo bằng `t_bea_balance.js` cũng phân cực nhất bảng: **0–2 trước năm người, 2–0
->   trước ba người** — ăn nhau ở đối thủ chứ không phải đều tay. Thêm nữa Minya có 13% choáng
->   bốc may rủi, còn mũi hai và mũi ba của El Minya thì né được. Mốc 46 đặt cạnh Shikamaru
->   (44) và Ginyu (42), cùng họ phụ thuộc điều kiện.
+> *Đã đi sai một lượt, ghi lại cho khỏi lặp:* tôi đọc nhầm câu *"atk speed vs consistency cao
+> lắm đấy"* thành "hai cái đó chấm cao quá" rồi hạ xuống `as 20 · con 46`. Người dùng bác
+> ngay: *"chỉnh lại là as với cons lên cao nữa á, sao lại hạ — 2 cái đó của beatrice là S"*.
+> Ý họ là hai trục đó **vốn đã cao trong thực tế**, chấm 31/72 mới là thấp.
+>
+> - **`as` = 88.** Không phải nhịp bắn to, mà là nhịp bắn **KHÔNG BAO GIỜ HỤT**: Minya nổ đều
+>   một mũi mỗi giây người chơi, không cần vào tầm tay, không có combo để bị bỏ dở, và
+>   **không một hồi chiêu nào của cô đi qua `cm()`** (`f.cds.s1 = BEA.minyaCd`,
+>   `s2 = BEA.shamacCd`, `s4 = BEA.ultCd` đều là hằng số thô). Nghĩa là mọi thứ bóp tốc thi
+>   triển trong game — aura ngơ ngác của Ginyu, Disoriented của Doraemon, Chilled của
+>   Superman, ghì chân của Kamehameha — **không chạm được vào cô một nhịp nào**; cả bảng
+>   không ai có chỗ đó. Ngay cả lúc đang choáng, Murak và E.M.T vẫn tự bung vì chúng chạy
+>   trong `beatriceTick()` chứ không chạy trong `think()`.
+> - **`con` = 90, cao nhất bảng.** Mọi chiêu **tự bung ngay khi hồi chiêu xong**, không giữ
+>   lại chờ thời cơ, không phụ thuộc ngưỡng máu (khác Tsubasa / Horikita / Shikamaru), không
+>   phải nuôi thanh tiến trình (khác nộ khí của Konohamaru hay bàn thắng của Tsubasa). Quãng
+>   miễn thương của E.M.T và Murak vì vậy **được bảo đảm, không bao giờ lỡ nhịp** — chính chỗ
+>   đó làm cô mạnh tới mức phải nerf (bảng ngay trên).
+>
+> **Đụng vào `minyaCd` hay đổi mấy hồi chiêu sang `cm()` thì nhớ chấm lại hai trục này.**
+> `t_beatrice.js` (mục 9) đọc qua `pwGrade()` chứ không ghim con số, nên hạ xuống dưới bậc S
+> là test đổ.
+
+> **Chữ effect của Beatrice thu nhỏ THÊM một nấc — `BEA_FX = .72`.** Người dùng: *"cast skill
+> thì mấy chữ effect của beatrice nhỏ lại"*. Bộ chiêu của cô có tới NĂM chiêu tự bung đúng
+> nhịp hồi chiêu, mỗi chiêu lại đẩy ra **HAI dòng** — tên hiệu ứng cộng một dòng số liệu
+> (`SHAMAC WEAKNESS` + `−20% DAMAGE DEALT 4s`) — nên chỉ mình cô là chữ chồng lên nhau kín
+> cả sàn.
+>
+> - Cờ **`beaFx:true`** gắn vào từng float, `floatScale()` nhân thêm `BEA_FX` (mục 6c). Muốn
+>   chỉnh nữa thì sửa đúng con số đó, đừng đi đổi `sc` của từng chỗ.
+> - Băng-rôn tên chiêu (`AL SHAMAC!` / `EL MINYA!`) đi qua `hurt()` nên cờ đặt ngay tại chỗ
+>   dựng nhãn `crit`, và **đọc HỒN chứ không đọc thân xác** (`(src.gnSoul||src.key)`): sau cú
+>   CHANGE của Ginyu thì chiêu đi theo hồn, chữ cũng phải đi theo.
+> - Kèm theo một **sàn cỡ chữ `FX_MIN = 8` px** cho mọi băng-rôn, cùng lối `bar()` tự thu nhãn
+>   cho vừa lòng thanh: mấy dòng phụ vốn đã nhỏ sẵn (`sc` .58~.62) mà nhân thêm một nấc nữa thì
+>   rơi xuống 6.9px và mờ tịt. **Kẹp trong `floatScale()` chứ đừng kẹp ở chỗ vẽ** — `k` còn
+>   dùng cho cả bề dày viền, tách ra là chữ nhỏ mà viền vẫn dày, nhìn bết thành một cục.
+> - Đo được: `SHAMAC WEAKNESS` 13.0 → **9.4px**, `AL SHAMAC!` 12.1 → **8.7px**, mấy dòng phụ
+>   9.3 → **8.0px** (chạm sàn). Chữ của tám người kia **không đổi một pixel nào** — đo trong
+>   một trận thật: 12 dòng của cô được gắn cờ, còn `BOOM!` / `RASENGAN!` / `MASENKO ×3` thì không.
 
 > **Đo lại sau mỗi lần chỉnh bằng `node tools/t_bea_balance.js`** chứ đừng chỉnh theo cảm
 > tính. Nó chạy Beatrice với cả tám đối thủ và in ra tỉ lệ thắng kèm **máu còn lại lúc
@@ -2844,6 +2869,12 @@ quá". `drawFloat()` vì vậy nhân thêm một hệ số qua `floatScale(f)`:
 > thêm nữa"* nên hạ tiếp xuống **`.62 / .74`** (nhỏ thêm chừng 15%). Muốn hạ nữa thì sửa
 > đúng hai hằng này, đừng đụng vào cỡ gốc 27/21 px — cỡ gốc còn dùng cho phép đo khối chữ.
 
+> **Riêng Beatrice có thêm một nấc nữa — `BEA_FX = .72`, bật bằng cờ `beaFx:true`.** Bộ chiêu
+> của cô có năm chiêu tự bung đúng nhịp hồi chiêu, mỗi chiêu đẩy ra HAI dòng, nên chữ chồng
+> kín sàn (xem mục Beatrice). Kèm theo là **sàn cỡ chữ `FX_MIN = 8` px** cho mọi băng-rôn,
+> kẹp **trong `floatScale()`** chứ không kẹp ở chỗ vẽ: `k` còn dùng cho bề dày viền, tách ra
+> là chữ nhỏ mà viền vẫn dày.
+
 - Hệ số ăn vào **cả bề dày viền** (`lineWidth`), không thì chữ nhỏ mà viền vẫn dày, nhìn
   bết lại thành một cục.
 - **Số sát thương không đụng tới** (34 px cho `big`, 22 px cho dòng thường) — chỗ đó người
@@ -3136,8 +3167,11 @@ node tools/t_beatrice.js # Beatrice: cửa Forbidden Library đúng 1.5s và đ�
                         # đúng 20% trong 2.5R (đứng ngoài thì không dính, đòn phản không phản
                         # lại lần nữa), El Minya ba mũi ở 0.65/0.90/1.15s + Minya Slow không
                         # cộng dồn + Mana Erosion trần 3 stack = 6 HP/s, hai lớp giảm sát
-                        # thương NHÂN chồng (80 rồi 64 chứ không phải 60), và chữ hiển thị
-                        # đều bằng tiếng Anh
+                        # thương NHÂN chồng (80 rồi 64 chứ không phải 60), chữ hiển thị
+                        # đều bằng tiếng Anh, TỐC ĐÁNH và ỔN ĐỊNH đều là bậc S (đọc qua
+                        # pwGrade chứ không ghim số), và chữ effect lúc cast skill thu nhỏ
+                        # theo BEA_FX mà vẫn không rơi xuống dưới sàn 8px — cờ beaFx bám
+                        # đúng float của cô, không lây sang nhân vật khác
 ```
 
 > **`t_buff.js` có một mục CHẬP CHỜN sẵn từ trước, không phải lỗi của ai mới đụng vào.**

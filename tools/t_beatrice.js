@@ -429,6 +429,54 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
   ok(dex.hasHp, 'the ho so co o chinh mau');
   ok(dex.st && dex.st.tech === undefined, 'khong dung lai thanh "do kho" da bo');
 
+  /* Người dùng chốt riêng hai trục này: *"as với cons lên cao nữa á, 2 cái đó của beatrice
+     là S"*. Đọc qua pwGrade() chứ đừng ghim con số — đổi thang bậc là mục này tự đúng theo. */
+  const bac = await page.evaluate(() => {
+    const D = window.__DEX.beatrice;
+    return { as: D.pw.as, con: D.pw.con,
+             gAs: window.__pwGrade(D.pw.as), gCon: window.__pwGrade(D.pw.con) };
+  });
+  ok(bac.gAs === 'S', `toc danh la bac S (${bac.as} -> ${bac.gAs})`);
+  ok(bac.gCon === 'S', `on dinh la bac S (${bac.con} -> ${bac.gCon})`);
+
+  console.log('\n=== 9b. Chu effect luc cast skill nho lai (BEA_FX) ===');
+  /* *"cast skill thì mấy chữ effect của beatrice nhỏ lại"*. Đo CỠ CHỮ THẬT qua floatScale()
+     — đó là con số drawFloat() dùng cho cả font lẫn bề dày viền. */
+  const co = await page.evaluate(() => {
+    const px = f => (f.big ? 27 : 21) * window.__floatScale(f);
+    const mau = [
+      ['SHAMAC WEAKNESS', { banner: true, gold: true }],
+      ['MANA EROSION', { banner: true, sc: .6 }],
+      ['AL SHAMAC!', { banner: true, bubble: true, gold: true, big: true, sc: .72 }]
+    ];
+    return { fx: window.__BEA_FX(),
+             do: mau.map(([t, o]) => ({ t, cu: px(o), moi: px(Object.assign({ beaFx: true }, o)) })),
+             /* sàn cỡ chữ: dòng phụ nhỏ nhất cũng không được rơi xuống dưới 8px */
+             day: px({ banner: true, sc: .3, beaFx: true }) };
+  });
+  ok(co.fx < 1, `he so thu nho rieng cua Beatrice la ${co.fx}`);
+  for (const d of co.do)
+    ok(d.moi < d.cu, `${d.t}: ${d.cu.toFixed(1)}px -> ${d.moi.toFixed(1)}px`);
+  ok(co.day >= 8, `van co san co chu, khong roi xuong duoi 8px (${co.day.toFixed(1)}px)`);
+
+  /* Và cờ đó phải bám vào ĐÚNG float của Beatrice, không lây sang nhân vật khác. */
+  const co2 = await page.evaluate(async () => {
+    const G = window.__G(), thay = {};
+    const push = G.floats.push.bind(G.floats);
+    G.floats.push = f => { if (f.banner) thay[f.txt] = !!f.beaFx; return push(f); };
+    for (const id of ['testBeaShamac', 'testBeaMurak', 'testBeaEmt', 'testBeaUlt']) {
+      const b = document.getElementById(id); if (b) b.click();
+      for (let i = 0; i < 320; i++) window.__step(1 / 120);
+    }
+    for (let i = 0; i < 900; i++) window.__step(1 / 120);
+    G.floats.push = push;
+    const key = Object.keys(thay);
+    return { bea: key.filter(k => thay[k]), khac: key.filter(k => !thay[k]) };
+  });
+  ok(co2.bea.length >= 5, `cac dong effect cua Beatrice deu duoc gan co (${co2.bea.length}: ${co2.bea.slice(0, 4).join(' / ')})`);
+  ok(co2.khac.every(k => !/MINYA|SHAMAC|MURAK|E\.M\.T|EROSION/.test(k)),
+     `khong dong effect nao cua co bi bo sot (${co2.khac.join(' / ') || 'khong con dong nao khac'})`);
+
   console.log('\n=== 10. AI: ngoai 5R thi di vao, trong 5R thi dung lai danh xa ===');
   /* Bản mô tả nói rõ hai vế: ngoài tầm thì tiến tới cho đến khi mục tiêu nằm trong 5R, và
      cô KHÔNG bao giờ chủ động áp sát tới cự ly cận chiến. Bị địch cận chiến dí sát thì cô

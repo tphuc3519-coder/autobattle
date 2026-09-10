@@ -2146,31 +2146,33 @@ const DEX={
       {tag:'U',name:'Meteor Strike',vi:`Bay lên rồi lao thẳng xuống: ${SUP.msDmg} dmg vào mục tiêu chính, cộng vùng chấn động quanh điểm rơi.`,
        en:`He rises, then drops straight down: ${SUP.msDmg} on the main target plus a shockwave around the impact.`}
     ]},
-  /* Beatrice chấm thấp ở SÁT THƯƠNG và TỐC ĐÁNH nhưng cao hẳn ở KHỐNG CHẾ, CHỐNG CHỊU và
+  /* Beatrice chấm thấp ở SÁT THƯƠNG và LẬT KÈO nhưng cao hẳn ở KHỐNG CHẾ, CHỐNG CHỊU và
      HỖ TRỢ: cô có cửa giải khống chế, một quãng miễn khống chế, một lớp chặn sạch sát thương
      biết phản đòn, cộng thêm cú dịch chuyển cưỡng bức và một debuff giảm 20% sát thương của
-     địch. LẬT KÈO thì thấp — bộ chiêu của cô không có ngưỡng máu nào cả, đánh đầu trận thế
-     nào thì cuối trận vẫn thế.
+     địch. LẬT KÈO thấp vì bộ chiêu của cô không có ngưỡng máu nào cả — đánh đầu trận thế nào
+     thì cuối trận vẫn thế.
 
-     Hai trục người dùng bắt hạ lại (*"atk speed vs consistency cao lắm đấy"*):
+     TỐC ĐÁNH và ỔN ĐỊNH là hai trục S của cô — người dùng chốt riêng (*"as với cons lên cao
+     nữa á, 2 cái đó của beatrice là S"*):
 
-     - TỐC ĐÁNH **31 → 20**, thấp nhất bảng. Không phải vì nhịp bắn — mỗi giây một mũi thì
-       vẫn nhanh hơn Shikamaru — mà vì **không một hồi chiêu nào của cô đi qua `cm()`**:
-       `f.cds.s1 = BEA.minyaCd`, `s2 = BEA.shamacCd`, `s4 = BEA.ultCd` đều là hằng số thô.
-       Nghĩa là nhịp ra đòn lẫn nhịp ra chiêu của cô **trơ hẳn với mọi thứ đổi tốc thi triển**
-       — buff không kéo nhanh lên được, mà debuff cũng không bóp chậm đi. Cộng thêm bộ hồi
-       chiêu dài nhất bảng (8.5 · 11.5 · 11.5 · 13.5 giây người chơi) và quãng khoá thân lúc
-       vận chiêu (Al Shamac 0.6s, El Minya hơn 1.15s), phần lớn trận cô chỉ có đúng 10 dmg
-       mỗi giây.
-     - ỔN ĐỊNH **72 → 46**. Chỗ chấm cũ ("mọi chiêu tự bung đúng nhịp hồi chiêu") viết từ
-       thời hồi chiêu còn ngắn; sau đợt nerf (mục Beatrice trong CLAUDE.md) quãng có lớp bảo
-       vệ tụt từ 71% xuống 27% nên sức mạnh của cô dồn hết vào mấy cửa sổ ngắn rồi tắt ngóm.
-       Đo thật bằng `t_bea_balance.js`: **0–2 trước năm người, 2–0 trước ba người** — bảng
-       thành tích phân cực nhất bảng, đúng nghĩa "ăn nhau ở đối thủ" chứ không phải đều tay.
-       Thêm nữa Minya có 13% choáng bốc may rủi, còn mũi hai và mũi ba của El Minya thì né
-       được. Mốc 46 đặt cạnh Shikamaru (44) và Ginyu (42) — cùng họ phụ thuộc điều kiện. */
+     - **`as` = 88.** Không phải nhịp bắn to, mà là nhịp bắn KHÔNG BAO GIỜ HỤT: Minya nổ đều
+       một mũi mỗi giây người chơi, không cần vào tầm tay, không có combo để bị bỏ dở, và
+       **không một hồi chiêu nào của cô đi qua `cm()`** (`f.cds.s1 = BEA.minyaCd`,
+       `s2 = BEA.shamacCd`, `s4 = BEA.ultCd` đều là hằng số thô). Nghĩa là mọi thứ bóp tốc thi
+       triển trong game — aura ngơ ngác của Ginyu, Disoriented của Doraemon, Chilled của
+       Superman, ghì chân của Kamehameha — **không chạm được vào cô một nhịp nào**. Cả bảng
+       không ai có chỗ đó. Ngay cả lúc đang bị choáng, Murak và E.M.T vẫn tự bung vì chúng
+       chạy trong `beatriceTick()` chứ không chạy trong `think()`.
+     - **`con` = 90, cao nhất bảng.** Mọi chiêu **tự bung ngay khi hồi chiêu xong**, không giữ
+       lại chờ thời cơ, không phụ thuộc ngưỡng máu (khác Tsubasa / Horikita / Shikamaru), không
+       phải nuôi thanh tiến trình (khác nộ khí của Konohamaru hay bàn thắng của Tsubasa), không
+       có cửa may rủi nào trong nguồn sát thương chính. Quãng miễn thương của E.M.T và Murak vì
+       vậy **được bảo đảm, không bao giờ lỡ nhịp** — chính chỗ đó làm cô mạnh tới mức phải nerf
+       (xem mục Beatrice trong CLAUDE.md).
+
+     **Đụng vào `minyaCd` hay đổi mấy hồi chiêu sang `cm()` thì nhớ chấm lại hai trục này.** */
   beatrice:{ role:{vi:'Pháp sư · Khống chế tầm xa',en:'Mage · Ranged control'}, st:{pow:2,spd:2,rng:4,def:3},
-    pw:{dmg:38,dur:62,mob:44,as:20,rng:76,cc:69,uti:70,con:46,cmb:29},
+    pw:{dmg:38,dur:62,mob:44,as:88,rng:76,cc:69,uti:70,con:90,cmb:29},
     bio:{vi:'Pháp sư nhỏ người của Forbidden Library. Đòn thường nhẹ hều, nhưng cô đẩy địch ra xa liên tục, tự gỡ khống chế, dựng kết giới chặn sạch sát thương rồi hắt ngược lại.',
          en:'The small mage of the Forbidden Library. Her basic attack barely stings, but she keeps shoving the fight away, breaks her own crowd control, and raises a barrier that eats every hit and throws part of it back.'},
     skills:[
@@ -4363,7 +4365,11 @@ function hurt(t,amt,src,crit,kind,tint,raw){
   }
   if(crit){
     const label=typeof crit==='string'?crit:'CRITICAL HIT!';
-    G.floats.push({x:t.x,y:t.y-90,txt:label,color:dc,life:1.4,ml:1.4,banner:true,bubble:true,gold:true,big:true,sc,tilt:rnd(-.08,.08)});
+    /* Băng-rôn tên chiêu của Beatrice (`AL SHAMAC!` / `EL MINYA!`) thu nhỏ theo BEA_FX
+       như mọi dòng effect khác của cô. Đọc HỒN chứ không đọc thân xác: sau cú CHANGE của
+       Ginyu thì chiêu đi theo hồn, nên chữ cũng phải đi theo. */
+    const bfx=!!src&&(src.gnSoul||src.key)==='beatrice';
+    G.floats.push({x:t.x,y:t.y-90,txt:label,color:dc,life:1.4,ml:1.4,banner:true,bubble:true,gold:true,big:true,sc,beaFx:bfx,tilt:rnd(-.08,.08)});
     G.fx.push({type:'burst',x:t.x,y:t.y-26,life:.38,ml:.38}); sfx('crit');
     G.flashScreen=Math.max(G.flashScreen,.07);
   }
@@ -8141,7 +8147,7 @@ function beaMinyaHit(p,e){
   if(chance(BEA.minyaStunOdds)&&stunFx(e,gnCc(p.owner,BEA.minyaStun),'spark')){
     sfx('stun');
     G.floats.push({x:e.x,y:e.y-108,txt:`MINYA STUN ${rts(BEA.minyaStun)}s`,color:'#C77DFF',
-      life:1.2,ml:1.2,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
+      life:1.2,ml:1.2,banner:true,gold:true,sc:.6,beaFx:true,tilt:rnd(-.05,.05)});
     say(`Mũi Minya găm trúng — ${BEA.minyaDmg} dmg và choáng ${rts(BEA.minyaStun)} giây.`,'g');
   }else{
     say(`Mũi Minya găm trúng — ${BEA.minyaDmg} dmg.`,'g');
@@ -8235,10 +8241,10 @@ function beaShamacTick(f,dt){
 function beaWeaken(t){
   t.beaWeak=BEA.shamacWeakT;                          // GÁN chứ không cộng: làm mới, không chồng
   G.floats.push({x:t.x,y:t.y-126,txt:'SHAMAC WEAKNESS',color:'#C9A0FF',
-    life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
+    life:1.6,ml:1.6,banner:true,gold:true,beaFx:true,tilt:rnd(-.05,.05)});
   G.floats.push({x:t.x,y:t.y-104,
     txt:`−${Math.round(BEA.shamacWeak*100)}% DAMAGE DEALT ${rts(BEA.shamacWeakT)}s`,
-    color:'#E3B8FF',life:1.6,ml:1.6,banner:true,sc:.62});
+    color:'#E3B8FF',life:1.6,ml:1.6,banner:true,sc:.62,beaFx:true});
 }
 
 /* ---- chiêu 3: Murak ---- */
@@ -8254,10 +8260,10 @@ function beaMurak(f){
   for(let i=0;i<10;i++) G.fx.push({type:'dust',x:f.x+rnd(-20,20),y:f.y+16,r:5,life:.5,ml:.5});
   sfx('bea_murak');
   G.floats.push({x:f.x,y:f.y-126,txt:'MURAK PROTECTION',color:'#C77DFF',
-    life:1.7,ml:1.7,banner:true,gold:true,tilt:rnd(-.05,.05)});
+    life:1.7,ml:1.7,banner:true,gold:true,beaFx:true,tilt:rnd(-.05,.05)});
   G.floats.push({x:f.x,y:f.y-104,
     txt:`CC IMMUNE · −${Math.round((1-BEA.murakRes)*100)}% DAMAGE TAKEN ${rts(BEA.murakT)}s`,
-    color:'#E3B8FF',life:1.7,ml:1.7,banner:true,sc:.62});
+    color:'#E3B8FF',life:1.7,ml:1.7,banner:true,sc:.62,beaFx:true});
   say(`Vòng phép tím mở ra dưới chân Beatrice — cô bay nhẹ lên, rũ sạch khống chế và miễn nhiễm khống chế ${rts(BEA.murakT)} giây.`,'g');
 }
 /* Rũ sạch KHỐNG CHẾ và mọi thứ trói chân: choáng, đóng băng, trói, quật ngã, hất tung,
@@ -8286,9 +8292,9 @@ function beaEmtOn(f){
   ring(f.x,f.y,BEA.R*1.9,'#E3B8FF',.5);
   sfx('bea_emt');
   G.floats.push({x:f.x,y:f.y-126,txt:'E.M.T',color:'#E3B8FF',
-    life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
+    life:1.6,ml:1.6,banner:true,gold:true,beaFx:true,tilt:rnd(-.05,.05)});
   G.floats.push({x:f.x,y:f.y-104,txt:`100% DAMAGE BLOCKED ${rts(BEA.emtT)}s`,
-    color:'#FBF3F7',life:1.6,ml:1.6,banner:true,sc:.62});
+    color:'#FBF3F7',life:1.6,ml:1.6,banner:true,sc:.62,beaFx:true});
   say(`Lớp kén kết giới khép lại quanh Beatrice — chặn sạch sát thương ${rts(BEA.emtT)} giây và phản lại ${Math.round(BEA.emtRefl*100)}%.`,'g');
 }
 /* Kết giới chặn một đòn. Gọi từ hurt() SAU khi đã nhân hệ số sát thương của kẻ tấn công
@@ -8347,7 +8353,7 @@ function beaUltCancel(f){
   f.beaUlt=null; f.lock=0; f.pose='idle'; f.poseT=0;
   f.cds.s4=BEA.ultCd*BEA.ultBreakCut;
   G.floats.push({x:f.x,y:f.y-92,txt:'INTERRUPTED',color:'#E3B8FF',
-    life:1.1,ml:1.1,banner:true,sc:.6});
+    life:1.1,ml:1.1,banner:true,sc:.6,beaFx:true});
   say('El Minya bị cắt ngang giữa lúc đang vận — Beatrice chỉ phải chờ nửa hồi chiêu.','s');
   return true;
 }
@@ -8393,7 +8399,7 @@ function beaSlowOn(t){
   t.beaSlow=BEA.slowT;                                // GÁN chứ không cộng
   G.floats.push({x:t.x,y:t.y-112,
     txt:`MINYA SLOW −${Math.round((1-BEA.slowMul)*100)}% MOVE ${rts(BEA.slowT)}s`,
-    color:'#C9A0FF',life:1.3,ml:1.3,banner:true,sc:.58});
+    color:'#C9A0FF',life:1.3,ml:1.3,banner:true,sc:.58,beaFx:true});
 }
 /* Mana Erosion — mỗi mũi trúng thêm MỘT stack, mỗi stack có đồng hồ RIÊNG và hết hạn
    riêng. Ba stack là trần. Sát thương đi đường dots[] của engine; dots[].dps tính theo
@@ -8416,7 +8422,7 @@ function beaErode(t,src){
     t.dots.push({dps:BEA.eroDps, left:BEA.eroT, acc:0, src, tint:'#C9A0FF', bea:true});
   }
   G.floats.push({x:t.x,y:t.y-96,txt:`MANA EROSION ×${beaEroStacks(t).length}`,color:'#C9A0FF',
-    life:1.2,ml:1.2,banner:true,sc:.6});
+    life:1.2,ml:1.2,banner:true,sc:.6,beaFx:true});
 }
 
 /* ---- bộ hệ số dùng chung ---- */
@@ -12198,6 +12204,13 @@ function versusBox(){
    nhẹ 15% cho khỏi mờ tịt. Chiêu "focus" — ultimate, biến thân, phân cảnh — gắn cờ
    focus:true và giữ nguyên cỡ chữ to. Số sát thương và bong bóng thoại không đụng tới. */
 const NAME_FULL=.62, NAME_SMALL=.74;
+/* Beatrice thu nhỏ THÊM một nấc nữa (người dùng: *"cast skill thì mấy chữ effect của
+   beatrice nhỏ lại"*). Bộ chiêu của cô có tới NĂM chiêu tự bung đúng nhịp hồi chiêu, mỗi
+   chiêu lại đẩy ra HAI dòng — tên hiệu ứng cộng một dòng số liệu (`SHAMAC WEAKNESS` +
+   `−20% DAMAGE DEALT 4s`), nên chỉ mình cô là mấy dòng chữ chồng lên nhau kín cả sàn.
+   Cờ `beaFx:true` gắn vào từng float, muốn chỉnh nữa thì sửa đúng con số này. */
+const BEA_FX=.72;
+const FX_MIN=8;                   // sàn cỡ chữ băng-rôn, tính bằng px
 /* Cỡ bong bóng thoại. Khai gom vào đây vì mấy con số này dùng ở HAI chỗ trong
    drawFloat(): lượt đo khối chữ để kéo vào trong sàn, và lượt vẽ thật. Để rời ra thì
    sửa một chỗ quên chỗ kia là khung lệch hẳn khỏi chữ. */
@@ -12206,7 +12219,13 @@ const chatBox=f=>f.big?CHAT_BIG:CHAT_SM;
 const chatFontOf=f=>`${f.big?900:800} ${chatBox(f).f}px "Be Vietnam Pro",sans-serif`;
 function floatScale(f){
   if(f.focus) return f.sc||1;
-  return (f.sc||1)*((f.sc&&f.sc<1&&!f.big)?NAME_SMALL:NAME_FULL);
+  let k=(f.sc||1)*((f.sc&&f.sc<1&&!f.big)?NAME_SMALL:NAME_FULL)*(f.beaFx?BEA_FX:1);
+  /* Sàn cỡ chữ, cùng lối `bar()` tự thu nhãn cho vừa lòng thanh: mấy dòng phụ vốn đã nhỏ
+     sẵn (`sc` .58~.62) mà nhân thêm một nấc nữa thì rơi xuống dưới 7px và mờ tịt. Kẹp ở đây
+     chứ đừng kẹp ở chỗ vẽ — `k` còn dùng cho cả bề dày viền, tách ra là chữ nhỏ mà viền vẫn
+     dày, nhìn bết thành một cục (mục 6c). */
+  if(f.banner) k=Math.max(k,FX_MIN/(f.big?27:21));
+  return k;
 }
 /* Một dòng chữ nổi: số sát thương, băng-rôn tên chiêu, hay bong bóng thoại.
    Tách ra khỏi draw() để vẽ được làm nhiều lượt — xem chatFloat(). */
