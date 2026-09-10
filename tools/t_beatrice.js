@@ -198,9 +198,9 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
     out.cd = f.cds.s3 * window.__RT;
     // mien khong che 100%: stunFx phai tra ve false
     out.stunBlocked = window.__stunFx(f, 2, 'spark') === false && f.stun <= 0;
-    /* Giảm 20% sát thương nhận vào. Kẻ tấn công phải SẠCH debuff thì mới đo được đúng ví
-       dụ người dùng nêu (100 dmg + choáng 2s ⇒ 80 dmg, không choáng) — Shamac Weakness còn
-       sót trên người họ từ mục 4 là ra 64 vì hai lớp NHÂN chồng nhau. */
+    /* Giảm 12% sát thương nhận vào. Kẻ tấn công phải SẠCH debuff thì mới đo được đúng ví
+       dụ người dùng nêu (100 dmg + choáng 2s ⇒ 88 dmg, không choáng) — Shamac Weakness còn
+       sót trên người họ từ mục 4 là ra 70.4 vì hai lớp NHÂN chồng nhau. */
     window.__statusTick(f, 0);
     out.take = f.dmgTake;
     e.beaWeak = 0; window.__statusTick(e, 0);
@@ -208,7 +208,7 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
     window.__hurt(f, 100, e, false, 'test');
     out.hit = 800 - f.hp;
     /* Và đây là chỗ chứng minh hai lớp giảm sát thương NHÂN chồng chứ không cộng: Shamac
-       Weakness −20% cộng Murak Protection −20% ra 64, không phải 60 (cộng phần trăm) và
+       Weakness −20% cộng Murak Protection −12% ra 70.4, không phải 68 (cộng phần trăm) và
        tuyệt đối không bao giờ gộp lại thành miễn thương 100%. */
     window.__beaWeaken(e); window.__statusTick(e, 0);
     f.hp = 800; window.__hurt(f, 100, e, false, 'test');

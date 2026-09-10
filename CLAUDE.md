@@ -1474,10 +1474,13 @@ di chuyển cũng không đánh. Đo được: 90/91 nhịp bị khoá, địch 
 một giọt máu nào**. Cánh cửa vẽ trong `drawBeaEntry()`, **TRƯỚC** nhân vật, để cô bước ra từ
 phía sau nó.
 
-**1 · Minya** — `BEA.minyaDmg = 15`, một đòn mỗi giây người chơi (`minyaCd: gs(1)`), nhắm kẻ
+> **Mọi con số dưới đây là bản SAU đợt nerf.** Bản đầu cao hơn hẳn; đường đi của từng con số
+> nằm trong bảng ở mục *Đợt NERF* phía dưới — đừng lấy số ở đó ra dùng.
+
+**1 · Minya** — `BEA.minyaDmg = 10`, một đòn mỗi giây người chơi (`minyaCd: gs(1)`), nhắm kẻ
 địch **gần nhất trong tầm 5R**. Mũi tinh thể tím đen bay thẳng, **xuất phát từ trước bàn
 tay** — không phải đấm, không phải súng, không phải tia laser hiện đại.
-- **20% choáng 0.5 giây** (`minyaStunOdds` / `minyaStun`), tên hiệu ứng là **Minya Stun**.
+- **13% choáng 0.5 giây** (`minyaStunOdds` / `minyaStun`), tên hiệu ứng là **Minya Stun**.
 - **Xác suất bốc RIÊNG cho từng viên, ĐÚNG LÚC nó chạm người** — `beaMinyaHit()` gọi
   `hurt()` trước, `return` ngay nếu đòn bị né hay bị chặn, rồi mới `chance()`. Bốc lúc bắn
   là sai: đòn bị né vẫn choáng.
@@ -1488,7 +1491,7 @@ tay** — không phải đấm, không phải súng, không phải tia laser hi�
 - Mục tiêu chết hoặc ra khỏi tầm **trước lúc bắn** thì bốc lại người gần nhất; **đã bắn ra
   rồi** thì viên đạn cứ bay theo cơ chế cũ, không tự đổi mục tiêu giữa đường.
 
-**2 · Al Shamac** — mỗi `gs(5)`, ném mục tiêu ra **sát rìa tầm đánh thường**.
+**2 · Al Shamac** — **9 dmg**, mỗi `gs(8.5)`, ném mục tiêu ra **sát rìa tầm đánh thường**.
 - `beaShamacSpot()` bốc 32 điểm trên vòng tròn bán kính `5R × 0.94` rồi **lùi dần vào trong**
   (82% → 68% → 54%) tới khi có chỗ hợp lệ: nằm hẳn trong sàn, không dính tường, không chồng
   lên model của ai. Chấm điểm ưu tiên **vòng ngoài cùng** (thắng đậm, +1000 mỗi vòng) rồi mới
@@ -1500,7 +1503,7 @@ tay** — không phải đấm, không phải súng, không phải tia laser hi�
   đúng **0.6 giây**, không dài hơn.
 - **Chỉ dời `x/y`**, không đụng tới `alive`, `hp` hay `G.fighters` — mục tiêu không bao giờ
   bị coi là đã chết hay đã rời trận, nên **thanh máu và tên vẫn hiện bình thường**.
-- Hiện ra: **10 dmg**, **choáng 1 giây**, và **Shamac Weakness 4 giây**.
+- Hiện ra: **9 dmg**, **choáng 1 giây**, và **Shamac Weakness 4 giây**.
 - **Shamac Weakness ăn vào `f.dmgOut`** (trong `beaStatus`) nên nó phủ được đòn thường, chiêu,
   ultimate **và cả sát thương duy trì do mục tiêu tạo ra** — đúng bản mô tả. Nó **không đụng
   tới hồi máu hay khiên** vì `dmgOut` chỉ nhân vào đúng lúc gây sát thương. **Không cộng
@@ -1510,7 +1513,7 @@ tay** — không phải đấm, không phải súng, không phải tia laser hi�
 - Ba người trở lên: chọn **kẻ địch gần nhất lúc bắt đầu chiêu**, chỉ **một** người bị dịch
   chuyển, không ảnh hưởng ai đứng gần chỗ xuất hiện.
 
-**3 · Murak** — mỗi `gs(7)`, tự dùng lên bản thân, **dùng được cả khi đang bị khống chế**.
+**3 · Murak** — mỗi `gs(11.5)`, tự dùng lên bản thân, **dùng được cả khi đang bị khống chế**.
 - **Chạy trong `beatriceTick()` chứ KHÔNG chạy trong `think()`**: `think()` không được gọi
   khi `f.stun>0`, mà chiêu này bắt buộc phải phá được choáng ngay lập tức. Đúng cái bẫy của
   Mini Rasengan và cú thoát góc của Tsubasa.
@@ -1524,19 +1527,19 @@ tay** — không phải đấm, không phải súng, không phải tia laser hi�
   từ đầu bên đó), quật ngã, hất tung (`kbx/kby`), làm chậm mọi loại, `lock`.
 - **KHÔNG xoá**: cháy, độc, chảy máu, sát thương duy trì, debuff giảm sát thương, dấu, hoán
   đổi thân xác. Đừng nới danh sách ra.
-- Rồi **Murak Protection 3 giây**: **miễn khống chế 100%** (`stunFx()` return false ngay) và
-  **giảm 20% sát thương nhận vào**. Vẫn đi lại, vẫn đánh thường, vẫn tung chiêu khác được.
+- Rồi **Murak Protection 2 giây**: **miễn khống chế 100%** (`stunFx()` return false ngay) và
+  **giảm 12% sát thương nhận vào**. Vẫn đi lại, vẫn đánh thường, vẫn tung chiêu khác được.
 - **`beaStatus()` chạy CUỐI trong `statusTick()`** và rũ sạch lại mỗi nhịp, kèm
   `moveMul=Math.max(moveMul,1)` — miễn khống chế 100% nghĩa là gạt sạch mọi thứ làm chậm mà
   `gnStatus` / `drStatus` / `supStatus` vừa nhân vào. Nhưng phải **giữ lại quãng khoá của
   CHÍNH chiêu cô đang tung** (`const own=(f.beaShamac||f.beaUlt)?f.lock:0`), không thì Al
   Shamac và El Minya tự cắt ngang mình.
 - **Giảm sát thương NHÂN chồng chứ không cộng phần trăm** — `f.dmgTake *= BEA.murakRes`, và
-  `dmgTake` là lớp nhân cuối cùng trong `hurt()`. Đo được: đòn 100 raw ⇒ **80**; cộng thêm
-  Shamac Weakness của chính kẻ tấn công ⇒ **64**, không phải 60 (cộng phần trăm) và không bao
-  giờ gộp lại thành miễn thương 100%.
+  `dmgTake` là lớp nhân cuối cùng trong `hurt()`. Đo được: đòn 100 raw ⇒ **88**; cộng thêm
+  Shamac Weakness của chính kẻ tấn công ⇒ **70.4**, không phải 68 (cộng phần trăm) và không
+  bao giờ gộp lại thành miễn thương 100%.
 
-**4 · E.M.T** — mỗi `gs(7)`, kén kết giới sống `gs(2)`.
+**4 · E.M.T** — mỗi `gs(13.5)`, kén kết giới sống `gs(1.35)`.
 - **Chặn 100% sát thương**: `hurt()` gọi `beaEmtBlock()` và return false. Lượng thật sự nhận
   vào là **0**, kể cả sát thương duy trì. Cô **vẫn bị chọn làm mục tiêu**, đòn vẫn tính là ĐÃ
   TRÚNG kết giới, và **KHÔNG** kèm miễn khống chế — choáng vẫn dính dù dmg thì không.
@@ -1544,9 +1547,9 @@ tay** — không phải đấm, không phải súng, không phải tia laser hi�
   công (`src.dmgOut`, tức Shamac Weakness tính trong đó) nhưng **TRƯỚC** mọi lớp giảm sát
   thương của chính cô. Người dùng chốt riêng chỗ này, và nó cũng là lý do phần phản lại tính
   từ con số **đã bị Shamac Weakness cắt**.
-- **Phản lại 20% chỗ VỪA CHẶN** (`E.M.T Reflection`), thành sát thương vùng lên **mọi kẻ địch
+- **Phản lại 12% chỗ VỪA CHẶN** (`E.M.T Reflection`), thành sát thương vùng lên **mọi kẻ địch
   trong 2.5R**. Kẻ tấn công đứng ngoài bán kính đó thì **không dính**; người khác đứng gần thì
-  vẫn dính dù không phải người vừa đánh. Đo được: chặn 50 ⇒ 10, chặn 100 ⇒ 20, chặn 200 ⇒ 40,
+  vẫn dính dù không phải người vừa đánh. Đo được: chặn 50 ⇒ 6, chặn 100 ⇒ 12, chặn 200 ⇒ 24,
   đứng ngoài 2.5R ⇒ 0.
 - **Vì kết giới chặn sạch nên lượng thật nhận vào là 0 — đừng lấy con số 0 đó để tính phản
   đòn.** `beaEmtBlock()` nhận `amt` trước khi vứt bỏ chính vì thế.
@@ -1556,15 +1559,15 @@ tay** — không phải đấm, không phải súng, không phải tia laser hi�
   Beatrice đối đầu nhau thì bên kia vẫn CHẶN được nhưng không phản, nên không có vòng lặp vô
   hạn. `reflect` cũng không cộng dồn tỉ lệ né của Shikamaru (cùng họ với `big`), không chí
   mạng, không choáng, không làm chậm.
-- Hết 2 giây thì kén vỡ thành hạt sáng rồi biến mất: **không gây thêm sát thương** và
+- Hết `emtT` thì kén vỡ thành hạt sáng rồi biến mất: **không gây thêm sát thương** và
   **không để lại khiên nào**.
 - Kén **di chuyển cùng cô**, không đứng lại chỗ kích hoạt (`drawBeaEmt()` đọc `f.x/f.y` mỗi
   khung hình). Mỗi lần chặn được một đòn thì mặt kén gợn sóng (`f.beaRipple`).
 
-**5 · El Minya** — mỗi `gs(8)`, **ba mũi tinh thể TÁCH BIỆT** chứ không phải một luồng năng
+**5 · El Minya** — mỗi `gs(11.5)`, **ba mũi tinh thể TÁCH BIỆT** chứ không phải một luồng năng
 lượng liền mạch.
 - Mốc bắn: **0.65 / 0.90 / 1.15 giây người chơi** (`ultAim` + `ultGap`). Đo được đúng ba mốc đó.
-- **50 dmg mỗi mũi**, tổng trực tiếp **150**. Mỗi mũi có collision riêng, bay thẳng, **không
+- **34 dmg mỗi mũi**, tổng trực tiếp **102**. Mỗi mũi có collision riêng, bay thẳng, **không
   dò tìm**, và **dừng lại ở fighter ĐẦU TIÊN nó chạm** — không xuyên qua ai để đi tìm mục
   tiêu ban đầu, nên người vô tình đứng chắn đường vẫn ăn đủ dmg + Minya Slow + Mana Erosion.
 - **Mỗi mũi ngắm vào chỗ mục tiêu đang đứng ĐÚNG LÚC nó rời tay**, nên mũi thứ hai và thứ ba
@@ -1574,11 +1577,11 @@ lượng liền mạch.
 - **Minya Slow** −50% tốc chạy trong 3 giây, **không cộng dồn phần trăm**: trúng cả ba mũi
   vẫn đúng −50% chứ không phải −150%. `beaSlowOn()` GÁN chứ không cộng; hệ số nhân vào
   `moveMul` trong `beaStatus()`.
-- **Mana Erosion** cộng dồn tới **3 stack**, mỗi stack **2 HP mỗi giây người chơi** trong 3
-  giây, **mỗi stack có đồng hồ riêng và hết hạn riêng**. Đủ ba stack là **6 HP/s**, tổng DoT
-  **18**, nên trần của một lượt El Minya là **150 + 18 = 168**.
+- **Mana Erosion** cộng dồn tới **3 stack**, mỗi stack **1.2 HP mỗi giây người chơi** trong 3
+  giây, **mỗi stack có đồng hồ riêng và hết hạn riêng**. Đủ ba stack là **3.6 HP/s**, tổng DoT
+  **10.8**, nên trần của một lượt El Minya là **102 + 10.8 ≈ 113**.
   - Sát thương đi đường `dots[]` của engine, mà `dots[].dps` tính theo **giây trong trận** —
-    nên hằng số khai là `2*RT` (mục 1). Không chí mạng, không theo phần trăm máu, không kích
+    nên hằng số khai là `1.2*RT` (mục 1). Không chí mạng, không theo phần trăm máu, không kích
     hoạt cửa choáng của Minya.
   - **Số stack ĐẾM THẲNG TỪ `f.dots`** (`beaEroStacks()`), đừng nuôi một mảng song song.
     Có tới năm chỗ trong game xoá sạch `dots` một lượt — phân cảnh gọi Goku / Gohan, CHANGE
@@ -3089,15 +3092,15 @@ node tools/t_superman.js # Superman: màn xuất hiện 1.5s bốn pha (bóng ng
                         # và chữ hiển thị đều bằng tiếng Anh
 node tools/t_beatrice.js # Beatrice: cửa Forbidden Library đúng 1.5s và địch chỉ đứng chờ,
                         # tầm đánh 5 × R suy từ hộp thân 34×96 (R = 51 ⇒ 255, phản đòn 127.5),
-                        # Minya 15 dmg + choáng 20% × 0.5s KHÔNG cộng dồn, Al Shamac ném địch
+                        # Minya 10 dmg + choáng 13% × 0.5s KHÔNG cộng dồn, Al Shamac ném địch
                         # ra sát rìa 5R (quá gần thì đẩy ra, quá xa thì kéo về, không bao giờ
                         # vượt tầm, không chồng lên model nào) + Shamac Weakness −20% dmg,
                         # Murak tự bung DÙ ĐANG BỊ CHOÁNG và phá luôn cả đóng băng lẫn dải
                         # bóng của Shikamaru nhưng không xoá dot, E.M.T chặn 0 dmg và phản
-                        # đúng 20% trong 2.5R (đứng ngoài thì không dính, đòn phản không phản
+                        # đúng 12% trong 2.5R (đứng ngoài thì không dính, đòn phản không phản
                         # lại lần nữa), El Minya ba mũi ở 0.65/0.90/1.15s + Minya Slow không
-                        # cộng dồn + Mana Erosion trần 3 stack = 6 HP/s, hai lớp giảm sát
-                        # thương NHÂN chồng (80 rồi 64 chứ không phải 60), và chữ hiển thị
+                        # cộng dồn + Mana Erosion trần 3 stack = 3.6 HP/s, hai lớp giảm sát
+                        # thương NHÂN chồng (88 rồi 70.4 chứ không phải 68), và chữ hiển thị
                         # đều bằng tiếng Anh
 ```
 
