@@ -2095,7 +2095,7 @@ tôi để mọi người chơi"*.
 | Trang | File | Có gì |
 |---|---|---|
 | xưởng | `index.html` | đủ bảng dán ảnh / tiếng, nạp hàng loạt, nút thử chiêu, ghi hình, xuất gói |
-| chơi | `play.html` | màn tiêu đề → chọn nhân vật → chọn màn → đánh. Không có bảng dán |
+| chơi | `play.html` | màn tiêu đề → chọn nhân vật → chọn màn → đánh. Không có bảng dán, nhưng **có nút quay video 9:16** (xem mục 7b) |
 
 **`play.html` DỰNG RA từ `index.html`, đừng sửa tay** — `python3 tools/mk_play.py`. Script
 chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và chèn `window.ARCADE=1`.
@@ -2918,6 +2918,30 @@ Nút `#rec` quay canvas sàn đấu; ô chọn `#rec916` quyết định khung v
 > lượt: dải nhật ký tiếng Việt phía dưới, dòng đồng hồ và chữ AUTOBATTLE phía trên, rồi cả
 > dòng tên cặp đấu tự vẽ — "chỉ cần tên màu của cặp đấu vs arena như trước giờ thôi".
 
+### Nút quay của TRANG CHƠI — `#arcRec`
+
+Người dùng: *"Thêm nút quay màn hình 9:16 1080p như bên link dev đi, link game ch có"*.
+Nút `#rec` cùng ô chọn khung `#rec916` nằm trong khối `<!--STUDIO-->` nên bị cắt khỏi
+`play.html` — trang chơi không có đường nào để quay. Vì vậy có thêm **một nút thứ hai
+`#arcRec` nằm NGOÀI mốc `<!--STUDIO-->`**, ngay cạnh *Đánh lại* trên thanh công cụ.
+
+- **Không dựng đường ghi hình thứ hai**: nút gọi thẳng `toggleRec()` như bên xưởng. Trang
+  chơi không có ô `#rec916` nên `recWantTall()` rơi về **mặc định 1080** — đúng khung
+  9:16 · 1080p người dùng cần, khỏi thêm ô chọn cho rối.
+- **Giấu ở xưởng bằng CSS** (`body:not(.arcade) #arcRec`): xưởng đã có `#rec` kèm ô chọn
+  khung, hai nút cùng một việc đứng cạnh nhau là rối. `t_play.js` soi `id="rec"` để chắc
+  trang chơi không còn nút xưởng — `id="arcRec"` không chứa chuỗi đó nên không đụng nhau.
+- **`recLabel(txt, st)` đổi nhãn CẢ HAI nút một lúc**: `#rec` lấy thẳng `txt` (tiếng Việt),
+  còn `#arcRec` song ngữ nên tra qua `t('recGo')` / `tf('recStop',{t})` / `t('recWait')`.
+  Tham số `st` là **số giây** khi đang quay · `'busy'` lúc dựng file · bỏ trống là đứng chờ.
+- Lúc đang quay nút chỉ **đổi màu** (`#arcRec.on`), **đừng cho nhấp nháy** — nút mà nhúc
+  nhích thì Playwright không bấm được (mục 9).
+- Nút nằm trên thanh công cụ nên mọi lớp phủ toàn màn (`#arcBoot` · `#arcTitle` · `#arcVs`
+  z-index 66~72, `#charSelect` 60) tự che nó đi; không phải viết thêm nhánh bật/tắt nào.
+
+Đo được ở trang chơi: bấm nút ⇒ nhãn `⏺ Record 9:16 · 1080p` → `⏹ Stop (0:02)`, bấm lần
+nữa ra file **MP4 1080×1920, nhịp khung cố định 60 fps**, kèm tiếng.
+
 ### Vì sao không dùng MediaRecorder nữa
 
 `MediaRecorder` gắn mốc thời gian theo **lúc khung tới**, nên file xuất ra là **VFR** —
@@ -3076,7 +3100,8 @@ node tools/t_chichi.js  # ChiChi: Flying Kick 45 dmg + choáng 2s, và viện bi
                         # ngược cả vòng khí Air Cannon lẫn luồng khí tím của Ginyu (chủ cũ ăn
                         # đúng 85 / 18 dmg của chính mình, đầu đạn xoay theo hướng bay mới)
 node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Eagle thì bay thẳng vào địch
-node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui
+node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui,
+                        # và TRANG CHƠI bấm #arcRec cũng ra đúng khung dọc 1080×1920
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
 node tools/t_ui.js      # đổi tên game, hai ngôn ngữ (MẶC ĐỊNH TIẾNG ANH, nút đổi ở cả ba chỗ,
                         # chữ và mô tả chiêu đổi theo, nhớ lại lựa chọn), hồ sơ chín nhân vật

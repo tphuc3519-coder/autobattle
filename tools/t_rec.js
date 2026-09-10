@@ -4,7 +4,7 @@
    - track tiếng phải phủ hết độ dài hình (đừng cụt đoạn cuối) VÀ giải mã ra tiếng thật
    - file phải phát lại được, đúng bề ngang/cao đã chọn
    - bỏ WebCodecs thì lui về MediaRecorder và nói rõ là nhịp khung thay đổi */
-const { openGame } = require('./probe.js');
+const { openGame, buildPlay, playwright } = require('./probe.js');
 
 /* soi thô MP4: trả về các box cần kiểm */
 function parseMp4(buf) {
@@ -68,6 +68,58 @@ async function record(page, ms) {
     } catch (e) { aud = { err: e.name }; }
     return { type: b.type, size: b.size, b64: btoa(s), play, aud, log: (window.__G().logs.find(l => /^Đã lưu|^Trình duyệt/.test(l.m)) || {}).m };
   });
+}
+
+/* TRANG CHƠI có nút quay riêng `#arcRec` — xưởng thì dùng `#rec` kèm ô chọn khung
+   `#rec916`, mà ô đó bị cắt khỏi play.html nên `recWantTall()` rơi về mặc định 1080.
+   Kiểm: nút có mặt và bấm được ở trang chơi, ra đúng khung dọc 1080×1920, và nhãn nút
+   đổi qua lại (đứng chờ ⇄ đang quay) chứ không đứng im. */
+async function quayTrangChoi() {
+  const file = buildPlay();
+  const { chromium } = playwright();
+  const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
+  const page = await browser.newPage({ viewport: { width: 900, height: 980 } });
+  await page.route('**://fonts.*/**', r => r.abort());
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto('file://' + file, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(700);
+  await page.evaluate(() => {
+    window.__blobObj = null;
+    const orig = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = b => { if (b instanceof Blob && b.type.includes('video')) window.__blobObj = b; return orig(b); };
+    document.addEventListener('click', e => { if (e.target.tagName === 'A') e.preventDefault(); }, true);
+  });
+  const co = await page.evaluate(() => !!document.getElementById('arcRec'));
+  await page.click('#arcStart'); await page.waitForTimeout(300);
+  await page.click('#listA .cTile[data-key="kono"]'); await page.click('#cselGo'); await page.waitForTimeout(200);
+  await page.click('#listB .cTile[data-key="chichi"]'); await page.click('#cselGo'); await page.waitForTimeout(200);
+  await page.click('#stageList .sTile[data-stage="dojo"]'); await page.click('#cselGo'); await page.waitForTimeout(400);
+  await page.evaluate(() => { const e = document.getElementById('arcVs');
+                              if (e && !e.classList.contains('off')) e.click(); });
+  await page.waitForTimeout(400);
+  const hien = await page.locator('#arcRec').isVisible();
+  const cho = await page.evaluate(() => document.getElementById('arcRec').textContent);
+  await page.click('#arcRec');
+  await page.waitForTimeout(2200);
+  const dang = await page.evaluate(() => ({ txt: document.getElementById('arcRec').textContent,
+                                            do: document.getElementById('arcRec').classList.contains('on') }));
+  await page.click('#arcRec');
+  await page.waitForFunction(() => window.__blobObj !== null, null, { timeout: 30000 }).catch(() => {});
+  const r = await page.evaluate(async () => {
+    const b = window.__blobObj;
+    if (!b) return { err: 'khong co file' };
+    const play = await new Promise(res => {
+      const v = document.createElement('video'); v.muted = true;
+      v.onloadedmetadata = () => res({ w: v.videoWidth, h: v.videoHeight });
+      v.onerror = () => res({ err: 'khong phat lai duoc' });
+      v.src = URL.createObjectURL(b); setTimeout(() => res({ err: 'het gio' }), 8000);
+    });
+    return { type: b.type, play, xong: document.getElementById('arcRec').textContent,
+             cfr: /CFR|nhịp khung cố định/.test((window.__G().logs.find(l => /^Đã lưu/.test(l.m)) || {}).m || '') };
+  });
+  await browser.close();
+  return { co, hien, cho, dang, r, errors };
 }
 
 /* Bảo đảm "luôn có tiếng": chặn từng API rồi kiểm file ra vẫn giải mã được tiếng.
@@ -178,11 +230,21 @@ async function chanApiVanCoTieng(patch) {
       (r.aud.err ? r.aud.err : `${r.aud.dur}s dinh ${r.aud.peak}`));
   }
 
+  const tc = await quayTrangChoi();
+  ok['trang choi co nut quay 9:16'] = tc.co && tc.hien;
+  ok['trang choi: nhan nut doi khi dang quay'] = /^⏹/.test(tc.dang.txt) && tc.dang.do
+    && /^⏺/.test(tc.cho) && /^⏺/.test(tc.r.xong || '');
+  ok['trang choi: ra dung khung doc 1080x1920'] = tc.r.play && tc.r.play.w === 1080 && tc.r.play.h === 1920;
+  ok['trang choi: van la MP4 nhip khung co dinh'] = tc.r.type === 'video/mp4' && tc.r.cfr;
+  ok['trang choi: khong loi trang'] = tc.errors.length === 0;
+
   for (const k of Object.keys(ok)) console.log((ok[k] ? 'DAT ' : 'HONG') + '  ' + k);
   console.log(`hinh ${vStts[0][0]} khung / ${vDur.toFixed(2)}s · tieng ${aDur.toFixed(2)}s ` +
     `(giai ma ${cfr.aud.err || cfr.aud.dur.toFixed(2) + 's, dinh ' + cfr.aud.peak}) · ` +
     `${m.stsd.map((k, i) => k + '[' + (m.cfgBox[i] || []).join(',') + ']').join(' + ')} · ${(cfr.size / 1048576).toFixed(1)} MB`);
   console.log('chan API:'); duong.forEach(d => console.log(d));
+  console.log(`trang choi: nut "${tc.cho}" -> "${tc.dang.txt}" · `
+    + `${tc.r.play && tc.r.play.w ? tc.r.play.w + 'x' + tc.r.play.h : tc.r.err || 'khong ra file'} · ${tc.r.type}`);
   console.log('loi trang:', errors.length ? errors : 'khong co');
   process.exit(Object.values(ok).every(Boolean) && !errors.length ? 0 : 1);
 })();

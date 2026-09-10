@@ -262,6 +262,12 @@
     50%{box-shadow:0 0 0 8px rgba(255,197,66,.16)}}
   .arcOver{position:fixed;left:0;right:0;bottom:18px;z-index:65;display:flex;gap:9px;justify-content:center}
   .arcOver.off{display:none}
+  /* Nút quay video 9:16 của TRANG CHƠI. Xưởng đã có #rec kèm ô chọn khung #rec916 ngay
+     trên thanh công cụ, nên ở đó giấu nút này đi — hai nút cùng một việc đứng cạnh nhau
+     là rối. Lúc đang quay chỉ đổi MÀU, đừng cho nhấp nháy: nút mà nhúc nhích thì
+     Playwright coi là "chưa đứng yên" và không bao giờ bấm được (mục 9). */
+  body:not(.arcade) #arcRec{display:none !important}
+  #arcRec.on{border-color:#FF4D6D;color:#FF9CB0;background:#2A1020}
   /* Trang chơi: chỉ giấu ô nhịp ra chiêu (đồ chỉnh cân bằng). Mấy ô .chk còn lại ở trang
      chơi là "tự dùng chiêu", "nhạc nền" và âm lượng nhạc — người chơi cần đúng mấy cái đó,
      giấu hết là họ không tắt bật nhạc được. */
@@ -659,6 +665,9 @@
 <!--/STUDIO-->
     <button id="play" class="primary">Bắt đầu</button>
     <button id="reset" data-i18n="reset">Đánh lại</button>
+    <!-- TRANG CHƠI: quay sàn đấu thành video dọc 9:16 · 1080p. Không có ô #rec916 ở đây
+         nên recWantTall() rơi về mặc định 1080 — đúng khung người dùng cần. -->
+    <button id="arcRec" data-i18n="recGo" data-i18n-title="recTip">⏺ Record 9:16 · 1080p</button>
     <!--STUDIO--><button id="rec">⏺ Ghi hình sàn đấu</button>
     <select id="rec916" title="Khung video lúc ghi hình. 1080p nét hơn nhưng máy yếu có thể rớt khung; 720p thì nhẹ hều.">
       <option value="1080" selected>Video dọc 9:16 · 1080p</option>
@@ -984,6 +993,8 @@ const L={
     mTeam:'🛡 Đánh theo đội', mTeamSub:'2–4 đội · tối đa 8 người',
     sideL:'Bên trái', sideR:'Bên phải', stagePick:'Chọn màn đấu',
     again:'↻ Đánh lại', repick:'⚔ Đổi nhân vật / màn',
+    recGo:'⏺ Quay 9:16 · 1080p', recStop:'⏹ Dừng quay ({t})', recWait:'⏳ Đang dựng video…',
+    recTip:'Quay sàn đấu thành video dọc 9:16 · 1080p — vừa khung TikTok / Reels / Shorts',
     arcHint:'Chọn nhân vật, chọn màn rồi ngồi xem máy đánh với máy',
     keys:'<kbd>W A S D</kbd> di chuyển · <kbd>J</kbd> chiêu 1 · <kbd>K</kbd> chiêu 2 · '+
          '<kbd>L</kbd> chiêu 3 · <kbd>U</kbd> tuyệt chiêu · <kbd>Space</kbd> dừng · <kbd>R</kbd> đánh lại',
@@ -1048,6 +1059,8 @@ const L={
     mTeam:'🛡 Team battle', mTeamSub:'2–4 teams · up to 8 fighters',
     sideL:'Left side', sideR:'Right side', stagePick:'Select stage',
     again:'↻ Rematch', repick:'⚔ Change fighter / stage',
+    recGo:'⏺ Record 9:16 · 1080p', recStop:'⏹ Stop ({t})', recWait:'⏳ Building video…',
+    recTip:'Record the arena as a 9:16 · 1080p vertical video — fits TikTok / Reels / Shorts',
     arcHint:'Pick your fighter, pick a stage, then watch the CPUs go at it',
     keys:'<kbd>W A S D</kbd> move · <kbd>J</kbd> skill 1 · <kbd>K</kbd> skill 2 · '+
          '<kbd>L</kbd> skill 3 · <kbd>U</kbd> ultimate · <kbd>Space</kbd> pause · <kbd>R</kbd> rematch',
@@ -12798,7 +12811,17 @@ function recFrame(){
   if(!recPainted){ recPainted=true; g.fillStyle='#000'; g.fillRect(0,0,w,h); }
   g.drawImage(CV,0,dy,w,dh);
 }
-function recLabel(txt){ const b=document.getElementById('rec'); if(b)b.textContent=txt; }
+/* Nhãn nút ghi hình, hai chỗ một lúc: `#rec` của XƯỞNG (tiếng Việt, lấy thẳng `txt`) và
+   `#arcRec` của TRANG CHƠI (song ngữ nên tra qua t()/tf(), đừng dùng `txt`).
+   `st`: số giây khi đang quay · 'busy' lúc dựng file · bỏ trống là đứng yên chờ. */
+function recLabel(txt,st){
+  const b=document.getElementById('rec'); if(b)b.textContent=txt;
+  const a=document.getElementById('arcRec'); if(!a) return;
+  const dang=typeof st==='number';
+  a.textContent=dang?tf('recStop',{t:`${Math.floor(st/60)}:${String(st%60).padStart(2,'0')}`})
+                    :st==='busy'?t('recWait'):t('recGo');
+  a.classList.toggle('on',dang||st==='busy');
+}
 
 /* ---------- dựng file MP4 ---------- */
 /* MediaRecorder gắn mốc thời gian theo lúc khung tới nên file xuất ra là VFR: khung nào
@@ -13226,7 +13249,7 @@ function cfrPump(){
 async function cfrStop(){
   if(!CFR||CFR.stopping) return;
   CFR.stopping=true; recBusy=true;
-  recLabel('⏳ Đang dựng video…');
+  recLabel('⏳ Đang dựng video…','busy');
   clearInterval(recTimer); recTimer=null;
   const st=CFR;
   // tin nhắn từ đầu thu xếp hàng ở luồng chính nên tiếng có thể về trễ: chờ nó đuổi kịp
@@ -13282,10 +13305,10 @@ function recSave(blob,ext){
 }
 function recClock(){
   recStart=performance.now();
-  recLabel('⏹ Dừng ghi (0:00)');
+  recLabel('⏹ Dừng ghi (0:00)',0);
   recTimer=setInterval(()=>{
     const t=Math.floor((performance.now()-recStart)/1000);
-    recLabel(`⏹ Dừng ghi (${Math.floor(t/60)}:${String(t%60).padStart(2,'0')})`);
+    recLabel(`⏹ Dừng ghi (${Math.floor(t/60)}:${String(t%60).padStart(2,'0')})`,t);
   },250);
 }
 /* gọi mỗi lượt vẽ: dựng khung dọc rồi đẩy khung vào bộ mã hoá CFR */
@@ -14609,6 +14632,7 @@ el('cast').addEventListener('change',e=>{
 el('hpK').addEventListener('change',onHp);
 el('hpC').addEventListener('change',onHp);
 el('rec').addEventListener('click',toggleRec);
+el('arcRec').addEventListener('click',toggleRec);
 el('colK').addEventListener('input',onColor);
 el('colC').addEventListener('input',onColor);
 applyColors(); applyHp();
