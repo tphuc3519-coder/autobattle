@@ -608,6 +608,64 @@ async function waitGame(page, fnBody, limit) {
     await browser.close();
   }
 
+  /* ---------- trận 3b: HỒI MÁU trong thân xác mượn ----------
+     Người dùng bác đúng hai chỗ: hồn Horikita ngồi trong xác Ginyu mà ra quyết định vẫn
+     được hồi máu (sai — chiêu riêng của hồn thì không hồi), còn Ginyu đấm bằng tay cô thì
+     được hồi là đúng nhưng phải hồi ÍT HƠN 70%. Đo cả mức hồi lẫn mức sát thương, và đo
+     bằng cách gọi thẳng hàm rồi so máu trước / sau chứ đừng đọc qua dòng thời gian. */
+  {
+    const { browser, page, errors } = await openGame('ginyu', 'suzune');
+    await waitGame(page, 'G.fighters.every(f=>!f.gnEntry)', 12);
+    const h = await page.evaluate(() => {
+      const G = window.__G(), GN = window.__GN;
+      const g = G.fighters.find(f => f.key === 'ginyu');
+      const s = G.fighters.find(f => f.key === 'suzune');
+      window.__suzForm2(s); s.form = 2; s.cp = 0;
+      /* `chance()` chỉ là Math.random()<p nên ghim một số rất nhỏ là cửa nào cũng mở —
+         nhờ vậy đo được đúng LƯỢNG hồi thay vì ngồi chờ tỉ lệ. */
+      const r0 = Math.random; Math.random = () => .0001;
+      /* Dọn sạch thế đứng của aura trước MỖI phép đo: thế hưng phấn cho Ginyu ăn thêm
+         50% sát thương, đo chồng vào đó thì tỉ lệ ra sai (đã dính: 80 raw đo ra 120). */
+      const sach = f => { f.gnState = null; f.gnStateT = 0; f.gnDaze = 0; f.gnRage = 0;
+                          f.gnTired = 0; f.gnSlow = 0; window.__statusTick(f, 1 / 120); };
+      const dat = (chu, ai, bi, fn) => { sach(ai); sach(bi); ai.hp = 400; bi.hp = 400;
+        const h0 = ai.hp; fn();
+        return { hoi: +(ai.hp - h0).toFixed(2), dmg: +(400 - bi.hp).toFixed(2) }; };
+      const out = {};
+      out.thuong = {
+        tay: dat('tay', s, g, () => window.__suzStrike(s, g)),
+        qd:  dat('qd',  s, g, () => window.__suzDecisionHit({ owner: s, dmg: 80, tier: 'BEST DECISION' }, g))
+      };
+      window.__ginyuPossess(g, s);
+      window.__statusTick(g, 1 / 120); window.__statusTick(s, 1 / 120);
+      const miss = s.missOdds; s.missOdds = 0;      // bỏ qua cửa hụt đòn, đang đo lượng hồi
+      out.swap = {
+        tay: dat('tay', s, g, () => window.__suzStrike(s, g)),
+        qd:  dat('qd',  g, s, () => window.__suzDecisionHit({ owner: g, dmg: 80, tier: 'BEST DECISION' }, s))
+      };
+      s.missOdds = miss;
+      Math.random = r0;
+      out.moc = { heal: GN.swapHeal, cut: GN.swapCut, soulG: g.gnSoul, soulS: s.gnSoul };
+      return out;
+    });
+    ok('chưa bị cướp xác thì Horikita hồi máu ở cả đòn tay lẫn quyết định',
+      h.thuong.tay.hoi > 0 && h.thuong.qd.hoi > 0,
+      `đòn tay +${h.thuong.tay.hoi} · quyết định +${h.thuong.qd.hoi}`);
+    ok('hồn Horikita ngồi trong xác Ginyu: quyết định KHÔNG hồi một giọt nào',
+      h.swap.qd.hoi === 0, `+${h.swap.qd.hoi}`);
+    ok('đòn tay MƯỢN vẫn hồi được, nhưng hồi ít hơn 70%',
+      h.swap.tay.hoi > 0 && Math.abs(h.swap.tay.hoi / h.thuong.tay.hoi - h.moc.heal) < .02,
+      `+${h.thuong.tay.hoi} -> +${h.swap.tay.hoi} (còn ${(h.swap.tay.hoi / h.thuong.tay.hoi * 100).toFixed(0)}%, mốc ${h.moc.heal * 100}%)`);
+    ok('sát thương của quyết định cũng bị cắt đúng mức hoán đổi',
+      Math.abs(h.swap.qd.dmg / h.thuong.qd.dmg - h.moc.cut) < .03,
+      `${h.thuong.qd.dmg} -> ${h.swap.qd.dmg} (còn ${(h.swap.qd.dmg / h.thuong.qd.dmg * 100).toFixed(0)}%)`);
+    ok('đòn tay mượn cũng chỉ còn bấy nhiêu sát thương',
+      Math.abs(h.swap.tay.dmg / h.thuong.tay.dmg - h.moc.cut) < .06,
+      `${h.thuong.tay.dmg} -> ${h.swap.tay.dmg}`);
+    ok('trận 3b không lỗi trang', errors.length === 0, errors.join(' | '));
+    await browser.close();
+  }
+
   /* ---------- trận 4: bảy cái hồn, cái nào cũng phải chạy được trong thân xác Ginyu ----------
      Mỗi hồn có một bộ chiêu riêng, và mấy chiêu nặng nề nhất (dải bóng, bảo bối, ba pha
      Meteor Strike, quãng đứng suy nghĩ của Horikita) đều tự khoá chân người tung ra rồi

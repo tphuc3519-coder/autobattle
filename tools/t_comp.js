@@ -207,9 +207,10 @@ async function daHet(page, tran) {
   await boQuaVs(page);
   await page.waitForTimeout(350);
   const cap = await doc(() => window.__G().fighters.filter(f => !f.summon).map(f => f.key));
-  /* ---------- HIỆU SỐ = MÁU CÒN LẠI CỦA NGƯỜI THẮNG ----------
-     Người dùng chốt: "winner có 32 máu thì +32, còn loser −32". Ghim máu hai bên rồi mới
-     kết trận để con số đo được là số chính xác chứ không phải xấp xỉ. */
+  /* ---------- HIỆU SỐ = MÁU NGƯỜI THẮNG TRỪ MÁU NGƯỜI THUA ----------
+     Thua vì cạn máu thì vế kia là 0 nên con số vẫn đúng bằng máu người thắng như trước;
+     chỉ TRẬN HẾT GIỜ mới khác, và đó chính là chỗ người dùng bác: 800–744 là một trận sát
+     nút mà bảng lại ghi +800 / −800. Ghim máu hai bên rồi mới kết trận để đo số chính xác. */
   const hs = await doc(k => {
     const G = window.__G();
     const w = G.fighters.find(f => !f.summon && f.key === k);
@@ -220,7 +221,7 @@ async function daHet(page, tran) {
     const tr = window.__COMP().fix.find(m => m.w);
     return { win: gd(k), thua: gd(l.key), ga: tr.ga, gb: tr.gb, wk: k, ak: tr.a };
   }, cap[1]);
-  ok(hs.win === 137, `nguoi thang con 137 mau thi hieu so +137 (${hs.win})`);
+  ok(hs.win === 137, `doi thu ve 0 mau thi hieu so dung bang mau nguoi thang: +137 (${hs.win})`);
   ok(hs.thua === -137, `nguoi thua bi tru dung bay nhieu (${hs.thua})`);
   ok((hs.wk === hs.ak ? hs.ga : hs.gb) === 137 && (hs.wk === hs.ak ? hs.gb : hs.ga) === 0,
     `dong ket qua in mau con lai cua ca hai ben (${hs.ga}-${hs.gb})`);
@@ -378,7 +379,30 @@ async function daHet(page, tran) {
   });
   ok(cu.gf === 0 && cu.ga === 0, `giai luu theo loi cu: cot hieu so ve 0 (${cu.gf}/${cu.ga})`);
   ok(cu.pts === 3 && cu.w === 1, `nhung diem va so tran thang giu nguyen (${cu.pts}d / ${cu.w}t)`);
-  ok(cu.sc === 2, `danh dau lai sang loi tinh moi (sc=${cu.sc})`);
+  ok(cu.sc === 3, `danh dau lai sang loi tinh moi (sc=${cu.sc})`);
+
+  /* ---------- trận HẾT GIỜ: chỉ tính phần CHÊNH ----------
+     Thua vì cạn máu thì vế kia là 0 nên hiệu số vẫn đúng bằng máu người thắng (đo ở trên).
+     Chỗ người dùng bác là trận hết giờ: 800–744 sát nút mà bảng ghi +800 / −800. Dựng một
+     giải RIÊNG rồi gọi thẳng `compResult()` — đo theo hằng số thì gọi thẳng hàm, đừng đo
+     qua dòng thời gian (mục 8). */
+  const ht = await doc(() => {
+    const C = window.__leagueNew(['kono', 'chichi'], 1);
+    window.__setComp(C, true);
+    const m = C.fix[0];
+    C.cur = { a: m.a, b: m.b, ref: m };
+    const G = window.__G();
+    const mains = G.fighters.filter(f => !f.summon);
+    const A = mains[0], B = mains[1];
+    A.key = m.a; A.gnSoul = null; A.hp = 800; A.summon = false;
+    B.key = m.b; B.gnSoul = null; B.hp = 744; B.summon = false;
+    window.__compResult(A);
+    const T = window.__COMP().tab, gd = x => T[x].gf - T[x].ga;
+    return { thang: gd(m.a), thua: gd(m.b), ga: m.ga, gb: m.gb };
+  });
+  ok(ht.thang === 56, `tran het gio 800-744 chi tinh phan chenh 56 (${ht.thang})`);
+  ok(ht.thua === -56, `ben thua cung chi -56 chu khong phai -800 (${ht.thua})`);
+  ok(ht.ga === 800 && ht.gb === 744, `dong ket qua van in mau con lai cua ca hai ben (${ht.ga}-${ht.gb})`);
 
   ok(errors.length === 0, `khong co loi trang (${errors.slice(0, 2).join(' | ')})`);
   await browser.close();
