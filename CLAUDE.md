@@ -746,6 +746,37 @@ thương, `GN.swapCcCut = .25` thời lượng hiệu ứng — đòn tay tính 
 | mọi chiêu còn lại — chiêu riêng của hồn và đòn tay mượn | `f.dmgOut` trong `hurt()`, `gnStatus()` đặt `out*(f.swapAs?GN.swapCut:1)` |
 | thời lượng khống chế / debuff | `gnCc(src,dur)` bọc ngay tại chỗ gây hiệu ứng |
 
+> **HỒI MÁU trong thân xác mượn đi đường RIÊNG — `GN.swapHeal = .30` và hàm `gnHeal(f,borrow)`.**
+> Người dùng chốt riêng, đừng gộp vào `swapCut`: *"suzu ra quyết định trên thân xác ginyu là
+> được hồi máu — điều này là sai"*, *"ginyu đánh thường trên thân xác suzu được hồi máu, điều
+> này là ok nhưng hiệu ứng hồi máu cũng giảm đi 70%"*, *"còn dùng skill của ginyu thì k được
+> hồi máu"*. Quy ra đúng một câu: **chỉ ĐÒN TAY MƯỢN mới còn hồi, và chỉ còn 30%.**
+>
+> | Ai | Đường | Hồi bao nhiêu |
+> |---|---|---|
+> | hồn Horikita trong xác Ginyu | Decision Making (chiêu riêng của HỒN) | **0** |
+> | hồn Horikita trong xác Ginyu | đấm đá của Ginyu | vốn không hồi |
+> | hồn Ginyu trong xác Horikita | đòn tay MƯỢN (`suzStrike`) | **30%** (`GN.swapHeal`) |
+> | hồn Ginyu trong xác Horikita | beam / flash của chính anh | **0** — chiêu đó vốn không hồi |
+>
+> - `gnHeal(f,borrow)` trả về hệ số: không hoán đổi thì **1**, hoán đổi thì `borrow?.30:0`.
+>   Viết bằng `function` chứ đừng `const` — chỗ gọi (`suzHeal` của Horikita) nằm **phía trên**
+>   khối Ginyu, `const` ở dưới là dính TDZ.
+> - `suzHeal(f,pct,ofMax,mul)` nhận thêm hệ số ở tham số thứ tư, bỏ trống là 1. Hai chỗ gọi:
+>   `suzStrike` truyền `gnHeal(f,true)`, `suzDecisionHit` truyền `gnHeal(f,false)`.
+> - **Thêm nhân vật có cửa hồi máu thì nhớ bọc `gnHeal()`** — không thì họ vào thân xác lạ là
+>   hồi đủ như thường.
+> - **Sát thương của quyết định thì VỐN ĐÃ bị cắt**, không phải sửa gì: `suzDecisionHit` gọi
+>   `hurt()` không kèm `raw` nên ăn `src.dmgOut` = `GN.swapCut`. Đo được **80 raw ⇒ 20**. Chỗ
+>   làm người ta tưởng chưa cắt là **dòng nhật ký**: nó in `p.dmg` thô. Giờ in lượng máu THẬT
+>   SỰ mất (`hp trước − hp sau`) và nói thẳng là đang ở thân xác lạ.
+>   - **Đo mức cắt thì phải dọn thế đứng của aura trước** (`gnState=null` rồi `statusTick`):
+>     thế hưng phấn cho Ginyu ăn thêm 50% sát thương nên mốc chuẩn đo ra 120 thay vì 80 và
+>     tỉ lệ ra 17% — đã dính đúng một lần khi viết test.
+> - Đo được (`t_ginyu.js`, trận 3b): Horikita bình thường hồi **+20** mỗi đòn tay và **+12**
+>   mỗi quyết định; sau CHANGE thì quyết định **+0**, đòn tay mượn **+6** (đúng 30%), sát
+>   thương **80 → 20** và **15 → 3.75** (đúng 25%).
+
 > **Sát thương duy trì (`dots`) chỉ bị cắt DMG, không bị cắt thời lượng.** Cháy và chảy máu
 > vốn đã đi qua `dmgOut` rồi; cắt cả thời lượng nữa là nhân hai lần, còn 6.25%. `gnCc()` chỉ
 > bọc mấy thứ *khống chế và debuff*: choáng, kiệt sức, Disoriented, Shrunk, Chilled, Worn
@@ -1952,20 +1983,28 @@ là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa 
 - **Không có trận HOÀ.** Game đối kháng thì luôn có người gục; chỗ duy nhất có thể hoà là
   hết giờ, mà chỗ đó đã xử bằng "ai còn nhiều % máu hơn thì thắng". Vì vậy bảng chỉ có
   `P · W · L · Hiệu số · Điểm`, đừng thêm cột D cho rối.
-- **Hiệu số = MÁU CÒN LẠI CỦA NGƯỜI THẮNG.** Người dùng chốt: *"winner có 32 máu thì +32,
-  còn loser −32"*. Một trận cho ra **đúng một con số**: cộng cho người thắng, trừ đúng bấy
-  nhiêu của người thua (`T[wk].gf += con; T[lk].ga += con`). Máu của kẻ thua **không** tính —
-  thường là 0, và trận hết giờ thì cũng chỉ lấy máu của người thắng.
+- **Hiệu số = MÁU NGƯỜI THẮNG TRỪ MÁU NGƯỜI THUA.** Một trận cho ra **đúng một con số**:
+  cộng cho người thắng, trừ đúng bấy nhiêu của người thua (`T[wk].gf += con; T[lk].ga += con`).
+  - Thua vì **cạn máu** thì vế kia là 0, nên con số ra **đúng bằng máu người thắng** — y hệt
+    bản trước, đúng câu người dùng chốt lúc đầu: *"winner có 32 máu thì +32, còn loser −32"*.
+  - Chỉ **TRẬN HẾT GIỜ** mới khác, và đó chính là chỗ họ bác: ảnh gửi kèm có dòng
+    `Horikita vs Ginyu · 800–744` — một trận sát nút — mà bảng ghi **+800 / −800**, đọc ra
+    như một trận một chiều. Giờ chỉ tính phần chênh **56**.
+  - `con = Math.max(0, máuThắng − máuThua)` — kẹp ở 0 phòng trận hết giờ xử theo **phần
+    trăm** máu mà hai người có máu tối đa lệch nhau (ô máu chỉnh được từ 100 tới 9999).
   - Dòng *kết quả đã đá* in **máu còn lại của CẢ HAI bên** (`0–137`): thua vì cạn máu nên vế
     kia là 0, chỉ trận hết giờ mới có hai số cùng dương.
-  - **Bản 1 lấy SÁT THƯƠNG, bản 2 lấy máu còn lại** — `COMP_SC = 2` đánh dấu lối tính, ghi
+  - **Bản 1 lấy SÁT THƯƠNG, bản 2 lấy máu người thắng, bản 3 lấy phần CHÊNH** — `COMP_SC = 3`
+    đánh dấu lối tính, ghi
     thẳng vào `COMP.sc`. `loadSaved()` thấy `sc` cũ thì **xoá cột hiệu số về 0** (giữ nguyên
     điểm, thắng, thua): giải lưu dở tính bằng sát thương mà cộng tiếp bằng máu là trộn hai
     đơn vị, bảng đọc ra vô nghĩa. `COMP_SC` **khai ngay trên `loadSaved()`**, không khai
     chung với `COMP_MAXT` mãi dưới khối giải đấu — hàm đó chạy rất sớm, để dưới là đúng cái
     bẫy TDZ ở mục 9.
-  - Đo được (`t_comp`): ghim máu người thắng 137 rồi kết trận ⇒ hiệu số **+137 / −137**, dòng
-    kết quả ra `0–137`; giải lưu theo lối cũ ⇒ hiệu số về **0/0** mà vẫn còn **3 điểm / 1 trận thắng**.
+  - Đo được (`t_comp`): ghim máu người thắng 137 còn đối thủ về 0 ⇒ hiệu số **+137 / −137**,
+    dòng kết quả ra `0–137`; ghim trận hết giờ **800–744** ⇒ hiệu số chỉ **+56 / −56** mà dòng
+    kết quả vẫn in đủ `800–744`; giải lưu theo lối cũ ⇒ hiệu số về **0/0** mà vẫn còn
+    **3 điểm / 1 trận thắng**.
   - Cột `HIỆU SỐ` có `title` (`lgDiffTip`, song ngữ) nói đúng luật đó — hỏi "tính kiểu gì" thì
     rê chuột vào là ra, không phải thêm dòng chữ nào lên bảng.
 
@@ -3072,6 +3111,7 @@ node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4
                         # bốc thăm / tự xếp (bấm hai người là tráo chỗ), hiệu số = MÁU CÒN
                         # LẠI của người thắng (+137 / −137, dòng kết quả in 0–137) và giải
                         # lưu theo lối tính cũ thì cột hiệu số về 0 mà giữ nguyên điểm,
+                        # trận HẾT GIỜ 800-744 thì hiệu số chỉ tính phần chênh 56,
                         # lượt đi lượt về
                         # (mặc định một lượt, bật lên thì nhân đôi số trận và ĐẢO SÂN),
                         # hiệu ứng bảng sau mỗi trận (hàng trượt thật, số đếm dần, mũi tên
@@ -3157,6 +3197,9 @@ node tools/t_ginyu.js   # Captain Ginyu: bay vào sân đúng 1.5s và địch b
                         # bên cùng một mức cắt 25% dmg + 25% hiệu ứng (hồn đối thủ tung
                         # được cả chiêu 2 lẫn chiêu 3 của chính mình, phân thân bay ra thật
                         # từ thân xác Ginyu, đấm đá Ginyu ăn đúng 5.5 dmg trên mốc 22),
+                        # HỒI MÁU trong thân xác mượn: chiêu riêng của hồn thì KHÔNG hồi,
+                        # đòn tay mượn vẫn hồi nhưng chỉ còn 30%, và dmg của cả hai đều
+                        # còn 25%,
                         # bắn trượt thì 1 máu + hoảng loạn, luật ba người thì luôn thăm dò,
                         # và thắng thua tính theo HỒN: thân xác Ginyu thắng thì giải ghi
                         # điểm cho Superman, kèm mức ngắm hỏng 20% / 0.45 rad
@@ -3287,6 +3330,8 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Dán ảnh, xuất gói, commit `pack.json` lên repo mà trang XƯỞNG vẫn hiện model vector | `packLoad()` / `voicePack()` gọi thẳng `fetch('assets/…')`, mà trang xưởng trên Pages nằm trong `/studio/` ⇒ đường dẫn thành `/studio/assets/…` và **404 im lặng** (`try{}` nuốt lỗi) | mọi cú fetch vào assets đi qua `fetchAsset()`: thử `''` → `'../'` → `'../../'` rồi nhớ mức ăn. Test dựng hẳn bản giống Pages rồi kiểm cả hai trang |
 | Thả `sup_resolve.mp3` vào `assets/voice` thì `mk_manifest.py` báo "không đoán ra tên ô" | `slot_keys()` bắt cả tên khoá lẫn nhãn bằng mẫu `\['(\w+)','([^']*)'`, mà nhãn của ô đó có dấu nháy đơn (`"Last Son's Resolve bùng lên"`) nên viết bằng nháy kép và cả dòng bị bỏ sót — 82 ô đọc ra thay vì 83 | chỉ bắt **tên khoá** (`\['(\w+)'`), đừng đòi luôn cái nhãn phía sau |
 | Trận đấu gương (kono vs kono) treo ở màn chọn, `t_reg` đổ | `tapTwice()` tính theo TÊN NHÂN VẬT, mà đấu gương thì bấm kono ở lưới trái rồi kono ở lưới phải là hai cú liên tiếp cùng tên ⇒ hiểu nhầm thành chạm hai lần, bảng thông số bật lên chặn mất nút Vào trận | mốc gồm **cả lưới lẫn tên** (`parentNode.id + '/' + key`). Đừng lấy chính phần tử làm mốc: mỗi cú bấm ở lưới đội hình dựng lại cả lưới |
+| Trận hết giờ 800–744 mà bảng giải ghi +800 / −800 | hiệu số lấy NGUYÊN máu người thắng, không trừ máu kẻ thua — thua vì cạn máu thì đúng, nhưng trận hết giờ thì hai bên cùng dương và một trận sát nút đọc ra như một chiều | `con = máuThắng − máuThua` (kẹp ở 0), `COMP_SC` lên 3 để giải lưu dở theo lối cũ xoá cột hiệu số về 0 |
+| Hồn Horikita ngồi trong xác Ginyu ra quyết định vẫn được hồi máu | `suzHeal()` không biết gì về cú CHANGE, mà `swapAs` chỉ cắt sát thương (`dmgOut`) chứ không đụng tới cửa hồi | thêm `gnHeal(f,borrow)`: chiêu riêng của hồn ⇒ 0, đòn tay mượn ⇒ `GN.swapHeal` = 30%, không hoán đổi ⇒ 1 |
 | Hiệu số của giải hụt mất mấy trăm điểm | dòng cộng dồn `dmgDealt` trong `hurt()` gác ở `!src.summon`, nên Kamehameha / Masenko do object Goku-Gohan bắn ra **không ghi cho ai cả** — trận ChiChi vs Doraemon ra `369–851` trong khi Doraemon kết trận với 32 máu | ghi công cho `src.master` khi `src` là viện binh, và chỉ cộng phần máu THẬT SỰ mất (`min(amt, t.hp)`) để đòn thừa lúc kết liễu không tính. Đo lại: Kamehameha 400 dmg 0 → **400**, đấm 400 vào người còn 30 máu 400 → **30** |
 | Hiệu ứng trượt hàng của bảng xếp hạng không chạy, đo ra 0px | `compOpen()` gọi `compPaint()` TRƯỚC khi bỏ lớp `off`, nên `lgPlay()` đo `offsetTop` bên trong một khối `display:none` — mọi hàng cùng ra 0 nên độ lệch cũng bằng 0 | hiện bảng ra trước rồi mới vẽ; đo lại hàng trượt xa nhất 105px |
 | Giải đấu ghi sai người thắng sau cú CHANGE | `compResult()` đọc `f.key`, tức đọc THÂN XÁC — Superman thắng trong xác Ginyu thì điểm về tay Ginyu | tra qua `compSoul(f)` = `f.gnSoul || f.key`. Băng-rôn và thanh máu vốn đã đọc `f.name` nên chúng đúng sẵn, chỉ sổ giải đấu sai |
