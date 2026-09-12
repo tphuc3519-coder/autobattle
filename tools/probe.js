@@ -99,7 +99,7 @@ window.__tanConstantFlux=tanConstantFlux; window.__tanSunDance=tanSunDance;
 window.__tanUltimate=tanUltimate; window.__tanAwaken=tanAwaken; window.__tanTarget=tanTarget;
 window.__tanOpeningReady=tanOpeningReady; window.__regenFactor=regenFactor;
 window.__drawTanjiroFx=drawTanjiroFx; window.__tanVector=tanVector;
-window.__tanVec=tanVec; window.__tanResetRhythm=tanResetRhythm;
+window.__tanResetRhythm=tanResetRhythm;
 /* nạp hàng loạt ảnh / tiếng */
 window.__bulkSprMatch=bulkSprMatch; window.__bulkSfxMatch=bulkSfxMatch;
 window.__bulkSprites=bulkSprites; window.__bulkSfxFiles=bulkSfxFiles;

@@ -2210,13 +2210,13 @@ const TAN={
   ultCd:gs(24), ultFocus:gs(.6), ultT:gs(3.5), ultRange:112, ultChase:610,
   ultTake:.50, ultCcRes:.70, ultDown:gs(1.2),
   redT:gs(6), suppressT:gs(5), suppressHeal:.60,
-  /* Combat rhythm: Tanjiro is quick, but he does not glue himself to a target. The AI
-     changes approach angles, probes at mid range and briefly resets after a completed
-     combo/form. A reset is a short sidestep/backstep, never prolonged kiting. */
+  /* Combat rhythm: ordinary movement uses the same shared melee AI as ChiChi. Water
+     Wheel is only an occasional gap closer after a separate wait, not Tanjiro's normal
+     way of moving. A completed combo/form also creates a short decision pause. */
   engageFar:170, wheelMin:132, formRange:148, fluxRange:108,
   aiThinkMin:gs(.22), aiThinkMax:gs(.48),
   resetMin:gs(.55), resetMax:gs(1.05),
-  moveMin:gs(.45), moveMax:gs(1.20)
+  wheelAiMin:gs(2.6), wheelAiMax:gs(4.4)
 };
 const CHARS={
   kono:{
@@ -2539,7 +2539,7 @@ const CHARS={
       f.tanThreadCd=TAN.threadCd; f.tanMarked=false; f.tanMarkStarted=false; f.tanMarkAnim=0;
       f.tanUlt=false; f.tanRed=0; f.tanTrails=[];
       f.tanThink=rnd(TAN.aiThinkMin,TAN.aiThinkMax); f.tanReset=0;
-      f.tanMove='probe'; f.tanMoveT=0; f.tanMoveSide=chance(.5)?1:-1;
+      f.tanWheelWait=rnd(TAN.wheelAiMin,TAN.wheelAiMax);
       tanjiroEnter(f);
     },
     think(f,e,d,auto){
@@ -2551,7 +2551,11 @@ const CHARS={
       /* Range-aware decisions replace the old cooldown dump. Water Wheel is an entry,
          never a point-blank filler. At fighting range he varies the two forms instead
          of always casting the same fixed priority chain. */
-      if(d>TAN.engageFar&&f.cds.s1<=0&&use('j')){ f.cds.s1=TAN.wheelCd; tanWaterWheel(f,e); return; }
+      if(d>TAN.engageFar&&f.cds.s1<=0&&(!auto||f.tanWheelWait<=0)&&use('j')){
+        f.cds.s1=TAN.wheelCd;
+        if(auto)f.tanWheelWait=TAN.wheelCd+rnd(TAN.wheelAiMin,TAN.wheelAiMax);
+        tanWaterWheel(f,e); return;
+      }
       if(f.tanMarked&&f.cds.s4<=0&&(auto?d<=TAN.formRange+28:keys['u'])){ f.cds.s4=TAN.ultCd; tanUltimate(f,e); return; }
       if(auto&&d<=TAN.formRange){
         const sun=f.cds.s3<=0, flux=f.cds.s2<=0&&d<=TAN.fluxRange;
@@ -2563,7 +2567,11 @@ const CHARS={
       }
       if(f.cds.s3<=0&&(auto?d<=TAN.formRange:keys['l'])){ f.cds.s3=TAN.sunCd; tanSunDance(f,e); return; }
       if(f.cds.s2<=0&&(auto?d<=TAN.fluxRange:keys['k'])){ f.cds.s2=TAN.fluxCd; tanConstantFlux(f,e); return; }
-      if(f.cds.s1<=0&&(auto?d>=TAN.wheelMin&&d<=TAN.engageFar+70:keys['j'])){ f.cds.s1=TAN.wheelCd; tanWaterWheel(f,e); return; }
+      if(f.cds.s1<=0&&(auto?f.tanWheelWait<=0&&d>=TAN.wheelMin&&d<=TAN.engageFar+70:keys['j'])){
+        f.cds.s1=TAN.wheelCd;
+        if(auto)f.tanWheelWait=TAN.wheelCd+rnd(TAN.wheelAiMin,TAN.wheelAiMax);
+        tanWaterWheel(f,e); return;
+      }
       if(f.cds.basic<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])) tanBasic(f,e);
       else wait();
     },
@@ -2828,9 +2836,9 @@ const DEX={
     ]},
   tanjiro:{ role:{vi:'Swordsman · Melee – Pursuit – Finisher',en:'Swordsman · Melee – Pursuit – Finisher'},
     st:{pow:4,spd:4,rng:1,def:3},
-    pw:{dmg:78,dur:60,mob:80,as:72,rng:18,cc:62,uti:64,con:70,cmb:92},
-    bio:{vi:'A mobile swordsman who circles, probes and changes angles before committing. Water Breathing starts combos; the Demon Slayer Mark unlocks his finisher.',
-         en:'A mobile swordsman who circles, probes and changes angles before committing. Water Breathing starts combos; the Demon Slayer Mark unlocks his finisher.'},
+    pw:{dmg:78,dur:56,mob:76,as:70,rng:18,cc:60,uti:62,con:66,cmb:74},
+    bio:{vi:'He uses regular melee footwork and only occasionally closes a long gap with Water Wheel. His low-HP Mark unlocks a finisher, but gives no healing or raw damage.',
+         en:'He uses regular melee footwork and only occasionally closes a long gap with Water Wheel. His low-HP Mark unlocks a finisher, but gives no healing or raw damage.'},
     skills:[
       {tag:'P',name:'Opening Thread',vi:`Every ${rts(TAN.threadCd)}s, marks the nearest enemy for ${rts(TAN.threadT)}s. The next sword hit gains accuracy, +${TAN.threadBonus} damage and partial damage-reduction bypass.`,en:`Every ${rts(TAN.threadCd)}s, marks the nearest enemy for ${rts(TAN.threadT)}s. The next sword hit gains accuracy, +${TAN.threadBonus} damage and partial damage-reduction bypass.`},
       {tag:'1',name:'Nichirin Sword Combo',vi:`Three strikes for ${TAN.basic.join(' / ')} damage; Water Surface Slash finishes with short knockback and hit stun.`,en:`Three strikes for ${TAN.basic.join(' / ')} damage; Water Surface Slash finishes with short knockback and hit stun.`},
@@ -4722,7 +4730,7 @@ function mk(o){
     openingThreads:[], regenSupp:0,
     tanEntry:null, tanHide:false, tanAct:null, tanCombo:0, tanThreadCd:0,
     tanMarked:false, tanMarkStarted:false, tanMarkAnim:0, tanUlt:false, tanRed:0, tanTrails:null,
-    tanThink:0, tanReset:0, tanMove:'probe', tanMoveT:0, tanMoveSide:1,
+    tanThink:0, tanReset:0, tanWheelWait:0,
     hist:[], histT:0, startX:0, startY:0,
     bind:null, bindGuard:false, bindPending:false, lazyTalk:0, wakeT:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
@@ -9409,7 +9417,6 @@ function tanAwaken(f){
 function tanResetRhythm(f){
   f.tanReset=rnd(TAN.resetMin,TAN.resetMax);
   f.tanThink=Math.max(f.tanThink||0,rnd(TAN.aiThinkMin,TAN.aiThinkMax));
-  f.tanMove='reset'; f.tanMoveT=f.tanReset; f.tanMoveSide=chance(.5)?1:-1;
 }
 function tanFinishAct(f,red){
   f.tanAct=null; f.tanUlt=false; f.pose='idle'; f.poseT=0;
@@ -9425,38 +9432,6 @@ function tanMoveToward(f,x,y,spd,dt){
   f.x=clamp(f.x+dx/d*spd*dt,PAD,W-PAD);
   f.y=clamp(f.y+dy/d*spd*dt,PAD+50,H-PAD-10);
   f.face=dx>=0?1:-1; f.moving=true;
-}
-/* Organic melee footwork: every short interval he chooses another approach angle,
-   probe, circle, press or watch beat. Far away he still closes the gap; the only
-   backwards movement is the brief post-combo reset created by tanResetRhythm(). */
-function tanVec(f,e){
-  e=tanTarget(f)||e; if(!e)return {x:0,y:0};
-  const d=dist(f,e)||1,ux=(e.x-f.x)/d,uy=(e.y-f.y)/d;
-  if(f.tanMoveT<=0){
-    const r=Math.random(); f.tanMoveSide=chance(.5)?1:-1;
-    f.tanMoveT=rnd(TAN.moveMin,TAN.moveMax);
-    if(d>TAN.engageFar) f.tanMove=r<.64?'approach':(r<.90?'angle':'probe');
-    else if(d>86) f.tanMove=r<.38?'angle':(r<.72?'probe':'approach');
-    else f.tanMove=r<.42?'circle':(r<.68?'reset':(r<.88?'press':'watch'));
-  }
-  let radial=0,lateral=0,roam=.35;
-  switch(f.tanMove){
-    case 'approach': radial=.82; lateral=.30; roam=.45; break;
-    case 'angle':    radial=d>105?.46:.12; lateral=.78; roam=.65; break;
-    case 'probe':    radial=d>118?.34:(d<78?-.16:.04); lateral=.62; roam=.85; break;
-    case 'circle':   radial=d>72?.16:(d<58?-.30:0); lateral=.98; roam=.45; break;
-    case 'press':    radial=.68; lateral=.42; roam=.25; break;
-    case 'watch':    radial=d>112?.20:0; lateral=.18; roam=.55; break;
-    case 'reset':    radial=-.34; lateral=.92; roam=.35; break;
-  }
-  // A random beat can change the route, never the duty to re-enter combat from far away.
-  if(d>230)radial=Math.max(radial,.72);
-  if(d<54&&f.tanMove!=='reset')radial=Math.min(radial,-.28);
-  const wd=Math.hypot(f.wx-f.x,f.wy-f.y)||1;
-  let x=ux*radial-uy*f.tanMoveSide*lateral+(f.wx-f.x)/wd*.28*roam+f.jx*.24*roam;
-  let y=uy*radial+ux*f.tanMoveSide*lateral+(f.wy-f.y)/wd*.28*roam+f.jy*.24*roam;
-  const dv=dodgeVec(f); x+=dv.x*1.35; y+=dv.y*1.35;
-  return {x,y};
 }
 function tanjiroTick(f,dt){
   const E=f.tanEntry;
@@ -9486,7 +9461,7 @@ function tanjiroTick(f,dt){
   }
   f.tanThink=Math.max(0,(f.tanThink||0)-dt);
   f.tanReset=Math.max(0,(f.tanReset||0)-dt);
-  f.tanMoveT=Math.max(0,(f.tanMoveT||0)-dt);
+  f.tanWheelWait=Math.max(0,(f.tanWheelWait||0)-dt);
   if(f.key==='tanjiro'&&!f.swapAs){
     f.tanThreadCd-=dt;
     if(f.tanThreadCd<=0){ f.tanThreadCd=TAN.threadCd; tanMarkOpening(f); }
@@ -9619,7 +9594,6 @@ function dodgeVec(f){
   return {x:dx,y:dy};
 }
 function aiVec(f,e){
-  if(f.key==='tanjiro'&&!f.summon&&!f.swapAs) return tanVec(f,e);
   const d=dist(f,e)||1, ux=(e.x-f.x)/d, uy=(e.y-f.y)/d;
   const wd=Math.hypot(f.wx-f.x,f.wy-f.y)||1, wxu=(f.wx-f.x)/wd, wyu=(f.wy-f.y)/wd;
   let x=0,y=0;
