@@ -107,7 +107,7 @@ window.__dexView=dexView; window.__HP=HP; window.__HP_STD=HP_STD; window.__hpSet
 window.__bgmPick=bgmPick; window.__BGM_SLOTS=BGM_SLOTS; window.__musicStart=musicStart;
 window.__STAGE=()=>STAGE; window.__stageArt=stageArt; window.__arenaFloor=arenaFloor;
 window.__stageThumb=stageThumb; window.__packBuild=packBuild; window.__packLoad=packLoad;
-window.__ARCADE=()=>ARCADE; window.__groundShadows=groundShadows; window.__running=()=>running;
+window.__draw=draw; window.__ghostSil=ghostSil; window.__ARCADE=()=>ARCADE; window.__groundShadows=groundShadows; window.__running=()=>running;
 /* ba chế độ đấu */
 window.__PMODE=()=>PMODE; window.__ROSTERS=ROSTERS; window.__PICK=PICK;
 window.__TMP=()=>TMP;   // đội hình đang NHÁP trong màn chọn, chưa chốt vào ROSTERS
