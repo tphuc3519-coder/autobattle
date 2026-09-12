@@ -2588,6 +2588,202 @@ Kiểm bằng `node tools/t_ui.js` (ba mục cuối: đủ chín ô, đủ chín
 chọn thì **có tiếng phát ra** — đếm ngay ở tầng WebAudio bằng cách bọc
 `AudioContext.prototype.createOscillator`, vì `sfx()` nằm trong IIFE nên không bọc từ ngoài được).
 
+## 2i. Hệ thiết kế — lớp token và mấy luật bố cục
+
+Người dùng: *"Cần giao diện chuyên nghiệp hơn nữa — gọn gàng thì đã có nhưng giao diện cần
+phải chuẩn hơn và tân tiến hơn"*. "Chuẩn" ở đây là **nhất quán** (một thang bo góc, một
+chiều cao ô điều khiển, một bộ bóng đổ), "tân tiến" là **nền mờ nhoè, bóng mềm, ô điều
+khiển tự vẽ thay cho đồ mặc định của trình duyệt**.
+
+### Lớp token — sửa một biến, cả trang đổi theo
+
+Khối `:root` ở đầu `<style>` giờ có thêm bốn nhóm. **Đừng gõ mã màu, bo góc hay bóng đổ
+thẳng vào từng khối nữa** — đọc qua biến, không thì mỗi chỗ một con số lẻ và cả trang lại
+lệch như cũ.
+
+| Nhóm | Biến | Dùng ở đâu |
+|---|---|---|
+| bậc nền | `--s1` khung lớn · `--s2` ô nổi trong khung · `--s3` ô điều khiển | thẻ, ô nhân vật, nút |
+| viền / lòng ô | `--line` thường · `--line2` sáng hơn (lúc rê chuột) · `--ink2` lòng ô nhập | mọi khung |
+| bo góc | `--r1` 9px · `--r2` 12px · `--r3` 16px · `--rp` viên thuốc | **chỉ có bốn nấc này** |
+| bóng đổ | `--e1` ô nhỏ · `--e2` khung · `--e3` lớp phủ toàn màn | thẻ, sàn đấu, hộp bật lên |
+| khác | `--ctl` 34px chiều cao ô điều khiển · `--ease` nhịp chuyển | thanh công cụ |
+
+Mấy tên cũ (`--ink` / `--panel` / `--gold` …) **giữ nguyên** vì đã rải khắp file.
+
+### Chiều cao `--ctl` CHỈ áp cho ô trên thanh điều khiển
+
+```css
+.bar>button,.bar>select,.bar>label.chk,.cselBar>button,.arcOver>button{height:var(--ctl)}
+```
+
+**Đừng nhét `height` vào luật `button` chung.** Ô nhân vật (`.cTile`), ô màn đấu (`.sTile`)
+và nút chế độ (`.mTab`) đều là `<button>` — ghim cứng chiều cao là chúng **bẹp dí xuống
+34px, mất cả ảnh lẫn dòng tên**. Đã dính đúng một lần, chụp màn hình ra đúng một hàng ô
+rỗng cao ba chục pixel.
+
+### Ô điều khiển tự vẽ
+
+- **`<select>` bỏ hẳn `appearance`** rồi tự vẽ mũi tên bằng một `data:` SVG trong
+  `background-image`. Để nguyên đồ mặc định thì giữa hàng nút bo góc lòi ra một cái hộp
+  vuông xám của hệ điều hành — đó là thứ làm cả thanh công cụ đọc ra một trang cấu hình.
+  Nhớ đặt cả `select option{background:…}`, không thì danh sách xổ ra là nền trắng.
+- **`label.chk` là một viên thuốc** ngang hàng với nút, không còn là chữ trần thả giữa
+  hàng. Thanh trượt và ô đánh dấu cũng tự vẽ (`accent-color` + track/thumb).
+- **Thanh cuộn** tô cùng tông với trang (`scrollbar-color` + `::-webkit-scrollbar`) —
+  thanh cuộn trắng của trình duyệt nằm giữa nền tím đậm là chỗ lộ ra "đây là một trang
+  web" rõ nhất.
+- **Vành sáng bàn phím** dùng `:focus-visible` nên bấm chuột thì không hiện.
+
+### Lưới đấu thủ là FLEX, không phải GRID
+
+`.cTiles` chuyển sang `display:flex;flex-wrap:wrap;justify-content:center`. Lý do: chín đấu
+thủ trên một lưới tám cột thì **người thứ chín đứng trơ một mình ở mép trái hàng dưới**,
+nhìn như lỗi bố cục — mà grid thì không có cách nào canh giữa hàng cuối. Flex thì hàng dở
+dang tự nằm giữa, và **thêm nhân vật mới bao nhiêu người cũng không phải sửa số cột**.
+
+> Vì vậy mấy chỗ chỉnh lưới ở trang chơi giờ chỉnh **`flex-basis` / `max-width` của một ô**,
+> không chỉnh `grid-template-columns` nữa. Còn sót một luật `grid-template-columns` nào trỏ
+> vào `.cTiles` thì nó là luật chết, xoá đi.
+
+### Mấy chỗ đã sửa cụ thể
+
+| Chỗ | Trước | Sau |
+|---|---|---|
+| sàn đấu | canvas kẹp ở 520px trong khung 680px ⇒ **thừa hơn 130px nền trống** hai bên | canvas trải tới 600px, padding khung còn 8px |
+| thanh công cụ trang chơi | mười ô thả trần giữa trang, xuống ba hàng lệch nhau | gom vào **một khối bảng điều khiển** (`body.arcade .bar`) có nền, viền, tự bó `width:fit-content`, và một vạch ngăn trước nút Bắt đầu |
+| lớp phủ (`.csel` / `.dexPop`) | chỉ tối đi 88%, phía sau vẫn đọc lờ mờ | thêm `backdrop-filter:blur(14~16px)` |
+| ô chọn màn | ảnh ở trên, một hộp chữ riêng dán dưới | **tên đè lên ảnh** sau lớp phủ tối dần (`.sCap`), ảnh cao 96→124px |
+| bảng thông số bật lên | một cột, biểu đồ nở giữa khoảng trống mênh mông | **hai cột** từ 760px trở lên |
+| bước chọn MÀN | vẫn treo hàng "xem skill / máu mọi nhân vật" | giấu `.cselOpts` đi, bước cuối chỉ còn một việc |
+| gạch dưới dòng phụ màn tiêu đề | `bottom:-7px` nên **đè lên chân chữ**, nhìn như gạch nhầm hai chữ giữa | hạ xuống -13px, rộng 180px |
+| nhật ký | viền đứt nét, dòng nào cũng như dòng nào | chấm đầu dòng theo màu phe, mép trên nhạt dần cho biết còn cuộn được |
+
+### Ngôn ngữ hình — GÓC VÁT, chữ HUD, ba màu
+
+Lượt đầu của mục này mới chỉ dọn cho *nhất quán*; người dùng xem rồi bác thẳng: *"nhìn ch
+khác gì, nâng cấp nó đẹp và chuẩn và visual phải thật bắt mắt như các game hiện nay"*. Dọn
+dẹp thôi thì vẫn ra một trang web sạch sẽ, không ra một cái game. Ba thứ dưới đây mới là
+thứ đổi được chất:
+
+**1 · Vát góc — `--cut`.** Mọi khối lớn đều **cắt một hoặc hai góc** bằng `clip-path`:
+khung chọn nhân vật, khung sàn đấu, bảng điều khiển, thẻ đấu thủ, ô màn đấu, thẻ hồ sơ,
+khung *trận kế tiếp*, ô sơ đồ nhánh, nút vàng, nút chế độ. Hình chữ nhật bo tròn đọc ra
+"trang web"; hình vát góc đọc ra "HUD".
+
+> **Góc vát CẮT MẤT bóng đổ ngoài.** `clip-path` xén cả `box-shadow` ra ngoài, nên mọi
+> viền và quầng sáng của khối đã vát phải vẽ bằng **`inset`** (`box-shadow:inset 0 0 0 1px …`
+> thay cho `border`). Đây là chỗ dễ quên nhất: đặt `border` rồi vát góc thì viền biến mất
+> một nửa. Ô đang chọn cũng vậy — quầng vàng của `.cTile.on` và `.sTile.on` đều là `inset`.
+
+**2 · Hai mặt chữ, chia việc rõ ràng.**
+
+| Font | Biến | Dùng cho |
+|---|---|---|
+| **Chakra Petch** 700 nghiêng | `--fd` | logo, tiêu đề màn, tên nhân vật, tên chiêu, tên màn đấu, chữ VS, nút vàng, tên trong bảng xếp hạng |
+| Be Vietnam Pro | *(mặc định)* | thân bài, mô tả, nhật ký |
+| Space Mono | — | nhãn micro chữ hoa (ENGLISH ONLY — font này thiếu chữ Việt có dấu) |
+
+Chakra Petch là mặt chữ vuông kiểu HUD và **có đủ bộ chữ tiếng Việt** (đã kiểm: Google Fonts
+trả về subset `vietnamese`), nên nhãn có dấu vẫn đúng. Nó cũng **hẹp hơn** Be Vietnam Pro nên
+thay vào là chữ co lại chứ không tràn. Chuỗi lùi là `"Chakra Petch","Be Vietnam Pro",…` —
+máy test chặn font mạng nên ảnh chụp ra font lùi, vẫn đọc tốt.
+
+**3 · Bóng LỆCH MÀU thay cho gradient trên chữ.** Logo, tiêu đề trang, tiêu đề màn chọn và
+chữ VS đều có ba lớp `text-shadow`: **lam lệch trái, hồng lệch phải, đen khối bên dưới**.
+Đó là mẹo "lệch màu ống kính" của mấy màn hình game đối kháng — cho ra cảm giác đèn neon mà
+**không** phải tô gradient lên chữ. Lối gradient đã thử và **bỏ hẳn** (mục 2h): bóng khối
+`text-shadow` vẽ theo ô chữ nên lòi ra giữa mặt chữ thành sọc vằn.
+
+**4 · Bảng màu ba màu, không hơn**: vàng arcade (`--gold`) + **lam điện `--cyan`** + **hồng
+nóng `--mag`**. Cặp lam-hồng chạy thành một dải sáng ở mép trên mọi khung lớn, hắt vào hai
+góc dưới của màn tiêu đề, và làm hai lớp bóng lệch màu. **Đừng thêm màu thứ tư** — mỗi nhân
+vật đã có màu riêng rồi, thêm nữa là loạn.
+
+**5 · Màu nhân vật ăn vào thẻ.** `tile()` gắn `--c` từ `C.color`; thẻ đấu thủ dùng nó cho
+**mảng sáng hắt lên từ đáy** (`color-mix`), quầng sau ô mặt, viền ô mặt và vạt màu dưới chân
+thẻ. Nhờ vậy chín thẻ đọc ra chín người khác nhau ngay cả khi ảnh còn là emoji. Thẻ hồ sơ
+thì `dexCard()` tự dựng một dải `.dexEdge` mang màu đó — đặt trong hàm chứ không đặt biến
+lên hộp ngoài, vì `.cDetail` được nhiều chỗ đổ nội dung vào.
+
+**6 · Chế độ đang chọn ĐẢO MÀU.** `.mTab.on` là nền vàng đặc chữ đen, không phải "viền sáng
+hơn một chút". Nhìn một cái là biết đang ở chế độ nào.
+
+**7 · Nền và hạt nhiễu.** Nền trang là ba quầng lệch nhau (tím đỉnh · lam trái · hồng phải)
+trên một lớp sọc quét, `background-attachment:fixed`. Trên đó là `body::after` phủ một lớp
+**hạt nhiễu** alpha `.035` (SVG `feTurbulence` nhúng thẳng): rất nhạt nhưng đủ để mấy mảng
+gradient lớn không bị **kẻ sọc** do màn hình 8-bit làm tròn màu — đó là thứ làm nền trông rẻ
+tiền. **`pointer-events:none` là bắt buộc** (z-index 9999, phủ kín màn), thiếu là cả trang
+không bấm được.
+
+### BỎ HẲN BỐ CỤC "TRANG WEB" — đây mới là chỗ đổi được chất
+
+Sau đợt vát góc người dùng vẫn bác: *"nhìn tổng thể vẫn như là normal, ko đẹp, cần phải
+khác đi"*. Đúng, và bài học ghi lại cho khỏi lặp:
+
+> **Đổi màu, đổi font, vát góc — đó là đổi LỚP SƠN. Cái làm người ta đọc ra "một trang
+> web" là BỐ CỤC: một cột hẹp canh giữa, mấy cái thẻ xếp chồng, và một hộp thoại nổi giữa
+> màn.** Giữ nguyên bộ xương đó thì sơn kiểu gì cũng vẫn ra trang web.
+
+Hai chỗ phải đổi bộ xương, **chỉ ở TRANG CHƠI** (xưởng còn cả chục bảng dán ảnh nên vẫn
+một cột, và mọi test cũ đi qua đường đó):
+
+**1 · Màn chọn là MỘT MÀN HÌNH, không phải một hộp thoại.** `body.arcade .cselBox` bỏ hết
+`max-width` / bo góc / viền / bóng đổ, kéo lên `width:100%;height:100%`, nền riêng ba quầng
+sáng, và canh nội dung bằng `padding: … max(16px, calc((100% - 1080px)/2))` thay cho
+`max-width` — nhờ vậy **nền tràn hết màn** mà chữ vẫn nằm trong một cột 1080px. Dải sáng
+lam-vàng-hồng chạy suốt mép trên. Tiêu đề nhảy lên `clamp(24px,6vw,44px)`. Bảng thông số
+bật lên (`#dexPop`) theo đúng lối đó.
+
+**2 · Trang trong trận là HAI CỘT từ 1040px trở lên.** `body.arcade .wrap` thành `grid`:
+
+```
+hàng 1   header  (bắc hết hai cột — logo trái, thẻ cặp đấu phải)
+hàng 2   .bar    (bắc hết hai cột — dải HUD chạy suốt)
+hàng 3   .stage  ┊  thẻ nhật ký   ← hàng CO GIÃN (1fr)
+hàng 4   (span)  ┊  bảng phím
+```
+
+- Nhận thẻ nhật ký bằng **`.card:has(#log)`**, đừng đếm `nth-of-type` — thêm bớt một khối
+  là lệch hết.
+- **Hàng 3 phải là `1fr`.** Để cả hai hàng `auto` thì phần dư của khối sàn (nó bắc qua hai
+  hàng) bị chia đều ra và hở một khoảng trống lơ lửng giữa hai thẻ bên phải — đo được hụt
+  ~80px. Cho hàng 3 co giãn thì nhật ký kéo cao bằng đúng sàn đấu, bảng phím tụt sát đáy,
+  dải bên không còn chỗ trống nào.
+- **`.stage` phải `width:fit-content` và canh giữa.** Canvas kẹp ở 600px mà khung trải hết
+  cột thì hai bên thừa cả trăm pixel nền trống — đúng cái lỗi "thừa nền" đã sửa ở mục trên,
+  chỉ là lần này nằm bên trong khung.
+- Nhật ký ở dải bên đổi sang lối **bảng tin trận đấu**: chữ 12px, mép trên và mép dưới đều
+  nhạt dần.
+- Khung sàn có thêm **bốn ngoặc góc** vẽ bằng tám mảng gradient trên một `::after` duy nhất
+  (`pointer-events:none` vì nó phủ lên canvas).
+
+**3 · Thẻ đấu thủ to hẳn ở màn rộng.** Từ 960px: `flex-basis:178px`, ô mặt 70px, tên 15px ⇒
+**năm ô một hàng, chín người thành 5 + 4**. Để ô nhỏ thì tám ô lọt một hàng và người thứ
+chín lại đứng trơ một mình — đúng cái lỗi bố cục đã sửa ở khổ hẹp, chỉ là nó quay lại ở khổ
+rộng. **Đổi cỡ ô thì nhớ đếm lại xem một hàng được mấy ô.**
+
+**4 · Ô chọn màn cao theo chiều cao MÀN HÌNH** (`clamp(124px,26vh,250px)`): màn chọn giờ
+chiếm cả màn, để ảnh cao cố định thì sáu ô tụm trên đỉnh và bỏ trống hai phần ba phía dưới.
+
+### Luật cũ vẫn nguyên giá trị
+
+Mọi thứ ở mục 2h **không đổi**: chuyển động lặp mãi chỉ được đổi `opacity` / `box-shadow` /
+`background-position` / `filter`, và **nút mà test phải bấm thì đừng gắn
+`animation … infinite`**. Cả đợt này chỉ có **hai** animation lặp, cả hai đều hợp luật:
+`titleSweep` (vệt chéo sau logo, chỉ đổi `background-position`) và `arcPulse` trên
+`#arcStart` — cái này đã có từ trước và giờ đổi sang **bóng TRONG**, vì góc vát cắt mất
+bóng ngoài nên quầng cũ không còn thấy gì.
+
+> **`clip-path` KHÔNG phải `transform`.** Nó không làm phần tử "chưa đứng yên" nên Playwright
+> vẫn bấm được — 45/45 trận của `t_reg` cùng cả bộ test click-nặng (`t_dex` chạm hai lần vào
+> ô nhân vật, `t_modes` dựng đội hình, `t_comp` bấm qua cả giải) đều chạy sạch sau khi vát
+> góc. Nhưng nó **có** ăn vào phép dò điểm chạm: bấm vào đúng cái góc đã cắt thì rơi xuống
+> phần tử phía dưới. Test bấm vào TÂM nên không dính; đừng vát sâu tới mức nuốt mất chữ.
+
+Kiểm bằng `node tools/t_ui.js`, `node tools/t_dex.js`, `node tools/t_play.js`,
+`node tools/t_stage.js` — bốn bộ này soi đúng mấy màn vừa sửa.
+
 ## 2b. Khoảng cách khi cận chiến — đừng dán vào nhau
 
 Người dùng bác bản cũ: hai người cận chiến đứng chồng hẳn lên nhau, nhìn chỉ thấy một
