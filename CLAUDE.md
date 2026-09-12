@@ -2659,12 +2659,77 @@ dang tự nằm giữa, và **thêm nhân vật mới bao nhiêu người cũng 
 | gạch dưới dòng phụ màn tiêu đề | `bottom:-7px` nên **đè lên chân chữ**, nhìn như gạch nhầm hai chữ giữa | hạ xuống -13px, rộng 180px |
 | nhật ký | viền đứt nét, dòng nào cũng như dòng nào | chấm đầu dòng theo màu phe, mép trên nhạt dần cho biết còn cuộn được |
 
+### Ngôn ngữ hình — GÓC VÁT, chữ HUD, ba màu
+
+Lượt đầu của mục này mới chỉ dọn cho *nhất quán*; người dùng xem rồi bác thẳng: *"nhìn ch
+khác gì, nâng cấp nó đẹp và chuẩn và visual phải thật bắt mắt như các game hiện nay"*. Dọn
+dẹp thôi thì vẫn ra một trang web sạch sẽ, không ra một cái game. Ba thứ dưới đây mới là
+thứ đổi được chất:
+
+**1 · Vát góc — `--cut`.** Mọi khối lớn đều **cắt một hoặc hai góc** bằng `clip-path`:
+khung chọn nhân vật, khung sàn đấu, bảng điều khiển, thẻ đấu thủ, ô màn đấu, thẻ hồ sơ,
+khung *trận kế tiếp*, ô sơ đồ nhánh, nút vàng, nút chế độ. Hình chữ nhật bo tròn đọc ra
+"trang web"; hình vát góc đọc ra "HUD".
+
+> **Góc vát CẮT MẤT bóng đổ ngoài.** `clip-path` xén cả `box-shadow` ra ngoài, nên mọi
+> viền và quầng sáng của khối đã vát phải vẽ bằng **`inset`** (`box-shadow:inset 0 0 0 1px …`
+> thay cho `border`). Đây là chỗ dễ quên nhất: đặt `border` rồi vát góc thì viền biến mất
+> một nửa. Ô đang chọn cũng vậy — quầng vàng của `.cTile.on` và `.sTile.on` đều là `inset`.
+
+**2 · Hai mặt chữ, chia việc rõ ràng.**
+
+| Font | Biến | Dùng cho |
+|---|---|---|
+| **Chakra Petch** 700 nghiêng | `--fd` | logo, tiêu đề màn, tên nhân vật, tên chiêu, tên màn đấu, chữ VS, nút vàng, tên trong bảng xếp hạng |
+| Be Vietnam Pro | *(mặc định)* | thân bài, mô tả, nhật ký |
+| Space Mono | — | nhãn micro chữ hoa (ENGLISH ONLY — font này thiếu chữ Việt có dấu) |
+
+Chakra Petch là mặt chữ vuông kiểu HUD và **có đủ bộ chữ tiếng Việt** (đã kiểm: Google Fonts
+trả về subset `vietnamese`), nên nhãn có dấu vẫn đúng. Nó cũng **hẹp hơn** Be Vietnam Pro nên
+thay vào là chữ co lại chứ không tràn. Chuỗi lùi là `"Chakra Petch","Be Vietnam Pro",…` —
+máy test chặn font mạng nên ảnh chụp ra font lùi, vẫn đọc tốt.
+
+**3 · Bóng LỆCH MÀU thay cho gradient trên chữ.** Logo, tiêu đề trang, tiêu đề màn chọn và
+chữ VS đều có ba lớp `text-shadow`: **lam lệch trái, hồng lệch phải, đen khối bên dưới**.
+Đó là mẹo "lệch màu ống kính" của mấy màn hình game đối kháng — cho ra cảm giác đèn neon mà
+**không** phải tô gradient lên chữ. Lối gradient đã thử và **bỏ hẳn** (mục 2h): bóng khối
+`text-shadow` vẽ theo ô chữ nên lòi ra giữa mặt chữ thành sọc vằn.
+
+**4 · Bảng màu ba màu, không hơn**: vàng arcade (`--gold`) + **lam điện `--cyan`** + **hồng
+nóng `--mag`**. Cặp lam-hồng chạy thành một dải sáng ở mép trên mọi khung lớn, hắt vào hai
+góc dưới của màn tiêu đề, và làm hai lớp bóng lệch màu. **Đừng thêm màu thứ tư** — mỗi nhân
+vật đã có màu riêng rồi, thêm nữa là loạn.
+
+**5 · Màu nhân vật ăn vào thẻ.** `tile()` gắn `--c` từ `C.color`; thẻ đấu thủ dùng nó cho
+**mảng sáng hắt lên từ đáy** (`color-mix`), quầng sau ô mặt, viền ô mặt và vạt màu dưới chân
+thẻ. Nhờ vậy chín thẻ đọc ra chín người khác nhau ngay cả khi ảnh còn là emoji. Thẻ hồ sơ
+thì `dexCard()` tự dựng một dải `.dexEdge` mang màu đó — đặt trong hàm chứ không đặt biến
+lên hộp ngoài, vì `.cDetail` được nhiều chỗ đổ nội dung vào.
+
+**6 · Chế độ đang chọn ĐẢO MÀU.** `.mTab.on` là nền vàng đặc chữ đen, không phải "viền sáng
+hơn một chút". Nhìn một cái là biết đang ở chế độ nào.
+
+**7 · Nền và hạt nhiễu.** Nền trang là ba quầng lệch nhau (tím đỉnh · lam trái · hồng phải)
+trên một lớp sọc quét, `background-attachment:fixed`. Trên đó là `body::after` phủ một lớp
+**hạt nhiễu** alpha `.035` (SVG `feTurbulence` nhúng thẳng): rất nhạt nhưng đủ để mấy mảng
+gradient lớn không bị **kẻ sọc** do màn hình 8-bit làm tròn màu — đó là thứ làm nền trông rẻ
+tiền. **`pointer-events:none` là bắt buộc** (z-index 9999, phủ kín màn), thiếu là cả trang
+không bấm được.
+
 ### Luật cũ vẫn nguyên giá trị
 
 Mọi thứ ở mục 2h **không đổi**: chuyển động lặp mãi chỉ được đổi `opacity` / `box-shadow` /
 `background-position` / `filter`, và **nút mà test phải bấm thì đừng gắn
-`animation … infinite`**. Đợt này không thêm một animation lặp nào; tất cả là `transition`
-chạy lúc rê chuột.
+`animation … infinite`**. Cả đợt này chỉ có **hai** animation lặp, cả hai đều hợp luật:
+`titleSweep` (vệt chéo sau logo, chỉ đổi `background-position`) và `arcPulse` trên
+`#arcStart` — cái này đã có từ trước và giờ đổi sang **bóng TRONG**, vì góc vát cắt mất
+bóng ngoài nên quầng cũ không còn thấy gì.
+
+> **`clip-path` KHÔNG phải `transform`.** Nó không làm phần tử "chưa đứng yên" nên Playwright
+> vẫn bấm được — 45/45 trận của `t_reg` cùng cả bộ test click-nặng (`t_dex` chạm hai lần vào
+> ô nhân vật, `t_modes` dựng đội hình, `t_comp` bấm qua cả giải) đều chạy sạch sau khi vát
+> góc. Nhưng nó **có** ăn vào phép dò điểm chạm: bấm vào đúng cái góc đã cắt thì rơi xuống
+> phần tử phía dưới. Test bấm vào TÂM nên không dính; đừng vát sâu tới mức nuốt mất chữ.
 
 Kiểm bằng `node tools/t_ui.js`, `node tools/t_dex.js`, `node tools/t_play.js`,
 `node tools/t_stage.js` — bốn bộ này soi đúng mấy màn vừa sửa.

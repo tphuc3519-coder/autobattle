@@ -7,7 +7,7 @@
 <title>Đấu Trường Chiba — Auto Battle Arena</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800;900&family=Chakra+Petch:ital,wght@0,600;0,700;1,600;1,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   /* ---------- lớp token ----------
      Mọi màu, bo góc, bóng đổ và chiều cao ô điều khiển đọc từ đây. Sửa một biến là cả
@@ -36,6 +36,18 @@
     /* chiều cao chuẩn của MỌI ô điều khiển trên thanh công cụ */
     --ctl:34px;
     --ease:cubic-bezier(.2,.7,.3,1);
+
+    /* Font TIÊU ĐỀ — mặt chữ vuông kiểu HUD của game đối kháng. Dùng cho logo, tiêu đề
+       màn, tên nhân vật, tên màn đấu, nhãn bảng. Thân bài vẫn là Be Vietnam Pro. Chakra
+       Petch có đủ bộ chữ tiếng Việt nên nhãn có dấu vẫn đúng. */
+    --fd:"Chakra Petch","Be Vietnam Pro",system-ui,sans-serif;
+
+    /* Hai màu phụ của vỏ giao diện: lam điện và hồng nóng. Cặp này + vàng arcade là cả
+       bảng màu — đừng thêm màu thứ tư. */
+    --cyan:#4DE2FF; --mag:#FF4FA3;
+    /* Góc vát của khối giao diện. Vát góc chính là thứ làm nó đọc ra "game" chứ không
+       ra "trang web" — mọi khối lớn đều cắt một hoặc hai góc theo con số này. */
+    --cut:14px;
   }
   *{box-sizing:border-box}
   /* Vành sáng khi đi bằng bàn phím. `:focus-visible` nên chuột bấm thì không hiện. */
@@ -48,23 +60,41 @@
   *::-webkit-scrollbar-track{background:transparent}
   *::-webkit-scrollbar-thumb{background:#332B63;border-radius:var(--rp);border:2px solid transparent;background-clip:padding-box}
   *::-webkit-scrollbar-thumb:hover{background:#4A3F8C;background-clip:padding-box}
+  /* Nền trang: hai quầng sáng lệch nhau (tím ở đỉnh, lam ở góc trái, hồng ở góc phải)
+     chồng lên một lớp sọc quét mảnh. Nền một màu phẳng là chỗ làm cả trang đọc ra một
+     trang web; ba quầng lệch nhau thì nó thành một cái sảnh có đèn. */
   body{
     margin:0;padding:16px 12px 44px;
     background:
-      radial-gradient(900px 520px at 50% -12%, #2A1F5E 0%, transparent 62%),
-      repeating-linear-gradient(180deg, rgba(255,255,255,.014) 0 1px, transparent 1px 3px),
+      radial-gradient(760px 420px at 50% -14%, rgba(126,86,255,.42) 0%, transparent 66%),
+      radial-gradient(620px 520px at 2% 12%, rgba(77,226,255,.13) 0%, transparent 62%),
+      radial-gradient(620px 520px at 98% 22%, rgba(255,79,163,.12) 0%, transparent 62%),
+      repeating-linear-gradient(180deg, rgba(255,255,255,.016) 0 1px, transparent 1px 3px),
       var(--ink);
+    background-attachment:fixed;
     color:var(--paper);font-family:"Be Vietnam Pro",system-ui,sans-serif;
   }
+  /* Hạt nhiễu phủ toàn trang. Rất nhạt (alpha .035) nhưng đủ để mấy mảng gradient lớn
+     không bị KẺ SỌC do màn hình 8-bit làm tròn màu — đó là thứ làm nền trông rẻ tiền.
+     `pointer-events:none` là BẮT BUỘC, thiếu là cả trang không bấm được. */
+  body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.035;
+    background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E")}
   .wrap{max-width:680px;margin:0 auto}
   /* Tiêu đề kiểu bảng hiệu thùng máy: chữ nghiêng, viền dày, gạch vàng dưới chân. */
-  header{margin-bottom:10px;padding-bottom:10px;position:relative;
+  header{margin-bottom:12px;padding:0 0 11px 13px;position:relative;
     border-bottom:1px solid var(--line)}
-  /* Gạch chân chạy HẾT bề ngang rồi nhạt dần về bên phải, thay cho mẩu 74px cụt lủn. */
+  /* Thanh màu dọc bên trái tiêu đề — lam chuyển sang hồng, cùng bảng màu với cả vỏ. */
+  header::before{content:'';position:absolute;left:0;top:2px;bottom:13px;width:4px;border-radius:var(--rp);
+    background:linear-gradient(180deg,var(--cyan),var(--mag))}
   header::after{content:'';position:absolute;left:0;bottom:-1px;width:min(210px,42%);height:2px;
     border-radius:var(--rp);background:linear-gradient(90deg,var(--gold),transparent)}
-  h1{font-weight:900;font-size:clamp(21px,5.6vw,30px);margin:0;letter-spacing:-.015em;
-    font-style:italic;text-shadow:0 2px 0 #100C28,0 5px 18px rgba(0,0,0,.55)}
+  /* Tiêu đề: mặt chữ HUD, nghiêng, siết chữ lại, và có một lớp bóng LỆCH MÀU phía sau
+     (lam bên trái, hồng bên phải) — mẹo "lệch màu ống kính" của mấy game đối kháng, làm
+     chữ nảy hẳn lên khỏi nền mà không cần tô gradient (gradient lên chữ đã thử và bỏ,
+     xem mục 2h). */
+  h1{font-family:var(--fd);font-weight:700;font-size:clamp(22px,6vw,33px);margin:0;
+    letter-spacing:-.01em;font-style:italic;line-height:1.05;
+    text-shadow:-2px 0 0 rgba(77,226,255,.55),2px 0 0 rgba(255,79,163,.45),0 3px 0 #0B0820,0 8px 26px rgba(0,0,0,.6)}
   h1 span{color:var(--gold)}
   .sub{font-family:"Space Mono",monospace;font-size:10.5px;color:var(--mute);letter-spacing:.16em;text-transform:uppercase;margin-top:6px}
 
@@ -96,11 +126,17 @@
   select option{background:#171240;color:var(--paper)}
   /* Nút vàng: một khối đặc có nét sáng ở mép trên và quầng ấm phía dưới, thay cho cái
      bệ 3px kiểu web cũ. Vẫn là vàng arcade, chỉ sạch nét hơn. */
-  button.primary{background:linear-gradient(180deg,#FFD267,#F2A414);color:#2C1E00;border-color:#FFDD8A;
-    font-weight:800;box-shadow:inset 0 1px 0 var(--gold2),0 2px 0 #A06D00,0 10px 24px -8px rgba(255,181,46,.65)}
-  button.primary:hover{background:linear-gradient(180deg,#FFE08C,#FFB92E);
-    box-shadow:inset 0 1px 0 #FFF3D2,0 2px 0 #A06D00,0 12px 28px -8px rgba(255,181,46,.8)}
-  button.primary:active{box-shadow:inset 0 2px 6px rgba(120,74,0,.5),0 0 0 #A06D00}
+  /* Nút vàng: khối đặc VÁT HAI GÓC chéo nhau, chữ HUD nghiêng. Góc vát cắt mất bóng đổ
+     ngoài nên quầng sáng phải vẽ bằng `inset` chứ không vẽ ra ngoài. */
+  button.primary{background:linear-gradient(180deg,#FFD267,#F2A414);color:#2C1E00;border:0;
+    font-family:var(--fd);font-weight:700;font-style:italic;font-size:13px;letter-spacing:.03em;
+    text-transform:uppercase;border-radius:0;
+    clip-path:polygon(9px 0,100% 0,calc(100% - 9px) 100%,0 100%);
+    box-shadow:inset 0 1px 0 var(--gold2),inset 0 -2px 0 rgba(150,95,0,.5)}
+  button.primary:hover{background:linear-gradient(180deg,#FFE79E,#FFB92E);
+    box-shadow:inset 0 1px 0 #FFF7DF,inset 0 -2px 0 rgba(150,95,0,.5),inset 0 0 26px rgba(255,255,255,.3)}
+  button.primary:active{background:linear-gradient(180deg,#F0AE20,#D98F00);
+    box-shadow:inset 0 3px 8px rgba(120,74,0,.55)}
   /* Ô đánh dấu và thanh trượt cũng là một viên thuốc ngang hàng với nút, không phải chữ
      trần thả giữa hàng. */
   label.chk{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mute);cursor:pointer;
@@ -124,11 +160,13 @@
   /* Khung sàn đấu. Padding mỏng và canvas trải HẾT bề ngang khung: bản cũ kẹp canvas ở
      520px trong một khung 680px nên hai bên thừa ra hơn 130px nền tím trống trơn, sàn
      đấu thì bé tí giữa màn. */
-  .stage{background:linear-gradient(180deg,#151130,#080716);border:1px solid var(--line);
-    border-radius:var(--r3);padding:8px;display:flex;justify-content:center;position:relative;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),var(--e2)}
-  .stage::before{content:'';position:absolute;left:14%;right:14%;top:-1px;height:2px;
-    border-radius:var(--rp);background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.6}
+  .stage{background:linear-gradient(180deg,#161231,#070614);border:0;border-radius:0;
+    padding:9px;display:flex;justify-content:center;position:relative;
+    clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+    box-shadow:inset 0 0 0 1px #332B63}
+  /* Dải lam → vàng → hồng chạy suốt mép trên khung sàn, đúng dải của khung chọn nhân vật. */
+  .stage::before{content:'';position:absolute;left:var(--cut);right:0;top:0;height:3px;
+    background:linear-gradient(90deg,var(--cyan),var(--gold) 50%,var(--mag))}
   /* Không dùng transform: Playwright coi phần tử đang biến đổi là "chưa đứng yên" và
      không bao giờ bấm được thứ nằm dưới nó (mục 9). Canh giữa bằng left/right thôi. */
   .loadChip{position:absolute;left:13px;right:13px;bottom:22px;text-align:center;
@@ -138,17 +176,19 @@
     border-radius:999px;padding:5px 12px;display:inline-block}
   /* Canvas 620x620 nên cho nó trải hết khung: ở bề ngang 680px sàn đấu ra ~640px thay
      vì 520px, mà vẫn dưới cỡ gốc nên không bị rỗ. */
-  canvas{width:100%;max-width:600px;height:auto;display:block;touch-action:none;image-rendering:auto;
-    border-radius:calc(var(--r3) - 8px)}
+  canvas{width:100%;max-width:600px;height:auto;display:block;touch-action:none;image-rendering:auto}
 
-  .card{background:linear-gradient(180deg,var(--s1),#100D26);border:1px solid var(--line);
-    border-radius:var(--r2);padding:11px 13px;margin-top:10px;box-shadow:var(--e1)}
-  .card h3{margin:0 0 8px;font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.18em;
+  .card{position:relative;background:linear-gradient(180deg,#161232,#0D0A24);border:0;border-radius:0;
+    padding:12px 14px;margin-top:11px;
+    clip-path:polygon(11px 0,100% 0,100% calc(100% - 11px),calc(100% - 11px) 100%,0 100%,0 11px);
+    box-shadow:inset 0 0 0 1px #2E2758}
+  .card h3{margin:0 0 9px;font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.18em;
     text-transform:uppercase;color:var(--mute);display:flex;align-items:center;gap:8px}
-  /* Chấm vàng đầu dòng tiêu đề — dấu hiệu nhỏ cho biết đây là một khối riêng, thay vì
-     bốn dòng chữ xám trôi nổi giống hệt nhau. */
+  /* Chấm vàng đầu dòng tiêu đề + gạch nối chạy hết dòng — dấu hiệu của một khối HUD,
+     thay cho bốn dòng chữ xám trôi nổi giống hệt nhau. */
   .card h3::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--gold);
     box-shadow:0 0 8px var(--gold);flex:none}
+  .card h3::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
   /* Nhật ký: dòng mới nhất nằm trên cùng, mép trên nhạt dần cho biết còn cuộn được nữa. */
   #log{height:126px;overflow-y:auto;font-size:12.5px;line-height:1.55;padding-right:4px;
     -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 10px);
@@ -196,17 +236,31 @@
   .csel.off{display:none}
   /* Hộp cao tối đa bằng màn hình, phần giữa mới cuộn — nhờ vậy tiêu đề và hàng nút
      luôn nằm trong tầm mắt, không phải cuộn cả trang mới bấm được Vào trận. */
+  /* Khung chọn: VÁT hai góc chéo nhau, có một dải sáng lam-hồng chạy suốt mép trên và
+     một quầng tím hắt từ đỉnh xuống. Góc vát cắt mất bóng đổ ngoài nên chiều sâu phải
+     dựng bằng lớp phủ mờ của `.csel` phía sau, đừng trông vào `box-shadow`. */
   .cselBox{width:100%;max-width:780px;max-height:calc(100vh - 28px);position:relative;
-    display:flex;flex-direction:column;background:linear-gradient(180deg,#171238,#0F0C26);
-    border:1px solid var(--line2);border-radius:var(--r3);padding:15px 15px 13px;box-shadow:var(--e3)}
-  /* Nét sáng mảnh chạy dọc mép trên khung — cùng ngôn ngữ với mép trên của sàn đấu. */
-  .cselBox::before{content:'';position:absolute;left:12%;right:12%;top:-1px;height:2px;border-radius:var(--rp);
-    background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.5;pointer-events:none}
-  .cselBody{flex:1;min-height:0;overflow:auto;padding-right:4px}
-  .cselBox h2{margin:0;font-size:clamp(17px,4.6vw,22px);font-weight:900;letter-spacing:-.015em;font-style:italic}
+    display:flex;flex-direction:column;
+    background:
+      radial-gradient(120% 60% at 50% 0%,rgba(126,86,255,.22),transparent 68%),
+      linear-gradient(180deg,#16112F,#0C0920);
+    border:0;border-radius:0;padding:16px 16px 13px;
+    clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+    box-shadow:inset 0 0 0 1px #3A3272}
+  /* Dải sáng mép trên: lam → vàng → hồng. Chừa hai đầu cho khỏi đè lên góc vát. */
+  .cselBox::before{content:'';position:absolute;left:var(--cut);right:0;top:0;height:3px;pointer-events:none;
+    background:linear-gradient(90deg,var(--cyan),var(--gold) 50%,var(--mag))}
+  .cselBody{flex:1;min-height:0;overflow:auto;padding-right:5px}
+  /* Tiêu đề màn chọn: chữ HUD nghiêng, to hẳn, kèm bóng lệch màu như tiêu đề trang. */
+  .cselBox h2{margin:0;font-family:var(--fd);font-size:clamp(19px,5.2vw,27px);font-weight:700;
+    letter-spacing:.005em;font-style:italic;text-transform:uppercase;line-height:1.05;
+    text-shadow:-2px 0 0 rgba(77,226,255,.5),2px 0 0 rgba(255,79,163,.4),0 2px 0 #0B0820}
   .cselBox h2 span{color:var(--gold)}
   .cselSub{font-family:"Space Mono",monospace;font-size:10px;color:var(--mute);
-    letter-spacing:.16em;text-transform:uppercase;margin:5px 0 12px}
+    letter-spacing:.16em;text-transform:uppercase;margin:6px 0 12px;
+    display:flex;align-items:center;gap:8px}
+  /* Gạch nối chạy hết phần còn lại của dòng phụ — thủ pháp quen của bảng HUD. */
+  .cselSub::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
   /* Hàng nút dưới cùng dính hẳn xuống đáy khung, có vạch ngăn với phần cuộn phía trên:
      cuộn tới đâu cũng thấy rõ đâu là nút đi tiếp. */
   .cselBar{border-top:1px solid var(--line);padding-top:11px}
@@ -220,49 +274,87 @@
   .cselHead b{color:var(--paper);font-family:"Be Vietnam Pro",sans-serif;letter-spacing:0;font-size:12.5px}
   /* Bốn ô nhỏ nằm ngang thay cho bốn thẻ dài xếp dọc: cả bảng chọn gọn lại còn
      hai hàng ô cộng hai khung mô tả, thay vì tám thẻ dài phải cuộn mãi mới hết. */
-  /* Lưới đấu thủ dùng FLEX chứ không dùng grid, và hàng cuối CANH GIỮA. Với chín đấu thủ
-     trên một lưới tám cột thì người thứ chín đứng trơ một mình ở mép trái hàng dưới —
-     nhìn như lỗi bố cục. Flex thì hàng dở dang tự nằm giữa, và thêm nhân vật mới bao
-     nhiêu người cũng không phải sửa lại số cột. */
-  .cTiles{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
+  /* ---------- THẺ ĐẤU THỦ ----------
+     Đây là thứ người chơi nhìn lâu nhất, nên nó là một TẤM THẺ chứ không phải một cái
+     nút vuông: ảnh chiếm gần hết ô, một mảng sáng theo MÀU RIÊNG của nhân vật hắt lên từ
+     đáy, tên in bằng mặt chữ HUD nghiêng, và hai góc bị VÁT. Góc vát chính là thứ làm cả
+     lưới đọc ra màn chọn của game đối kháng.
+
+     Lưới dùng FLEX chứ không dùng grid, và hàng cuối CANH GIỮA: chín đấu thủ trên lưới
+     tám cột thì người thứ chín đứng trơ một mình ở mép trái. Flex thì hàng dở dang tự
+     nằm giữa, thêm nhân vật bao nhiêu người cũng không phải sửa số cột. */
+  .cTiles{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
   .cTile{flex:1 1 84px;max-width:132px;min-width:0;
-    display:flex;flex-direction:column;align-items:center;gap:6px;padding:9px 4px;
-    background:linear-gradient(180deg,var(--s2),#141031);border:1px solid #2E2758;border-radius:var(--r2);
-    cursor:pointer;font-weight:400;
+    display:flex;flex-direction:column;align-items:center;gap:7px;padding:10px 5px 8px;
+    background:
+      linear-gradient(180deg,transparent 38%,color-mix(in srgb,var(--c,#7C6AD6) 26%,transparent) 100%),
+      linear-gradient(180deg,#1C1745,#100C29);
+    border:1px solid #302859;cursor:pointer;font-weight:400;
+    clip-path:polygon(11px 0,100% 0,100% calc(100% - 11px),calc(100% - 11px) 100%,0 100%,0 11px);
     transition:background .16s var(--ease),border-color .16s var(--ease),box-shadow .16s var(--ease)}
-  .cTile:hover{background:linear-gradient(180deg,#2A2262,#1C1743);border-color:var(--line2)}
-  .cTile.on{border-color:var(--gold);background:linear-gradient(180deg,#372B60,#241C48);
-    box-shadow:0 0 0 1px var(--gold) inset,0 6px 18px rgba(255,197,66,.16)}
-  /* Ô mặt: viền mảnh 1px cộng một quầng màu nhân vật phía trong, thay cho cái viền đặc
-     2px làm mọi ô đọc ra như một con tem. */
-  .cAva{width:38px;height:38px;flex:0 0 38px;border-radius:var(--r1);display:flex;align-items:center;
-    justify-content:center;font-size:19px;background:radial-gradient(circle at 50% 30%,#171141,#0A0820);
-    border:1px solid currentColor}
-  .cDetail{margin-top:9px;background:linear-gradient(180deg,#151132,#100D26);border:1px solid #2A2450;
-    border-radius:var(--r2);padding:11px 12px}
-  .cName{display:block;font-weight:800;font-size:12px;line-height:1.2;text-align:center}
-  .cDetail .cName{font-size:14px;text-align:left}
-  .cTag{display:block;font-family:"Space Mono",monospace;font-size:9.5px;color:var(--mute);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+  .cTile:hover{border-color:color-mix(in srgb,var(--c,#7C6AD6) 70%,#fff 0%);
+    background:
+      linear-gradient(180deg,transparent 30%,color-mix(in srgb,var(--c,#7C6AD6) 42%,transparent) 100%),
+      linear-gradient(180deg,#241D57,#141031)}
+  /* Ô đang chọn: viền vàng DÀY vẽ bằng bóng trong (bóng ngoài bị góc vát cắt mất), cộng
+     một mảng sáng đậm hơn hẳn. Đừng cho nó nhấp nháy — cả lưới này bị test bấm hàng chục
+     lần một lượt, xem ghi chú ở nút vàng. */
+  .cTile.on{border-color:var(--gold);
+    background:
+      linear-gradient(180deg,transparent 26%,color-mix(in srgb,var(--c,#7C6AD6) 52%,transparent) 100%),
+      linear-gradient(180deg,#2E2457,#15102F);
+    box-shadow:0 0 0 2px rgba(255,197,66,.85) inset,0 0 34px -10px var(--gold) inset}
+  /* Vạt màu chéo ở đáy thẻ — dấu hiệu màu của nhân vật, đọc được cả khi ảnh còn là emoji. */
+  .cTile::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;
+    background:linear-gradient(90deg,transparent,var(--c,var(--gold)),transparent);opacity:.85}
+  .cTile.on::after{height:4px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+  /* Ô mặt: quầng màu nhân vật hắt ra sau ảnh, viền mảnh phát sáng. */
+  .cAva{width:44px;height:44px;flex:0 0 44px;border-radius:11px;display:flex;align-items:center;
+    justify-content:center;font-size:22px;position:relative;
+    background:radial-gradient(circle at 50% 34%,color-mix(in srgb,var(--c,#7C6AD6) 34%,#0A0820),#070518);
+    border:1px solid color-mix(in srgb,var(--c,#7C6AD6) 75%,transparent)}
+  /* Thẻ hồ sơ: vát góc như mọi khối khác, và mang dải màu riêng của nhân vật ở mép trên
+     (`.dexEdge`, do `dexCard()` dựng ra kèm màu). */
+  .cDetail{position:relative;margin-top:10px;overflow:hidden;
+    background:linear-gradient(180deg,#17123A,#0D0A24);border:0;border-radius:0;padding:14px 14px 12px;
+    clip-path:polygon(11px 0,100% 0,100% calc(100% - 11px),calc(100% - 11px) 100%,0 100%,0 11px);
+    box-shadow:inset 0 0 0 1px #2E2758}
+  .dexEdge{position:absolute;left:11px;right:0;top:0;height:3px;display:block}
+  .dexPopBody .cDetail{clip-path:none;box-shadow:none;background:none;padding:0}
+  .dexPopBody .dexEdge{display:none}
+  .cName{display:block;font-family:var(--fd);font-weight:700;font-style:italic;font-size:12.5px;
+    line-height:1.15;text-align:center;letter-spacing:.01em;text-transform:uppercase;
+    text-shadow:0 1px 0 rgba(0,0,0,.6)}
+  .cDetail .cName{font-size:16px;text-align:left;text-transform:none}
+  .cTag{display:block;font-family:"Space Mono",monospace;font-size:9.5px;color:var(--mute);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
   .cSkills{display:block;font-size:11px;color:#C3B9E6;line-height:1.5;margin-top:5px}
   .cSkills i{color:var(--mute);font-style:normal}
   .cselBar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:11px}
   .cselVs{font-family:"Space Mono",monospace;font-size:11.5px;color:var(--mute);margin-left:auto;text-align:right}
   .cselVs b{color:var(--paper)}
   /* ba chế độ đấu: 1v1 · hỗn chiến · đồng đội */
-  /* Năm chế độ đấu. Cao bằng nhau (`align-items:stretch` + dòng phụ đẩy xuống đáy) nên
-     hàng nút thẳng hàng dù tên chế độ dài ngắn khác nhau. */
-  .cselModes{display:flex;gap:6px;flex-wrap:wrap;align-items:stretch;margin:2px 0 11px}
-  .mTab{flex:1 1 132px;display:flex;flex-direction:column;justify-content:center;gap:3px;height:auto;
-    padding:9px 10px;background:linear-gradient(180deg,var(--s2),#141031);border:1px solid #2E2758;
-    border-radius:var(--r2);cursor:pointer;color:var(--paper);font-weight:800;font-size:12.5px;
-    text-align:center;transition:background .16s var(--ease),border-color .16s var(--ease),box-shadow .16s var(--ease)}
-  .mTab:hover{background:linear-gradient(180deg,#2A2260,#1C1743);border-color:var(--line2)}
-  .mTab.on{border-color:var(--gold);background:linear-gradient(180deg,#3A2D62,#241C48);
-    box-shadow:0 0 0 1px var(--gold) inset,0 8px 22px -8px rgba(255,197,66,.5);color:var(--gold)}
-  .mTab b{font-weight:800;line-height:1.2}
+  /* Năm chế độ đấu — dải nút NGHIÊNG kiểu bảng chọn chế độ của game đối kháng. Mép trái
+     và mép phải vát ngược chiều nhau nên cả hàng đọc ra một dải liền, không phải năm cái
+     hộp rời. Cao bằng nhau nhờ `align-items:stretch`. */
+  .cselModes{display:flex;gap:5px;flex-wrap:wrap;align-items:stretch;margin:2px 0 12px}
+  .mTab{flex:1 1 132px;position:relative;display:flex;flex-direction:column;justify-content:center;
+    gap:3px;height:auto;padding:10px 12px;border:0;border-radius:0;
+    background:linear-gradient(180deg,#221B4E,#120E2C);cursor:pointer;color:#B9AFE4;
+    font-weight:800;font-size:12.5px;text-align:center;
+    clip-path:polygon(9px 0,100% 0,calc(100% - 9px) 100%,0 100%);
+    box-shadow:inset 0 0 0 1px #332B63;
+    transition:background .16s var(--ease),color .16s var(--ease),box-shadow .16s var(--ease)}
+  .mTab:hover{background:linear-gradient(180deg,#2E2568,#1A1440);color:var(--paper);
+    box-shadow:inset 0 0 0 1px var(--line2)}
+  /* Chế độ đang chọn: nền vàng ĐẶC, chữ đen. Đảo hẳn màu như vậy thì nhìn một cái là
+     biết đang ở chế độ nào, không phải dò xem ô nào viền sáng hơn ô nào. */
+  .mTab.on{background:linear-gradient(180deg,#FFD267,#F0A414);color:#2C1E00;
+    box-shadow:inset 0 0 0 1px #FFE9AE,0 0 26px -8px var(--gold)}
+  .mTab b{font-family:var(--fd);font-weight:700;font-style:italic;font-size:13px;line-height:1.15;
+    letter-spacing:.01em;text-transform:uppercase}
   .mTab i{display:block;font-style:normal;font-family:"Space Mono",monospace;font-size:8.5px;
-    letter-spacing:.1em;text-transform:uppercase;color:var(--mute);line-height:1.35}
-  .mTab.on i{color:rgba(255,197,66,.72)}
+    letter-spacing:.09em;text-transform:uppercase;color:var(--mute);line-height:1.35}
+  .mTab.on i{color:rgba(58,38,0,.72)}
   .off{display:none !important}
   /* danh sách đội hình đã chọn: mỗi người một thẻ nhỏ có nút ✕ để bỏ ra */
   .cRoster{display:flex;flex-wrap:wrap;gap:5px;min-height:34px;margin-bottom:8px;
@@ -279,7 +371,11 @@
      `transform`: Playwright coi phần tử đang biến đổi là "chưa đứng yên" và không bấm được
      (mục 9). Riêng cú bay vào lúc mở màn có dùng transform nhưng nó CHẠY MỘT LẦN rồi dừng,
      và nó nằm trong `.vsSide` chứ không phải chính `#arcVs` — cái mà test bấm vào. */
-  .vsFlash{position:absolute;inset:0;pointer-events:none;background:#fff;
+  /* Hai lớp nền của #arcVs vẽ bằng ::before/::after nên chúng nằm SAU trong thứ tự vẽ —
+     phải đẩy khối nội dung lên z-index 2, không thì vệt chém và hai mảng màu phủ đè lên
+     chính hai nhân vật. Chớp màn nằm trên cùng. */
+  #arcVs>div{z-index:2}
+  .vsFlash{position:absolute;inset:0;pointer-events:none;background:#fff;z-index:3;
     animation:vsFlash .5s ease-out both}
   @keyframes vsFlash{from{opacity:.5}to{opacity:0}}
   .vsRow{display:flex;align-items:flex-end;justify-content:center;gap:clamp(6px,2.4vw,26px)}
@@ -312,31 +408,55 @@
   /* Nền ăn theo tông màu của màn đấu (`--vsFog`, đặt trong `vsShow()`) — nhìn ra ngay
      mình sắp đánh ở đâu chứ không phải một cái nền tím dùng chung cho mọi màn. */
   #arcVs{background:
-    radial-gradient(ellipse at 50% 78%,color-mix(in srgb,var(--vsFog,#8899FF) 22%,transparent),transparent 62%),
+    radial-gradient(ellipse at 50% 78%,color-mix(in srgb,var(--vsFog,#8899FF) 24%,transparent),transparent 62%),
     radial-gradient(circle at 50% 34%,#2B1F5E,#06051A 72%)}
+  /* VẾT CHÉM chia đôi màn hình — mấy màn VS của game đối kháng đều có một đường chéo
+     tách hai bên. Vẽ bằng gradient có điểm dừng cứng nên nó là một nét sắc, không phải
+     một mảng loang. `pointer-events:none` vì cả màn này chạm vào là vào trận. */
+  #arcVs::before{content:'';position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(100deg,transparent calc(50% - 2px),rgba(255,255,255,.16) calc(50% - 2px),
+      rgba(255,255,255,.16) calc(50% + 2px),transparent calc(50% + 2px))}
+  /* Hai mảng màu hắt vào từ hai mép, cùng cặp lam - hồng của cả vỏ giao diện. */
+  #arcVs::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:
+      linear-gradient(100deg,rgba(77,226,255,.14) 0%,transparent 46%),
+      linear-gradient(100deg,transparent 54%,rgba(255,79,163,.14) 100%)}
 
   .vsFloor{position:absolute;left:4%;right:4%;bottom:-6px;height:18px;border-radius:50%;
     pointer-events:none;background:radial-gradient(ellipse at 50% 50%,currentColor,transparent 70%);
     opacity:.55;animation:vsBreath 1.5s ease-in-out infinite}
-  .vsName{font-weight:900;letter-spacing:.05em;font-size:clamp(12px,3.2vw,21px);
-    text-shadow:0 0 14px currentColor,0 2px 0 rgba(0,0,0,.6)}
+  .vsName{font-family:var(--fd);font-weight:700;font-style:italic;letter-spacing:.03em;
+    text-transform:uppercase;font-size:clamp(13px,3.5vw,24px);
+    text-shadow:0 0 18px currentColor,0 3px 0 rgba(0,0,0,.7)}
   .vsBig{position:relative;display:flex;align-items:center;justify-content:center;
     align-self:center;margin-bottom:clamp(24px,9vw,64px);
     width:clamp(52px,15vw,110px);height:clamp(52px,15vw,110px);flex:none}
   .vsBurst{position:absolute;inset:-40%;pointer-events:none;
     background:radial-gradient(circle,rgba(255,197,66,.55) 0%,rgba(255,120,40,.22) 38%,transparent 68%);
     animation:vsBreath .82s ease-in-out infinite}
-  .vsBig b{position:relative;font-family:"Space Mono",monospace;font-weight:700;color:var(--gold);
-    font-size:clamp(28px,8.4vw,62px);letter-spacing:.04em;
-    text-shadow:0 4px 0 #6B3A00,0 0 30px rgba(255,197,66,.85)}
-  .vsStage{margin-top:20px;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.24em;color:var(--mute)}
+  .vsBig b{position:relative;font-family:var(--fd);font-weight:700;font-style:italic;color:var(--gold);
+    font-size:clamp(34px,10vw,74px);letter-spacing:.02em;
+    text-shadow:-3px 0 0 rgba(77,226,255,.5),3px 0 0 rgba(255,79,163,.45),
+      0 5px 0 #5A3000,0 0 40px rgba(255,197,66,.9)}
+  /* Tên màn đấu nằm trong một tấm biển vát góc, không còn là một dòng chữ xám trôi nổi. */
+  .vsStage{margin-top:24px;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.24em;
+    color:#D3CAF2;display:inline-block;padding:6px 20px;background:rgba(10,8,26,.66);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);
+    clip-path:polygon(9px 0,100% 0,calc(100% - 9px) 100%,0 100%)}
   @keyframes vsBreath{0%,100%{opacity:.26}50%{opacity:.62}}
   @keyframes vsSweep{from{background-position:0 0}to{background-position:200% 0}}
-  .arcLogo{font-size:clamp(30px,9vw,64px);font-weight:900;line-height:.95;letter-spacing:-.03em;
-    color:var(--paper);text-shadow:0 6px 0 #1B1440,0 12px 34px rgba(0,0,0,.6)}
-  .arcLogo b{display:block;color:var(--gold)}
-  .arcTag{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.22em;color:var(--mute);
-    margin:14px 0 26px;text-transform:uppercase}
+  /* Logo màn tiêu đề: mặt chữ HUD nghiêng, siết chữ, và BA lớp bóng — lam lệch trái,
+     hồng lệch phải, đen khối bên dưới. Đó là mẹo "lệch màu ống kính"; nó cho ra cảm giác
+     đèn neon mà KHÔNG phải tô gradient lên chữ (lối đó đã thử và bỏ hẳn, xem mục 2h). */
+  .arcLogo{font-family:var(--fd);font-size:clamp(34px,10.5vw,76px);font-weight:700;font-style:italic;
+    line-height:.92;letter-spacing:-.005em;color:var(--paper);
+    text-shadow:-3px 0 0 rgba(77,226,255,.62),3px 0 0 rgba(255,79,163,.5),
+      0 6px 0 #150F35,0 14px 40px rgba(0,0,0,.65)}
+  .arcLogo b{display:block;color:var(--gold);
+    text-shadow:-3px 0 0 rgba(77,226,255,.42),3px 0 0 rgba(255,79,163,.42),
+      0 6px 0 #3A2600,0 14px 44px rgba(255,181,46,.35)}
+  .arcTag{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.22em;color:#C7BDEF;
+    margin:18px 0 28px;text-transform:uppercase}
   .arcHint{font-size:12px;color:var(--mute);margin-top:16px}
   .arcLoad{margin-top:9px;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.06em;
     color:var(--gold);opacity:.9}
@@ -344,7 +464,20 @@
      phần trăm to. Toàn bộ chuyển động dùng background-position / opacity — KHÔNG dùng
      transform, vì Playwright coi phần tử đang biến đổi là "chưa đứng yên" và không bấm
      được nút nằm trong đó (mục 9). */
-  #arcBoot,#arcTitle{background:radial-gradient(circle at 50% 38%,#2E2168,#0A0820 68%)}
+  /* Nền màn chờ / màn tiêu đề: quầng tím ở giữa, thêm hai vệt sáng LAM và HỒNG hắt từ
+     hai góc dưới lên — cùng bảng màu với cả vỏ giao diện. */
+  #arcBoot,#arcTitle{background:
+    radial-gradient(circle at 50% 36%,#332472,#0A0820 66%),
+    radial-gradient(60% 50% at 4% 100%,rgba(77,226,255,.16),transparent 70%),
+    radial-gradient(60% 50% at 96% 100%,rgba(255,79,163,.16),transparent 70%),
+    #07061A}
+  /* Hai vệt chéo quét ngang phía sau logo. Chỉ đổi `background-position` nên khung bao
+     đứng yên — nút PRESS START nằm trong màn này và test phải bấm được (mục 9). */
+  #arcTitle .bootIn::before,#arcTitle>div::before{content:'';position:absolute;left:-20%;right:-20%;
+    top:26%;height:34%;pointer-events:none;opacity:.5;
+    background:repeating-linear-gradient(104deg,transparent 0 58px,rgba(255,255,255,.05) 58px 60px);
+    background-size:220% 100%;animation:titleSweep 9s linear infinite}
+  @keyframes titleSweep{from{background-position:0 0}to{background-position:220% 0}}
   /* pointer-events:none là BẮT BUỘC — hai lớp này phủ kín màn, thiếu nó thì nút
      PRESS START nằm dưới không bấm được (kể cả người lẫn Playwright). */
   #arcBoot::before,#arcTitle::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
@@ -374,9 +507,15 @@
     margin-left:auto;margin-right:auto;line-height:1.35;transition:opacity .4s}
   /* Nhịp nháy chỉ đổi QUẦNG SÁNG, đừng đụng tới transform: nút mà nhúc nhích thì
      Playwright coi là "chưa đứng yên" và không bao giờ bấm được (test treo 30 giây). */
-  #arcStart{font-size:17px;padding:14px 34px;animation:arcPulse 1.6s ease-in-out infinite}
-  @keyframes arcPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,197,66,0)}
-    50%{box-shadow:0 0 0 8px rgba(255,197,66,.16)}}
+  /* PRESS START: to hẳn, vát góc sâu hơn nút thường. Nhịp thở dùng bóng TRONG chứ không
+     dùng bóng ngoài — góc vát cắt mất bóng ngoài nên quầng cũ không còn thấy gì. Và
+     tuyệt đối đừng đụng `transform`: nút này test bấm, nhúc nhích là treo (mục 9). */
+  #arcStart{font-size:clamp(16px,4.4vw,20px);padding:0 42px;height:52px;letter-spacing:.08em;
+    clip-path:polygon(15px 0,100% 0,calc(100% - 15px) 100%,0 100%);
+    animation:arcPulse 1.8s ease-in-out infinite}
+  @keyframes arcPulse{
+    0%,100%{box-shadow:inset 0 1px 0 var(--gold2),inset 0 -2px 0 rgba(150,95,0,.5),inset 0 0 0 rgba(255,255,255,0)}
+    50%{box-shadow:inset 0 1px 0 #FFF7DF,inset 0 -2px 0 rgba(150,95,0,.5),inset 0 0 40px rgba(255,255,255,.42)}}
   .arcOver{position:fixed;left:0;right:0;bottom:18px;z-index:65;display:flex;gap:9px;justify-content:center}
   .arcOver.off{display:none}
   /* Nút quay video 9:16 của TRANG CHƠI. Xưởng đã có #rec kèm ô chọn khung #rec916 ngay
@@ -394,11 +533,14 @@
   /* Thanh công cụ của TRANG CHƠI gom vào một khối như bảng điều khiển của thùng máy:
      có nền, có viền, canh giữa và tự bó lại vừa đủ chiều ngang. Trước đây mười ô điều
      khiển thả trần giữa trang, xuống ba hàng lệch nhau — nhìn ra một trang cấu hình. */
-  body.arcade .bar{justify-content:center;gap:8px;margin:12px auto;padding:11px 12px;
-    width:fit-content;max-width:100%;
-    background:linear-gradient(180deg,rgba(24,19,65,.75),rgba(16,13,38,.75));
-    border:1px solid var(--line);border-radius:var(--r3);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.05),var(--e1)}
+  body.arcade .bar{position:relative;justify-content:center;gap:8px;margin:12px auto;padding:12px 16px;
+    width:fit-content;max-width:100%;border:0;border-radius:0;
+    background:linear-gradient(180deg,rgba(27,21,72,.8),rgba(13,10,32,.8));
+    clip-path:polygon(13px 0,100% 0,100% calc(100% - 13px),calc(100% - 13px) 100%,0 100%,0 13px);
+    box-shadow:inset 0 0 0 1px #332B63}
+  /* Vạch lam mảnh ở mép trên bảng điều khiển — phân biệt nó với khung sàn (mép vàng). */
+  body.arcade .bar::before{content:'';position:absolute;left:13px;right:0;top:0;height:2px;
+    background:linear-gradient(90deg,var(--cyan),transparent 70%)}
   /* Vạch ngăn mảnh trước nút Bắt đầu: bên trái là mấy thứ chỉnh trước trận, bên phải là
      mấy nút điều khiển trận đấu. */
   body.arcade .bar #play{margin-left:4px;position:relative}
@@ -442,15 +584,17 @@
 
   /* dải "đã chọn": lúc chọn P2 vẫn thấy P1 vừa chốt */
   .pickRow{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin:11px 0 3px}
-  .pickChip{display:flex;align-items:center;gap:7px;padding:5px 11px 5px 5px;border-radius:11px;
-    background:#150F32;border:1px solid #3A3272}
-  .pickChip.now{border-color:var(--gold);box-shadow:0 0 0 1px rgba(255,214,102,.35) inset}
-  .pickChip img,.pickChip span.e{width:26px;height:26px;border-radius:7px;object-fit:cover;
-    background:#0C0920;display:flex;align-items:center;justify-content:center;font-size:15px}
-  .pickChip b{font-size:12.5px}
+  .pickChip{display:flex;align-items:center;gap:8px;padding:6px 13px 6px 6px;border:0;border-radius:0;
+    background:linear-gradient(180deg,#1D1748,#120E2C);box-shadow:inset 0 0 0 1px #3A3272;
+    clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
+  .pickChip.now{box-shadow:inset 0 0 0 2px var(--gold),inset 0 0 26px -10px var(--gold)}
+  .pickChip img,.pickChip span.e{width:30px;height:30px;border-radius:8px;object-fit:cover;
+    background:#0C0920;display:flex;align-items:center;justify-content:center;font-size:17px}
+  .pickChip b{font-family:var(--fd);font-weight:700;font-style:italic;font-size:13.5px;text-transform:uppercase}
   .pickChip i{font-style:normal;font-family:"Space Mono",monospace;font-size:9px;color:var(--mute);
     letter-spacing:.1em;display:block;text-transform:uppercase}
-  .pickVs{font-family:"Space Mono",monospace;font-size:11px;color:var(--gold);letter-spacing:.14em}
+  .pickVs{font-family:var(--fd);font-weight:700;font-style:italic;font-size:16px;color:var(--gold);
+    letter-spacing:.06em;text-shadow:0 0 14px rgba(255,197,66,.55)}
 
   /* ---- TRANG CHƠI: hỗn chiến / đánh đội cũng đi TỪNG BƯỚC như 1v1 ----
      Người dùng: "giao diện hỗn chiến cũng phải nhìn cho đẹp và không rối mắt, theo đội
@@ -510,7 +654,8 @@
   .dexTop{display:flex;align-items:center;gap:9px;margin-bottom:7px}
   .dexAva{font-size:26px;line-height:1;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
   .dexId{display:flex;flex-direction:column;min-width:0}
-  .dexId b{font-size:14.5px;font-weight:900;letter-spacing:-.01em}
+  .dexId b{font-family:var(--fd);font-size:17px;font-weight:700;font-style:italic;letter-spacing:.005em;
+    text-transform:uppercase;line-height:1.1}
   .dexId i{font-style:normal;font-family:"Space Mono",monospace;font-size:9.5px;color:var(--mute);
     letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
   .dexHp{margin-left:auto;text-align:right;font-family:"Space Mono",monospace;font-size:9px;
@@ -524,8 +669,11 @@
   .pips{display:flex;gap:2px}
   .pips b{width:11px;height:6px;border-radius:2px;background:#2A2258}
   .pips b.on{background:var(--gold)}
+  /* Nhãn khối trong thẻ: chữ nhỏ + một gạch nối chạy hết dòng, thay cho đường kẻ ngang
+     suông — cùng thủ pháp với dòng phụ của màn chọn. */
   .dexHead{font-family:"Space Mono",monospace;font-size:9.5px;letter-spacing:.16em;color:var(--mute);
-    text-transform:uppercase;border-top:1px solid var(--line);padding-top:7px;margin-bottom:6px}
+    text-transform:uppercase;padding-top:10px;margin-bottom:7px;display:flex;align-items:center;gap:8px}
+  .dexHead::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
   .sk{display:grid;grid-template-columns:auto 1fr;gap:3px 8px;padding:6px 0;border-bottom:1px dashed #2A2350}
   .sk:last-child{border-bottom:0}
   .skTag{grid-row:span 2;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;
@@ -533,7 +681,7 @@
     background:#241D4C;color:var(--paper);border:1px solid var(--line)}
   .skTag.tP{background:#1E3A2C;border-color:#2F6B4A;color:#8FE8B4;font-size:9px;letter-spacing:-.03em}
   .skTag.tU{background:#3A2E00;border-color:var(--gold);color:var(--gold);font-size:9px;letter-spacing:-.03em}
-  .sk b{font-size:12.5px;align-self:center}
+  .sk b{font-family:var(--fd);font-weight:700;font-size:13.5px;align-self:center;letter-spacing:.005em}
   .sk p{grid-column:2;margin:0;font-size:11px;line-height:1.5;color:var(--mute)}
   .dexRaw{margin-top:7px}
   .dexRaw summary{font-size:10.5px;color:var(--mute);font-family:"Space Mono",monospace;letter-spacing:.06em}
@@ -541,12 +689,13 @@
 
   /* ---- dải tuỳ chọn trên đầu màn chọn: hai lối xem skill + ô máu ---- */
   .cselOpts{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 14px;margin:8px 0 2px}
-  .vTabs{display:flex;gap:0;border:1px solid #3A3272;border-radius:11px;overflow:hidden;background:#150F32}
+  .vTabs{display:flex;gap:0;overflow:hidden;background:#120E2C;box-shadow:inset 0 0 0 1px #3A3272;
+    clip-path:polygon(9px 0,100% 0,calc(100% - 9px) 100%,0 100%)}
   .vTab{border:0;border-radius:0;background:transparent;color:var(--mute);font-size:11.5px;font-weight:700;
-    padding:7px 14px;letter-spacing:.02em}
-  .vTab+.vTab{border-left:1px solid #3A3272}
-  .vTab.on{background:linear-gradient(180deg,#3A2E7A,#2A2158);color:var(--paper);
-    box-shadow:inset 0 0 0 1px rgba(255,214,102,.35)}
+    padding:8px 16px;letter-spacing:.02em;box-shadow:none}
+  .vTab+.vTab{border-left:1px solid #2E2758}
+  .vTab:hover{background:#1D1745;color:var(--paper)}
+  .vTab.on{background:linear-gradient(180deg,#4A3A96,#2E2364);color:#fff;box-shadow:none}
   .hpAll{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--mute);
     font-family:"Space Mono",monospace;letter-spacing:.06em;text-transform:uppercase}
   .hpAll input{width:72px;background:#0E0B24;color:var(--paper);border:1px solid #3A3272;border-radius:8px;
@@ -559,10 +708,19 @@
     padding:14px;overflow:auto;background:rgba(6,4,18,.82);
     -webkit-backdrop-filter:blur(16px) saturate(.85);backdrop-filter:blur(16px) saturate(.85)}
   .dexPop.off{display:none}
-  .dexPopBox{width:min(820px,100%);max-height:calc(100vh - 28px);display:flex;flex-direction:column;
-    background:linear-gradient(180deg,#171238,#100C28);border:1px solid #3A3272;border-radius:16px;
-    box-shadow:0 26px 70px rgba(0,0,0,.6)}
-  .dexPopBar{display:flex;align-items:center;gap:9px;padding:11px 12px;border-bottom:1px solid #2A2450}
+  /* Cùng ngôn ngữ hình với khung chọn nhân vật: vát hai góc chéo nhau, dải lam-vàng-hồng
+     chạy mép trên, viền vẽ bằng `inset` vì góc vát cắt mất bóng ngoài. */
+  .dexPopBox{position:relative;width:min(820px,100%);max-height:calc(100vh - 28px);
+    display:flex;flex-direction:column;
+    background:
+      radial-gradient(120% 60% at 50% 0%,rgba(126,86,255,.2),transparent 68%),
+      linear-gradient(180deg,#16112F,#0C0920);
+    border:0;border-radius:0;
+    clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+    box-shadow:inset 0 0 0 1px #3A3272}
+  .dexPopBox::before{content:'';position:absolute;left:var(--cut);right:0;top:0;height:3px;pointer-events:none;
+    background:linear-gradient(90deg,var(--cyan),var(--gold) 50%,var(--mag))}
+  .dexPopBar{display:flex;align-items:center;gap:9px;padding:13px 14px 11px;border-bottom:1px solid #2A2450}
   .dexPopX{margin-left:auto;padding:6px 12px;font-size:13px;line-height:1}
   .dexPopBody{padding:12px;overflow:auto}
   .dexPopBody .cDetail{margin-top:0;border:0;background:none;padding:0}
@@ -580,12 +738,15 @@
      Người dùng: "giao diện cần rất dễ nhìn, đừng bị rối". Nên cả hai màn đều chỉ có ba
      khối xếp dọc: TRẬN KẾ TIẾP to ở trên, bảng / nhánh ở giữa, kết quả đã đá ở dưới. */
   .nextM{position:relative;overflow:hidden;background:
-      radial-gradient(ellipse at 50% 0%,rgba(255,197,66,.1),transparent 62%),
-      linear-gradient(180deg,#1D1748,#131030);
-    border:1px solid #3E357C;border-radius:var(--r3);padding:13px 12px 15px;text-align:center;
-    margin-bottom:12px;box-shadow:var(--e1)}
-  .nextM::before{content:'';position:absolute;left:22%;right:22%;top:0;height:2px;border-radius:var(--rp);
-    background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.6}
+      radial-gradient(ellipse at 50% 0%,rgba(255,197,66,.13),transparent 62%),
+      linear-gradient(180deg,#1E1850,#100D2A);
+    border:0;border-radius:0;padding:15px 12px 17px;text-align:center;margin-bottom:13px;
+    clip-path:polygon(13px 0,100% 0,100% calc(100% - 13px),calc(100% - 13px) 100%,0 100%,0 13px);
+    box-shadow:inset 0 0 0 1px #3E357C}
+  .nextM::before{content:'';position:absolute;left:13px;right:0;top:0;height:3px;
+    background:linear-gradient(90deg,var(--cyan),var(--gold) 50%,var(--mag))}
+  .nextF b{font-family:var(--fd);font-weight:700;font-style:italic;font-size:14px;text-transform:uppercase}
+  .nextF span{border-radius:12px}
   .nextLab{font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.18em;
     text-transform:uppercase;color:var(--gold);margin-bottom:9px}
   .nextRow{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
@@ -596,7 +757,9 @@
   .nextF b{font-size:13px;font-weight:800}
   .compWin{text-align:center;padding:18px 10px}
   .compWin i{display:block;font-style:normal;font-size:44px;line-height:1}
-  .compWin b{display:block;font-size:22px;font-weight:900;margin-top:6px}
+  .compWin b{display:block;font-family:var(--fd);font-size:30px;font-weight:700;font-style:italic;
+    text-transform:uppercase;margin-top:8px;
+    text-shadow:-2px 0 0 rgba(77,226,255,.5),2px 0 0 rgba(255,79,163,.45),0 3px 0 #0B0820}
   .compWin em{display:block;font-style:normal;font-family:"Space Mono",monospace;font-size:10px;
     letter-spacing:.2em;text-transform:uppercase;color:var(--mute);margin-top:5px}
 
@@ -608,8 +771,9 @@
   .lgTab td{padding:6px 5px;border-bottom:1px solid #1E1943;text-align:center;color:#C8BEE8}
   .lgTab td.r{width:24px;font-family:"Space Mono",monospace;color:var(--mute)}
   .lgTab td.n{text-align:left}
-  .lgTab td.n b{font-weight:800;font-size:13px}
-  .lgTab td.pt{font-weight:900;color:var(--paper);font-size:14px}
+  .lgTab td.n b{font-family:var(--fd);font-weight:700;font-style:italic;font-size:14px;
+    text-transform:uppercase;letter-spacing:.01em}
+  .lgTab td.pt{font-family:var(--fd);font-weight:700;color:var(--paper);font-size:17px}
   .lgTab td.up{color:#5BE39A} .lgTab td.dn{color:#FF8FA3}
   .lgTab tr.top td{background:rgba(255,197,66,.08)}
   .lgTab tr.top td.r{color:var(--gold);font-weight:700}
@@ -635,7 +799,9 @@
   .brCol{flex:1 1 0;min-width:148px;display:flex;flex-direction:column;justify-content:space-around;gap:8px}
   .brHead{font-family:"Space Mono",monospace;font-size:9.5px;letter-spacing:.14em;
     text-transform:uppercase;color:var(--mute);text-align:center;margin-bottom:2px}
-  .brM{background:#150F32;border:1px solid #2E2758;border-radius:10px;overflow:hidden}
+  .brM{background:linear-gradient(180deg,#191340,#0F0B28);border:0;border-radius:0;overflow:hidden;
+    box-shadow:inset 0 0 0 1px #332B63;
+    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
   .brM+.brM{margin-top:8px}
   .brSlot{display:flex;align-items:center;gap:6px;padding:5px 7px;font-size:12px;color:#B4A9DE}
   .brSlot+.brSlot{border-top:1px solid #241E4E}
@@ -649,7 +815,8 @@
 
   .rsList{display:flex;flex-direction:column;gap:4px}
   .rsRow{display:flex;align-items:center;gap:8px;font-size:12px;color:#B4A9DE;
-    background:#150F32;border:1px solid #241E4E;border-radius:9px;padding:5px 9px}
+    background:linear-gradient(90deg,#181240,#110D2B);border:0;border-radius:0;padding:6px 10px;
+    box-shadow:inset 2px 0 0 #4A3F8C}
   .rsRow b{font-weight:800}
   .rsRow s{margin-left:auto;font-family:"Space Mono",monospace;font-size:10.5px;color:var(--mute);text-decoration:none}
   /* Chip đội hình đang chờ tráo chỗ khi tự xếp nhánh */
@@ -699,16 +866,22 @@
   .sTiles{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:8px}
   @media(max-width:520px){.sTiles{grid-template-columns:repeat(2,1fr)}}
   .sTile{position:relative;padding:0;overflow:hidden;height:auto;background:#0C0920;
-    border:1px solid #2E2758;border-radius:var(--r2);cursor:pointer;color:var(--paper);text-align:left;
-    transition:border-color .16s var(--ease),box-shadow .16s var(--ease)}
-  .sTile:hover{border-color:var(--line2)}
-  .sTile.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+    border:0;border-radius:0;cursor:pointer;color:var(--paper);text-align:left;
+    clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);
+    box-shadow:inset 0 0 0 1px #332B63;
+    transition:box-shadow .16s var(--ease)}
+  .sTile:hover{box-shadow:inset 0 0 0 1px var(--line2)}
+  .sTile.on{box-shadow:inset 0 0 0 2px var(--gold),inset 0 0 40px -12px var(--gold)}
   .sTile img{display:block;width:100%;height:96px;object-fit:cover;background:#0C0920}
-  .sTile .sCap{position:absolute;left:0;right:0;bottom:0;padding:20px 9px 7px;pointer-events:none;
-    background:linear-gradient(180deg,transparent,rgba(6,4,18,.9) 58%)}
-  .sTile b{display:block;font-size:11.5px;font-weight:800;letter-spacing:.02em}
+  .sTile .sCap{position:absolute;left:0;right:0;bottom:0;padding:26px 10px 9px;pointer-events:none;
+    background:linear-gradient(180deg,transparent,rgba(5,4,16,.92) 62%)}
+  .sTile b{display:block;font-family:var(--fd);font-size:13px;font-weight:700;font-style:italic;
+    letter-spacing:.02em;text-transform:uppercase;line-height:1.1}
   .sTile i{display:block;font-style:normal;font-family:"Space Mono",monospace;font-size:8.5px;
-    color:#A99FD6;margin-top:1px}
+    color:#A99FD6;margin-top:2px}
+  /* Vạch màn đang chọn: một nêm vàng ở góc trên bên phải, thấy ngay giữa sáu ô. */
+  .sTile.on::after{content:'';position:absolute;right:0;top:0;width:0;height:0;
+    border-top:24px solid var(--gold);border-left:24px solid transparent}
   .cChip{display:flex;align-items:center;gap:5px;padding:4px 6px 4px 8px;background:#191436;
     border:1px solid currentColor;border-radius:8px;font-size:11.5px;font-weight:800}
   .cChip button{all:unset;cursor:pointer;color:var(--mute);font-size:12px;line-height:1;padding:0 2px}
@@ -752,18 +925,14 @@
     transition:background-position .55s ease-out}
   button.primary:hover::after{background-position:-50% 0}
 
-  /* Ô nhân vật: quầng sáng theo màu nhân vật lúc rê chuột, và ô đang chọn thì thở nhẹ.
-     Cả hai chỉ đổi box-shadow nên khung bao đứng yên. */
+  /* Quầng sáng màu nhân vật hắt ra từ sau ô mặt. Chỉ đổi opacity nên khung bao đứng yên. */
   .cTile{position:relative;overflow:hidden}
-  .cTile::before{content:'';position:absolute;left:50%;top:-14px;width:74px;height:74px;margin-left:-37px;
-    border-radius:50%;pointer-events:none;opacity:0;transition:opacity .18s;
-    background:radial-gradient(circle,var(--c,var(--gold)),transparent 68%)}
-  .cTile:hover::before{opacity:.13}
-  .cTile.on::before{opacity:.2}
-  /* Ô đang chọn: quầng vàng ĐẬM HƠN, đứng yên. Đừng cho nó nhấp nháy bằng `animation
-     ... infinite` — cả lưới này bị test bấm hàng chục lần một lượt, xem ghi chú ở nút vàng. */
-  .cTile.on{box-shadow:0 0 0 1px var(--gold) inset,0 6px 26px rgba(255,197,66,.34)}
-  .cAva{box-shadow:0 0 12px -3px currentColor}
+  .cTile::before{content:'';position:absolute;left:50%;top:-18px;width:96px;height:96px;margin-left:-48px;
+    border-radius:50%;pointer-events:none;opacity:.1;transition:opacity .18s;
+    background:radial-gradient(circle,var(--c,var(--gold)),transparent 66%)}
+  .cTile:hover::before{opacity:.26}
+  .cTile.on::before{opacity:.34}
+  .cAva{box-shadow:0 0 16px -4px var(--c,currentColor),inset 0 0 18px -8px var(--c,currentColor)}
 
   /* Ô màn đấu: ảnh sáng lên lúc rê chuột, ô đang chọn có viền vàng dày hơn và một dải
      vàng chạy dọc mép trên cho dễ thấy giữa sáu ô. */
@@ -14130,7 +14299,11 @@ function dexCard(key,view){
     `<div class="sk"><span class="skTag t${k.tag}" title="${dexTagFull(k.tag)}">${dexTag(k.tag)}</span>`+
     `<b style="color:${C.color}">${k.name}</b><p>${tr(k)}</p></div>`).join('');
   const avg=pwAvg(key);
-  return `<div class="dexTop"><span class="dexAva">${avaHtml(key)}</span>`+
+  /* Dải màu của chính nhân vật chạy dọc mép trên thẻ. Để ở đây chứ không đặt biến --c
+     lên hộp ngoài: `.cDetail` được nhiều chỗ đổ nội dung vào, gắn ngay trong thẻ thì chỗ
+     nào gọi `dexCard()` cũng có, khỏi phải nhớ. */
+  return `<i class="dexEdge" style="background:linear-gradient(90deg,${C.color},transparent 78%)"></i>`+
+    `<div class="dexTop"><span class="dexAva">${avaHtml(key)}</span>`+
     `<span class="dexId"><b style="color:${C.color}">${C.name}</b><i>${tr(D.role)||C.tag}</i></span>`+
     `<span class="dexHp">${t('hp')}<label><input type="number" class="dexHpIn" data-hpkey="${key}" `+
       `value="${HP[key]||HP_STD}" min="${HP_MIN}" max="${HP_MAX}" step="50" title="${t('hpTip')}"></label></span></div>`+
