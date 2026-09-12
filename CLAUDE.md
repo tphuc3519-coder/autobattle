@@ -1848,15 +1848,17 @@ riêng trong `TAN`, `CHARS.tanjiro` hay logic Demon Slayer Mark.**
   sau mọi cửa invulnerability/E.M.T; cú kiếm đầu trúng nhận +15 và chỉ xuyên 20% phần
   giảm damage. Multi-hit cũng chỉ ăn đúng một lần. Sợi trắng chỉ là lớp vẽ nối kiếm–địch.
 - Basic là 24/24/38 = 86, nhịp 0.8 giây; hit ba là Water Surface Slash, hất nhẹ và hit
-  stun 0.4 giây. Water Wheel 75/6.5 giây là cú lao thẳng có chỉnh hướng rất nhẹ, trượt thì
-  khựng 0.5 giây. Constant Flux là 18/22/26/30/34 = 130; bị cắt thì không bù hit. Dragon
-  Sun Halo là 3×35 = 105, được đổi mỗi hit sang người đứng gần đường chạy.
+  stun 0.4 giây. Water Wheel 75/9 giây là cú lao thẳng có chỉnh hướng rất nhẹ, trượt thì
+  khựng 0.5 giây. Constant Flux là 18/22/26/30/34 = 130, cooldown 14 giây; bị cắt thì
+  không bù hit. Dragon Sun Halo là 3×35 = 105, cooldown 13 giây, được đổi mỗi hit sang
+  người đứng gần đường chạy. Ultimate giữ damage 210 nhưng cooldown tăng thành 28 giây.
 - Di chuyển thường của AI đi qua đúng nhánh melee chung trong `aiVec()` như ChiChi: lúc
   áp sát, lúc lượn quanh cự ly đánh, lúc đi theo waypoint/jitter ngẫu nhiên. Tanjiro không
   có vector di chuyển riêng. Water Wheel chỉ được cân nhắc khi còn xa và sau một nhịp chờ
-  riêng ngẫu nhiên 2.6–4.4 giây, ngoài cooldown 6.5 giây; Constant Flux chỉ mở ở gần,
-  Dragon Sun Halo ở tầm gần-vừa. Hết một form hoặc đủ ba basic thì `tanResetRhythm()` chỉ
-  tạo khoảng nghỉ quyết định 0.55–1.05 giây, sau đó vẫn tiếp tục bằng movement melee chung.
+  riêng ngẫu nhiên 3.5–6 giây, ngoài cooldown 9 giây. Trong tầm tay, 72% quyết định mới
+  bắt đầu bằng basic; một khi đã chém hit đầu thì AI buộc hoàn thành đủ combo ba hit trước
+  khi xét Breathing Form. Constant Flux chỉ mở ở gần, Dragon Sun Halo ở tầm gần-vừa. Hết
+  một form hoặc đủ ba basic thì `tanResetRhythm()` tạo khoảng nghỉ quyết định 0.55–1.05 giây.
 - Demon Slayer Mark nổ **lần đầu khi `hp < maxHp * .40`**, animation 0.8 giây, không hồi
   HP/không cộng damage: +25% chạy, +20% nhịp basic, +20% hồi chiêu, 25% kháng hiệu ứng,
   20% kháng lực đẩy. Sau đó mới mở `Sun Breathing: Thirteenth Form`.

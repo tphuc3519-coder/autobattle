@@ -2201,13 +2201,13 @@ const TAN={
   entranceT:gs(1.5), entrancePh:[gs(.5),gs(1),gs(1.5)],
   basic:[24,24,38], basicGap:gs(.8), surfaceStun:gs(.4), surfaceKb:72,
   threadCd:gs(8), threadT:gs(3), threadBonus:15, threadPierce:.20, threadDodgeMul:.20,
-  wheelDmg:75, wheelCd:gs(6.5), wheelTravel:gs(.72), wheelAir:gs(.7), wheelRecover:gs(.5), wheelSpd:520,
-  fluxHit:[18,22,26,30,34], fluxCd:gs(11), fluxGap:gs(.24), fluxStun:gs(.9), fluxKb:170,
-  sunHit:[35,35,35], sunCd:gs(10), sunGap:gs(.32), sunStun:gs(.7), sunKb:170, sunSpd:560,
+  wheelDmg:75, wheelCd:gs(9), wheelTravel:gs(.72), wheelAir:gs(.7), wheelRecover:gs(.5), wheelSpd:520,
+  fluxHit:[18,22,26,30,34], fluxCd:gs(14), fluxGap:gs(.24), fluxStun:gs(.9), fluxKb:170,
+  sunHit:[35,35,35], sunCd:gs(13), sunGap:gs(.32), sunStun:gs(.7), sunKb:170, sunSpd:560,
   markHp:.40, markT:gs(.8), markMove:1.25, markAtk:1.20, markCast:1.20,
   markCcRes:.25, markKbRes:.20,
   ultDmg:[17,17,17,17,17,17,17,17,17,17,17,23],
-  ultCd:gs(24), ultFocus:gs(.6), ultT:gs(3.5), ultRange:112, ultChase:610,
+  ultCd:gs(28), ultFocus:gs(.6), ultT:gs(3.5), ultRange:112, ultChase:610,
   ultTake:.50, ultCcRes:.70, ultDown:gs(1.2),
   redT:gs(6), suppressT:gs(5), suppressHeal:.60,
   /* Combat rhythm: ordinary movement uses the same shared melee AI as ChiChi. Water
@@ -2216,7 +2216,7 @@ const TAN={
   engageFar:170, wheelMin:132, formRange:148, fluxRange:108,
   aiThinkMin:gs(.22), aiThinkMax:gs(.48),
   resetMin:gs(.55), resetMax:gs(1.05),
-  wheelAiMin:gs(2.6), wheelAiMax:gs(4.4)
+  wheelAiMin:gs(3.5), wheelAiMax:gs(6), formChance:.28
 };
 const CHARS={
   kono:{
@@ -2557,6 +2557,10 @@ const CHARS={
         tanWaterWheel(f,e); return;
       }
       if(f.tanMarked&&f.cds.s4<=0&&(auto?d<=TAN.formRange+28:keys['u'])){ f.cds.s4=TAN.ultCd; tanUltimate(f,e); return; }
+      const basicReady=f.cds.basic<=0&&d<f.r+e.r+meleeReach(f);
+      /* Basic attacks are the default close-range plan. Once a three-hit combo starts,
+         finish all three swings before considering another Breathing Form. */
+      if(auto&&basicReady&&(f.tanCombo>0||!chance(TAN.formChance))){ tanBasic(f,e); return; }
       if(auto&&d<=TAN.formRange){
         const sun=f.cds.s3<=0, flux=f.cds.s2<=0&&d<=TAN.fluxRange;
         if(sun&&flux){
@@ -2836,9 +2840,9 @@ const DEX={
     ]},
   tanjiro:{ role:{vi:'Swordsman · Melee – Pursuit – Finisher',en:'Swordsman · Melee – Pursuit – Finisher'},
     st:{pow:4,spd:4,rng:1,def:3},
-    pw:{dmg:78,dur:56,mob:76,as:70,rng:18,cc:60,uti:62,con:66,cmb:74},
-    bio:{vi:'He uses regular melee footwork and only occasionally closes a long gap with Water Wheel. His low-HP Mark unlocks a finisher, but gives no healing or raw damage.',
-         en:'He uses regular melee footwork and only occasionally closes a long gap with Water Wheel. His low-HP Mark unlocks a finisher, but gives no healing or raw damage.'},
+    pw:{dmg:74,dur:56,mob:72,as:70,rng:18,cc:52,uti:62,con:68,cmb:74},
+    bio:{vi:'He relies on his three-hit Nichirin Sword Combo and regular melee footwork. Breathing Forms are occasional commitments, while his low-HP Mark unlocks a finisher without healing him.',
+         en:'He relies on his three-hit Nichirin Sword Combo and regular melee footwork. Breathing Forms are occasional commitments, while his low-HP Mark unlocks a finisher without healing him.'},
     skills:[
       {tag:'P',name:'Opening Thread',vi:`Every ${rts(TAN.threadCd)}s, marks the nearest enemy for ${rts(TAN.threadT)}s. The next sword hit gains accuracy, +${TAN.threadBonus} damage and partial damage-reduction bypass.`,en:`Every ${rts(TAN.threadCd)}s, marks the nearest enemy for ${rts(TAN.threadT)}s. The next sword hit gains accuracy, +${TAN.threadBonus} damage and partial damage-reduction bypass.`},
       {tag:'1',name:'Nichirin Sword Combo',vi:`Three strikes for ${TAN.basic.join(' / ')} damage; Water Surface Slash finishes with short knockback and hit stun.`,en:`Three strikes for ${TAN.basic.join(' / ')} damage; Water Surface Slash finishes with short knockback and hit stun.`},
