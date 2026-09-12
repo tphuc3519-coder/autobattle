@@ -3011,10 +3011,73 @@ function master(){ const c=ac(); if(!c)return null; if(!MASTER){ MASTER=c.create
 function recDest(){ const c=ac(); if(!c)return null; if(!RECDEST){ RECDEST=c.createMediaStreamDestination(); master().connect(RECDEST); } return RECDEST; }
 function ac(){
   try{
+    /* Context ĐÃ ĐÓNG thì `resume()` vô nghĩa và mọi `createOscillator` đều ném lỗi —
+       phải bỏ hẳn cái cũ rồi dựng cái mới. iOS đóng context sau một quãng chạy nền. */
+    if(AC&&AC.state==='closed'){ AC=null; MASTER=null; RECDEST=null; }
     if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
-    if(AC.state==='suspended') AC.resume();
+    /* Safari trên iOS có thêm trạng thái 'interrupted' (cuộc gọi, Siri, chuyển app) —
+       nó KHÔNG phải 'suspended' nên nhánh cũ bỏ sót và tiếng tắt hẳn. */
+    if(AC.state==='suspended'||AC.state==='interrupted') AC.resume().catch(()=>{});
     return AC;
   }catch(e){ return null; }
+}
+/* ---------- THOÁT RA MỘT LÚC RỒI VÀO LẠI THÌ MẤT TIẾNG (iPhone) ----------
+   Người dùng: *"thoát ra khoảng 1 tg là vào lại game mất tiếng (trên iphone)"*.
+   iOS Safari treo AudioContext khi trang chạy nền, và có HAI kiểu hỏng:
+     1. state thành 'interrupted' (riêng WebKit) hoặc 'suspended' — `resume()` là xong,
+        nhưng `resume()` ngoài cử chỉ người dùng hay bị từ chối, nên phải thử lại ở cú
+        CHẠM kế tiếp chứ đừng thử đúng một lần lúc trang hiện ra;
+     2. state vẫn báo 'running' mà **đồng hồ `currentTime` đứng yên** — context đã chết
+        bên trong, `resume()` không cứu được, bắt buộc phải DỰNG LẠI cái mới.
+   `audioWake()` lo cả hai, cộng việc đá cho thẻ `<audio>` nhạc nền chạy tiếp (iOS cũng
+   pause nó khi chuyển app).
+   **Đừng dựng lại context trong lúc đang ghi hình** — `recDest()` và bộ mã hoá tiếng
+   bám vào đúng cái context đó, thay giữa chừng là video mất tiếng. */
+let acWatch=null;
+function audioRebuild(){
+  const cu=AC;
+  /* Dọn NHẠC TỰ SINH trước tiên. `startMusic()` gác ở `if(MUSIC.gain) return`, mà mấy
+     node đó thuộc context vừa chết — không xoá là nhạc im lặng mất hẳn và không cách
+     nào dựng lại. Gọi `stopMusic()` thì nó đụng `AC.currentTime` của context chết nên
+     bọc try; phần dọn biến nằm trước cú đụng đó nên vẫn sạch. */
+  try{ stopMusic(); }catch(e){}
+  MUSIC.gain=null; MUSIC.oscs=[]; MUSIC.lfo=null; MUSIC.filter=null;
+  if(MUSIC.timer){ clearInterval(MUSIC.timer); MUSIC.timer=null; }
+  AC=null; MASTER=null; RECDEST=null;
+  for(const k in SFX_ACTIVE) delete SFX_ACTIVE[k];
+  try{ if(cu&&cu.state!=='closed') cu.close(); }catch(e){}
+  ac();                                    // dựng lại ngay, graph tự mọc lại theo master()
+}
+function audioWake(){
+  if(REC||CFR) return;                     // đang ghi hình thì đừng đụng vào đồ thị âm thanh
+  let c=null;
+  try{ c=AC; }catch(e){ return; }
+  if(!c){ return; }                        // chưa ai bật tiếng lần nào thì thôi, khỏi tạo
+  if(c.state==='closed'){ audioRebuild(); if(MUSIC.on) try{ musicStart(); }catch(e){} return; }
+  if(c.state==='suspended'||c.state==='interrupted'){
+    c.resume().catch(()=>{ audioRebuild(); });
+  }
+  /* Kiểu hỏng thứ hai: báo 'running' mà đồng hồ đứng. Đo hai mốc cách nhau một nhịp
+     THẬT rồi mới kết luận — đọc một lần thì không phân biệt được với context vừa mở. */
+  clearTimeout(acWatch);
+  const t0=c.currentTime;
+  acWatch=setTimeout(()=>{
+    if(REC||CFR||AC!==c) return;
+    if(c.state==='running'&&c.currentTime===t0) audioRebuild();
+  },400);
+  /* Đá cho nhạc nền chạy tiếp — nhưng CHỈ khi nó đang đứng. `audioWake()` chạy ở MỌI cú
+     chạm, gọi `musicStart()` vô điều kiện là mỗi lần bấm lại một lượt dò ô nhạc. */
+  if(MUSIC.on&&((BGM.el&&BGM.el.paused)||(!MUSIC.gain&&!BGM.key))) try{ musicStart(); }catch(e){}
+}
+/* Bốn cửa gọi: trang hiện lại, quay về từ bfcache, cửa sổ lấy lại focus, và CÚ CHẠM
+   kế tiếp — cú chạm mới là chỗ iOS chịu cho `resume()` chạy. Dùng `pointerdown` +
+   `touchend` ở pha bắt, `passive` để không cản thao tác nào. */
+if(typeof document!=='undefined'){
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) audioWake(); });
+  window.addEventListener('pageshow',audioWake);
+  window.addEventListener('focus',audioWake);
+  for(const ev of ['pointerdown','touchend'])
+    document.addEventListener(ev,audioWake,{capture:true,passive:true});
 }
 /* TIẾNG ĐỘNG KHÔNG chạy theo thanh tốc độ. Bản trước có nhân `playbackRate` theo
    `speedMul` (và rút ngắn quãng ngân của tiếng tự tạo) cho khớp nhịp trận; người dùng
@@ -15044,6 +15107,12 @@ function cselSteps(){
      là vào trận. */
   if(TMP.mode==='duel') return ['mode','p1','p2','stage'];
   if(TMP.mode==='team') return ['mode'].concat(TMP.teams.map((_,i)=>'t'+i),'stage');
+  /* GIẢI ĐẤU KHÔNG có bước chọn màn ở đây — người dùng: *"có việc lặp lại chọn
+     background 2 lần ở chế độ league và tournament… 2 chế độ này chỉ chọn background ở
+     lần 2 thôi chứ lần đầu là không được"*. Khai mạc giải xong là vào thẳng bảng xếp
+     hạng, rồi MỖI TRẬN mới hỏi sàn (`stagePickOpen`, mục 2e) — hỏi ở đây nữa là hỏi
+     hai lần liền mà cái đầu chẳng dùng vào đâu. */
+  if(TMP.mode==='league'||TMP.mode==='cup') return ['mode','chars'];
   return ['mode','chars','stage'];
 }
 const teamStep=()=>{ const m=/^t(\d+)$/.exec(cselPage); return m?+m[1]:-1; };

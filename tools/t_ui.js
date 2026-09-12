@@ -213,6 +213,61 @@ function fileNhac() {
   await p3.click('#mTabFfa');
   await p3.waitForTimeout(250);
   ok(await dem() > 0, 'bam nut che do thi co tieng');
+
+  /* ---------- THOÁT RA MỘT LÚC RỒI VÀO LẠI VẪN CÒN TIẾNG (iPhone) ----------
+     Người dùng: "thoát ra khoảng 1 tg là vào lại game mất tiếng (trên iphone)".
+     iOS treo AudioContext khi chạy nền; hai kiểu hỏng đều phải tự cứu được. */
+  await p3.click('#mTabDuel');            // cú bấm trên vừa đổi sang hỗn chiến, lưới A bị giấu
+  await p3.waitForTimeout(300);
+  const trThai = () => p3.evaluate(() => { const c = window.__ac(); return c ? c.state : null; });
+  ok(await trThai() !== null, 'da mo AudioContext sau may cu bam');
+
+  /* 1 · state 'suspended' — đúng cảnh chuyển app rồi quay lại */
+  await p3.evaluate(() => window.__ac().suspend());
+  await p3.waitForTimeout(150);
+  ok(await trThai() === 'suspended', 'gia lap thoat app: context bi treo');
+  await p3.evaluate(() => window.__audioWake());
+  await p3.waitForTimeout(400);
+  ok(await trThai() === 'running', `vao lai thi context tu chay lai (${await trThai()})`);
+  await dem();
+  await p3.click('#listA .cTile[data-key="kono"]');
+  await p3.waitForTimeout(250);
+  ok(await dem() > 0, 'va bam nut thi lai co tieng');
+
+  /* 2 · cú CHẠM cũng phải tự đánh thức — trên iOS `resume()` chỉ chắc ăn trong cử chỉ
+        người dùng, nên đừng chỉ trông vào sự kiện trang hiện lại. */
+  await p3.evaluate(() => window.__ac().suspend());
+  await p3.waitForTimeout(150);
+  await p3.click('#listA .cTile[data-key="chichi"]');
+  await p3.waitForTimeout(400);
+  ok(await trThai() === 'running', `mot cu cham bat ky cung danh thuc tieng (${await trThai()})`);
+
+  /* 3 · context CHẾT hẳn (state báo running mà đồng hồ đứng, hoặc đã closed) thì phải
+        DỰNG LẠI cái mới chứ `resume()` không cứu nổi. */
+  const cu = await p3.evaluate(async () => { const c = window.__ac(); await c.close(); return c.state; });
+  ok(cu === 'closed', `gia lap context chet han (${cu})`);
+  await p3.evaluate(() => window.__audioWake());
+  await p3.waitForTimeout(500);
+  ok(await trThai() === 'running' || await trThai() === 'suspended',
+     `context chet thi dung lai cai moi (${await trThai()})`);
+  await dem();
+  await p3.click('#listA .cTile[data-key="shika"]');
+  await p3.waitForTimeout(300);
+  ok(await dem() > 0, 'dung lai xong van keu binh thuong');
+
+  /* 4 · NHẠC TỰ SINH cũng phải sống lại. `startMusic()` gác ở `if(MUSIC.gain) return`,
+        mà mấy node đó thuộc context vừa chết — không dọn là nhạc im hẳn, đúng cái
+        "vào lại mất tiếng" người dùng báo. */
+  await p3.evaluate(() => { window.__MUSIC.on = true; window.__MUSIC.synth = true; window.__musicStart(); });
+  await p3.waitForTimeout(300);
+  ok(await p3.evaluate(() => !!window.__MUSIC.gain), 'bat nhac tu sinh thi co node nhac');
+  await p3.evaluate(async () => { await window.__ac().close(); });
+  await p3.evaluate(() => window.__audioWake());
+  await p3.waitForTimeout(500);
+  const nhac = await p3.evaluate(() => ({
+    co: !!window.__MUSIC.gain, ctx: window.__ac() ? window.__ac().state : null }));
+  ok(nhac.co && nhac.ctx !== 'closed',
+     `context chet roi song lai thi nhac tu sinh cung dung lai (node: ${nhac.co} · ${nhac.ctx})`);
   await b3.close();
 
   console.log(loi.length ? `\nHONG ${loi.length} muc` : '\nDAT het');
