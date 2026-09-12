@@ -109,11 +109,12 @@ function fileNhac() {
   await page.click('#cselCancel');
   await page.waitForTimeout(200);
   const m0 = await doc(() => ({ on: window.__MUSIC.on, synth: window.__MUSIC.synth,
-                                slots: window.__BGM_SLOTS.length,
+                                slots: window.__BGM_SLOTS.length, man: window.__STAGES.length,
                                 o: document.getElementById('musicOn').checked }));
   ok(m0.on === false && m0.o === false, 'nhac nen MAC DINH TAT');
   ok(m0.synth === false, 'nhac tu tao cung mac dinh tat');
-  ok(m0.slots === 8, `co du 8 o nhac: menu + chung + sau man (${m0.slots})`);
+  /* Đọc theo SỐ MÀN chứ đừng ghim con số: thêm sàn đấu là bảng nhạc tự dài ra một ô. */
+  ok(m0.slots === 2 + m0.man, `du o nhac: menu + chung + ${m0.man} man (${m0.slots})`);
 
   /* Bật nhạc lúc CHƯA có file nào: phải chạy nhạc tự tạo chứ không im ru.
      Trước đây rơi thẳng vào `stopMusic()` — gói phát hành chưa có ô nhạc nào nên người chơi

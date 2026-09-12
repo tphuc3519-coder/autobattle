@@ -24,7 +24,7 @@ function fileAnh() {   // PNG 2x2 màu đỏ tươi — dán vào ô nền là n
 
   /* ---------- mỗi màn một sàn khác nhau ---------- */
   const keys = await doc(() => window.__STAGES.map(s => s.key));
-  ok(keys.length === 6, `co du sau man (${keys.join(', ')})`);
+  ok(keys.length === 12, `co du muoi hai man (${keys.join(', ')})`);
 
   // vẽ từng màn ra canvas phụ rồi lấy màu trung bình: hai màn không được ra cùng một màu
   const mau = await doc(ks => ks.map(k => {
@@ -42,7 +42,7 @@ function fileAnh() {   // PNG 2x2 màu đỏ tươi — dán vào ô nền là n
   }), keys);
   keys.forEach((k, i) => console.log(`        ${k.padEnd(8)} mau trung binh R${mau[i][0]} G${mau[i][1]} B${mau[i][2]}`));
   const kc = new Set(mau.map(m => m.join(',')));
-  ok(kc.size === keys.length, `sau man ra sau tong mau khac nhau (${kc.size}/${keys.length})`);
+  ok(kc.size === keys.length, `moi man mot tong mau rieng (${kc.size}/${keys.length})`);
   // sân vận động phải xanh lá hơn đỏ, vũ trụ phải tối hơn mọi màn khác
   const iSt = keys.indexOf('stadium'), iSp = keys.indexOf('space');
   ok(mau[iSt][1] > mau[iSt][0] + 20, `san van dong xanh la (G ${mau[iSt][1]} > R ${mau[iSt][0]})`);

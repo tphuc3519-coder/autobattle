@@ -12,6 +12,20 @@ const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if 
    tự nhảy sang bảng xếp hạng. Hai hàm con này đi qua đúng hai chỗ đó. */
 /* Bấm qua `evaluate` chứ đừng `page.click`: máy chạy test lúc nghẹt thì Playwright bấm
    xong còn ngồi chờ "trang đứng yên" và hết giờ (đã dính đúng ở nút này). */
+/* MỖI TRẬN CỦA GIẢI GIỜ ĐƯỢC CHỌN SÀN RIÊNG — người dùng: "league match thì mỗi trận vào
+   là đc chọn 1 background chứ k phải là chọn 1 background cho cả league". Nên bấm ▶ xong
+   phải chốt sàn rồi trận mới bắt đầu. */
+async function quaChonSan(page, san) {
+  for (let i = 0; i < 20; i++) {
+    if (!await page.evaluate(() => { const e = document.getElementById('arcStage');
+                                     return !!e && !e.classList.contains('off'); })) return;
+    if (san) await page.evaluate(k => {
+      const b = document.querySelector(`#arcStageList .sTile[data-stage="${k}"]`); if (b) b.click();
+    }, san);
+    await page.evaluate(() => document.getElementById('arcStageGo').click());
+    await page.waitForTimeout(80);
+  }
+}
 async function boQuaVs(page) {
   for (let i = 0; i < 20; i++) {
     if (!await page.evaluate(() => { const e = document.getElementById('arcVs');
@@ -42,6 +56,7 @@ async function daHet(page, tran) {
   for (let i = 0; i < tran + 2; i++) {
     if (!await page.evaluate(() => !!window.__compNext())) break;
     await page.evaluate(() => document.getElementById('compGo').click());
+    await quaChonSan(page);
     await boQuaVs(page);
     await page.waitForTimeout(320);
     const cap = await page.evaluate(() => window.__G().fighters.filter(f => !f.summon).map(f => f.key));
@@ -88,6 +103,9 @@ async function daHet(page, tran) {
 
   /* ---------- LEAGUE ---------- */
   await page.click('#mTabLeague');
+  await page.waitForTimeout(300);
+  /* Bấm START ra MÀN CHỌN CHẾ ĐỘ trước (mục 2e), chốt chế độ rồi mới tới dàn đấu thủ. */
+  await page.click('#cselGo');
   await page.waitForTimeout(350);
   const lp = await doc(() => ({
     h2: document.querySelector('#charSelect h2').textContent,
@@ -201,6 +219,15 @@ async function daHet(page, tran) {
 
   /* một trận thật: điểm và hiệu số phải nhảy đúng */
   await page.evaluate(() => document.getElementById('compGo').click());
+  /* Chọn sàn riêng cho trận này rồi mới vào — mỗi trận một sàn, không dùng lại sàn của
+     cả giải nữa. */
+  const coSan = await page.evaluate(() => { const e = document.getElementById('arcStage');
+                                            return !!e && !e.classList.contains('off'); });
+  ok(coSan, 'bam danh tran nay thi hoi CHON SAN rieng cho tran do');
+  await quaChonSan(page, 'snow');
+  await page.waitForTimeout(200);
+  ok(await page.evaluate(() => window.__STAGE()) === 'snow',
+     'san chon cho tung tran an vao dung tran do');
   const coVs = await page.evaluate(() => { const e = document.getElementById('arcVs');
                                            return !!e && !e.classList.contains('off'); });
   ok(coVs, 'moi tran cua giai cung mo man VS truoc');
@@ -296,7 +323,8 @@ async function daHet(page, tran) {
 
   /* ---------- TOURNAMENT ---------- */
   await page.click('#compPick'); await page.waitForTimeout(300);
-  await page.click('#mTabCup'); await page.waitForTimeout(350);
+  await page.click('#mTabCup'); await page.waitForTimeout(300);
+  await page.click('#cselGo'); await page.waitForTimeout(350);
   ok(await page.locator('#cupSeed').isVisible(), 'che do loai truc tiep co hang chon cach xep nhanh');
   const seed = await doc(() => [...document.querySelectorAll('#cupSeed button')].map(b => b.dataset.seed));
   ok(seed.join(',') === 'random,manual', `du hai lua chon: boc tham va tu xep (${seed.join(',')})`);

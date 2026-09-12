@@ -222,6 +222,8 @@ const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if 
   await page2.goto('file://' + buildPlay(), { waitUntil: 'domcontentloaded' });
   await page2.waitForTimeout(700);
   await page2.click('#arcStart');                 // trang chơi vào bằng màn tiêu đề
+  await page2.waitForTimeout(300);
+  await page2.click('#cselGo');                   // bước đầu là CHỌN CHẾ ĐỘ, chốt rồi mới tới nhân vật
   await page2.waitForTimeout(350);
   const doc2 = (fn) => page2.evaluate(fn);
   const choi = await doc2(() => ({
