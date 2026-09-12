@@ -81,7 +81,7 @@ while (acc >= 1/120) { step(1/120); acc -= 1/120; }
 
 ---
 
-## 2. Chín nhân vật và những con số đã chốt
+## 2. Mười nhân vật và những con số đã chốt
 
 **Cả chín người cùng 800 máu** — `HP_STD = 800`, người dùng chốt: *"máu setting chuẩn là 800"*.
 Bảng `HP` chỉ là chỗ giữ con số của từng người để người chơi chỉnh lẻ; mọi chỗ cần một con số
@@ -1835,6 +1835,41 @@ Kiểm bằng `node tools/t_beatrice.js`.
 > để lực kéo 1.15 ngang ngửa tổng nhiễu 1.15 là cô trôi hẳn ra ngoài tầm rồi đứng đó không
 > bắn được ai.
 
+### Tanjiro Kamado
+
+Tanjiro là `Swordsman · Melee – Pursuit – Finisher`. Mọi con số nằm trong `TAN`; thời gian
+được viết theo giây người chơi qua `gs()`. HP mặc định là `HP.tanjiro = HP_STD`, còn
+`mkChar()` mới chụp giá trị hiện hành vào `hp/maxHp`. **Không đặt một con số Maximum HP
+riêng trong `TAN`, `CHARS.tanjiro` hay logic Demon Slayer Mark.**
+
+- Màn vào sân đúng 1.5 giây: 0–0.5 chạy vào, 0.5–1 rút Black Nichirin Sword, 1–1.5 hạ
+  trọng tâm. `introOn()` và `tanjiroTick()` giữ cả sàn đứng chờ, không ai gây damage.
+- `Opening Thread`: 8 giây một lần, đánh dấu địch gần nhất 3 giây. `hurt()` chỉ tiêu thụ
+  sau mọi cửa invulnerability/E.M.T; cú kiếm đầu trúng nhận +15 và chỉ xuyên 20% phần
+  giảm damage. Multi-hit cũng chỉ ăn đúng một lần. Sợi trắng chỉ là lớp vẽ nối kiếm–địch.
+- Basic là 24/24/38 = 86, nhịp 0.8 giây; hit ba là Water Surface Slash, hất nhẹ và hit
+  stun 0.4 giây. Water Wheel 75/6.5 giây là cú lao thẳng có chỉnh hướng rất nhẹ, trượt thì
+  khựng 0.5 giây. Constant Flux là 18/22/26/30/34 = 130; bị cắt thì không bù hit. Dragon
+  Sun Halo là 3×35 = 105, được đổi mỗi hit sang người đứng gần đường chạy.
+- Demon Slayer Mark nổ **lần đầu khi `hp < maxHp * .40`**, animation 0.8 giây, không hồi
+  HP/không cộng damage: +25% chạy, +20% nhịp basic, +20% hồi chiêu, 25% kháng hiệu ứng,
+  20% kháng lực đẩy. Sau đó mới mở `Sun Breathing: Thirteenth Form`.
+- Ultimate tập trung 0.6 giây, chạy tổng 3.5 giây, 12 hit có tổng đúng 210, mục tiêu ra
+  khỏi tầm thì hit trượt; không teleport. Đang tung chiêu chỉ giảm 50% damage và có 70%
+  kháng hiệu ứng, không bất tử. Hit cuối knockdown 1.2 giây.
+- Xong Ultimate, lưỡi kiếm đỏ 6 giây. Đòn kiếm chỉ dán `Regeneration Suppression` −60%
+  hồi HP trong 5 giây (làm mới, không stack), tuyệt đối không cộng damage.
+- `drawTanjiroFx()` chỉ vẽ vệt nước/đỏ-cam nối với đường kiếm, Mark heat và afterimage.
+  Nó không đẩy gì vào `G.proj`, không chọn mục tiêu và không gây damage: rồng nước/rồng mặt
+  trời không phải vật thể tự chiến đấu, Sun Breathing không để lại burn.
+- Khi Ginyu đổi xác, active forms 2/3 có thể đi theo hồn như roster cũ; Opening Thread,
+  Mark, Ultimate theo ngưỡng HP và Bright Red suppression đều tắt vì là nội tại thân xác.
+
+Toàn bộ tên, role, skill, buff/debuff, gauge, banner và log riêng của Tanjiro là tiếng Anh ở
+cả hai nhánh `vi/en`. Vector fallback giữ tóc đỏ sẫm, scar/Mark bên trái trán, Hanafuda,
+đồng phục, haori caro xanh-đen và kiếm đen; không có Nezuko hay dạng Demon Tanjiro. Kiểm bằng
+`node tools/t_tanjiro.js`.
+
 ---
 
 ## 2c. Ba chế độ đấu — 1v1, hỗn chiến, đánh theo đội
@@ -2846,7 +2881,7 @@ Mọi thứ ở mục 2h **không đổi**: chuyển động lặp mãi chỉ đ
 bóng ngoài nên quầng cũ không còn thấy gì.
 
 > **`clip-path` KHÔNG phải `transform`.** Nó không làm phần tử "chưa đứng yên" nên Playwright
-> vẫn bấm được — 45/45 trận của `t_reg` cùng cả bộ test click-nặng (`t_dex` chạm hai lần vào
+> vẫn bấm được — 55/55 trận của `t_reg` cùng cả bộ test click-nặng (`t_dex` chạm hai lần vào
 > ô nhân vật, `t_modes` dựng đội hình, `t_comp` bấm qua cả giải) đều chạy sạch sau khi vát
 > góc. Nhưng nó **có** ăn vào phép dò điểm chạm: bấm vào đúng cái góc đã cắt thì rơi xuống
 > phần tử phía dưới. Test bấm vào TÂM nên không dính; đừng vát sâu tới mức nuốt mất chữ.
@@ -3460,7 +3495,7 @@ nên đổi độ phân giải không phải tính lại toạ độ. `recCanvas
 Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 
 ```bash
-node tools/t_reg.js     # 45 cặp đấu, chạy theo đợt, bắt lỗi trang, xem cơ chế lớn có nổ không
+node tools/t_reg.js     # 55 cặp đấu, chạy theo đợt, bắt lỗi trang, xem cơ chế lớn có nổ không
 node tools/t_perf.js    # nhịp vẽ: một vệt bóng mờ không được tốn quá 8ms, tám vệt không được
                         # làm lượt vẽ nặng gấp ba, bóng nướng sẵn phải cắt sát mép, và nhánh
                         # vẽ vệt tuyệt đối không đặt lại ctx.filter (xem mục 7)
@@ -3620,6 +3655,11 @@ node tools/t_beatrice.js # Beatrice: cửa Forbidden Library đúng 1.5s và đ�
                         # pwGrade chứ không ghim số), và chữ effect lúc cast skill thu nhỏ
                         # theo BEA_FX mà vẫn không rơi xuống dưới sàn 8px — cờ beaFx bám
                         # đúng float của cô, không lây sang nhân vật khác
+node tools/t_tanjiro.js # Tanjiro: HP đọc từ HP_STD, màn vào sân 1.5s, Opening Thread không
+                        # xuyên invulnerability/barrier và chỉ cộng một lần, combo 86,
+                        # Water Wheel 75, Constant Flux 130, Dragon Sun Halo 105 không burn,
+                        # Mark đọc runtime maxHp và không hồi máu, Ultimate đúng 210, giảm
+                        # damage/kháng hiệu ứng nhưng không bất tử, Bright Red chỉ giảm hồi HP
 ```
 
 > **`t_buff.js` có một mục CHẬP CHỜN sẵn từ trước, không phải lỗi của ai mới đụng vào.**
@@ -3634,9 +3674,9 @@ node tools/t_beatrice.js # Beatrice: cửa Forbidden Library đúng 1.5s và đ�
 > đo theo dòng thời gian lệch hẳn, và `t_suzune.js` có thể chạy quá `timeout`. Chạy từng bộ
 > một khi cần con số chính xác.
 
-> **`t_reg.js` giờ chạy 45 trận** (9 nhân vật), theo đợt 5 trang một lượt. Máy test yếu thì mỗi trận trôi
+> **`t_reg.js` giờ chạy 55 trận** (10 nhân vật), theo đợt 5 trang một lượt. Máy test yếu thì mỗi trận trôi
 > chậm hẳn và nhiều trận báo "còn đánh" thay vì "kết thúc" — đó là chuyện bình thường,
-> mục cần xem là dòng cuối `DAT 45/45 tran sach loi`. Muốn soi kỹ một cặp thì chạy riêng.
+> mục cần xem là dòng cuối `DAT 55/55 tran sach loi`. Muốn soi kỹ một cặp thì chạy riêng.
 
 Tất cả trả mã thoát 0 khi đạt. **Chạy `t_reg.js` trước mỗi lần commit đụng tới cân bằng
 hoặc tới `step()`.**
@@ -3734,7 +3774,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 
 ## 10. Quy trình git
 
-- Nhánh làm việc: `claude/auto-add-model-voice-d3fq10`. **Không đẩy sang nhánh khác.**
+- Nhánh làm việc cho Tanjiro: `feature/tanjiro-kamado`.
 - `git push -u origin <nhánh>`; lỗi mạng thì thử lại 4 lần, giãn 2s/4s/8s/16s.
 - Người dùng thường merge rất nhanh rồi hỏi luôn "pr?" / "merge đâu" — làm xong một việc thì
   **mở PR ngay**. Nếu PR trước đã merge thì mở PR mới, đừng chồng lên nhánh đã merge.

@@ -30,7 +30,7 @@ const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if 
     return out;
   });
   ok(so.truc === 9, `du chin tieu chi (${so.truc})`);
-  ok(so.thieu.length === 0, `ca tam nhan vat deu co bang cham diem (thieu: ${so.thieu.join(',') || 'khong'})`);
+  ok(so.thieu.length === 0, `toan bo nhan vat deu co bang cham diem (thieu: ${so.thieu.join(',') || 'khong'})`);
   ok(so.ngoai.length === 0, `moi diem nam trong thang 0-100 (${so.ngoai.join(',') || 'dung het'})`);
   ok(so.ten.length === 0, `ten va mo ta tieu chi du hai ngon ngu (${so.ten.join(',') || 'du'})`);
   const tb = Object.values(so.tb);

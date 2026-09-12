@@ -1,9 +1,9 @@
-/* Chạy đủ 45 cặp đấu (36 cặp khác nhau + 9 trận gương) song song, xem có trận nào
+/* Chạy đủ 55 cặp đấu (45 cặp khác nhau + 10 trận gương) song song, xem có trận nào
    ném lỗi trang không và các cơ chế lớn có thật sự nổ ra không.
    Chạy: node tools/t_reg.js */
 const { build, playwright } = require('./probe');
 
-const K = ['kono', 'chichi', 'tsubasa', 'shika', 'suzune', 'ginyu', 'dora', 'superman', 'beatrice'];
+const K = ['kono', 'chichi', 'tsubasa', 'shika', 'suzune', 'ginyu', 'dora', 'superman', 'beatrice', 'tanjiro'];
 const MOC = 60;          // giây trong trận, đủ để một trận ngã ngũ
 
 (async () => {
@@ -101,6 +101,11 @@ const MOC = 60;          // giây trong trận, đủ để một trận ngã ng
           if (f.beaUlt) seen.add('bea-ult');
           if (f.beaSlow > 0) seen.add('bea-slow');
           if (f.dots && f.dots.some(d => d && d.bea)) seen.add('bea-erosion');
+          if (f.tanEntry) seen.add('tan-entry');
+          if (f.tanMarked) seen.add('tan-mark');
+          if (f.tanAct && f.tanAct.kind === 'ultimate') seen.add('tan-ultimate');
+          if (f.tanRed > 0) seen.add('tan-red-blade');
+          if (f.regenSupp > 0) seen.add('tan-regen-suppression');
         }
         if (G.over || G.t - t0 > moc) { clearInterval(id); xong(); }
       }, 60);
@@ -111,7 +116,7 @@ const MOC = 60;          // giây trong trận, đủ để một trận ngã ng
     return { a, c, ...r, errors };
   };
 
-  /* Chạy theo từng đợt chứ đừng mở cả 45 trang một lúc: máy test không có GPU, mở hết
+  /* Chạy theo từng đợt chứ đừng mở cả 55 trang một lúc: máy test không có GPU, mở hết
      cùng lúc thì mỗi trận chỉ trôi được 1~2 giây trong trận và mấy cơ chế máu thấp không
      kịp nổ ra — nhìn thì vẫn "sạch lỗi" nhưng chẳng kiểm được gì. */
   const LO = 5;
