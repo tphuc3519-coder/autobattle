@@ -159,13 +159,28 @@
   /* Khung sàn đấu. Padding mỏng và canvas trải HẾT bề ngang khung: bản cũ kẹp canvas ở
      520px trong một khung 680px nên hai bên thừa ra hơn 130px nền tím trống trơn, sàn
      đấu thì bé tí giữa màn. */
+  /* Khung BÓ SÁT canvas rồi canh giữa — để nó trải hết bề ngang thì hai bên thừa cả trăm
+     pixel nền trống quanh một cái canvas 600px, và bốn ngoặc góc thì dạt ra tận mép khung
+     chứ không ôm lấy sàn đấu. */
   .stage{background:linear-gradient(180deg,#161231,#070614);border:0;border-radius:0;
     padding:9px;display:flex;justify-content:center;position:relative;
+    width:fit-content;max-width:100%;margin-left:auto;margin-right:auto;
     clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
     box-shadow:inset 0 0 0 1px #332B63}
   /* Dải lam → vàng → hồng chạy suốt mép trên khung sàn, đúng dải của khung chọn nhân vật. */
   .stage::before{content:'';position:absolute;left:var(--cut);right:0;top:0;height:3px;
     background:linear-gradient(90deg,var(--cyan),var(--gold) 50%,var(--mag))}
+  /* BỐN NGOẶC GÓC ôm lấy sàn đấu — dấu hiệu "khung ngắm" của HUD, vẽ bằng tám mảng
+     gradient trên một pseudo duy nhất nên không tốn thêm phần tử nào. Đặt `inset` âm để
+     chúng ôm ra ngoài mép, và `pointer-events:none` vì nó phủ lên canvas. */
+  .stage::after{content:'';position:absolute;inset:3px;pointer-events:none;
+    --b:linear-gradient(var(--gold),var(--gold));
+    background:
+      var(--b) 0 0/22px 2px,      var(--b) 0 0/2px 22px,
+      var(--b) 100% 0/22px 2px,   var(--b) 100% 0/2px 22px,
+      var(--b) 0 100%/22px 2px,   var(--b) 0 100%/2px 22px,
+      var(--b) 100% 100%/22px 2px,var(--b) 100% 100%/2px 22px;
+    background-repeat:no-repeat;opacity:.55}
   /* Không dùng transform: Playwright coi phần tử đang biến đổi là "chưa đứng yên" và
      không bao giờ bấm được thứ nằm dưới nó (mục 9). Canh giữa bằng left/right thôi. */
   .loadChip{position:absolute;left:13px;right:13px;bottom:22px;text-align:center;
@@ -527,19 +542,63 @@
      chơi là "tự dùng chiêu", "nhạc nền" và âm lượng nhạc — người chơi cần đúng mấy cái đó,
      giấu hết là họ không tắt bật nhạc được. */
   body.arcade #cast{display:none}
-  body.arcade header h1{font-size:clamp(17px,4vw,24px)}
+
+  /* ---------- TRANG CHƠI: BỐ CỤC HAI CỘT, SÀN ĐẤU LÀ NHÂN VẬT CHÍNH ----------
+     Cột dọc 680px với mấy cái thẻ xếp chồng là bố cục của một TRANG WEB — đó chính là
+     thứ làm cả trang "nhìn vẫn như normal". Từ 1040px trở lên, trang chơi xếp lại thành
+     một CÁI THÙNG MÁY: sàn đấu chiếm cột trái thật to, nhật ký và bảng phím dồn sang một
+     dải HUD bên phải, thanh điều khiển chạy suốt bề ngang phía trên.
+
+     Chỉ đổi ở TRANG CHƠI. Xưởng còn cả chục bảng dán ảnh nên vẫn là một cột. */
+  /* Khung sàn BÓ SÁT canvas rồi canh giữa. Để nó trải hết bề ngang thì hai bên thừa ra
+     cả trăm pixel nền trống quanh một cái canvas 600px — đúng cái lỗi "thừa nền" đã sửa
+     một lần ở mục trên, chỉ là lần này nằm bên trong khung. */
+
+  @media(min-width:1040px){
+    body.arcade .wrap{max-width:1040px;display:grid;grid-template-columns:minmax(0,1fr) 290px;
+      column-gap:16px;align-items:start}
+    body.arcade .wrap>header,body.arcade .wrap>.bar{grid-column:1/-1}
+    body.arcade .wrap>.stage{grid-column:1;grid-row:3/span 2}
+    /* `:has()` để nhận ra đúng thẻ nhật ký mà không phải đánh số thứ tự — đếm bằng
+       `nth-of-type` là hỏng ngay khi thêm bớt một khối. */
+    /* Hàng 3 là hàng CO GIÃN: nhật ký kéo cao bằng đúng sàn đấu, bảng phím hụt xuống sát
+       đáy. Để cả hai hàng `auto` thì phần dư của khối sàn (nó bắc qua hai hàng) bị chia
+       đều ra và hở một khoảng trống lơ lửng giữa hai thẻ — đo được hụt ~80px. */
+    body.arcade .wrap{grid-template-rows:auto auto 1fr auto}
+    body.arcade .wrap>.card:has(#log){grid-column:2;grid-row:3;margin-top:0;
+      align-self:stretch;display:flex;flex-direction:column;min-height:0}
+    body.arcade .wrap>.card.help{grid-column:2;grid-row:4}
+    body.arcade #log{flex:1;height:auto;min-height:0}
+  }
+  /* Đầu trang thành một TẤM BIỂN: logo bên trái, dòng cặp đấu thành một tấm thẻ bên
+     phải. Trước đây hai dòng chữ xếp chồng ở góc trái, đọc ra đúng phần đầu của một bài
+     viết. */
+  @media(min-width:720px){
+    body.arcade .wrap>header{display:flex;align-items:center;gap:16px;
+      padding:4px 0 12px 15px;margin-bottom:0}
+    body.arcade .wrap>header .sub{margin:0 0 0 auto;padding:7px 15px;
+      background:rgba(14,11,36,.7);box-shadow:inset 0 0 0 1px #332B63;
+      clip-path:polygon(9px 0,100% 0,calc(100% - 9px) 100%,0 100%)}
+  }
+  body.arcade header h1{font-size:clamp(19px,4.4vw,30px)}
   body.arcade header{margin-bottom:2px}
+  /* Nhật ký ở dải bên đọc như một bảng tin trận đấu: chữ nhỏ hơn, dòng sát nhau, không
+     còn khung trắng đục — mép trên và mép dưới đều nhạt dần. */
+  body.arcade #log{font-size:12px;line-height:1.5;
+    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 14px,#000 calc(100% - 12px),transparent 100%);
+    mask-image:linear-gradient(180deg,transparent 0,#000 14px,#000 calc(100% - 12px),transparent 100%)}
   /* Thanh công cụ của TRANG CHƠI gom vào một khối như bảng điều khiển của thùng máy:
      có nền, có viền, canh giữa và tự bó lại vừa đủ chiều ngang. Trước đây mười ô điều
      khiển thả trần giữa trang, xuống ba hàng lệch nhau — nhìn ra một trang cấu hình. */
-  body.arcade .bar{position:relative;justify-content:center;gap:8px;margin:12px auto;padding:12px 16px;
-    width:fit-content;max-width:100%;border:0;border-radius:0;
-    background:linear-gradient(180deg,rgba(27,21,72,.8),rgba(13,10,32,.8));
-    clip-path:polygon(13px 0,100% 0,100% calc(100% - 13px),calc(100% - 13px) 100%,0 100%,0 13px);
+  /* Thanh điều khiển: một DẢI HUD chạy suốt bề ngang, không phải một viên thuốc canh giữa
+     — viên thuốc đọc ra "một cụm nút trên trang", dải chạy suốt đọc ra "bảng điều khiển". */
+  body.arcade .bar{position:relative;justify-content:center;gap:8px;margin:12px 0;padding:11px 16px;
+    width:auto;max-width:100%;border:0;border-radius:0;
+    background:linear-gradient(180deg,rgba(27,21,72,.72),rgba(11,9,28,.72));
+    clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);
     box-shadow:inset 0 0 0 1px #332B63}
-  /* Vạch lam mảnh ở mép trên bảng điều khiển — phân biệt nó với khung sàn (mép vàng). */
-  body.arcade .bar::before{content:'';position:absolute;left:13px;right:0;top:0;height:2px;
-    background:linear-gradient(90deg,var(--cyan),transparent 70%)}
+  body.arcade .bar::before{content:'';position:absolute;left:14px;right:0;top:0;height:2px;
+    background:linear-gradient(90deg,var(--cyan),transparent 60%)}
   /* Vạch ngăn mảnh trước nút Bắt đầu: bên trái là mấy thứ chỉnh trước trận, bên phải là
      mấy nút điều khiển trận đấu. */
   body.arcade .bar #play{margin-left:4px;position:relative}
@@ -552,11 +611,42 @@
   body.arcade #charSelect[data-page="stage"] .cselModes,
   body.arcade #charSelect[data-page="stage"] #duelPane,
   body.arcade #charSelect[data-page="stage"] #multiPane{display:none}
-  body.arcade #charSelect[data-page="stage"] .sTiles{grid-template-columns:repeat(3,1fr)}
-  body.arcade #charSelect[data-page="stage"] .sTile img{height:124px}
+  body.arcade #charSelect[data-page="stage"] .sTiles{grid-template-columns:repeat(3,1fr);gap:12px}
+  /* Màn chọn sàn chiếm cả màn hình nên ảnh phải CAO theo chiều cao màn, không thì sáu ô
+     nằm tụm trên đỉnh và bỏ trống hai phần ba phía dưới. */
+  body.arcade #charSelect[data-page="stage"] .sTile img{height:clamp(124px,26vh,250px)}
   /* Bước chọn MÀN thì hàng "xem skill / máu mọi nhân vật" chẳng còn liên quan gì nữa —
      giấu đi cho bước cuối chỉ còn đúng một việc phải làm. */
   body.arcade #charSelect[data-page="stage"] .cselOpts{display:none}
+
+  /* ---------- TRANG CHƠI: MÀN CHỌN LÀ MỘT MÀN HÌNH, KHÔNG PHẢI MỘT HỘP THOẠI ----------
+     Người dùng bác hai lượt đánh bóng trước: *"nhìn tổng thể vẫn như là normal, ko đẹp,
+     cần phải khác đi"*. Đúng — vát góc với đổi font mà vẫn để một cái HỘP nổi giữa trang
+     thì nó vẫn đọc ra "hộp thoại của một trang web". Game thì màn chọn nhân vật CHIẾM CẢ
+     MÀN HÌNH: không viền, không góc bo, mép chữ ăn ra tới rìa.
+     Chỉ đổi ở TRANG CHƠI — xưởng giữ nguyên hộp thoại vì nó là đồ nghề. */
+  body.arcade .csel{padding:0;background:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+  body.arcade .cselBox{max-width:none;width:100%;height:100%;max-height:100%;
+    clip-path:none;box-shadow:none;border-radius:0;
+    padding:clamp(14px,2.4vh,26px) max(16px,calc((100% - 1080px)/2)) clamp(10px,1.6vh,18px);
+    background:
+      radial-gradient(90% 55% at 50% -8%,rgba(126,86,255,.3),transparent 70%),
+      radial-gradient(50% 40% at 0% 100%,rgba(77,226,255,.1),transparent 70%),
+      radial-gradient(50% 40% at 100% 100%,rgba(255,79,163,.1),transparent 70%),
+      linear-gradient(180deg,#100C28,#070518)}
+  /* Dải sáng chạy SUỐT bề ngang màn, không thụt vào theo góc vát nữa. */
+  body.arcade .cselBox::before{left:0;right:0;height:4px}
+  /* Tiêu đề to hẳn ra — đây là màn hình chính, không phải một cái hộp nhỏ. */
+  body.arcade .cselBox h2{font-size:clamp(24px,6vw,44px)}
+  body.arcade .cselSub{font-size:11px;letter-spacing:.2em}
+  /* Hàng nút dưới cùng: một dải HUD chạy hết bề ngang, có nền riêng. */
+  body.arcade .cselBar{border-top:1px solid rgba(255,255,255,.09);padding-top:13px;margin-top:13px}
+  /* Bảng thông số bật lên cũng theo lối đó: phủ kín màn chứ không phải một cái hộp. */
+  body.arcade .dexPop{padding:0}
+  body.arcade .dexPopBox{max-width:none;width:100%;height:100%;max-height:100%;
+    clip-path:none;box-shadow:none;
+    padding-left:max(0px,calc((100% - 1080px)/2));padding-right:max(0px,calc((100% - 1080px)/2))}
+  body.arcade .dexPopBox::before{left:0;right:0}
 
   /* ---- TRANG CHƠI: chọn P1 xong mới tới P2 ----
      Người dùng bác lối để hai cột cạnh nhau: "màn chọn p1 xong r chọn p2 sau, để chung
@@ -641,6 +731,23 @@
     body.arcade #charSelect[data-page="p1"] .cTile,
     body.arcade #charSelect[data-page="p2"] .cTile,
     body.arcade #multiPane .cTile{flex-basis:118px;max-width:152px;padding:12px 5px}
+  }
+  /* Màn rộng: thẻ to hẳn, NĂM ô một hàng (chín người ⇒ 5 + 4). Để ô nhỏ thì tám ô lọt
+     một hàng và người thứ chín lại đứng trơ một mình — đúng cái lỗi bố cục đã sửa ở khổ
+     hẹp, chỉ là nó quay lại ở khổ rộng. */
+  @media(min-width:960px){
+    body.arcade #charSelect[data-page="p1"] .cTiles,
+    body.arcade #charSelect[data-page="p2"] .cTiles,
+    body.arcade #multiPane .cTiles{gap:11px}
+    body.arcade #charSelect[data-page="p1"] .cTile,
+    body.arcade #charSelect[data-page="p2"] .cTile,
+    body.arcade #multiPane .cTile{flex-basis:178px;max-width:212px;padding:16px 8px 13px;gap:10px}
+    body.arcade #charSelect[data-page="p1"] .cAva,
+    body.arcade #charSelect[data-page="p2"] .cAva,
+    body.arcade #multiPane .cAva{width:70px;height:70px;flex:0 0 70px;font-size:32px;border-radius:14px}
+    body.arcade #charSelect[data-page="p1"] .cName,
+    body.arcade #charSelect[data-page="p2"] .cName,
+    body.arcade #multiPane .cName{font-size:15px}
   }
 
   /* mặt nhân vật: dán ảnh thì lấy chính ảnh thủ thế, chưa dán thì vẫn là emoji */

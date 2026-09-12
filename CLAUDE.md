@@ -2716,6 +2716,56 @@ gradient lớn không bị **kẻ sọc** do màn hình 8-bit làm tròn màu �
 tiền. **`pointer-events:none` là bắt buộc** (z-index 9999, phủ kín màn), thiếu là cả trang
 không bấm được.
 
+### BỎ HẲN BỐ CỤC "TRANG WEB" — đây mới là chỗ đổi được chất
+
+Sau đợt vát góc người dùng vẫn bác: *"nhìn tổng thể vẫn như là normal, ko đẹp, cần phải
+khác đi"*. Đúng, và bài học ghi lại cho khỏi lặp:
+
+> **Đổi màu, đổi font, vát góc — đó là đổi LỚP SƠN. Cái làm người ta đọc ra "một trang
+> web" là BỐ CỤC: một cột hẹp canh giữa, mấy cái thẻ xếp chồng, và một hộp thoại nổi giữa
+> màn.** Giữ nguyên bộ xương đó thì sơn kiểu gì cũng vẫn ra trang web.
+
+Hai chỗ phải đổi bộ xương, **chỉ ở TRANG CHƠI** (xưởng còn cả chục bảng dán ảnh nên vẫn
+một cột, và mọi test cũ đi qua đường đó):
+
+**1 · Màn chọn là MỘT MÀN HÌNH, không phải một hộp thoại.** `body.arcade .cselBox` bỏ hết
+`max-width` / bo góc / viền / bóng đổ, kéo lên `width:100%;height:100%`, nền riêng ba quầng
+sáng, và canh nội dung bằng `padding: … max(16px, calc((100% - 1080px)/2))` thay cho
+`max-width` — nhờ vậy **nền tràn hết màn** mà chữ vẫn nằm trong một cột 1080px. Dải sáng
+lam-vàng-hồng chạy suốt mép trên. Tiêu đề nhảy lên `clamp(24px,6vw,44px)`. Bảng thông số
+bật lên (`#dexPop`) theo đúng lối đó.
+
+**2 · Trang trong trận là HAI CỘT từ 1040px trở lên.** `body.arcade .wrap` thành `grid`:
+
+```
+hàng 1   header  (bắc hết hai cột — logo trái, thẻ cặp đấu phải)
+hàng 2   .bar    (bắc hết hai cột — dải HUD chạy suốt)
+hàng 3   .stage  ┊  thẻ nhật ký   ← hàng CO GIÃN (1fr)
+hàng 4   (span)  ┊  bảng phím
+```
+
+- Nhận thẻ nhật ký bằng **`.card:has(#log)`**, đừng đếm `nth-of-type` — thêm bớt một khối
+  là lệch hết.
+- **Hàng 3 phải là `1fr`.** Để cả hai hàng `auto` thì phần dư của khối sàn (nó bắc qua hai
+  hàng) bị chia đều ra và hở một khoảng trống lơ lửng giữa hai thẻ bên phải — đo được hụt
+  ~80px. Cho hàng 3 co giãn thì nhật ký kéo cao bằng đúng sàn đấu, bảng phím tụt sát đáy,
+  dải bên không còn chỗ trống nào.
+- **`.stage` phải `width:fit-content` và canh giữa.** Canvas kẹp ở 600px mà khung trải hết
+  cột thì hai bên thừa cả trăm pixel nền trống — đúng cái lỗi "thừa nền" đã sửa ở mục trên,
+  chỉ là lần này nằm bên trong khung.
+- Nhật ký ở dải bên đổi sang lối **bảng tin trận đấu**: chữ 12px, mép trên và mép dưới đều
+  nhạt dần.
+- Khung sàn có thêm **bốn ngoặc góc** vẽ bằng tám mảng gradient trên một `::after` duy nhất
+  (`pointer-events:none` vì nó phủ lên canvas).
+
+**3 · Thẻ đấu thủ to hẳn ở màn rộng.** Từ 960px: `flex-basis:178px`, ô mặt 70px, tên 15px ⇒
+**năm ô một hàng, chín người thành 5 + 4**. Để ô nhỏ thì tám ô lọt một hàng và người thứ
+chín lại đứng trơ một mình — đúng cái lỗi bố cục đã sửa ở khổ hẹp, chỉ là nó quay lại ở khổ
+rộng. **Đổi cỡ ô thì nhớ đếm lại xem một hàng được mấy ô.**
+
+**4 · Ô chọn màn cao theo chiều cao MÀN HÌNH** (`clamp(124px,26vh,250px)`): màn chọn giờ
+chiếm cả màn, để ảnh cao cố định thì sáu ô tụm trên đỉnh và bỏ trống hai phần ba phía dưới.
+
 ### Luật cũ vẫn nguyên giá trị
 
 Mọi thứ ở mục 2h **không đổi**: chuyển động lặp mãi chỉ được đổi `opacity` / `box-shadow` /
