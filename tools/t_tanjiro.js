@@ -150,6 +150,39 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
   ok(near(ult.supp,5,.04) && near(ult.factor,.4) && !ult.stacked,
     'Regeneration Suppression cuts healing by 60% for 5s and does not stack');
 
+  console.log('\n=== 7. AI uses varied footwork and range-aware forms ===');
+  const ai = await page.evaluate(() => {
+    const G=window.__G(), C=window.__CHARS.tanjiro, f=G.fighters.find(x=>x.key==='tanjiro'), e=G.fighters.find(x=>x.key==='chichi');
+    const vec=(mode,range)=>{
+      f.x=260;f.y=350;e.x=f.x+range;e.y=f.y;f.wx=f.x;f.wy=f.y;f.jx=0;f.jy=0;
+      f.tanMove=mode;f.tanMoveT=1;f.tanMoveSide=1;
+      return window.__tanVec(f,e);
+    };
+    const approach=vec('approach',300), angle=vec('angle',125), circle=vec('circle',64), reset=vec('reset',64);
+    const prep=(range)=>{
+      f.x=260;f.y=350;e.x=f.x+range;e.y=f.y;f.tanAct=null;f.tanEntry=null;f.tanMarkAnim=0;
+      f.tanThink=0;f.tanReset=0;f.tanMarked=false;f.cds.s1=f.cds.s2=f.cds.s3=0;f.cds.s4=999;f.cds.basic=0;
+    };
+    const oldRandom=Math.random;
+    Math.random=()=>.9; // when both forms are ready, choose Flux deterministically
+    prep(64);C.think(f,e,64,true);const close=f.tanAct&&f.tanAct.kind;
+    prep(300);C.think(f,e,300,true);const far=f.tanAct&&f.tanAct.kind;
+    prep(64);f.tanReset=1;C.think(f,e,64,true);const gated=f.tanAct;
+    prep(55);f.tanCombo=0;window.__tanBasic(f,e);window.__tanBasic(f,e);window.__tanBasic(f,e);
+    const comboReset=f.tanReset;
+    Math.random=oldRandom;
+    return {approach,angle,circle,reset,close,far,gated,comboReset,
+      chart:window.__DEX.tanjiro.pw,summary:window.__DEX.tanjiro.bio.en};
+  });
+  ok(ai.approach.x>0&&Math.abs(ai.approach.y)>.05, 'far approach closes in on a changing angle');
+  ok(Math.abs(ai.angle.y)>Math.abs(ai.angle.x)&&Math.abs(ai.circle.y)>Math.abs(ai.circle.x),
+    'mid and close movement circle/probe instead of running straight');
+  ok(ai.reset.x<0&&Math.abs(ai.reset.y)>Math.abs(ai.reset.x), 'post-combo reset is a short diagonal reposition');
+  ok(ai.close==='flux'&&ai.far==='wheel', 'forms are selected by range; Water Wheel is not used point-blank', `${ai.close}/${ai.far}`);
+  ok(ai.gated===null&&ai.comboReset>0, 'a completed combo creates a real action pause before another skill');
+  ok(ai.chart.mob===80&&ai.chart.as===72&&ai.chart.cmb===92&&/circles, probes/.test(ai.summary),
+    'power chart and short profile describe the revised combat rhythm');
+
   ok(errors.length===0, 'no browser page errors', errors[0]);
   await browser.close();
   console.log(`\n${fail===0?'DAT':'HONG'}  ${pass} dat / ${fail} hong`);
