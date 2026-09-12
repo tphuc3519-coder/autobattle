@@ -25,6 +25,7 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
       wheel: [T.wheelDmg, T.wheelCd * RT, T.wheelAir * RT, T.wheelRecover * RT],
       flux: T.fluxHit.slice(), fluxCd: T.fluxCd * RT,
       sun: T.sunHit.slice(), sunCd: T.sunCd * RT,
+      control: [T.surfaceStun,T.wheelAir,T.fluxStun,T.sunStun,T.ultDown].map(x=>x*RT),
       mark: [T.markHp, T.markT * RT, T.markMove, T.markAtk, T.markCast, T.markCcRes, T.markKbRes],
       ult: T.ultDmg.slice(), ultCd: T.ultCd * RT, ultT: T.ultT * RT,
       ultFocus: T.ultFocus * RT, ultTake: T.ultTake, ultCcRes: T.ultCcRes,
@@ -39,16 +40,18 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
   ok(cfg.hp === cfg.hpStd, 'Tanjiro HP reads the shared HP standard', `${cfg.hp}/${cfg.hpStd}`);
   ok(near(cfg.entrance, 1.5), 'entrance is exactly 1.5 player seconds', cfg.entrance);
   ok(cfg.threadCd === 8 && cfg.threadT === 3, 'Opening Thread is 8s cooldown / 3s duration');
-  ok(cfg.basic.join(',') === '24,24,38' && cfg.basic.reduce((a,b)=>a+b,0) === 86 && cfg.basicGap === .8,
-    'Nichirin Sword Combo is 24/24/38 = 86 at 0.8s per strike');
-  ok(cfg.wheel[0] === 75 && cfg.wheel[1] === 6.5 && cfg.wheel[2] === .7 && cfg.wheel[3] === .5,
+  ok(cfg.basic.join(',') === '22,22,36' && cfg.basic.reduce((a,b)=>a+b,0) === 80 && cfg.basicGap === .8,
+    'Nichirin Sword Combo is 22/22/36 = 80 at 0.8s per strike');
+  ok(cfg.wheel[0] === 75 && cfg.wheel[1] === 9 && cfg.wheel[2] === .85 && cfg.wheel[3] === .5,
     'Water Wheel values are exact');
-  ok(cfg.flux.join(',') === '18,22,26,30,34' && cfg.flux.reduce((a,b)=>a+b,0) === 130 && cfg.fluxCd === 11,
+  ok(cfg.flux.join(',') === '18,22,26,30,34' && cfg.flux.reduce((a,b)=>a+b,0) === 130 && cfg.fluxCd === 14,
     'Constant Flux is five increasing hits totaling 130');
-  ok(cfg.sun.join(',') === '35,35,35' && cfg.sun.reduce((a,b)=>a+b,0) === 105 && cfg.sunCd === 10,
+  ok(cfg.sun.join(',') === '35,35,35' && cfg.sun.reduce((a,b)=>a+b,0) === 105 && cfg.sunCd === 13,
     'Dragon Sun Halo Head Dance is 3 x 35 = 105');
-  ok(cfg.ult.length === 12 && cfg.ult.reduce((a,b)=>a+b,0) === 210 && cfg.ultCd === 24 && cfg.ultT === 3.5,
+  ok(cfg.ult.length === 12 && cfg.ult.reduce((a,b)=>a+b,0) === 210 && cfg.ultCd === 28 && cfg.ultT === 3.5,
     'Thirteenth Form is twelve connected hits, capped at 210 over 3.5s');
+  ok(cfg.control.every((x,i)=>near(x,[.55,.85,1.1,.9,1.4][i],.01)),
+    'control durations rise one step across basic, Water Wheel, Flux, Sun Dance and Ultimate', cfg.control.join('/'));
   ok(!cfg.hasVietnamese && cfg.locked && cfg.names, 'all Tanjiro profile, skill, buff and debuff text is English');
 
   console.log('\n=== 2. Entrance locks the arena for all three phases ===');
@@ -104,7 +107,7 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
     prep(); h=e.hp; window.__tanSunDance(f,e); const sun=run(h);
     return {basic,basicStun,wheel,flux,sun,sunDots:e.dots.length};
   });
-  ok(forms.basic===86 && near(forms.basicStun,.4,.02), 'basic combo deals 86; third hit applies 0.4s hit stun');
+  ok(forms.basic===80 && near(forms.basicStun,.55,.02), 'basic combo deals 80; third hit applies 0.55s hit stun');
   ok(forms.wheel.dmg===75 && forms.wheel.n<600, 'Water Wheel deals 75 and completes without teleporting');
   ok(forms.flux.dmg===130 && forms.flux.n<600, 'Constant Flux deals exactly 130 across five hits');
   ok(forms.sun.dmg===105 && forms.sun.n<600 && forms.sunDots===0, 'Sun dance deals exactly 105 with no burn or damage over time');
@@ -184,7 +187,8 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
       held,far,nextWheel,wheelCd:window.__TAN.wheelCd,gated,
       cooldowns:[window.__TAN.wheelCd,window.__TAN.fluxCd,window.__TAN.sunCd,window.__TAN.ultCd].map(x=>x*window.__RT),
       wheelWait:[window.__TAN.wheelAiMin*window.__RT,window.__TAN.wheelAiMax*window.__RT],
-      chart:window.__DEX.tanjiro.pw,summary:window.__DEX.tanjiro.bio.en};
+      chart:window.__DEX.tanjiro.pw,asRank:window.__pwGrade(window.__DEX.tanjiro.pw.as),
+      summary:window.__DEX.tanjiro.bio.en};
   });
   ok(near(ai.tanMove.x,ai.chiMove.x)&&near(ai.tanMove.y,ai.chiMove.y),
     'ordinary Tanjiro movement uses the same shared melee vector as ChiChi');
@@ -196,9 +200,9 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
   ok(ai.gated===null&&ai.comboReset>0, 'a completed combo creates a real action pause before another skill');
   ok(ai.cooldowns.join('/')==='9/14/13/28'&&ai.wheelWait.join('/')==='3.5/6',
     'active cooldowns and the extra Water Wheel decision delay are nerfed', ai.cooldowns.join('/'));
-  ok(ai.chart.dmg===74&&ai.chart.dur===56&&ai.chart.mob===72&&ai.chart.as===70&&ai.chart.rng===18&&
-     ai.chart.cc===52&&ai.chart.uti===62&&ai.chart.con===68&&ai.chart.cmb===74&&
-     /three-hit Nichirin Sword Combo/.test(ai.summary)&&/occasional commitments/.test(ai.summary),
+  ok(ai.chart.dmg===72&&ai.chart.dur===56&&ai.chart.mob===72&&ai.chart.as===84&&ai.chart.rng===18&&
+     ai.chart.cc===64&&ai.chart.uti===62&&ai.chart.con===68&&ai.chart.cmb===74&&
+     ai.asRank==='S'&&/three-hit Nichirin Sword Combo/.test(ai.summary)&&/occasional commitments/.test(ai.summary),
     'power chart and short profile describe the revised combat rhythm');
 
   ok(errors.length===0, 'no browser page errors', errors[0]);

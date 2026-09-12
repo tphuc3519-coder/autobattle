@@ -2096,16 +2096,16 @@ const BEA={
    deliberately absent here: mkChar() reads HP.tanjiro, whose default is HP_STD. */
 const TAN={
   entranceT:gs(1.5), entrancePh:[gs(.5),gs(1),gs(1.5)],
-  basic:[24,24,38], basicGap:gs(.8), surfaceStun:gs(.4), surfaceKb:72,
+  basic:[22,22,36], basicGap:gs(.8), surfaceStun:gs(.55), surfaceKb:72,
   threadCd:gs(8), threadT:gs(3), threadBonus:15, threadPierce:.20, threadDodgeMul:.20,
-  wheelDmg:75, wheelCd:gs(9), wheelTravel:gs(.72), wheelAir:gs(.7), wheelRecover:gs(.5), wheelSpd:520,
-  fluxHit:[18,22,26,30,34], fluxCd:gs(14), fluxGap:gs(.24), fluxStun:gs(.9), fluxKb:170,
-  sunHit:[35,35,35], sunCd:gs(13), sunGap:gs(.32), sunStun:gs(.7), sunKb:170, sunSpd:560,
+  wheelDmg:75, wheelCd:gs(9), wheelTravel:gs(.72), wheelAir:gs(.85), wheelRecover:gs(.5), wheelSpd:520,
+  fluxHit:[18,22,26,30,34], fluxCd:gs(14), fluxGap:gs(.24), fluxStun:gs(1.1), fluxKb:170,
+  sunHit:[35,35,35], sunCd:gs(13), sunGap:gs(.32), sunStun:gs(.9), sunKb:170, sunSpd:560,
   markHp:.40, markT:gs(.8), markMove:1.25, markAtk:1.20, markCast:1.20,
   markCcRes:.25, markKbRes:.20,
   ultDmg:[17,17,17,17,17,17,17,17,17,17,17,23],
   ultCd:gs(28), ultFocus:gs(.6), ultT:gs(3.5), ultRange:112, ultChase:610,
-  ultTake:.50, ultCcRes:.70, ultDown:gs(1.2),
+  ultTake:.50, ultCcRes:.70, ultDown:gs(1.4),
   redT:gs(6), suppressT:gs(5), suppressHeal:.60,
   /* Combat rhythm: ordinary movement uses the same shared melee AI as ChiChi. Water
      Wheel is only an occasional gap closer after a separate wait, not Tanjiro's normal
@@ -2737,7 +2737,7 @@ const DEX={
     ]},
   tanjiro:{ role:{vi:'Swordsman · Melee – Pursuit – Finisher',en:'Swordsman · Melee – Pursuit – Finisher'},
     st:{pow:4,spd:4,rng:1,def:3},
-    pw:{dmg:74,dur:56,mob:72,as:70,rng:18,cc:52,uti:62,con:68,cmb:74},
+    pw:{dmg:72,dur:56,mob:72,as:84,rng:18,cc:64,uti:62,con:68,cmb:74},
     bio:{vi:'He relies on his three-hit Nichirin Sword Combo and regular melee footwork. Breathing Forms are occasional commitments, while his low-HP Mark unlocks a finisher without healing him.',
          en:'He relies on his three-hit Nichirin Sword Combo and regular melee footwork. Breathing Forms are occasional commitments, while his low-HP Mark unlocks a finisher without healing him.'},
     skills:[
