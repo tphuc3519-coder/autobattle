@@ -1847,11 +1847,12 @@ riêng trong `TAN`, `CHARS.tanjiro` hay logic Demon Slayer Mark.**
 - `Opening Thread`: 8 giây một lần, đánh dấu địch gần nhất 3 giây. `hurt()` chỉ tiêu thụ
   sau mọi cửa invulnerability/E.M.T; cú kiếm đầu trúng nhận +15 và chỉ xuyên 20% phần
   giảm damage. Multi-hit cũng chỉ ăn đúng một lần. Sợi trắng chỉ là lớp vẽ nối kiếm–địch.
-- Basic là 24/24/38 = 86, nhịp 0.8 giây; hit ba là Water Surface Slash, hất nhẹ và hit
-  stun 0.4 giây. Water Wheel 75/9 giây là cú lao thẳng có chỉnh hướng rất nhẹ, trượt thì
-  khựng 0.5 giây. Constant Flux là 18/22/26/30/34 = 130, cooldown 14 giây; bị cắt thì
-  không bù hit. Dragon Sun Halo là 3×35 = 105, cooldown 13 giây, được đổi mỗi hit sang
-  người đứng gần đường chạy. Ultimate giữ damage 210 nhưng cooldown tăng thành 28 giây.
+- Basic là 22/22/36 = 80, nhịp 0.8 giây; hit ba là Water Surface Slash, hất nhẹ và hit
+  stun 0.55 giây. Water Wheel 75/9 giây là cú lao thẳng có chỉnh hướng rất nhẹ, hất 0.85
+  giây; trượt thì khựng 0.5 giây. Constant Flux là 18/22/26/30/34 = 130, cooldown 14 giây; bị cắt thì
+  không bù hit, hit cuối stun 1.1 giây. Dragon Sun Halo là 3×35 = 105, cooldown 13 giây,
+  hit cuối stun 0.9 giây và được đổi mỗi hit sang người đứng gần đường chạy. Ultimate giữ
+  damage 210, cooldown 28 giây và hit cuối knockdown 1.4 giây.
 - Di chuyển thường của AI đi qua đúng nhánh melee chung trong `aiVec()` như ChiChi: lúc
   áp sát, lúc lượn quanh cự ly đánh, lúc đi theo waypoint/jitter ngẫu nhiên. Tanjiro không
   có vector di chuyển riêng. Water Wheel chỉ được cân nhắc khi còn xa và sau một nhịp chờ
@@ -1864,7 +1865,7 @@ riêng trong `TAN`, `CHARS.tanjiro` hay logic Demon Slayer Mark.**
   20% kháng lực đẩy. Sau đó mới mở `Sun Breathing: Thirteenth Form`.
 - Ultimate tập trung 0.6 giây, chạy tổng 3.5 giây, 12 hit có tổng đúng 210, mục tiêu ra
   khỏi tầm thì hit trượt; không teleport. Đang tung chiêu chỉ giảm 50% damage và có 70%
-  kháng hiệu ứng, không bất tử. Hit cuối knockdown 1.2 giây.
+  kháng hiệu ứng, không bất tử. Hit cuối knockdown 1.4 giây.
 - Xong Ultimate, lưỡi kiếm đỏ 6 giây. Đòn kiếm chỉ dán `Regeneration Suppression` −60%
   hồi HP trong 5 giây (làm mới, không stack), tuyệt đối không cộng damage.
 - `drawTanjiroFx()` chỉ vẽ vệt nước/đỏ-cam nối với đường kiếm, Mark heat và afterimage.
@@ -3664,7 +3665,7 @@ node tools/t_beatrice.js # Beatrice: cửa Forbidden Library đúng 1.5s và đ�
                         # theo BEA_FX mà vẫn không rơi xuống dưới sàn 8px — cờ beaFx bám
                         # đúng float của cô, không lây sang nhân vật khác
 node tools/t_tanjiro.js # Tanjiro: HP đọc từ HP_STD, màn vào sân 1.5s, Opening Thread không
-                        # xuyên invulnerability/barrier và chỉ cộng một lần, combo 86,
+                        # xuyên invulnerability/barrier và chỉ cộng một lần, combo 80,
                         # Water Wheel 75, Constant Flux 130, Dragon Sun Halo 105 không burn,
                         # Mark đọc runtime maxHp và không hồi máu, Ultimate đúng 210, giảm
                         # damage/kháng hiệu ứng nhưng không bất tử, Bright Red chỉ giảm hồi HP;
