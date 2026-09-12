@@ -9,12 +9,45 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
+  /* ---------- lớp token ----------
+     Mọi màu, bo góc, bóng đổ và chiều cao ô điều khiển đọc từ đây. Sửa một biến là cả
+     trang đổi theo — đừng gõ mã màu hay bo góc thẳng vào từng khối nữa. Mấy tên cũ
+     (--ink / --panel / --line …) GIỮ NGUYÊN vì đã rải khắp file. */
   :root{
     --ink:#07060F; --panel:#12102A; --panel2:#1B1740; --line:#2E2757;
     --paper:#EFE9FF; --mute:#948AC0; --kono:#63B4FF; --chichi:#FF4D6D; --gold:#FFC542;
     --tsubasa:#2ED573; --steel:#8A97C4; --hot:#FF3D7F;
+
+    /* bậc nền: s1 là khung lớn, s2 là ô nổi trong khung, s3 là ô điều khiển */
+    --s1:#120F2A; --s2:#181341; --s3:#1E1849;
+    --line2:#3A3272;                 /* viền sáng hơn, dùng cho ô đang chờ thao tác */
+    --ink2:#0C0A1E;                  /* lòng ô nhập, tối hơn cả nền trang */
+    --gold2:#FFE29A;                 /* vàng nhạt, dùng cho nét sáng trên nút vàng */
+
+    /* bo góc: một thang duy nhất, đừng chế thêm con số lẻ */
+    --r1:9px; --r2:12px; --r3:16px; --rp:999px;
+
+    /* bóng đổ: e1 ô nhỏ, e2 khung, e3 lớp phủ toàn màn */
+    --e1:0 1px 2px rgba(0,0,0,.4);
+    --e2:0 10px 30px rgba(0,0,0,.45);
+    --e3:0 26px 70px rgba(0,0,0,.62);
+    --glow:0 0 22px -6px var(--gold);
+
+    /* chiều cao chuẩn của MỌI ô điều khiển trên thanh công cụ */
+    --ctl:34px;
+    --ease:cubic-bezier(.2,.7,.3,1);
   }
   *{box-sizing:border-box}
+  /* Vành sáng khi đi bằng bàn phím. `:focus-visible` nên chuột bấm thì không hiện. */
+  :where(button,select,input,summary,[tabindex]):focus-visible{
+    outline:0;box-shadow:0 0 0 2px var(--ink),0 0 0 4px rgba(255,197,66,.6)}
+  /* Thanh cuộn mảnh, cùng tông với trang — mặc định của trình duyệt sáng trắng, đặt
+     giữa nền tím đậm thì lộ hẳn ra là một trang web chứ không phải một cái máy game. */
+  *{scrollbar-width:thin;scrollbar-color:#3A3272 transparent}
+  *::-webkit-scrollbar{width:8px;height:8px}
+  *::-webkit-scrollbar-track{background:transparent}
+  *::-webkit-scrollbar-thumb{background:#332B63;border-radius:var(--rp);border:2px solid transparent;background-clip:padding-box}
+  *::-webkit-scrollbar-thumb:hover{background:#4A3F8C;background-clip:padding-box}
   body{
     margin:0;padding:16px 12px 44px;
     background:
@@ -25,33 +58,77 @@
   }
   .wrap{max-width:680px;margin:0 auto}
   /* Tiêu đề kiểu bảng hiệu thùng máy: chữ nghiêng, viền dày, gạch vàng dưới chân. */
-  header{margin-bottom:10px;border-bottom:2px solid var(--line);padding-bottom:9px;position:relative}
-  header::after{content:'';position:absolute;left:0;bottom:-2px;width:74px;height:2px;background:var(--gold)}
-  h1{font-weight:900;font-size:clamp(21px,5.6vw,30px);margin:0;letter-spacing:.01em;
+  header{margin-bottom:10px;padding-bottom:10px;position:relative;
+    border-bottom:1px solid var(--line)}
+  /* Gạch chân chạy HẾT bề ngang rồi nhạt dần về bên phải, thay cho mẩu 74px cụt lủn. */
+  header::after{content:'';position:absolute;left:0;bottom:-1px;width:min(210px,42%);height:2px;
+    border-radius:var(--rp);background:linear-gradient(90deg,var(--gold),transparent)}
+  h1{font-weight:900;font-size:clamp(21px,5.6vw,30px);margin:0;letter-spacing:-.015em;
     font-style:italic;text-shadow:0 2px 0 #100C28,0 5px 18px rgba(0,0,0,.55)}
   h1 span{color:var(--gold)}
-  .sub{font-family:"Space Mono",monospace;font-size:11px;color:var(--mute);letter-spacing:.14em;text-transform:uppercase;margin-top:5px}
+  .sub{font-family:"Space Mono",monospace;font-size:10.5px;color:var(--mute);letter-spacing:.16em;text-transform:uppercase;margin-top:6px}
 
+  /* ---------- ô điều khiển ----------
+     MỌI thứ trên thanh công cụ — nút, ô chọn, ô đánh dấu, thanh trượt, ô số — cùng một
+     chiều cao `--ctl` và cùng một bo góc. Trước đây mỗi loại một kiểu của trình duyệt
+     nên hàng nút nhìn ra một trang cấu hình chứ không ra một cái máy game. */
   .bar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:12px 0}
-  button,select{font-family:inherit;font-weight:800;font-size:12.5px;letter-spacing:.02em;
-    background:linear-gradient(180deg,#241E4E,#1A1638);color:var(--paper);
-    border:1px solid var(--line);border-radius:8px;padding:8px 13px;cursor:pointer;transition:.14s}
-  button:hover,select:hover{background:linear-gradient(180deg,#2E2662,#221C48);border-color:#4A3F8C}
-  button:active{transform:translateY(1px)}
-  button.primary{background:linear-gradient(180deg,#FFD979,#F0A81E);color:#2A1E00;border-color:#FFD979;
-    box-shadow:0 3px 0 #9A6A00,0 8px 22px rgba(255,197,66,.22)}
-  button.primary:hover{background:linear-gradient(180deg,#FFE49A,#FFB92E)}
-  button.primary:active{box-shadow:0 1px 0 #9A6A00}
-  label.chk{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--mute);cursor:pointer}
-  input[type=color]{width:30px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer}
-  input[type=number]{width:64px;font-family:"Space Mono",monospace;font-size:12.5px;background:#0C0920;color:var(--paper);
-    border:1px solid var(--line);border-radius:7px;padding:5px 6px}
+  button,select{font-family:inherit;font-weight:700;font-size:12.5px;letter-spacing:.01em;
+    background:linear-gradient(180deg,var(--s3),#171240);color:var(--paper);
+    border:1px solid var(--line);border-radius:var(--r1);padding:8px 13px;
+    cursor:pointer;transition:background .16s var(--ease),border-color .16s var(--ease),box-shadow .16s var(--ease);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05),var(--e1)}
+  /* Chiều cao chuẩn chỉ áp cho ô nằm trên THANH ĐIỀU KHIỂN. Đừng đặt nó vào luật
+     `button` chung: ô nhân vật, ô màn đấu, nút chế độ đều là <button>, ghim cứng chiều
+     cao là chúng bẹp dí và mất cả dòng tên (đã dính đúng một lần). */
+  .bar>button,.bar>select,.bar>label.chk,.cselBar>button,.arcOver>button{
+    height:var(--ctl);padding-top:0;padding-bottom:0;display:inline-flex;align-items:center}
+  button:hover,select:hover{background:linear-gradient(180deg,#2B2360,#1F1A4A);border-color:var(--line2)}
+  button:active{box-shadow:inset 0 2px 5px rgba(0,0,0,.45)}
+  /* Ô chọn: bỏ hẳn giao diện của hệ điều hành rồi tự vẽ mũi tên, nếu không thì giữa hàng
+     nút bo góc lại lòi ra một cái hộp vuông màu xám của trình duyệt. */
+  select{appearance:none;-webkit-appearance:none;padding-right:29px;
+    background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23948AC0' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"),
+      linear-gradient(180deg,var(--s3),#171240);
+    background-repeat:no-repeat;background-position:right 11px center,0 0;background-size:10px 6px,auto}
+  select:hover{background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23EFE9FF' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"),
+      linear-gradient(180deg,#2B2360,#1F1A4A)}
+  select option{background:#171240;color:var(--paper)}
+  /* Nút vàng: một khối đặc có nét sáng ở mép trên và quầng ấm phía dưới, thay cho cái
+     bệ 3px kiểu web cũ. Vẫn là vàng arcade, chỉ sạch nét hơn. */
+  button.primary{background:linear-gradient(180deg,#FFD267,#F2A414);color:#2C1E00;border-color:#FFDD8A;
+    font-weight:800;box-shadow:inset 0 1px 0 var(--gold2),0 2px 0 #A06D00,0 10px 24px -8px rgba(255,181,46,.65)}
+  button.primary:hover{background:linear-gradient(180deg,#FFE08C,#FFB92E);
+    box-shadow:inset 0 1px 0 #FFF3D2,0 2px 0 #A06D00,0 12px 28px -8px rgba(255,181,46,.8)}
+  button.primary:active{box-shadow:inset 0 2px 6px rgba(120,74,0,.5),0 0 0 #A06D00}
+  /* Ô đánh dấu và thanh trượt cũng là một viên thuốc ngang hàng với nút, không phải chữ
+     trần thả giữa hàng. */
+  label.chk{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mute);cursor:pointer;
+    height:var(--ctl);padding:0 11px;border:1px solid var(--line);border-radius:var(--r1);
+    background:rgba(24,19,65,.55);transition:border-color .16s var(--ease),color .16s var(--ease)}
+  label.chk:hover{border-color:var(--line2);color:var(--paper)}
+  label.chk b{color:var(--paper)}
+  input[type=checkbox]{accent-color:var(--gold);width:15px;height:15px;margin:0;cursor:pointer}
+  input[type=range]{appearance:none;-webkit-appearance:none;height:16px;background:transparent;cursor:pointer;margin:0}
+  input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:var(--rp);background:#332B63}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;margin-top:-4.5px;
+    border-radius:50%;background:var(--gold);border:0;box-shadow:0 0 8px -1px var(--gold)}
+  input[type=range]::-moz-range-track{height:4px;border-radius:var(--rp);background:#332B63}
+  input[type=range]::-moz-range-thumb{width:13px;height:13px;border:0;border-radius:50%;background:var(--gold)}
+  input[type=color]{width:30px;height:24px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer}
+  input[type=number],input[type=text]{width:64px;font-family:"Space Mono",monospace;font-size:12.5px;
+    background:var(--ink2);color:var(--paper);border:1px solid var(--line);border-radius:var(--r1);padding:5px 7px;
+    transition:border-color .16s var(--ease)}
+  input[type=number]:focus,input[type=text]:focus{border-color:var(--gold);outline:0}
 
-  .stage{background:linear-gradient(180deg,#151130,#0A0818);border:1px solid var(--line);
-    border-radius:16px;padding:13px;display:flex;justify-content:center;position:relative;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 50px rgba(0,0,0,.55)}
-  .stage::before{content:'';position:absolute;left:16%;right:16%;top:-1px;height:2px;
-    background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.55}
+  /* Khung sàn đấu. Padding mỏng và canvas trải HẾT bề ngang khung: bản cũ kẹp canvas ở
+     520px trong một khung 680px nên hai bên thừa ra hơn 130px nền tím trống trơn, sàn
+     đấu thì bé tí giữa màn. */
+  .stage{background:linear-gradient(180deg,#151130,#080716);border:1px solid var(--line);
+    border-radius:var(--r3);padding:8px;display:flex;justify-content:center;position:relative;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),var(--e2)}
+  .stage::before{content:'';position:absolute;left:14%;right:14%;top:-1px;height:2px;
+    border-radius:var(--rp);background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.6}
   /* Không dùng transform: Playwright coi phần tử đang biến đổi là "chưa đứng yên" và
      không bao giờ bấm được thứ nằm dưới nó (mục 9). Canh giữa bằng left/right thôi. */
   .loadChip{position:absolute;left:13px;right:13px;bottom:22px;text-align:center;
@@ -59,12 +136,27 @@
     color:#EFE6FF;pointer-events:none;z-index:5}
   .loadChip span{background:rgba(10,8,24,.82);border:1px solid rgba(255,255,255,.18);
     border-radius:999px;padding:5px 12px;display:inline-block}
-  canvas{width:100%;max-width:520px;height:auto;display:block;touch-action:none;image-rendering:auto}
+  /* Canvas 620x620 nên cho nó trải hết khung: ở bề ngang 680px sàn đấu ra ~640px thay
+     vì 520px, mà vẫn dưới cỡ gốc nên không bị rỗ. */
+  canvas{width:100%;max-width:600px;height:auto;display:block;touch-action:none;image-rendering:auto;
+    border-radius:calc(var(--r3) - 8px)}
 
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-top:10px}
-  .card h3{margin:0 0 8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
-  #log{height:120px;overflow-y:auto;font-size:12.5px;line-height:1.5}
-  #log div{padding:2px 0;border-bottom:1px dashed #241E48}
+  .card{background:linear-gradient(180deg,var(--s1),#100D26);border:1px solid var(--line);
+    border-radius:var(--r2);padding:11px 13px;margin-top:10px;box-shadow:var(--e1)}
+  .card h3{margin:0 0 8px;font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--mute);display:flex;align-items:center;gap:8px}
+  /* Chấm vàng đầu dòng tiêu đề — dấu hiệu nhỏ cho biết đây là một khối riêng, thay vì
+     bốn dòng chữ xám trôi nổi giống hệt nhau. */
+  .card h3::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--gold);
+    box-shadow:0 0 8px var(--gold);flex:none}
+  /* Nhật ký: dòng mới nhất nằm trên cùng, mép trên nhạt dần cho biết còn cuộn được nữa. */
+  #log{height:126px;overflow-y:auto;font-size:12.5px;line-height:1.55;padding-right:4px;
+    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 10px);
+    mask-image:linear-gradient(180deg,transparent 0,#000 10px)}
+  #log div{padding:3px 0 3px 9px;border-bottom:1px solid rgba(46,39,87,.5);position:relative}
+  #log div:last-child{border-bottom:0}
+  #log div::before{content:'';position:absolute;left:0;top:8px;width:3px;height:3px;border-radius:50%;
+    background:currentColor;opacity:.5}
   .k{color:var(--kono)}.c{color:var(--chichi)}.g{color:var(--gold)}.m{color:var(--mute)}.s{color:#9B8CFF}
 
   .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:7px}
@@ -96,19 +188,28 @@
   kbd{font-family:"Space Mono",monospace;background:#0C0920;border:1px solid #2A2350;border-radius:4px;padding:1px 5px;font-size:10.5px}
 
   /* ---- màn chọn nhân vật ---- */
+  /* Lớp phủ: nền mờ CÓ NHOÈ. Bản cũ chỉ tối đi 88% nên cả thanh công cụ và nhật ký phía
+     sau vẫn đọc được lờ mờ, nhìn rối; nhoè đi thì khung chọn nổi hẳn lên phía trước. */
   .csel{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
-    padding:14px;overflow:auto;background:rgba(6,4,18,.88)}
+    padding:14px;overflow:auto;background:rgba(6,4,18,.8);
+    -webkit-backdrop-filter:blur(14px) saturate(.85);backdrop-filter:blur(14px) saturate(.85)}
   .csel.off{display:none}
   /* Hộp cao tối đa bằng màn hình, phần giữa mới cuộn — nhờ vậy tiêu đề và hàng nút
      luôn nằm trong tầm mắt, không phải cuộn cả trang mới bấm được Vào trận. */
-  .cselBox{width:100%;max-width:760px;max-height:calc(100vh - 28px);
-    display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);
-    border-radius:16px;padding:15px 15px 13px;box-shadow:0 18px 60px rgba(0,0,0,.6)}
-  .cselBody{flex:1;min-height:0;overflow:auto;padding-right:2px}
-  .cselBox h2{margin:0;font-size:clamp(17px,4.6vw,22px);font-weight:900;letter-spacing:.01em;font-style:italic}
+  .cselBox{width:100%;max-width:780px;max-height:calc(100vh - 28px);position:relative;
+    display:flex;flex-direction:column;background:linear-gradient(180deg,#171238,#0F0C26);
+    border:1px solid var(--line2);border-radius:var(--r3);padding:15px 15px 13px;box-shadow:var(--e3)}
+  /* Nét sáng mảnh chạy dọc mép trên khung — cùng ngôn ngữ với mép trên của sàn đấu. */
+  .cselBox::before{content:'';position:absolute;left:12%;right:12%;top:-1px;height:2px;border-radius:var(--rp);
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.5;pointer-events:none}
+  .cselBody{flex:1;min-height:0;overflow:auto;padding-right:4px}
+  .cselBox h2{margin:0;font-size:clamp(17px,4.6vw,22px);font-weight:900;letter-spacing:-.015em;font-style:italic}
   .cselBox h2 span{color:var(--gold)}
-  .cselSub{font-family:"Space Mono",monospace;font-size:10.5px;color:var(--mute);
-    letter-spacing:.14em;text-transform:uppercase;margin:4px 0 12px}
+  .cselSub{font-family:"Space Mono",monospace;font-size:10px;color:var(--mute);
+    letter-spacing:.16em;text-transform:uppercase;margin:5px 0 12px}
+  /* Hàng nút dưới cùng dính hẳn xuống đáy khung, có vạch ngăn với phần cuộn phía trên:
+     cuộn tới đâu cũng thấy rõ đâu là nút đi tiếp. */
+  .cselBar{border-top:1px solid var(--line);padding-top:11px}
   .cselCols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media(max-width:520px){.cselCols{grid-template-columns:1fr}}
   .cselCol{background:#120F28;border:1px solid var(--line);border-radius:12px;padding:9px;
@@ -119,34 +220,49 @@
   .cselHead b{color:var(--paper);font-family:"Be Vietnam Pro",sans-serif;letter-spacing:0;font-size:12.5px}
   /* Bốn ô nhỏ nằm ngang thay cho bốn thẻ dài xếp dọc: cả bảng chọn gọn lại còn
      hai hàng ô cộng hai khung mô tả, thay vì tám thẻ dài phải cuộn mãi mới hết. */
-  .cTiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-  .cTile{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 3px;
-    background:#191436;border:1px solid #2E2758;border-radius:10px;cursor:pointer;transition:.14s;font-weight:400}
-  .cTile{background:linear-gradient(180deg,#1D1842,#151130)}
-  .cTile:hover{background:linear-gradient(180deg,#282161,#1C1743);border-color:#4A3F8C}
-  .cTile.on{border-color:var(--gold);background:linear-gradient(180deg,#33285C,#241C48);
+  /* Lưới đấu thủ dùng FLEX chứ không dùng grid, và hàng cuối CANH GIỮA. Với chín đấu thủ
+     trên một lưới tám cột thì người thứ chín đứng trơ một mình ở mép trái hàng dưới —
+     nhìn như lỗi bố cục. Flex thì hàng dở dang tự nằm giữa, và thêm nhân vật mới bao
+     nhiêu người cũng không phải sửa lại số cột. */
+  .cTiles{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
+  .cTile{flex:1 1 84px;max-width:132px;min-width:0;
+    display:flex;flex-direction:column;align-items:center;gap:6px;padding:9px 4px;
+    background:linear-gradient(180deg,var(--s2),#141031);border:1px solid #2E2758;border-radius:var(--r2);
+    cursor:pointer;font-weight:400;
+    transition:background .16s var(--ease),border-color .16s var(--ease),box-shadow .16s var(--ease)}
+  .cTile:hover{background:linear-gradient(180deg,#2A2262,#1C1743);border-color:var(--line2)}
+  .cTile.on{border-color:var(--gold);background:linear-gradient(180deg,#372B60,#241C48);
     box-shadow:0 0 0 1px var(--gold) inset,0 6px 18px rgba(255,197,66,.16)}
-  .cAva{width:34px;height:34px;flex:0 0 34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
-    font-size:18px;background:#0C0920;border:2px solid currentColor}
-  .cDetail{margin-top:8px;background:#120F28;border:1px solid #2A2450;border-radius:10px;padding:9px 10px}
+  /* Ô mặt: viền mảnh 1px cộng một quầng màu nhân vật phía trong, thay cho cái viền đặc
+     2px làm mọi ô đọc ra như một con tem. */
+  .cAva{width:38px;height:38px;flex:0 0 38px;border-radius:var(--r1);display:flex;align-items:center;
+    justify-content:center;font-size:19px;background:radial-gradient(circle at 50% 30%,#171141,#0A0820);
+    border:1px solid currentColor}
+  .cDetail{margin-top:9px;background:linear-gradient(180deg,#151132,#100D26);border:1px solid #2A2450;
+    border-radius:var(--r2);padding:11px 12px}
   .cName{display:block;font-weight:800;font-size:12px;line-height:1.2;text-align:center}
   .cDetail .cName{font-size:14px;text-align:left}
   .cTag{display:block;font-family:"Space Mono",monospace;font-size:9.5px;color:var(--mute);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
   .cSkills{display:block;font-size:11px;color:#C3B9E6;line-height:1.5;margin-top:5px}
   .cSkills i{color:var(--mute);font-style:normal}
-  .cselBar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  .cselBar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:11px}
   .cselVs{font-family:"Space Mono",monospace;font-size:11.5px;color:var(--mute);margin-left:auto;text-align:right}
   .cselVs b{color:var(--paper)}
   /* ba chế độ đấu: 1v1 · hỗn chiến · đồng đội */
-  .cselModes{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 10px}
-  .mTab{flex:1 1 120px;padding:9px 10px;background:#191436;border:1px solid #2E2758;border-radius:10px;
-    cursor:pointer;color:var(--paper);font-weight:800;font-size:12.5px;text-align:center;transition:.14s}
-  .mTab:hover{background:#241D4C;border-color:#4A3F8C}
-  .mTab.on{border-color:var(--gold);background:linear-gradient(180deg,#33285C,#241C48);
-    box-shadow:0 0 0 1px var(--gold) inset,0 6px 18px rgba(255,197,66,.14);color:var(--gold)}
-  .mTab b{font-weight:800}
-  .mTab i{display:block;font-style:normal;font-family:"Space Mono",monospace;font-size:9px;
-    letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-top:2px}
+  /* Năm chế độ đấu. Cao bằng nhau (`align-items:stretch` + dòng phụ đẩy xuống đáy) nên
+     hàng nút thẳng hàng dù tên chế độ dài ngắn khác nhau. */
+  .cselModes{display:flex;gap:6px;flex-wrap:wrap;align-items:stretch;margin:2px 0 11px}
+  .mTab{flex:1 1 132px;display:flex;flex-direction:column;justify-content:center;gap:3px;height:auto;
+    padding:9px 10px;background:linear-gradient(180deg,var(--s2),#141031);border:1px solid #2E2758;
+    border-radius:var(--r2);cursor:pointer;color:var(--paper);font-weight:800;font-size:12.5px;
+    text-align:center;transition:background .16s var(--ease),border-color .16s var(--ease),box-shadow .16s var(--ease)}
+  .mTab:hover{background:linear-gradient(180deg,#2A2260,#1C1743);border-color:var(--line2)}
+  .mTab.on{border-color:var(--gold);background:linear-gradient(180deg,#3A2D62,#241C48);
+    box-shadow:0 0 0 1px var(--gold) inset,0 8px 22px -8px rgba(255,197,66,.5);color:var(--gold)}
+  .mTab b{font-weight:800;line-height:1.2}
+  .mTab i{display:block;font-style:normal;font-family:"Space Mono",monospace;font-size:8.5px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--mute);line-height:1.35}
+  .mTab.on i{color:rgba(255,197,66,.72)}
   .off{display:none !important}
   /* danh sách đội hình đã chọn: mỗi người một thẻ nhỏ có nút ✕ để bỏ ra */
   .cRoster{display:flex;flex-wrap:wrap;gap:5px;min-height:34px;margin-bottom:8px;
@@ -275,7 +391,19 @@
   body.arcade #cast{display:none}
   body.arcade header h1{font-size:clamp(17px,4vw,24px)}
   body.arcade header{margin-bottom:2px}
-  body.arcade .bar{justify-content:center}
+  /* Thanh công cụ của TRANG CHƠI gom vào một khối như bảng điều khiển của thùng máy:
+     có nền, có viền, canh giữa và tự bó lại vừa đủ chiều ngang. Trước đây mười ô điều
+     khiển thả trần giữa trang, xuống ba hàng lệch nhau — nhìn ra một trang cấu hình. */
+  body.arcade .bar{justify-content:center;gap:8px;margin:12px auto;padding:11px 12px;
+    width:fit-content;max-width:100%;
+    background:linear-gradient(180deg,rgba(24,19,65,.75),rgba(16,13,38,.75));
+    border:1px solid var(--line);border-radius:var(--r3);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05),var(--e1)}
+  /* Vạch ngăn mảnh trước nút Bắt đầu: bên trái là mấy thứ chỉnh trước trận, bên phải là
+     mấy nút điều khiển trận đấu. */
+  body.arcade .bar #play{margin-left:4px;position:relative}
+  body.arcade .bar #play::before{content:'';position:absolute;left:-8px;top:6px;bottom:6px;
+    width:1px;background:var(--line)}
   body.arcade #charSelect[data-page="stage"] #cselCount{display:none}
   body.arcade .cselBox h2 span{color:var(--gold)}
   body.arcade #charSelect[data-page="chars"] #stageSub,
@@ -284,7 +412,10 @@
   body.arcade #charSelect[data-page="stage"] #duelPane,
   body.arcade #charSelect[data-page="stage"] #multiPane{display:none}
   body.arcade #charSelect[data-page="stage"] .sTiles{grid-template-columns:repeat(3,1fr)}
-  body.arcade #charSelect[data-page="stage"] .sTile img{height:120px}
+  body.arcade #charSelect[data-page="stage"] .sTile img{height:124px}
+  /* Bước chọn MÀN thì hàng "xem skill / máu mọi nhân vật" chẳng còn liên quan gì nữa —
+     giấu đi cho bước cuối chỉ còn đúng một việc phải làm. */
+  body.arcade #charSelect[data-page="stage"] .cselOpts{display:none}
 
   /* ---- TRANG CHƠI: chọn P1 xong mới tới P2 ----
      Người dùng bác lối để hai cột cạnh nhau: "màn chọn p1 xong r chọn p2 sau, để chung
@@ -300,18 +431,17 @@
   body.arcade #charSelect[data-page="stage"] #colB{display:none}
   body.arcade #charSelect[data-page="p1"] .cselCols,
   body.arcade #charSelect[data-page="p2"] .cselCols{grid-template-columns:1fr}
+  /* Trang chơi chỉ có MỘT lưới mỗi bước nên ô to hẳn ra. Lưới là flex (xem `.cTiles`)
+     nên chỗ này chỉnh BỀ RỘNG một ô, không chỉnh số cột — hàng cuối tự canh giữa. */
   body.arcade #charSelect[data-page="p1"] .cTiles,
-  body.arcade #charSelect[data-page="p2"] .cTiles{grid-template-columns:repeat(4,1fr);gap:8px}
+  body.arcade #charSelect[data-page="p2"] .cTiles{gap:9px}
+  body.arcade #charSelect[data-page="p1"] .cTile,
+  body.arcade #charSelect[data-page="p2"] .cTile{flex-basis:88px;max-width:112px;padding:11px 4px}
   body.arcade #charSelect[data-page="p1"] .cselHead,
   body.arcade #charSelect[data-page="p2"] .cselHead{display:none}
-  @media(min-width:760px){
-    body.arcade #charSelect[data-page="p1"] .cTiles,
-    body.arcade #charSelect[data-page="p2"] .cTiles{grid-template-columns:repeat(8,1fr)}
-    /* lưới ngang + thẻ hồ sơ nằm dưới: nhìn gọn một màn, không phải cuộn hai cột */
-  }
 
   /* dải "đã chọn": lúc chọn P2 vẫn thấy P1 vừa chốt */
-  .pickRow{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin:6px 0 2px}
+  .pickRow{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin:11px 0 3px}
   .pickChip{display:flex;align-items:center;gap:7px;padding:5px 11px 5px 5px;border-radius:11px;
     background:#150F32;border:1px solid #3A3272}
   .pickChip.now{border-color:var(--gold);box-shadow:0 0 0 1px rgba(255,214,102,.35) inset}
@@ -355,11 +485,20 @@
   body.arcade #multiPane .cselCol{padding:11px 12px 12px;border-radius:14px;background:#130F2C}
   /* Dòng liệt kê ở góc phải nhắc lại đúng cái dải chip phía trên — bỏ cho đỡ rối. */
   body.arcade .cselVs{display:none}
-  body.arcade #multiPane .cTiles{grid-template-columns:repeat(4,1fr);gap:8px}
+  body.arcade #multiPane .cTiles{gap:9px}
+  body.arcade #multiPane .cTile{flex-basis:88px;max-width:112px;padding:11px 4px}
   body.arcade #multiPane .cAva{width:52px;height:52px;flex:0 0 52px}
-  @media(min-width:760px){ body.arcade #multiPane .cTiles{grid-template-columns:repeat(8,1fr)} }
   body.arcade .cRoster{justify-content:center;min-height:38px;border:1px dashed #332B63;
     border-radius:11px;padding:7px;background:#120F28}
+
+  /* Màn rộng thì ô to hẳn ra (chín người thành 5 + 4), màn hẹp giữ ô nhỏ để còn ba ô
+     một hàng — để nguyên cỡ rộng thì điện thoại chỉ nhét được HAI ô mỗi hàng và phải
+     cuộn gần hết màn mới xem hết chín người. */
+  @media(min-width:560px){
+    body.arcade #charSelect[data-page="p1"] .cTile,
+    body.arcade #charSelect[data-page="p2"] .cTile,
+    body.arcade #multiPane .cTile{flex-basis:118px;max-width:152px;padding:12px 5px}
+  }
 
   /* mặt nhân vật: dán ảnh thì lấy chính ảnh thủ thế, chưa dán thì vẫn là emoji */
   .cAva img,.dexAva img{width:100%;height:100%;object-fit:contain;display:block}
@@ -417,7 +556,8 @@
   /* ---- bảng thông số bật lên (chạm hai lần vào ô nhân vật) ----
      z-index 68: trên màn chọn (.csel = 60) nhưng dưới vỏ arcade (.arc = 70). */
   .dexPop{position:fixed;inset:0;z-index:68;display:flex;align-items:center;justify-content:center;
-    padding:14px;overflow:auto;background:rgba(6,4,18,.9)}
+    padding:14px;overflow:auto;background:rgba(6,4,18,.82);
+    -webkit-backdrop-filter:blur(16px) saturate(.85);backdrop-filter:blur(16px) saturate(.85)}
   .dexPop.off{display:none}
   .dexPopBox{width:min(820px,100%);max-height:calc(100vh - 28px);display:flex;flex-direction:column;
     background:linear-gradient(180deg,#171238,#100C28);border:1px solid #3A3272;border-radius:16px;
@@ -425,7 +565,10 @@
   .dexPopBar{display:flex;align-items:center;gap:9px;padding:11px 12px;border-bottom:1px solid #2A2450}
   .dexPopX{margin-left:auto;padding:6px 12px;font-size:13px;line-height:1}
   .dexPopBody{padding:12px;overflow:auto}
-  .dexPopBody .cDetail{margin-top:0}
+  .dexPopBody .cDetail{margin-top:0;border:0;background:none;padding:0}
+  /* Bảng bật lên rộng 820px, để một cột thì biểu đồ nở ra giữa một khoảng trống mênh
+     mông còn bộ chiêu thì kéo dài cả trang. Chia hai cột đúng lối thẻ hồ sơ ở bước P1/P2. */
+  @media(min-width:760px){ .dexPop .dexGrid{grid-template-columns:1.05fr .95fr} }
   /* Ô nhân vật: chạm hai lần KHÔNG được để trình duyệt hiểu thành phóng to trang. */
   .cTile{touch-action:manipulation;-webkit-user-select:none;user-select:none}
   body.arcade #charSelect[data-step="stage"] #tapHint,
@@ -436,8 +579,13 @@
   /* ---- giải đấu: bảng xếp hạng và sơ đồ nhánh ----
      Người dùng: "giao diện cần rất dễ nhìn, đừng bị rối". Nên cả hai màn đều chỉ có ba
      khối xếp dọc: TRẬN KẾ TIẾP to ở trên, bảng / nhánh ở giữa, kết quả đã đá ở dưới. */
-  .nextM{background:linear-gradient(180deg,#1D1748,#141033);border:1px solid #3E357C;
-    border-radius:14px;padding:12px 12px 14px;text-align:center;margin-bottom:12px}
+  .nextM{position:relative;overflow:hidden;background:
+      radial-gradient(ellipse at 50% 0%,rgba(255,197,66,.1),transparent 62%),
+      linear-gradient(180deg,#1D1748,#131030);
+    border:1px solid #3E357C;border-radius:var(--r3);padding:13px 12px 15px;text-align:center;
+    margin-bottom:12px;box-shadow:var(--e1)}
+  .nextM::before{content:'';position:absolute;left:22%;right:22%;top:0;height:2px;border-radius:var(--rp);
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.6}
   .nextLab{font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.18em;
     text-transform:uppercase;color:var(--gold);margin-bottom:9px}
   .nextRow{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
@@ -546,16 +694,21 @@
   .gS{color:#FFD666} .gA{color:#8FE8B4} .gB{color:#7FE0FF} .gC{color:#C9BFEC} .gD{color:#9C93C8} .gE{color:#7A719F}
 
   /* lưới chọn màn đấu — ảnh trong thẻ là ảnh thu nhỏ VẼ THẬT từ chính sàn đấu */
-  .sTiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+  /* Ô chọn màn: TÊN NẰM ĐÈ LÊN ẢNH sau một lớp phủ tối dần, thay cho một cái hộp chữ
+     riêng dán dưới ảnh — bớt được một khối và ô nhìn ra một tấm poster màn đấu. */
+  .sTiles{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:8px}
   @media(max-width:520px){.sTiles{grid-template-columns:repeat(2,1fr)}}
-  .sTile{padding:0;overflow:hidden;background:#191436;border:1px solid #2E2758;border-radius:11px;
-    cursor:pointer;color:var(--paper);text-align:left;transition:.15s}
-  .sTile:hover{border-color:#4A3F8C;background:#241D4C}
+  .sTile{position:relative;padding:0;overflow:hidden;height:auto;background:#0C0920;
+    border:1px solid #2E2758;border-radius:var(--r2);cursor:pointer;color:var(--paper);text-align:left;
+    transition:border-color .16s var(--ease),box-shadow .16s var(--ease)}
+  .sTile:hover{border-color:var(--line2)}
   .sTile.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
-  .sTile img{display:block;width:100%;height:74px;object-fit:cover;background:#0C0920}
-  .sTile b{display:block;font-size:11.5px;font-weight:800;padding:6px 8px 1px}
-  .sTile i{display:block;font-style:normal;font-family:"Space Mono",monospace;font-size:9px;
-    color:var(--mute);padding:0 8px 7px}
+  .sTile img{display:block;width:100%;height:96px;object-fit:cover;background:#0C0920}
+  .sTile .sCap{position:absolute;left:0;right:0;bottom:0;padding:20px 9px 7px;pointer-events:none;
+    background:linear-gradient(180deg,transparent,rgba(6,4,18,.9) 58%)}
+  .sTile b{display:block;font-size:11.5px;font-weight:800;letter-spacing:.02em}
+  .sTile i{display:block;font-style:normal;font-family:"Space Mono",monospace;font-size:8.5px;
+    color:#A99FD6;margin-top:1px}
   .cChip{display:flex;align-items:center;gap:5px;padding:4px 6px 4px 8px;background:#191436;
     border:1px solid currentColor;border-radius:8px;font-size:11.5px;font-weight:800}
   .cChip button{all:unset;cursor:pointer;color:var(--mute);font-size:12px;line-height:1;padding:0 2px}
@@ -582,8 +735,10 @@
      chạy ra ngoài khung và mất luôn mấy chữ cuối (chụp màn hình ra đúng mỗi chữ "M").
      Logo vốn đã có quầng sáng thở của `#arcTitle::after` rồi, đủ rồi. Đừng dựng lại. */
   .arcTag{position:relative}
-  .arcTag::after{content:'';position:absolute;left:50%;right:auto;bottom:-7px;width:96px;height:1px;
-    margin-left:-48px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.6}
+  /* Gạch phải nằm HẲN dưới dòng chữ. Bản cũ để -7px nên nó đè lên chân chữ, nhìn như
+     đang gạch chân nhầm đúng hai chữ ở giữa. */
+  .arcTag::after{content:'';position:absolute;left:50%;right:auto;bottom:-13px;width:180px;height:1px;
+    margin-left:-90px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.55}
 
   /* Nút vàng: một vệt sáng quét qua mặt nút KHI RÊ CHUỘT. Cố ý dùng `transition` chứ
      KHÔNG dùng `animation ... infinite`: mấy nút này (#cselGo, #compGo, #arcAgain) bị test
@@ -14129,7 +14284,8 @@ function buildStages(){
   for(const st of STAGES){
     const t=document.createElement('button');
     t.type='button'; t.className='sTile'+(st.key===TMP.stage?' on':''); t.dataset.stage=st.key;
-    t.innerHTML=`<img alt="" src="${stageThumb(st.key)}"><b>${st.name}</b><i>${tr(st.sub)||st.vn}</i>`;
+    // tên nằm ĐÈ lên ảnh trong `.sCap` (lớp phủ tối dần), xem ghi chú ở `.sTile`
+    t.innerHTML=`<img alt="" src="${stageThumb(st.key)}"><span class="sCap"><b>${st.name}</b><i>${tr(st.sub)||st.vn}</i></span>`;
     t.addEventListener('click',()=>{ sfx('ui_tap'); TMP.stage=st.key; cselRefresh(); });
     box.appendChild(t);
   }

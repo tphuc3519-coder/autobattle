@@ -2588,6 +2588,87 @@ Kiểm bằng `node tools/t_ui.js` (ba mục cuối: đủ chín ô, đủ chín
 chọn thì **có tiếng phát ra** — đếm ngay ở tầng WebAudio bằng cách bọc
 `AudioContext.prototype.createOscillator`, vì `sfx()` nằm trong IIFE nên không bọc từ ngoài được).
 
+## 2i. Hệ thiết kế — lớp token và mấy luật bố cục
+
+Người dùng: *"Cần giao diện chuyên nghiệp hơn nữa — gọn gàng thì đã có nhưng giao diện cần
+phải chuẩn hơn và tân tiến hơn"*. "Chuẩn" ở đây là **nhất quán** (một thang bo góc, một
+chiều cao ô điều khiển, một bộ bóng đổ), "tân tiến" là **nền mờ nhoè, bóng mềm, ô điều
+khiển tự vẽ thay cho đồ mặc định của trình duyệt**.
+
+### Lớp token — sửa một biến, cả trang đổi theo
+
+Khối `:root` ở đầu `<style>` giờ có thêm bốn nhóm. **Đừng gõ mã màu, bo góc hay bóng đổ
+thẳng vào từng khối nữa** — đọc qua biến, không thì mỗi chỗ một con số lẻ và cả trang lại
+lệch như cũ.
+
+| Nhóm | Biến | Dùng ở đâu |
+|---|---|---|
+| bậc nền | `--s1` khung lớn · `--s2` ô nổi trong khung · `--s3` ô điều khiển | thẻ, ô nhân vật, nút |
+| viền / lòng ô | `--line` thường · `--line2` sáng hơn (lúc rê chuột) · `--ink2` lòng ô nhập | mọi khung |
+| bo góc | `--r1` 9px · `--r2` 12px · `--r3` 16px · `--rp` viên thuốc | **chỉ có bốn nấc này** |
+| bóng đổ | `--e1` ô nhỏ · `--e2` khung · `--e3` lớp phủ toàn màn | thẻ, sàn đấu, hộp bật lên |
+| khác | `--ctl` 34px chiều cao ô điều khiển · `--ease` nhịp chuyển | thanh công cụ |
+
+Mấy tên cũ (`--ink` / `--panel` / `--gold` …) **giữ nguyên** vì đã rải khắp file.
+
+### Chiều cao `--ctl` CHỈ áp cho ô trên thanh điều khiển
+
+```css
+.bar>button,.bar>select,.bar>label.chk,.cselBar>button,.arcOver>button{height:var(--ctl)}
+```
+
+**Đừng nhét `height` vào luật `button` chung.** Ô nhân vật (`.cTile`), ô màn đấu (`.sTile`)
+và nút chế độ (`.mTab`) đều là `<button>` — ghim cứng chiều cao là chúng **bẹp dí xuống
+34px, mất cả ảnh lẫn dòng tên**. Đã dính đúng một lần, chụp màn hình ra đúng một hàng ô
+rỗng cao ba chục pixel.
+
+### Ô điều khiển tự vẽ
+
+- **`<select>` bỏ hẳn `appearance`** rồi tự vẽ mũi tên bằng một `data:` SVG trong
+  `background-image`. Để nguyên đồ mặc định thì giữa hàng nút bo góc lòi ra một cái hộp
+  vuông xám của hệ điều hành — đó là thứ làm cả thanh công cụ đọc ra một trang cấu hình.
+  Nhớ đặt cả `select option{background:…}`, không thì danh sách xổ ra là nền trắng.
+- **`label.chk` là một viên thuốc** ngang hàng với nút, không còn là chữ trần thả giữa
+  hàng. Thanh trượt và ô đánh dấu cũng tự vẽ (`accent-color` + track/thumb).
+- **Thanh cuộn** tô cùng tông với trang (`scrollbar-color` + `::-webkit-scrollbar`) —
+  thanh cuộn trắng của trình duyệt nằm giữa nền tím đậm là chỗ lộ ra "đây là một trang
+  web" rõ nhất.
+- **Vành sáng bàn phím** dùng `:focus-visible` nên bấm chuột thì không hiện.
+
+### Lưới đấu thủ là FLEX, không phải GRID
+
+`.cTiles` chuyển sang `display:flex;flex-wrap:wrap;justify-content:center`. Lý do: chín đấu
+thủ trên một lưới tám cột thì **người thứ chín đứng trơ một mình ở mép trái hàng dưới**,
+nhìn như lỗi bố cục — mà grid thì không có cách nào canh giữa hàng cuối. Flex thì hàng dở
+dang tự nằm giữa, và **thêm nhân vật mới bao nhiêu người cũng không phải sửa số cột**.
+
+> Vì vậy mấy chỗ chỉnh lưới ở trang chơi giờ chỉnh **`flex-basis` / `max-width` của một ô**,
+> không chỉnh `grid-template-columns` nữa. Còn sót một luật `grid-template-columns` nào trỏ
+> vào `.cTiles` thì nó là luật chết, xoá đi.
+
+### Mấy chỗ đã sửa cụ thể
+
+| Chỗ | Trước | Sau |
+|---|---|---|
+| sàn đấu | canvas kẹp ở 520px trong khung 680px ⇒ **thừa hơn 130px nền trống** hai bên | canvas trải tới 600px, padding khung còn 8px |
+| thanh công cụ trang chơi | mười ô thả trần giữa trang, xuống ba hàng lệch nhau | gom vào **một khối bảng điều khiển** (`body.arcade .bar`) có nền, viền, tự bó `width:fit-content`, và một vạch ngăn trước nút Bắt đầu |
+| lớp phủ (`.csel` / `.dexPop`) | chỉ tối đi 88%, phía sau vẫn đọc lờ mờ | thêm `backdrop-filter:blur(14~16px)` |
+| ô chọn màn | ảnh ở trên, một hộp chữ riêng dán dưới | **tên đè lên ảnh** sau lớp phủ tối dần (`.sCap`), ảnh cao 96→124px |
+| bảng thông số bật lên | một cột, biểu đồ nở giữa khoảng trống mênh mông | **hai cột** từ 760px trở lên |
+| bước chọn MÀN | vẫn treo hàng "xem skill / máu mọi nhân vật" | giấu `.cselOpts` đi, bước cuối chỉ còn một việc |
+| gạch dưới dòng phụ màn tiêu đề | `bottom:-7px` nên **đè lên chân chữ**, nhìn như gạch nhầm hai chữ giữa | hạ xuống -13px, rộng 180px |
+| nhật ký | viền đứt nét, dòng nào cũng như dòng nào | chấm đầu dòng theo màu phe, mép trên nhạt dần cho biết còn cuộn được |
+
+### Luật cũ vẫn nguyên giá trị
+
+Mọi thứ ở mục 2h **không đổi**: chuyển động lặp mãi chỉ được đổi `opacity` / `box-shadow` /
+`background-position` / `filter`, và **nút mà test phải bấm thì đừng gắn
+`animation … infinite`**. Đợt này không thêm một animation lặp nào; tất cả là `transition`
+chạy lúc rê chuột.
+
+Kiểm bằng `node tools/t_ui.js`, `node tools/t_dex.js`, `node tools/t_play.js`,
+`node tools/t_stage.js` — bốn bộ này soi đúng mấy màn vừa sửa.
+
 ## 2b. Khoảng cách khi cận chiến — đừng dán vào nhau
 
 Người dùng bác bản cũ: hai người cận chiến đứng chồng hẳn lên nhau, nhìn chỉ thấy một
