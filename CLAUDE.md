@@ -2166,8 +2166,18 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
   | Chế độ | Các bước |
   |---|---|
   | đấu tay đôi | **`mode`** → `p1` → `p2` → `stage` |
-  | hỗn chiến · giải vòng tròn · giải loại trực tiếp | **`mode`** → `chars` (một khung đội hình) → `stage` |
+  | hỗn chiến | **`mode`** → `chars` (một khung đội hình) → `stage` |
+  | **giải vòng tròn · giải loại trực tiếp** | **`mode`** → `chars` — **KHÔNG có bước `stage`** |
   | **đánh đội** | **`mode`** → **`t0` → `t1` → … → `stage`** — mỗi đội một bước |
+
+  > **HAI CHẾ ĐỘ GIẢI KHÔNG hỏi sàn ở màn chọn nhân vật.** Người dùng: *"có việc lặp lại
+  > chọn background 2 lần ở chế độ league và tournament — 2 chế độ này chỉ chọn background
+  > ở lần 2 thôi chứ lần đầu là không được"*. Khai mạc giải xong là vào thẳng bảng xếp
+  > hạng, rồi **mỗi trận** mới hỏi sàn qua `stagePickOpen()` — hỏi thêm một lần ở màn chọn
+  > là bắt người chơi chọn hai lần liền mà lần đầu chẳng dùng vào đâu (sàn của cả giải bị
+  > sàn của từng trận ghi đè ngay). Kéo theo: nút cuối của hai chế độ này là **"Khai mạc
+  > giải"** chứ không phải "Tiếp ▸ Chọn màn", và test chỉ bấm `#cselGo` **MỘT lần** (trước
+  > đây hai lần).
 
   > **BƯỚC ĐẦU TIÊN LÀ CHỌN CHẾ ĐỘ** — người dùng: *"vào game ấn phát là chọn trc chế độ
   > chơi, xong rồi mới vào phần chọn nhân vật"*. Dải năm nút `.cselModes` vốn chen trên
@@ -3059,6 +3069,45 @@ Kiểm bằng `node tools/t_voice.js`.
    `shika_bind` + `shika_grab`. Tiếng "trúng" đặt **sau** nhánh né, địch né được thì im.
 7. **Tiếng KHÔNG chạy theo thanh tốc độ** — xem mục ngay dưới.
 
+### Thoát app rồi vào lại vẫn phải còn tiếng (iPhone) — `audioWake()`
+
+Người dùng: *"fix lỗi thoát ra khoảng 1 tg là vào lại game mất tiếng (trên iphone)"*.
+iOS Safari treo `AudioContext` khi trang chạy nền, và nó hỏng theo **ba** kiểu khác nhau —
+chữa một kiểu là chưa đủ:
+
+| Kiểu hỏng | Dấu hiệu | Cách cứu |
+|---|---|---|
+| bị treo | `state` = `'suspended'` **hoặc `'interrupted'`** | `resume()` |
+| chết bên trong | `state` vẫn báo `'running'` mà **`currentTime` đứng yên** | **dựng context mới** |
+| bị đóng hẳn | `state` = `'closed'` | **dựng context mới** |
+
+- **`'interrupted'` là trạng thái RIÊNG của WebKit** (cuộc gọi, Siri, chuyển app). Nhánh cũ
+  trong `ac()` chỉ hỏi `'suspended'` nên bỏ sót đúng cái hay gặp nhất trên iPhone.
+- **`resume()` ngoài cử chỉ người dùng hay bị từ chối**, nên đừng chỉ thử một lần lúc trang
+  hiện ra. Bốn cửa gọi `audioWake()`: `visibilitychange` (lúc hiện lại) · `pageshow` (quay
+  về từ bfcache) · `focus` · và **`pointerdown` / `touchend` ở pha bắt** — cú chạm mới là
+  chỗ iOS chắc chắn cho `resume()` chạy.
+- **Kiểu hỏng thứ hai phải đo HAI MỐC cách nhau một nhịp thật** (`acWatch`, 400ms): đọc
+  `currentTime` một lần thì không phân biệt được với context vừa mở.
+- **`audioRebuild()` phải dọn NHẠC TỰ SINH trước.** `startMusic()` gác ở
+  `if(MUSIC.gain) return`, mà mấy node đó thuộc context vừa chết — không xoá
+  `MUSIC.gain/oscs/lfo/filter` là nhạc im hẳn và **không cách nào dựng lại**. Đây chính là
+  nửa "mất tiếng" mà chỉ sửa `resume()` sẽ không chữa được.
+- `ac()` cũng tự bỏ context `'closed'` rồi dựng cái mới — mọi đường vào đều lành, không
+  phải nhớ gọi `audioWake()` trước.
+- **TUYỆT ĐỐI đừng dựng lại context trong lúc đang ghi hình**: `recDest()` và bộ mã hoá
+  tiếng bám vào đúng cái context đó. `audioWake()` `return` sớm khi `REC || CFR`, và cái
+  hẹn giờ 400ms cũng kiểm lại lần nữa lúc nó nổ (quãng đó người chơi có thể vừa bấm ghi).
+- **Đừng gọi `musicStart()` vô điều kiện trong `audioWake()`** — hàm này chạy ở MỌI cú
+  chạm, gọi mỗi lần là mỗi lần một lượt dò ô nhạc. Chỉ đá khi nhạc đang thật sự đứng
+  (`BGM.el.paused`, hoặc chưa có node nhạc tự sinh nào).
+- `SFXBUF` giữ nguyên: `AudioBuffer` không bám vào context nào cả, context mới phát lại
+  được. Nhưng `SFX_ACTIVE` thì phải xoá sạch — nó trỏ vào node của context đã chết.
+
+Kiểm bằng `node tools/t_ui.js` (bốn mục cuối): ép `suspend()` rồi gọi `audioWake()` ⇒ chạy
+lại và bấm nút có tiếng; ép `suspend()` rồi **chỉ bấm một cú bất kỳ** ⇒ cũng tỉnh; ép
+`close()` ⇒ dựng lại context mới và vẫn kêu; và nhạc tự sinh sống lại sau khi context chết.
+
 ### Tiếng KHÔNG chạy theo thanh tốc độ — đã BỎ HẲN, đừng dựng lại
 
 Từng có một bản cho tiếng chạy theo thanh tốc độ (người dùng: *"âm thanh khi chúng ta chọn
@@ -3428,7 +3477,8 @@ node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4
                         # đúng một lượt), xếp được CẢ BẢNG nhân vật vào một giải (trần đọc
                         # số ô trong lưới chứ không ghim số, dòng phụ và hàng thể thức đếm
                         # đúng theo), khối kết quả đã đá bị cắt còn 40 trận gần nhất,
-                        # bảng xếp hạng cộng điểm và xếp thứ tự đúng, dàn đấu
+                        # GIẢI KHÔNG có bước chọn màn (chỉ hỏi sàn ở từng trận, không
+                        # hỏi hai lần), bảng xếp hạng cộng điểm và xếp thứ tự đúng, dàn đấu
                         # thủ bấm là bật/tắt chứ không có bản sao, MỖI TRẬN của giải được
                         # chọn một sàn riêng trước khi vào, sơ đồ nhánh 8 người đủ ba
                         # vòng + trận tranh hạng ba, 5 người thì khoá nút vào giải, xếp nhánh
@@ -3471,7 +3521,10 @@ node tools/t_ui.js      # đổi tên game, hai ngôn ngữ (MẶC ĐỊNH TIẾ
                         # chữ và mô tả chiêu đổi theo, nhớ lại lựa chọn), hồ sơ chín nhân vật
                         # đủ song ngữ + thẻ chiêu vẽ ra thật, nhạc nền mặc định tắt và chạy
                         # theo ô nhạc tự nạp; và CHÍN Ô TIẾNG GIAO DIỆN: đủ ô, đủ case
-                        # trong synth(), bấm chọn nhân vật / ô màn / nút chế độ đều có tiếng
+                        # trong synth(), bấm chọn nhân vật / ô màn / nút chế độ đều có tiếng;
+                        # và THOÁT APP RỒI VÀO LẠI VẪN CÒN TIẾNG (iPhone): ép suspend() thì
+                        # audioWake() cứu được, một cú chạm bất kỳ cũng đánh thức, ép
+                        # close() thì dựng context mới và nhạc tự sinh cũng sống lại
 node tools/t_dex.js     # chạm hai lần vào ô nhân vật thì bật bảng thông số (đúng người vừa chạm,
                         # hai nút xem skill nằm trong bảng và đi chung lựa chọn với cặp ngoài,
                         # một cú bấm thì chỉ chọn, X / Esc đóng được, hai cú cách xa nhau
@@ -3673,6 +3726,8 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | `openMulti('team',…)` thỉnh thoảng dựng ra một trận **tay đôi** `kono vs chichi` | `loadSaved()` chạy bất đồng bộ và kết thúc bằng một lượt `cselRefresh()`; lượt vẽ muộn đó dựng lại dải nút theo `TMP.mode` đã lưu, quét sạch cú bấm `#mTabTeam` vừa rồi | bấm nút chế độ rồi **kiểm lại `.on`, bấm lại tới khi ăn**; test đổ mỗi lần một chỗ chính vì thiếu chỗ này |
 | `openMulti` đổ ở tận `t1[1].hp` / `a.x` undefined | cú bấm ô nhân vật rơi đúng lúc lưới được vẽ lại nên mất trắng, đội hình thiếu người mà mãi sau mới lộ | bấm rồi **chờ dải đội hình dài thêm một thẻ** mới đi tiếp, và chốt lại số người ở cuối mỗi đội; lần thử lại phải **nghỉ quá 380ms** (`DBL_TAP`), không thì game hiểu là chạm hai lần và mở `#dexPop` — bảng đó phủ kín trang, chặn luôn `#cselGo` |
 | Tiếng méo hẳn ở mốc 2x | file thu sẵn đọc bằng `playbackRate = speedMul/BASE_SPEED` — gấp đôi tốc độ là tua băng, cao giọng lên hẳn; tiếng tự tạo thì rút ngắn `dur` nên cụt và chói | bỏ hẳn lối cho tiếng chạy theo thanh tốc độ: `playbackRate` luôn là 1, `dur`/`delay` đúng con số khai, gỡ luôn hàm `sfxRate()` |
+| Chế độ league / tournament bắt chọn background HAI LẦN liền | `cselSteps()` vẫn cho hai chế độ này bước `stage`, mà từ khi có màn hỏi sàn TỪNG TRẬN thì trận đầu lại hỏi thêm lần nữa — lần chọn ở màn chọn nhân vật bị ghi đè ngay, chọn xong chẳng để làm gì | bỏ bước `stage` khỏi `league`/`cup`: khai mạc giải xong vào thẳng bảng xếp hạng, sàn hỏi riêng cho mỗi trận |
+| iPhone: thoát app một lúc rồi vào lại là MẤT TIẾNG | ba thứ cùng lúc — `ac()` chỉ resume khi `state==='suspended'` nên bỏ sót `'interrupted'` của WebKit; context có khi chết hẳn mà `state` vẫn báo `'running'`; và `startMusic()` gác ở `if(MUSIC.gain) return` với node của context đã chết nên nhạc không bao giờ dựng lại | `audioWake()` gọi từ `visibilitychange` / `pageshow` / `focus` / **mọi cú chạm**, resume cả `'interrupted'`, dò `currentTime` đứng yên thì `audioRebuild()`, và `audioRebuild()` dọn sạch `MUSIC.gain/oscs/lfo/filter` trước khi dựng lại |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---

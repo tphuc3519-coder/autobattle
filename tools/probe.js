@@ -111,6 +111,10 @@ window.__draw=draw; window.__ghostSil=ghostSil; window.__ARCADE=()=>ARCADE; wind
 /* ba chế độ đấu */
 window.__PMODE=()=>PMODE; window.__ROSTERS=ROSTERS; window.__PICK=PICK;
 window.__TMP=()=>TMP;   // đội hình đang NHÁP trong màn chọn, chưa chốt vào ROSTERS
+window.__cselSteps=()=>cselSteps();  // danh sách bước của màn chọn theo chế độ đang chọn
+window.__audioWake=()=>audioWake();  // ép chạy lượt cứu tiếng sau khi thoát app (iOS)
+window.__ac=()=>AC;                  // AudioContext đang dùng (null nếu chưa ai bật tiếng)
+window.__acOpen=()=>ac();            // mở/đánh thức context đúng đường của game
 /* giải đấu */
 window.__COMP=()=>COMP; window.__compNext=()=>compNextMatch(); window.__compDone=()=>compDone();
 window.__compPlayNext=()=>compPlayNext(); window.__compChampion=()=>compChampion();

@@ -113,6 +113,11 @@ async function daHet(page, tran) {
     n: window.__TMP().comp.length
   }));
   ok(/LEAGUE/i.test(lp.h2), `tieu de doi sang chon dan dau thu (${lp.h2})`);
+  /* Giải đấu KHÔNG hỏi sàn ở đây — sàn hỏi riêng cho từng trận. Hỏi cả hai chỗ là
+     người chơi phải chọn hai lần liền mà lần đầu chẳng dùng vào đâu. */
+  ok(await doc(() => window.__cselSteps().indexOf('stage')) < 0,
+     `che do giai KHONG con buoc chon man (${await doc(() => window.__cselSteps().join(' -> '))})`);
+  ok(/competition|Khai m/i.test(lp.go), `nut doc thang la khai mac giai (${lp.go})`);
 
   /* Bấm vào một ô đang có trong dàn thì BỎ RA, bấm lại thì thêm vào — không có bản sao.
      Hai cú phải giãn hơn DBL_TAP (380ms), không thì game hiểu là chạm hai lần và mở bảng
@@ -194,7 +199,8 @@ async function daHet(page, tran) {
   ok(hai.trung, 'khong cap nao bi lap y nguyen ca hai luot');
   ok(hai.leg === 2, `tran cuoi mang co luot ve (${hai.leg})`);
 
-  await page.click('#cselGo'); await page.waitForTimeout(250);
+  /* GIẢI ĐẤU không còn bước chọn màn ở màn chọn nhân vật — một cú bấm là khai mạc.
+     Sàn hỏi riêng cho TỪNG trận, ngay trước khi vào (xem `quaChonSan`). */
   await page.click('#cselGo'); await page.waitForTimeout(500);
   const lb = await doc(() => ({
     mo: !document.getElementById('compBoard').classList.contains('off'),
@@ -364,7 +370,8 @@ async function daHet(page, tran) {
   ok(trrand.cu.slice().sort().join() === trrand.moi.slice().sort().join(),
      'boc tham chi xao thu tu chu khong doi nguoi');
 
-  await page.click('#cselGo'); await page.waitForTimeout(250);
+  /* GIẢI ĐẤU không còn bước chọn màn ở màn chọn nhân vật — một cú bấm là khai mạc.
+     Sàn hỏi riêng cho TỪNG trận, ngay trước khi vào (xem `quaChonSan`). */
   await page.click('#cselGo'); await page.waitForTimeout(500);
   const cb = await doc(() => ({
     cot: [...document.querySelectorAll('#compBody .brCol .brHead')].map(h => h.textContent),
