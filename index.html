@@ -2250,6 +2250,8 @@ function shrink(img,maxH){
 function setFrames(ck,pk,imgs,label){
   SPR[ck][pk]=imgs;
   if(ck==='stages'&&typeof stageThumbClear==='function') stageThumbClear(pk);
+  // bóng mờ nướng sẵn theo ảnh cũ, dán ảnh mới thì phải nướng lại
+  if(typeof ghostClear==='function') ghostClear();
   const ref=SLOT[ck]&&SLOT[ck][pk]; if(!ref)return;
   ref.prev.src=imgs[0].src; ref.prev.style.display='block';
   ref.cap.textContent=(label||ref.label)+(imgs.length>1?` ×${imgs.length}`:'');
@@ -2261,6 +2263,8 @@ function setFrames(ck,pk,imgs,label){
 function clearFrames(ck,pk,label){
   delete SPR[ck][pk];
   if(ck==='stages'&&typeof stageThumbClear==='function') stageThumbClear(pk);
+  // bóng mờ nướng sẵn theo ảnh cũ, dán ảnh mới thì phải nướng lại
+  if(typeof ghostClear==='function') ghostClear();
   const ref=SLOT[ck]&&SLOT[ck][pk]; if(!ref)return;
   ref.prev.removeAttribute('src'); ref.prev.style.display='none';
   ref.cap.textContent=label||ref.label;
@@ -12424,12 +12428,10 @@ function draw(){
     else if(e.type==='dust'){ ctx.globalAlpha=a*.4; ctx.fillStyle='#F2F2F2';
       ctx.beginPath(); ctx.ellipse(e.x,e.y,e.r+(1-a)*10,(e.r+(1-a)*7)*.5,0,0,7); ctx.fill(); }
     else if(e.type==='ghost'){ ctx.globalAlpha=a*.35;
-      const arr=SPR[e.key]&&(SPR[e.key][e.pose]||SPR[e.key].idle);
-      const img=arr&&arr.length?arr[0]:null;
+      // bóng trắng nướng sẵn — xem ghostSil(), đừng đặt ctx.filter lại ở đây
+      const sil=ghostSil(e.key,e.pose,e.h||120);
       ctx.translate(e.x,e.y+20); if(e.face<0)ctx.scale(-1,1);
-      ctx.filter='brightness(0) invert(1)';
-      if(img){ const h=e.h||120,w=img.width/img.height*h; ctx.drawImage(img,-w/2,-h,w,h); }
-      else vector({key:e.key,face:1,moving:true}); }
+      if(sil) ctx.drawImage(sil,-sil.ox,-sil.oy); }
     else if(e.type==='burst'){
       ctx.globalAlpha=a; ctx.strokeStyle='#FFD400'; ctx.lineWidth=4; ctx.lineCap='round';
       const g=(1-a);
@@ -12655,6 +12657,91 @@ function blurredCopy(src,key,rad){
 }
 /* quầng sáng nướng sẵn, dùng lại cho hào quang và vũng sáng dưới chân */
 let GLOW=null;
+/* Vệt bóng mờ (ghost) nướng sẵn — dùng cho cú lao của ChiChi, Ayanokouji, Rasengan
+   Dash, quãng bay của Ginyu, và cả ba chỗ của Superman (chào sân · Kryptonian Flight ·
+   Meteor Strike).
+
+   Bản cũ vẽ thẳng tại chỗ với ctx.filter='brightness(0) invert(1)'. Bộ lọc canvas dựng
+   một MẶT VẼ PHỤ cho TỪNG lệnh vẽ, mà nhánh vector gọi tới hơn ba chục lệnh fill/stroke,
+   nên một vệt thôi đã tốn hàng trăm mili giây. Đo trên máy không có GPU, một lượt draw():
+   không vệt 10.9ms · 4 vệt 1503ms · 8 vệt 2977ms, tức 371ms MỘT vệt. Superman nhả vệt
+   mỗi 0.05~0.07 giây và mỗi vệt sống 0.3 giây nên lúc nào cũng có 4~6 vệt trên sàn —
+   đó chính là chỗ lag lúc anh chào sân và lúc thi triển chiêu.
+
+   Giờ bóng trắng được vẽ MỘT LẦN ra canvas phụ rồi blit lại: không còn lệnh lọc nào,
+   mỗi vệt chỉ còn đúng một cú drawImage. Đây là họ hàng của luật ở drawFighter —
+   "chỉ lọc màu khi vẽ bằng ảnh" — nên đừng đặt ctx.filter lại vào nhánh ghost.
+
+   Bóng nướng sẵn nên tư thế đứng yên trong suốt quãng vệt sống. Không mất gì: cả dải
+   vệt vốn đã đọc chung một G.t nên xưa nay chúng vẫn giống hệt nhau từng khung hình,
+   mà bóng của một cú lao thì lẽ ra phải đứng im ở đúng dáng nó để lại. */
+const GHOST_SIL=new Map();
+function ghostClear(){ GHOST_SIL.clear(); }
+function ghostSil(key,pose,h){
+  const arr=SPR[key]&&(SPR[key][pose]||SPR[key].idle);
+  const img=arr&&arr.length?arr[0]:null;
+  const id=key+'|'+pose+'|'+h+'|'+(img?'i':'v');
+  let c=GHOST_SIL.get(id);
+  if(c) return c;
+  if(GHOST_SIL.size>40) GHOST_SIL.clear();   // xem cả bảng nhân vật cả buổi thì đừng phình mãi
+  const iw=img?img.width/img.height*h:0;
+  c=document.createElement('canvas');
+  c.width=Math.max(240,Math.ceil(iw)+48);        // chừa chỗ cho áo choàng, tóc, vũ khí
+  c.height=Math.max(260,Math.ceil(h)+80);
+  c.ox=Math.round(c.width/2); c.oy=c.height-64;  // gốc toạ độ của thân người trong ô
+  const g=c.getContext('2d');
+  g.save(); g.translate(c.ox,c.oy);
+  if(img){ g.drawImage(img,-iw/2,-h,iw,h); }
+  else {
+    /* vector() vẽ thẳng vào ctx của module, nên mượn tạm — đúng lối stageThumb().
+       ctx khai bằng let chính vì mấy chỗ mượn thế này.
+       Ghim luôn G.t=0 lúc nướng: vector() lắc tay chân và tà áo theo G.t, mà bóng thì
+       nướng đúng một lần — không ghim thì dáng đông cứng ở đúng cái nhịp lắc ngẫu nhiên
+       lúc vệt đầu tiên rơi ra, mỗi lần mở game một khác. Ghim rồi thì bóng luôn là dáng
+       gốc không lắc, lần chạy nào cũng như lần nào. */
+    const old=ctx, gt=G.t; ctx=g; G.t=0;
+    try{ vector({key:key,pose:pose,face:1,moving:true}); }
+    catch(e){}                                   // dáng lạ thì để bóng dở còn hơn chết cả lượt vẽ
+    finally { ctx=old; G.t=gt; }
+  }
+  g.restore();
+  /* Đổ trắng toàn bộ phần vừa vẽ mà giữ nguyên độ trong suốt — đúng cái
+     brightness(0) invert(1) làm ra, nhưng bằng MỘT lệnh thay vì mấy chục lệnh lọc. */
+  g.globalCompositeOperation='source-in';
+  g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height);
+  g.globalCompositeOperation='source-over';
+  /* Cắt sát mép phần vẽ được. Ô nướng phải để rộng vì không biết trước áo choàng hay
+     tóc vươn tới đâu, nhưng blit lại nguyên ô rỗng thì mỗi vệt phải trộn hơn sáu vạn
+     điểm ảnh trong suốt — đo được 6.85ms mỗi vệt, cắt xong còn 0.59ms. */
+  const bb=ghostBounds(g,c.width,c.height);
+  if(bb){
+    const t=document.createElement('canvas');
+    t.width=bb.w; t.height=bb.h;
+    t.getContext('2d').drawImage(c,bb.x,bb.y,bb.w,bb.h,0,0,bb.w,bb.h);
+    t.ox=c.ox-bb.x; t.oy=c.oy-bb.y;
+    c=t;
+  }
+  GHOST_SIL.set(id,c);
+  return c;
+}
+/* Khung nhỏ nhất bao hết phần có màu, tìm bằng cách quét kênh alpha. Chỉ chạy MỘT lần
+   cho mỗi bóng nướng sẵn nên getImageData ở đây không đụng tới nhịp khung hình. */
+function ghostBounds(g,w,h){
+  let d;
+  try{ d=g.getImageData(0,0,w,h).data; }catch(e){ return null; }
+  let x0=w,y0=h,x1=-1,y1=-1;
+  for(let y=0;y<h;y++){
+    const row=y*w*4;
+    for(let x=0;x<w;x++){
+      if(d[row+x*4+3]){
+        if(x<x0)x0=x; if(x>x1)x1=x;
+        if(y<y0)y0=y; if(y>y1)y1=y;
+      }
+    }
+  }
+  if(x1<0) return null;
+  return {x:x0,y:y0,w:x1-x0+1,h:y1-y0+1};
+}
 function glowSprite(){
   if(GLOW) return GLOW;
   GLOW=document.createElement('canvas'); GLOW.width=GLOW.height=256;

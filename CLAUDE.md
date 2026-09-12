@@ -2944,6 +2944,70 @@ Máy chạy test không có GPU, nên:
   cảnh lãnh địa ra canvas phụ, fps **tụt** 43 → 27. Đã bỏ. Đừng thử lại hướng đó.
 - Gradient phủ toàn màn hình cũng nặng — dùng dè.
 
+### `ctx.filter` bọc quanh `vector()` là chỗ chết người — đừng lặp lại
+
+Luật "trả `filter` về `'none'`" ở trên **chưa đủ**. Bộ lọc canvas dựng hẳn một **mặt vẽ phụ
+cho TỪNG lệnh vẽ**, nên cái quyết định giá không phải là bật/tắt mà là **có bao nhiêu lệnh
+vẽ nằm trong quãng bật**:
+
+| Bọc quanh cái gì | Bao nhiêu lệnh chịu lọc | Giá |
+|---|---|---|
+| một `drawImage` (một tấm ảnh) | 1 | chấp nhận được |
+| một lượt `vector()` | **hơn ba chục** `fill`/`stroke` | **không xài được** |
+
+Đo thật, một lượt `draw()` trên máy không GPU: **không vệt 10.9ms · 4 vệt 1503ms · 8 vệt
+2977ms** — tức **371ms MỘT vệt bóng mờ**. Đó chính là lý do người dùng báo *"superman thi
+triển skill hay chào sân trên web bằng laptop bị lag"*: anh nhả vệt mỗi 0.05~0.07 giây ở cả
+ba chỗ (chào sân · Kryptonian Flight · Meteor Strike), mỗi vệt sống 0.3 giây nên lúc nào
+cũng có 4~6 vệt trên sàn.
+
+Hai chỗ trong game đã học đúng bài này từ trước, **đọc chúng làm mẫu**: `drawFighter()` gác
+lớp ám màu bằng `if(bodyTint&&img)` với ghi chú *"chỉ lọc màu khi vẽ bằng ảnh"*, còn
+`ghostCanvas()` nướng sẵn hình vector ra canvas phụ vì lớp nhoè của flashback cũng đắt y
+như vậy. Nhánh vẽ vệt bóng mờ thì lọt lưới cả hai.
+
+**Cách làm đúng khi cần một hiệu ứng màu phủ lên cả người: nướng sẵn ra canvas phụ rồi
+blit lại** — `ghostSil()`. Ba điều bắt buộc:
+1. **Đổi màu bằng `globalCompositeOperation`, đừng bằng `filter`.** Bóng trắng của vệt =
+   vẽ người ra ô phụ rồi `'source-in'` + tô trắng: **một** lệnh thay cho mấy chục lệnh lọc.
+   Đo được ra **đúng từng điểm ảnh** như `brightness(0) invert(1)` cũ, cả 12 cặp dáng.
+2. **Cắt sát mép phần vẽ được** (`ghostBounds()`, quét kênh alpha một lần lúc nướng). Ô nướng
+   phải để rộng 240×260 vì không biết trước áo choàng với tóc vươn tới đâu, nhưng blit lại
+   nguyên ô rỗng thì mỗi vệt phải trộn hơn sáu vạn điểm ảnh trong suốt: **6.85ms**. Cắt còn
+   69×69 thì xuống **0.59ms**. Cắt hay không chênh nhau **hơn 10 lần**, đừng bỏ bước này.
+3. **Ghim `G.t=0` lúc nướng.** `vector()` lắc tay chân và tà áo theo `G.t`, mà bóng chỉ nướng
+   một lần — không ghim thì dáng đông cứng ở đúng nhịp lắc ngẫu nhiên lúc vệt đầu tiên rơi
+   ra, mỗi lần mở game một khác. Ghim rồi thì lần chạy nào cũng như lần nào.
+
+Kết quả đo lại (nhịp khung hình thật, không bọc lệnh vẽ nào):
+
+| | Trước | Sau |
+|---|---|---|
+| chào sân | **11.0 fps** | **59.6 fps** |
+| đánh thường | **1.1 fps** | **60.0 fps** |
+| Meteor Strike | 27.3 fps | 54.4 fps |
+| Freeze Breath | **0.7 fps** | 56.1 fps |
+| Kryptonian Flight | 42.1 fps | 55.3 fps |
+| Last Son's Resolve | 32.5 fps | 38.9 fps |
+
+Hai cột đo bằng **cùng một phép**, đừng trộn: con số ở trên lấy từ nhịp rAF thật, KHÔNG bọc
+lệnh vẽ nào. Bản bọc từng lệnh vẽ để đếm số lệnh có lọc thì đọc ra cao hơn một nhịp (ví dụ
+Kryptonian Flight ra 52 thay vì 42) — dùng nó để **đếm** thì được, để **so fps** thì không.
+Số lệnh vẽ có lọc trong 2.5 giây: **19562 → 0**.
+
+`Resolve` vẫn 38.9 fps là chuyện khác, **không phải phần này**: một lượt `draw()` nền trên
+máy không GPU đã tốn 11.4ms, quầng nắng của Resolve đội thêm 3.3ms là vượt ngân sách 16.7ms
+nên rơi xuống nhịp 30 fps. Mấy chỗ khác của Superman chỉ đội thêm 0.4~0.7ms. Máy có GPU thì
+lượt vẽ nền rẻ hơn hẳn nên chỗ này không lộ ra.
+
+Vệt bóng mờ dùng chung nên **ChiChi, Ayanokouji, Rasengan Dash và quãng bay của Ginyu cùng
+được vạ** — chỉ là Superman xài dày nhất nên lộ ra ở anh trước.
+
+`node tools/t_perf.js` canh chỗ này: đo phần đội thêm so với chính lượt vẽ nền của máy đó
+(máy test không GPU nên con số tuyệt đối vô nghĩa) và soi thẳng nguồn để chắc không ai đặt
+lại `ctx.filter` vào nhánh vệt. Đã thử ngược trên bản hỏng: ra **394ms mỗi vệt, nặng gấp
+266 lần** và test đổ đúng 4 mục.
+
 ---
 
 ## 7b. Ghi hình — khung dọc 9:16, nhịp khung cố định (CFR)
@@ -3092,6 +3156,9 @@ Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 
 ```bash
 node tools/t_reg.js     # 45 cặp đấu, chạy theo đợt, bắt lỗi trang, xem cơ chế lớn có nổ không
+node tools/t_perf.js    # nhịp vẽ: một vệt bóng mờ không được tốn quá 8ms, tám vệt không được
+                        # làm lượt vẽ nặng gấp ba, bóng nướng sẵn phải cắt sát mép, và nhánh
+                        # vẽ vệt tuyệt đối không đặt lại ctx.filter (xem mục 7)
 node tools/t_modes.js   # ba chế độ đấu: 1v1 vẫn y như cũ (hai người, đúng hai đầu sàn),
                         # hỗn chiến (mỗi người một phe, hạ một người thì trận còn chạy,
                         # người cuối cùng thắng, băng-rôn gạch tên người đã bị hạ,
@@ -3291,6 +3358,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 
 | Lỗi | Nguyên nhân | Cách sửa |
 |---|---|---|
+| Superman chào sân và thi triển chiêu thì lag trên laptop | vệt bóng mờ vẽ bằng `ctx.filter='brightness(0) invert(1)'` bọc quanh cả một lượt `vector()` — bộ lọc dựng mặt vẽ phụ cho TỪNG lệnh, mà vector có hơn ba chục lệnh; đo được **371ms MỘT vệt**, mà anh nhả vệt mỗi 0.05~0.07 giây ở cả ba chỗ nên lúc nào cũng có 4~6 vệt (chào sân tụt còn **11 fps**, Freeze Breath còn **0.7 fps**) | nướng sẵn bóng trắng ra canvas phụ bằng `'source-in'` rồi cắt sát mép và blit lại (`ghostSil()`): **0.59ms mỗi vệt**, chào sân về **59.6 fps**, ra đúng từng điểm ảnh như cũ. Xem mục 7 |
 | Video quay ra không có tiếng | `mAudioEntry()` dựng `esds`/`dOps` rồi quên gắn vào sample entry | gắn `cfg` vào cuối `mBox(type,…)`, và test soi byte thay vì chỉ đếm track |
 | Video chỉ có track hình, không có track tiếng | thu PCM bằng `MediaStreamTrackProcessor` — Safari/Firefox không có API này | thu thẳng từ đồ thị âm thanh: `AudioWorklet`, không được thì `ScriptProcessor` |
 | Gohan bắn vào chính ChiChi | `summonHelp` cắm cứng `team:1` | `team:c.team` + `master:c`, `foeOf` đi qua `master` |
