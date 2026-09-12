@@ -150,15 +150,18 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
   ok(near(ult.supp,5,.04) && near(ult.factor,.4) && !ult.stacked,
     'Regeneration Suppression cuts healing by 60% for 5s and does not stack');
 
-  console.log('\n=== 7. AI uses varied footwork and range-aware forms ===');
+  console.log('\n=== 7. AI shares normal melee movement and uses Water Wheel occasionally ===');
   const ai = await page.evaluate(() => {
     const G=window.__G(), C=window.__CHARS.tanjiro, f=G.fighters.find(x=>x.key==='tanjiro'), e=G.fighters.find(x=>x.key==='chichi');
-    const vec=(mode,range)=>{
-      f.x=260;f.y=350;e.x=f.x+range;e.y=f.y;f.wx=f.x;f.wy=f.y;f.jx=0;f.jy=0;
-      f.tanMove=mode;f.tanMoveT=1;f.tanMoveSide=1;
-      return window.__tanVec(f,e);
+    G.proj=[];G.waves=[];
+    const sharedVec=(unit,target)=>{
+      unit.x=260;unit.y=350;unit.role='melee';unit.engage=true;unit.orbR=62;
+      unit.wx=320;unit.wy=410;unit.jx=.25;unit.jy=-.15;unit.strafe=1;unit.dodge=0;
+      target.x=360;target.y=350;
+      return window.__aiVec(unit,target);
     };
-    const approach=vec('approach',300), angle=vec('angle',125), circle=vec('circle',64), reset=vec('reset',64);
+    const tanMove=sharedVec(f,e);
+    const chiMove=sharedVec(e,f);
     const prep=(range)=>{
       f.x=260;f.y=350;e.x=f.x+range;e.y=f.y;f.tanAct=null;f.tanEntry=null;f.tanMarkAnim=0;
       f.tanThink=0;f.tanReset=0;f.tanMarked=false;f.cds.s1=f.cds.s2=f.cds.s3=0;f.cds.s4=999;f.cds.basic=0;
@@ -166,21 +169,25 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
     const oldRandom=Math.random;
     Math.random=()=>.9; // when both forms are ready, choose Flux deterministically
     prep(64);C.think(f,e,64,true);const close=f.tanAct&&f.tanAct.kind;
-    prep(300);C.think(f,e,300,true);const far=f.tanAct&&f.tanAct.kind;
+    prep(300);f.tanWheelWait=1;C.think(f,e,300,true);const held=f.tanAct;
+    prep(300);f.tanWheelWait=0;C.think(f,e,300,true);const far=f.tanAct&&f.tanAct.kind, nextWheel=f.tanWheelWait;
     prep(64);f.tanReset=1;C.think(f,e,64,true);const gated=f.tanAct;
     prep(55);f.tanCombo=0;window.__tanBasic(f,e);window.__tanBasic(f,e);window.__tanBasic(f,e);
     const comboReset=f.tanReset;
     Math.random=oldRandom;
-    return {approach,angle,circle,reset,close,far,gated,comboReset,
+    return {tanMove,chiMove,close,held,far,nextWheel,wheelCd:window.__TAN.wheelCd,gated,comboReset,
       chart:window.__DEX.tanjiro.pw,summary:window.__DEX.tanjiro.bio.en};
   });
-  ok(ai.approach.x>0&&Math.abs(ai.approach.y)>.05, 'far approach closes in on a changing angle');
-  ok(Math.abs(ai.angle.y)>Math.abs(ai.angle.x)&&Math.abs(ai.circle.y)>Math.abs(ai.circle.x),
-    'mid and close movement circle/probe instead of running straight');
-  ok(ai.reset.x<0&&Math.abs(ai.reset.y)>Math.abs(ai.reset.x), 'post-combo reset is a short diagonal reposition');
-  ok(ai.close==='flux'&&ai.far==='wheel', 'forms are selected by range; Water Wheel is not used point-blank', `${ai.close}/${ai.far}`);
+  ok(near(ai.tanMove.x,ai.chiMove.x)&&near(ai.tanMove.y,ai.chiMove.y),
+    'ordinary Tanjiro movement uses the same shared melee vector as ChiChi');
+  ok(ai.held===null&&ai.far==='wheel'&&ai.nextWheel>ai.wheelCd,
+    'Water Wheel waits beyond its cooldown for an occasional approach window, then closes a long gap');
+  ok(ai.close==='flux', 'Water Wheel is not used point-blank; close range selects a sword form', ai.close);
   ok(ai.gated===null&&ai.comboReset>0, 'a completed combo creates a real action pause before another skill');
-  ok(ai.chart.mob===80&&ai.chart.as===72&&ai.chart.cmb===92&&/circles, probes/.test(ai.summary),
+  ok(ai.chart.dmg===78&&ai.chart.dur===56&&ai.chart.mob===76&&ai.chart.as===70&&ai.chart.rng===18&&
+     ai.chart.cc===60&&ai.chart.uti===62&&ai.chart.con===66&&ai.chart.cmb===74&&
+     /regular melee footwork/.test(ai.summary)&&/occasionally closes a long gap with Water Wheel/.test(ai.summary)&&
+     /no healing or raw damage/.test(ai.summary),
     'power chart and short profile describe the revised combat rhythm');
 
   ok(errors.length===0, 'no browser page errors', errors[0]);

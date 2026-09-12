@@ -1851,11 +1851,12 @@ riêng trong `TAN`, `CHARS.tanjiro` hay logic Demon Slayer Mark.**
   stun 0.4 giây. Water Wheel 75/6.5 giây là cú lao thẳng có chỉnh hướng rất nhẹ, trượt thì
   khựng 0.5 giây. Constant Flux là 18/22/26/30/34 = 130; bị cắt thì không bù hit. Dragon
   Sun Halo là 3×35 = 105, được đổi mỗi hit sang người đứng gần đường chạy.
-- AI không dính thẳng vào mục tiêu và xả skill theo cooldown nữa. `tanVec()` đổi ngẫu nhiên
-  giữa approach / angle / probe / circle / press / watch theo từng nhịp 0.45–1.2 giây;
-  Water Wheel chỉ dùng để vào giao tranh từ xa, Constant Flux chỉ mở ở gần, Dragon Sun Halo
-  ở tầm gần-vừa. Hết một form hoặc đủ ba basic thì `tanResetRhythm()` buộc lượn/lùi chéo
-  ngắn 0.55–1.05 giây rồi mới quyết định tiếp — đây là tái định vị, không phải chạy lùi câu giờ.
+- Di chuyển thường của AI đi qua đúng nhánh melee chung trong `aiVec()` như ChiChi: lúc
+  áp sát, lúc lượn quanh cự ly đánh, lúc đi theo waypoint/jitter ngẫu nhiên. Tanjiro không
+  có vector di chuyển riêng. Water Wheel chỉ được cân nhắc khi còn xa và sau một nhịp chờ
+  riêng ngẫu nhiên 2.6–4.4 giây, ngoài cooldown 6.5 giây; Constant Flux chỉ mở ở gần,
+  Dragon Sun Halo ở tầm gần-vừa. Hết một form hoặc đủ ba basic thì `tanResetRhythm()` chỉ
+  tạo khoảng nghỉ quyết định 0.55–1.05 giây, sau đó vẫn tiếp tục bằng movement melee chung.
 - Demon Slayer Mark nổ **lần đầu khi `hp < maxHp * .40`**, animation 0.8 giây, không hồi
   HP/không cộng damage: +25% chạy, +20% nhịp basic, +20% hồi chiêu, 25% kháng hiệu ứng,
   20% kháng lực đẩy. Sau đó mới mở `Sun Breathing: Thirteenth Form`.
@@ -3665,7 +3666,8 @@ node tools/t_tanjiro.js # Tanjiro: HP đọc từ HP_STD, màn vào sân 1.5s, O
                         # Water Wheel 75, Constant Flux 130, Dragon Sun Halo 105 không burn,
                         # Mark đọc runtime maxHp và không hồi máu, Ultimate đúng 210, giảm
                         # damage/kháng hiệu ứng nhưng không bất tử, Bright Red chỉ giảm hồi HP;
-                        # AI lượn/probe/reset ngẫu nhiên và chọn form đúng cự ly
+                        # AI dùng vector melee chung như ChiChi, Water Wheel chờ nhịp riêng
+                        # và chỉ tiếp cận khi ở xa; power chart khớp nhịp chiến đấu mới
 ```
 
 > **`t_buff.js` có một mục CHẬP CHỜN sẵn từ trước, không phải lỗi của ai mới đụng vào.**
