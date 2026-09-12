@@ -164,30 +164,41 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
     const chiMove=sharedVec(e,f);
     const prep=(range)=>{
       f.x=260;f.y=350;e.x=f.x+range;e.y=f.y;f.tanAct=null;f.tanEntry=null;f.tanMarkAnim=0;
-      f.tanThink=0;f.tanReset=0;f.tanMarked=false;f.cds.s1=f.cds.s2=f.cds.s3=0;f.cds.s4=999;f.cds.basic=0;
+      f.tanThink=0;f.tanReset=0;f.tanCombo=0;f.tanMarked=false;
+      f.cds.s1=f.cds.s2=f.cds.s3=0;f.cds.s4=999;f.cds.basic=0;
     };
     const oldRandom=Math.random;
-    Math.random=()=>.9; // when both forms are ready, choose Flux deterministically
-    prep(64);C.think(f,e,64,true);const close=f.tanAct&&f.tanAct.kind;
+    Math.random=()=>.9; // default close decision must start with the basic combo
+    prep(64);C.think(f,e,64,true);const basic1=f.tanCombo, basicAct=f.tanAct;
+    Math.random=()=>0; // an in-progress combo must finish even when a form roll would win
+    f.cds.basic=0;C.think(f,e,64,true);const basic2=f.tanCombo;
+    f.cds.basic=0;C.think(f,e,64,true);const basic3=f.tanCombo, comboReset=f.tanReset;
+    prep(64);const rolls=[.1,.9];Math.random=()=>rolls.shift()??.9;
+    C.think(f,e,64,true);const occasionalForm=f.tanAct&&f.tanAct.kind;
+    Math.random=()=>.9;
     prep(300);f.tanWheelWait=1;C.think(f,e,300,true);const held=f.tanAct;
     prep(300);f.tanWheelWait=0;C.think(f,e,300,true);const far=f.tanAct&&f.tanAct.kind, nextWheel=f.tanWheelWait;
     prep(64);f.tanReset=1;C.think(f,e,64,true);const gated=f.tanAct;
-    prep(55);f.tanCombo=0;window.__tanBasic(f,e);window.__tanBasic(f,e);window.__tanBasic(f,e);
-    const comboReset=f.tanReset;
     Math.random=oldRandom;
-    return {tanMove,chiMove,close,held,far,nextWheel,wheelCd:window.__TAN.wheelCd,gated,comboReset,
+    return {tanMove,chiMove,basic1,basic2,basic3,basicAct,comboReset,occasionalForm,
+      held,far,nextWheel,wheelCd:window.__TAN.wheelCd,gated,
+      cooldowns:[window.__TAN.wheelCd,window.__TAN.fluxCd,window.__TAN.sunCd,window.__TAN.ultCd].map(x=>x*window.__RT),
+      wheelWait:[window.__TAN.wheelAiMin*window.__RT,window.__TAN.wheelAiMax*window.__RT],
       chart:window.__DEX.tanjiro.pw,summary:window.__DEX.tanjiro.bio.en};
   });
   ok(near(ai.tanMove.x,ai.chiMove.x)&&near(ai.tanMove.y,ai.chiMove.y),
     'ordinary Tanjiro movement uses the same shared melee vector as ChiChi');
   ok(ai.held===null&&ai.far==='wheel'&&ai.nextWheel>ai.wheelCd,
     'Water Wheel waits beyond its cooldown for an occasional approach window, then closes a long gap');
-  ok(ai.close==='flux', 'Water Wheel is not used point-blank; close range selects a sword form', ai.close);
+  ok(ai.basic1===1&&ai.basic2===2&&ai.basic3===0&&ai.basicAct===null&&ai.comboReset>0,
+    'close-range AI defaults to and completes the full three-hit basic combo');
+  ok(ai.occasionalForm==='flux', 'a Breathing Form is an occasional close-range decision, not the default', ai.occasionalForm);
   ok(ai.gated===null&&ai.comboReset>0, 'a completed combo creates a real action pause before another skill');
-  ok(ai.chart.dmg===78&&ai.chart.dur===56&&ai.chart.mob===76&&ai.chart.as===70&&ai.chart.rng===18&&
-     ai.chart.cc===60&&ai.chart.uti===62&&ai.chart.con===66&&ai.chart.cmb===74&&
-     /regular melee footwork/.test(ai.summary)&&/occasionally closes a long gap with Water Wheel/.test(ai.summary)&&
-     /no healing or raw damage/.test(ai.summary),
+  ok(ai.cooldowns.join('/')==='9/14/13/28'&&ai.wheelWait.join('/')==='3.5/6',
+    'active cooldowns and the extra Water Wheel decision delay are nerfed', ai.cooldowns.join('/'));
+  ok(ai.chart.dmg===74&&ai.chart.dur===56&&ai.chart.mob===72&&ai.chart.as===70&&ai.chart.rng===18&&
+     ai.chart.cc===52&&ai.chart.uti===62&&ai.chart.con===68&&ai.chart.cmb===74&&
+     /three-hit Nichirin Sword Combo/.test(ai.summary)&&/occasional commitments/.test(ai.summary),
     'power chart and short profile describe the revised combat rhythm');
 
   ok(errors.length===0, 'no browser page errors', errors[0]);
