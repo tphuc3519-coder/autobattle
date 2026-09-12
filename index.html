@@ -1129,7 +1129,7 @@
 <div class="wrap">
   <header>
     <h1>MULTIVERSE <span>BATTLER</span></h1>
-    <div class="sub" data-i18n="tagline">Đấu trường đa vũ trụ · 9 đấu thủ · 6 màn</div>
+    <div class="sub" data-i18n="tagline">Đấu trường đa vũ trụ · 10 đấu thủ · 12 màn</div>
   </header>
 
   <div class="bar">
@@ -1313,7 +1313,7 @@
 <div class="arc off" id="arcTitle">
   <div>
     <div class="arcLogo">MULTIVERSE<b>BATTLER</b></div>
-    <div class="arcTag">9 fighters · 6 stages · auto battle</div>
+    <div class="arcTag">10 fighters · 12 stages · auto battle</div>
     <button id="arcStart" class="primary" type="button">PRESS START</button>
     <div style="margin-top:14px"><button type="button" data-lang-toggle title="Vietnamese / English">🌐 English</button></div>
     <div class="arcHint" data-i18n="arcHint">Chọn nhân vật, chọn màn rồi ngồi xem máy đánh với máy</div>
@@ -1375,7 +1375,7 @@
       <button class="mTab on" id="mTabDuel" data-ico="⚔" style="--mc:#4DE2FF" data-mode="duel" type="button"><b data-i18n="mDuel">Đấu tay đôi</b><i data-i18n="mDuelSub">1 vs 1</i></button>
       <button class="mTab" id="mTabFfa" data-ico="🔥" style="--mc:#FF7A4F" data-mode="ffa" type="button"><b data-i18n="mFfa">Hỗn chiến</b><i data-i18n="mFfaSub">3–6 người · last man standing</i></button>
       <button class="mTab" id="mTabTeam" data-ico="🛡" style="--mc:#6BE39A" data-mode="team" type="button"><b data-i18n="mTeam">Đánh theo đội</b><i data-i18n="mTeamSub">2–4 đội · tối đa 8 người</i></button>
-      <button class="mTab" id="mTabLeague" data-ico="🏆" style="--mc:#FFC542" data-mode="league" type="button"><b data-i18n="mLeague">Giải vòng tròn</b><i data-i18n="mLeagueSub">3–8 người · tính điểm</i></button>
+      <button class="mTab" id="mTabLeague" data-ico="🏆" style="--mc:#FFC542" data-mode="league" type="button"><b data-i18n="mLeague">Giải vòng tròn</b><i data-i18n="mLeagueSub">3–10 người · tính điểm</i></button>
       <button class="mTab" id="mTabCup" data-ico="🥇" style="--mc:#FF4FA3" data-mode="cup" type="button"><b data-i18n="mCup">Giải loại trực tiếp</b><i data-i18n="mCupSub">4 hoặc 8 người · bracket</i></button>
     </div>
     <div class="cselSub" id="cselCount">Chọn một nhân vật cho mỗi bên</div>
@@ -1466,13 +1466,13 @@ let vsOn=false, vsTimer=0;
 const keys={};
 
 /* ---------- sprite slots ---------- */
-const SPR={stages:{},kono:{},chichi:{},tsubasa:{},shika:{},suzune:{},ginyu:{},dora:{},superman:{},beatrice:{},ayanokouji:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
-const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',suzune:'#7FC8FF',ginyu:'#A05CFF',dora:'#2B9BE8',superman:'#2E5BD8',beatrice:'#C77DFF'};
+const SPR={stages:{},kono:{},chichi:{},tsubasa:{},shika:{},suzune:{},ginyu:{},dora:{},superman:{},beatrice:{},tanjiro:{},ayanokouji:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
+const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',suzune:'#7FC8FF',ginyu:'#A05CFF',dora:'#2B9BE8',superman:'#2E5BD8',beatrice:'#C77DFF',tanjiro:'#39B87F'};
 /* Superman đứng riêng ở 800 máu — cả bộ chiêu của anh cân theo đúng thanh máu đó. */
 /* Máu chuẩn của cả bảng. Người chơi chỉnh thoải mái ở màn chọn nhân vật (ô HP_MIN..HP_MAX),
    nút "Chuẩn" đưa mọi người về đúng con số này. */
 const HP_STD=800, HP_MIN=100, HP_MAX=9999;
-const HP={kono:800,chichi:800,tsubasa:800,shika:800,suzune:800,ginyu:800,dora:800,superman:800,beatrice:800};
+const HP={kono:800,chichi:800,tsubasa:800,shika:800,suzune:800,ginyu:800,dora:800,superman:800,beatrice:800,tanjiro:HP_STD};
 const CAST={mul:1.8};
 const cm=v=>v*CAST.mul;
 /* ---------- ngôn ngữ ----------
@@ -1493,7 +1493,7 @@ const cm=v=>v*CAST.mul;
 let LANG='en';
 const L={
   vi:{
-    tagline:'Đấu trường đa vũ trụ · 9 đấu thủ · 6 màn',
+    tagline:'Đấu trường đa vũ trụ · 10 đấu thủ · 12 màn',
     pick:'⚔ Chọn nhân vật', play:'Bắt đầu', pause:'Tạm dừng', resume:'Tiếp tục', reset:'Đánh lại',
     mAuto:'Máy vs Máy', mP1:'Điều khiển bên trái', mP2:'Điều khiển bên phải',
     spSlow:'Chậm 0.7x', spNormal:'Gốc 1x', spFast:'Nhanh 1.5x', spFaster:'Nhanh 2x',
@@ -1519,7 +1519,7 @@ const L={
     subTeamStep:'Chọn {lo}–{hi} người cho đội {n} · {cur}/{max} người trên sàn',
     rosterHint:'Bấm vào ô bên dưới để thêm người (tối thiểu {lo})',
     rmTeam:'✕ Bỏ đội', addTeam:'+ Thêm đội', rmFighter:'Bỏ ra khỏi đội hình',
-    mLeague:'Giải vòng tròn', mLeagueSub:'3–8 người · tính điểm',
+    mLeague:'Giải vòng tròn', mLeagueSub:'3–10 người · tính điểm',
     mCup:'Giải loại trực tiếp', mCupSub:'4 hoặc 8 người · bracket',
     cselLeague:'CHỌN <span>DÀN ĐẤU THỦ</span>', cselCup:'XẾP <span>NHÁNH ĐẤU</span>',
     subLeague:'Giải vòng tròn — chọn {lo}–{hi} người, ai cũng gặp ai đúng một lượt',
@@ -1563,7 +1563,7 @@ const L={
     musicNone:'Chưa có file nhạc nền nào nên đang dùng nhạc tự tạo. Muốn nhạc của bạn thì nạp file vào ô nhạc ở trang xưởng rồi xuất gói.'
   },
   en:{
-    tagline:'Cross-universe arena · 9 fighters · 6 stages',
+    tagline:'Cross-universe arena · 10 fighters · 12 stages',
     pick:'⚔ Select fighter', play:'Start', pause:'Pause', resume:'Resume', reset:'Rematch',
     mAuto:'CPU vs CPU', mP1:'Control left side', mP2:'Control right side',
     spSlow:'Slow 0.7x', spNormal:'Normal 1x', spFast:'Fast 1.5x', spFaster:'Fast 2x',
@@ -1589,7 +1589,7 @@ const L={
     subTeamStep:'Pick {lo}–{hi} fighters for team {n} · {cur}/{max} on the field',
     rosterHint:'Tap a fighter below to add ({lo} minimum)',
     rmTeam:'✕ Remove team', addTeam:'+ Add team', rmFighter:'Remove from line-up',
-    mLeague:'League', mLeagueSub:'3–8 fighters · points table',
+    mLeague:'League', mLeagueSub:'3–10 fighters · points table',
     mCup:'Tournament', mCupSub:'4 or 8 fighters · bracket',
     cselLeague:'PICK THE <span>LEAGUE</span>', cselCup:'SEED THE <span>BRACKET</span>',
     subLeague:'League — pick {lo}–{hi} fighters, everyone plays everyone once',
@@ -1703,6 +1703,7 @@ const SETS=[
   {key:'dora', name:'Doraemon', poses:[['idle','Thủ thế'],['punch','Đấm (bàn tay tròn)'],['kick','Đá'],['slam','Lao bụng / húc đầu (đòn 3)'],['aircannon','Air Cannon'],['smalllight','Small Light'],['copter','Take-copter (bay)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Ngồi ăn dorayaki (thắng)'],['down','Ngã ngồi, choáng váng (thua)']]},
   {key:'superman', name:'Superman', poses:[['idle','Thủ thế'],['fly','Bay (Kryptonian Flight)'],['land','Tiếp đất bằng một chân'],['punch','Đấm tay phải (đòn 1)'],['punch2','Xoay người đấm tay trái (đòn 2)'],['upper','Uppercut (đòn 3)'],['heat','Heat Vision'],['freeze','Freeze Breath'],['meteor','Meteor Strike (lao xuống)'],['down','Ngã sau khi Meteor Strike trượt'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Ăn mừng (chống hông, bay lên)'],['ko','Gục xuống']]},
   {key:'beatrice', name:'Beatrice', poses:[['idle','Thủ thế (khoanh tay)'],['minya','Minya (bắn tinh thể)'],['shamac','Al Shamac (giơ tay)'],['murak','Murak (bay lên, vòng phép)'],['emt','E.M.T (kén kết giới)'],['elminya','El Minya (mở sách, vòng phép)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Ăn mừng (đóng sách, khoanh tay)'],['down','Gục xuống (quỳ rồi ngã)']]},
+  {key:'tanjiro', name:'Tanjiro Kamado', poses:[['idle','Thủ thế với Nichirin Sword'],['run','Chạy vào sân'],['draw','Rút Nichirin Sword'],['ready','Hạ thấp trọng tâm'],['slash1','First Slash'],['slash2','Second Slash'],['surface','Water Surface Slash'],['wheel','Water Wheel'],['flux','Constant Flux'],['sun','Dragon Sun Halo Head Dance'],['mark','Demon Slayer Mark'],['ultimate','Sun Breathing: Thirteenth Form'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Tra kiếm và cúi đầu'],['down','Quỳ rồi ngã xuống']]},
   {key:'ayanokouji', name:'Ayanokouji', poses:[['idle','Đứng'],['guard','Đỡ đòn thay Horikita'],['strike','Đòn đột kích'],['leave','Rời sàn đấu']]},
   {key:'nara', name:'Con nai nhà Nara', poses:[['idle','Đứng cạnh Shikamaru trong lãnh địa']]},
   {key:'garden', name:'Phong cảnh lãnh địa', poses:[['idle','Ảnh nền khu rừng nhà Nara']]},
@@ -2191,6 +2192,26 @@ const BEA={
   /* AI: giữ mục tiêu trong tầm nhưng không xáp vào cự ly cận chiến. */
   want:BEA_R*4.2
 };
+
+/* ---------- Tanjiro Kamado ----------
+   All player-facing names and status text for this fighter stay in English. Durations are
+   authored in player seconds and converted through gs(), like the newer fighters. HP is
+   deliberately absent here: mkChar() reads HP.tanjiro, whose default is HP_STD. */
+const TAN={
+  entranceT:gs(1.5), entrancePh:[gs(.5),gs(1),gs(1.5)],
+  basic:[24,24,38], basicGap:gs(.8), surfaceStun:gs(.4), surfaceKb:72,
+  threadCd:gs(8), threadT:gs(3), threadBonus:15, threadPierce:.20, threadDodgeMul:.20,
+  wheelDmg:75, wheelCd:gs(6.5), wheelTravel:gs(.72), wheelAir:gs(.7), wheelRecover:gs(.5), wheelSpd:520,
+  fluxHit:[18,22,26,30,34], fluxCd:gs(11), fluxGap:gs(.24), fluxStun:gs(.9), fluxKb:170,
+  sunHit:[35,35,35], sunCd:gs(10), sunGap:gs(.32), sunStun:gs(.7), sunKb:170, sunSpd:560,
+  markHp:.40, markT:gs(.8), markMove:1.25, markAtk:1.20, markCast:1.20,
+  markCcRes:.25, markKbRes:.20,
+  ultDmg:[17,17,17,17,17,17,17,17,17,17,17,23],
+  ultCd:gs(24), ultFocus:gs(.6), ultT:gs(3.5), ultRange:112, ultChase:610,
+  ultTake:.50, ultCcRes:.70, ultDown:gs(1.2),
+  redT:gs(6), suppressT:gs(5), suppressHeal:.60,
+  engageFar:150
+};
 const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
@@ -2492,6 +2513,48 @@ const CHARS={
               txt:w<=0?'El Minya ready':`El Minya: ${(w*RT).toFixed(1)}s`};
     }
   }
+  ,tanjiro:{
+    name:'Tanjiro Kamado', short:'Tanjiro', tag:'Swordsman · Melee – Pursuit – Finisher', emoji:'⚔️', color:'#39B87F', alt:'#E05A45',
+    role:'melee', speed:112, dodge:.82, male:true, spriteH:124,
+    skills:[
+      `<b>Entrance</b> Runs into the arena, draws his <b>Black Nichirin Sword</b>, then lowers into a fighting stance. Exactly ${rts(TAN.entranceT)}s; every opponent waits until it ends.`,
+      `<b>Passive · Opening Thread</b> Every ${rts(TAN.threadCd)}s the nearest enemy is marked for ${rts(TAN.threadT)}s. Tanjiro's next sword hit gains greatly increased accuracy, deals +${TAN.threadBonus} damage and ignores ${Math.round(TAN.threadPierce*100)}% of damage reduction. It is consumed once, even by a multi-hit skill, and never pierces invulnerability or a full barrier.`,
+      `<b>Basic · Nichirin Sword Combo</b> One strike every ${rts(TAN.basicGap)}s: ${TAN.basic[0]} / ${TAN.basic[1]} / <b>Water Breathing, First Form: Water Surface Slash</b> ${TAN.basic[2]} = ${TAN.basic.reduce((a,b)=>a+b,0)} damage. The third hit briefly knocks back and applies ${rts(TAN.surfaceStun)}s hit stun.`,
+      `<b>1 · Water Breathing, Second Form: Water Wheel</b> ${TAN.wheelDmg} damage · ${rts(TAN.wheelCd)}s cooldown. A straight-line jumping slash that lightly launches for ${rts(TAN.wheelAir)}s. It can miss; a miss leaves ${rts(TAN.wheelRecover)}s recovery. No teleport.`,
+      `<b>2 · Water Breathing, Tenth Form: Constant Flux</b> ${TAN.fluxHit.join(' / ')} = ${TAN.fluxHit.reduce((a,b)=>a+b,0)} damage · ${rts(TAN.fluxCd)}s cooldown. Five accelerating sword rotations; the final water-dragon-shaped trail knocks back and stuns for ${rts(TAN.fluxStun)}s. Interrupted casts only deal hits that already landed.`,
+      `<b>3 · Hinokami Kagura: Dragon Sun Halo Head Dance</b> ${TAN.sunHit.length} × ${TAN.sunHit[0]} = ${TAN.sunHit.reduce((a,b)=>a+b,0)} damage · ${rts(TAN.sunCd)}s cooldown. Three rapid angles around the nearest enemy; a passing hit may switch to another nearby fighter, but each hit damages exactly one target. No burn and no fire left on the arena.`,
+      `<b>Awakening · Demon Slayer Mark</b> The first time current HP falls below ${Math.round(TAN.markHp*100)}% of <b>Maximum HP</b>: ${rts(TAN.markT)}s awakening, +${Math.round((TAN.markMove-1)*100)}% move speed, +${Math.round((TAN.markAtk-1)*100)}% attack speed, +${Math.round((TAN.markCast-1)*100)}% cast speed, +${Math.round(TAN.markCcRes*100)}% status resistance and +${Math.round(TAN.markKbRes*100)}% knockback resistance. No damage bonus and no healing.`,
+      `<b>Ultimate · Sun Breathing: Thirteenth Form</b> <b>Locked – Awaken Demon Slayer Mark</b>. Once unlocked, auto-casts on the nearest valid enemy for up to ${TAN.ultDmg.reduce((a,b)=>a+b,0)} damage over about ${rts(TAN.ultT)}s. Tanjiro takes ${Math.round((1-TAN.ultTake)*100)}% less damage and gains ${Math.round(TAN.ultCcRes*100)}% status resistance, but is never invulnerable and never teleports. The final hit knocks down for ${rts(TAN.ultDown)}s.`,
+      `<b>Bright Red Nichirin Blade</b> After the Ultimate, the blade stays red for ${rts(TAN.redT)}s. Sword hits apply <b>Regeneration Suppression</b>: −${Math.round(TAN.suppressHeal*100)}% HP recovery for ${rts(TAN.suppressT)}s, refreshed but never stacked; no bonus damage.`
+    ],
+    init(f){
+      f.cds={s1:TAN.wheelCd*.35,s2:TAN.fluxCd*.55,s3:TAN.sunCd*.45,s4:0,basic:0};
+      f.tanEntry=null; f.tanHide=false; f.tanAct=null; f.tanCombo=0;
+      f.tanThreadCd=TAN.threadCd; f.tanMarked=false; f.tanMarkStarted=false; f.tanMarkAnim=0;
+      f.tanUlt=false; f.tanRed=0; f.tanTrails=[];
+      tanjiroEnter(f);
+    },
+    think(f,e,d,auto){
+      if(f.tanEntry||f.tanAct||f.tanMarkAnim>0)return;
+      e=tanTarget(f); if(!e)return; d=dist(f,e);
+      const use=(key)=>auto||keys[key];
+      /* Distance closer first; after that the unlocked Ultimate has highest priority,
+         followed by Dragon Sun Halo, Constant Flux, Water Wheel, then the basic combo. */
+      if(d>TAN.engageFar&&f.cds.s1<=0&&use('j')){ f.cds.s1=TAN.wheelCd; tanWaterWheel(f,e); return; }
+      if(f.tanMarked&&f.cds.s4<=0&&use('u')){ f.cds.s4=TAN.ultCd; tanUltimate(f,e); return; }
+      if(f.cds.s3<=0&&use('l')){ f.cds.s3=TAN.sunCd; tanSunDance(f,e); return; }
+      if(f.cds.s2<=0&&use('k')){ f.cds.s2=TAN.fluxCd; tanConstantFlux(f,e); return; }
+      if(f.cds.s1<=0&&use('j')){ f.cds.s1=TAN.wheelCd; tanWaterWheel(f,e); return; }
+      if(f.cds.basic<=0&&d<f.r+e.r+meleeReach(f)&&(auto||keys['j'])) tanBasic(f,e);
+    },
+    gauge:f=>{
+      if(f.tanMarkAnim>0) return {pct:clamp(1-f.tanMarkAnim/TAN.markT,0,1),fill:'#FF8A3D',txt:'Demon Slayer Mark'};
+      if(!f.tanMarked) return {pct:clamp(1-f.hp/(f.maxHp*TAN.markHp),0,1),fill:'#39B87F',txt:'Locked – Awaken Demon Slayer Mark'};
+      if(f.tanRed>0) return {pct:clamp(f.tanRed/TAN.redT,0,1),fill:'#FF4D3D',txt:`Bright Red Nichirin Blade ${(f.tanRed*RT).toFixed(1)}s`};
+      const w=Math.max(0,f.cds.s4||0);
+      return {pct:clamp(1-w/TAN.ultCd,0,1),fill:'#FF8A3D',txt:w<=0?'Sun Breathing: Thirteenth Form ready':`Thirteenth Form: ${(w*RT).toFixed(1)}s`};
+    }
+  }
 };
 const CKEYS=Object.keys(CHARS);
 
@@ -2742,6 +2805,21 @@ const DEX={
       {tag:'U',name:'El Minya',
        vi:`Mỗi ${rts(BEA.ultCd)}s: ba mũi tinh thể bắn lần lượt, ${BEA.ultDmg} dmg mỗi mũi (${BEA.ultN*BEA.ultDmg} nếu trúng đủ). Mỗi mũi trúng gây Minya Slow −${Math.round((1-BEA.slowMul)*100)}% tốc chạy và một stack Mana Erosion ${BEA.eroDps/RT} HP/s.`,
        en:`Every ${rts(BEA.ultCd)}s, ${BEA.ultN} crystal bolts one after another for ${BEA.ultDmg} each (${BEA.ultN*BEA.ultDmg} if they all land). Every hit adds Minya Slow, −${Math.round((1-BEA.slowMul)*100)}% move speed, and one stack of Mana Erosion at ${BEA.eroDps/RT} HP/s.`}
+    ]},
+  tanjiro:{ role:{vi:'Swordsman · Melee – Pursuit – Finisher',en:'Swordsman · Melee – Pursuit – Finisher'},
+    st:{pow:4,spd:5,rng:1,def:3},
+    pw:{dmg:82,dur:62,mob:91,as:86,rng:20,cc:66,uti:58,con:78,cmb:96},
+    bio:{vi:'A fast melee swordsman wielding a Black Nichirin Sword. He uses Water Breathing to pursue and chain attacks; at low HP, the Demon Slayer Mark unlocks his finisher.',
+         en:'A fast melee swordsman wielding a Black Nichirin Sword. He uses Water Breathing to pursue and chain attacks; at low HP, the Demon Slayer Mark unlocks his finisher.'},
+    skills:[
+      {tag:'P',name:'Opening Thread',vi:`Every ${rts(TAN.threadCd)}s, marks the nearest enemy for ${rts(TAN.threadT)}s. The next sword hit gains accuracy, +${TAN.threadBonus} damage and partial damage-reduction bypass.`,en:`Every ${rts(TAN.threadCd)}s, marks the nearest enemy for ${rts(TAN.threadT)}s. The next sword hit gains accuracy, +${TAN.threadBonus} damage and partial damage-reduction bypass.`},
+      {tag:'1',name:'Nichirin Sword Combo',vi:`Three strikes for ${TAN.basic.join(' / ')} damage; Water Surface Slash finishes with short knockback and hit stun.`,en:`Three strikes for ${TAN.basic.join(' / ')} damage; Water Surface Slash finishes with short knockback and hit stun.`},
+      {tag:'2',name:'Water Wheel',vi:`A straight-line jumping slash for ${TAN.wheelDmg} damage and ${rts(TAN.wheelAir)}s airborne. A miss has ${rts(TAN.wheelRecover)}s recovery.`,en:`A straight-line jumping slash for ${TAN.wheelDmg} damage and ${rts(TAN.wheelAir)}s airborne. A miss has ${rts(TAN.wheelRecover)}s recovery.`},
+      {tag:'3',name:'Constant Flux',vi:`Five accelerating hits for ${TAN.fluxHit.reduce((a,b)=>a+b,0)} total damage; the final water-dragon trail knocks back and stuns.`,en:`Five accelerating hits for ${TAN.fluxHit.reduce((a,b)=>a+b,0)} total damage; the final water-dragon trail knocks back and stuns.`},
+      {tag:'3',name:'Dragon Sun Halo Head Dance',vi:`Three directional sword hits for ${TAN.sunHit.reduce((a,b)=>a+b,0)} total damage. The red-orange dragon exists only along the sword path; no burn.`,en:`Three directional sword hits for ${TAN.sunHit.reduce((a,b)=>a+b,0)} total damage. The red-orange dragon exists only along the sword path; no burn.`},
+      {tag:'P',name:'Demon Slayer Mark',vi:`Below ${Math.round(TAN.markHp*100)}% Maximum HP, permanently gains move, attack, cast, status and knockback resistance bonuses. Unlocks the Ultimate; grants no healing or direct damage.`,en:`Below ${Math.round(TAN.markHp*100)}% Maximum HP, permanently gains move, attack, cast, status and knockback resistance bonuses. Unlocks the Ultimate; grants no healing or direct damage.`},
+      {tag:'U',name:'Sun Breathing: Thirteenth Form',vi:`After Transparent World focus, links twelve forms for up to ${TAN.ultDmg.reduce((a,b)=>a+b,0)} damage. Finishes with Flame Dance and ${rts(TAN.ultDown)}s knockdown.`,en:`After Transparent World focus, links twelve forms for up to ${TAN.ultDmg.reduce((a,b)=>a+b,0)} damage. Finishes with Flame Dance and ${rts(TAN.ultDown)}s knockdown.`},
+      {tag:'P',name:'Bright Red Nichirin Blade',vi:`For ${rts(TAN.redT)}s after the Ultimate, sword hits apply Regeneration Suppression: −${Math.round(TAN.suppressHeal*100)}% HP recovery for ${rts(TAN.suppressT)}s, no stacking and no extra damage.`,en:`For ${rts(TAN.redT)}s after the Ultimate, sword hits apply Regeneration Suppression: −${Math.round(TAN.suppressHeal*100)}% HP recovery for ${rts(TAN.suppressT)}s, no stacking and no extra damage.`}
     ]}
 };
 
@@ -4619,6 +4697,11 @@ function mk(o){
     beaSlow:0, beaWeak:0, beaWarp:null, beaRipple:0, beaLog:null,
     beaEntry:null, beaHide:false, beaShamac:null, beaUlt:null,
     beaMurak:0, beaEmt:0, beaLift:0,
+    /* Tanjiro: Opening Thread and Regeneration Suppression can live on any target, so
+       their neutral state belongs in the shared fighter record. */
+    openingThreads:[], regenSupp:0,
+    tanEntry:null, tanHide:false, tanAct:null, tanCombo:0, tanThreadCd:0,
+    tanMarked:false, tanMarkStarted:false, tanMarkAnim:0, tanUlt:false, tanRed:0, tanTrails:null,
     hist:[], histT:0, startX:0, startY:0,
     bind:null, bindGuard:false, bindPending:false, lazyTalk:0, wakeT:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
@@ -4794,9 +4877,13 @@ function newGame(){
   G.k=G.fighters[0];
   G.c=G.fighters.find(f=>f.team!==G.k.team)||G.fighters[1]||G.fighters[0];
   if(typeof resetSfxPos==='function') resetSfxPos();
-  if(PMODE==='team')      say(`Trận đấu theo đội sẵn sàng. ${teamLabel(0)} vs ${teamLabel(1)}.`,'g');
-  else if(PMODE==='ffa')  say(`Hỗn chiến ${G.fighters.length} người sẵn sàng — ai còn đứng cuối cùng thì thắng.`,'g');
-  else                    say(`Trận đấu sẵn sàng. ${G.k.name} vs ${G.c.name}.`,'g');
+  const tanMatch=G.fighters.some(f=>f.key==='tanjiro'&&!f.summon);
+  if(tanMatch&&PMODE==='team')     say(`Team battle ready. ${teamLabel(0)} vs ${teamLabel(1)}.`,'g');
+  else if(tanMatch&&PMODE==='ffa') say(`Free-for-all ready — ${G.fighters.length} fighters, last one standing wins.`,'g');
+  else if(tanMatch)                say(`Battle ready. ${G.k.name} vs ${G.c.name}.`,'g');
+  else if(PMODE==='team')          say(`Trận đấu theo đội sẵn sàng. ${teamLabel(0)} vs ${teamLabel(1)}.`,'g');
+  else if(PMODE==='ffa')           say(`Hỗn chiến ${G.fighters.length} người sẵn sàng — ai còn đứng cuối cùng thì thắng.`,'g');
+  else                             say(`Trận đấu sẵn sàng. ${G.k.name} vs ${G.c.name}.`,'g');
   // ô màu / ô máu / nhãn chế độ điều khiển đọc theo đội hình vừa dựng
   applyColors(); applyHp();
   paintLog(); draw();
@@ -4839,6 +4926,8 @@ function stunFx(f,dur,kind){
   if(f.ccRes>0) dur*=(1-f.ccRes);                // Horikita form 3: kháng hiệu ứng, choáng ngắn lại
   if(f.gnCcRes>0) dur*=(1-f.gnCcRes);            // Ginyu đang ở thế thăm dò: kháng hiệu ứng
   if(f.drCcRes>0) dur*=(1-f.drCcRes);            // Doraemon đang mang Future Knowledge
+  if(f.key==='tanjiro'&&!f.swapAs&&f.tanMarked)
+    dur*=1-(f.tanUlt?TAN.ultCcRes:TAN.markCcRes); // Demon Slayer Mark / Ultimate resistance
   /* Man of Steel: choáng do va chạm vật lý ngắn lại 15%. Đây chỉ là rút ngắn, không
      bao giờ là miễn nhiễm — băng của Freeze Breath (kind 'ice') thì không dính luật này. */
   if(f.key==='superman'&&!f.swapAs&&kind!=='ice') dur*=(1-SUP.steelStun);
@@ -4874,11 +4963,11 @@ function aim(f,e,power){
    nó ăn y hệt 'big' — né được nhưng KHÔNG cộng dồn tỉ lệ; chỗ khác nhau duy nhất là cửa
    thần kỳ của Doraemon né nó khó hơn hẳn. */
 const isUlt=kind=>kind==='ult';
-function tryEvade(t,kind){
+function tryEvade(t,kind,accuracyMul){
   if(!(t.evade>0)||kind==='dot'||kind==='domain')return false;
   // Đang choáng thì đứng như trời trồng: không lách được cú nào. Vẫn cộng dồn tỉ lệ
   // ở dưới, vì đó vẫn là một đòn thường ăn vào người.
-  if(t.stun<=0&&chance(t.evade)){
+  if(t.stun<=0&&chance(t.evade*(accuracyMul===undefined?1:accuracyMul))){
     G.floats.push({x:t.x,y:t.y-88,txt:'DODGE',color:'#CFC6FF',life:.9,ml:.9,banner:true,sc:.62});
     return true;
   }
@@ -4893,7 +4982,19 @@ function tryEvade(t,kind){
    nấp trong màn ra mắt (Anywhere Door / bóng người trên cao), đang trong phân cảnh Time
    Machine, hay đang mang lớp miễn thương. hurt() có sẵn từng lớp chặn này; gom lại một
    hàm để mấy chỗ KHÔNG đi qua hurt() — như tia CHANGE của Ginyu — dùng chung, khỏi lệch. */
-const offField=f=>!!f&&(f.edT>0||f.drHide||f.supHide||f.beaHide||!!f.tm||!!f.gnChange||f.invuln>0||f.leaving>0);
+const offField=f=>!!f&&(f.edT>0||f.drHide||f.supHide||f.beaHide||f.tanHide||!!f.tm||!!f.gnChange||f.invuln>0||f.leaving>0);
+const tanOpeningReady=(t,src,kind)=>!!(t&&src&&src.key==='tanjiro'&&!src.summon&&!src.swapAs&&kind!=='dot'&&
+  t.openingThreads&&t.openingThreads.some(x=>x&&x.owner===src&&x.t>0));
+const tanDefMul=(mul,pierce)=>pierce&&mul<1?1-(1-mul)*(1-TAN.threadPierce):mul;
+function tanOpeningConsume(t,src){
+  if(!tanOpeningReady(t,src))return false;
+  const i=t.openingThreads.findIndex(x=>x&&x.owner===src&&x.t>0);
+  if(i>=0)t.openingThreads.splice(i,1);
+  G.floats.push({x:t.x,y:t.y-116,txt:'OPENING THREAD',color:'#FFFFFF',life:1.1,ml:1.1,banner:true,gold:true,sc:.62});
+  ring(t.x,t.y,82,'#FFFFFF',.32);
+  return true;
+}
+const regenFactor=f=>(f&&f.regenSupp>0)?(1-TAN.suppressHeal):1;
 function hurt(t,amt,src,crit,kind,tint,raw){
   if(!t.alive||G.over)return false;
   if(t.leaving>0)return false;              // Ayanokouji đang rời sàn: không ăn đòn nữa
@@ -4917,7 +5018,8 @@ function hurt(t,amt,src,crit,kind,tint,raw){
     G.floats.push({x:t.x,y:t.y-88,txt:'MISS',color:'#C9A0FF',life:.9,ml:.9,banner:true,sc:.6});
     return false;
   }
-  if(tryEvade(t,kind))return false;
+  const opening=tanOpeningReady(t,src,kind);
+  if(tryEvade(t,kind,opening?TAN.threadDodgeMul:1))return false;
   if(src&&!raw&&src.dmgOut!==undefined&&src.dmgOut!==1) amt*=src.dmgOut;
   if(src&&src.outCut>0) amt*=(1-src.outCut);   // đứng trong lãnh địa thì đánh yếu hẳn
   /* E.M.T — kén kết giới của Beatrice chặn 100% sát thương và phản lại 20% chỗ vừa chặn.
@@ -4926,25 +5028,30 @@ function hurt(t,amt,src,crit,kind,tint,raw){
      giảm sát thương của chính cô — đúng câu người dùng chốt. Đòn vẫn tính là ĐÃ TRÚNG kết
      giới, chỉ là lượng nhận vào bằng 0. */
   if(t.beaEmt>0&&beaEmtBlock(t,amt,src,kind)) return false;
+  /* Opening Thread is consumed only after every full block/invulnerability gate has
+     passed. Its +15 belongs to one landed sword hit only, even inside a multi-hit move. */
+  const pierced=opening&&tanOpeningConsume(t,src);
+  if(pierced) amt+=TAN.threadBonus;
   /* Sổ ai vừa đánh cô — Beatrice dùng nó để phá thế hoà khi hai địch đứng cách đều nhau. */
   if(t.key==='beatrice'&&!t.summon&&src&&src.team!==t.team){
     if(!t.beaLog) t.beaLog=[];
     t.beaLog.push({t:G.t,src});
   }
   if(t.vuln>0) amt*=1.5;                    // dính Twin Shot: nhận thêm 50% sát thương
-  if(t.eagle) amt*=.3;                      // Wings of the Eagle: miễn 70% sát thương
-  else if(t.prewing) amt*=PREWING_RES;      // Pre-Wings: miễn 35% sát thương
+  if(t.eagle) amt*=tanDefMul(.3,pierced);                      // Wings of the Eagle: miễn 70% sát thương
+  else if(t.prewing) amt*=tanDefMul(PREWING_RES,pierced);      // Pre-Wings: miễn 35% sát thương
   /* Man of Steel: da thép chắn đòn vật lý và đạn năng lượng, nhưng KHÔNG chắn được
      sát thương duy trì (burn / poison / true damage) lẫn sát thương của lãnh địa —
      hai loại đó đi đường kind 'dot' và 'domain'. supResist() đã gộp cả buff giảm
      sát thương khác vào rồi mới chặn ở trần 60%, nên đừng nhân t.dmgRes thêm lần nữa. */
   if(t.key==='superman'&&!t.swapAs){
-    if(kind!=='dot'&&kind!=='domain') amt*=supResist(t);
+    if(kind!=='dot'&&kind!=='domain') amt*=tanDefMul(supResist(t),pierced);
   }
-  else if(t.dmgRes>0) amt*=(1-t.dmgRes);    // Horikita form 3: miễn thương cộng dồn theo mốc điểm lớp
+  else if(t.dmgRes>0) amt*=tanDefMul(1-t.dmgRes,pierced);    // Horikita form 3: miễn thương cộng dồn theo mốc điểm lớp
   // Ginyu: hưng phấn thì ăn thêm 50% sát thương (xuyên qua phòng thủ), thăm dò thì chỉ ăn 40%
-  if(t.dmgTake!==undefined&&t.dmgTake!==1) amt*=t.dmgTake;
-  if(t.dash&&t.dash.guard) amt*=CHICHI_DASH_RES;   // đang lao tới: nhận ít sát thương hơn
+  if(t.dmgTake!==undefined&&t.dmgTake!==1) amt*=tanDefMul(t.dmgTake,pierced);
+  if(t.dash&&t.dash.guard) amt*=tanDefMul(CHICHI_DASH_RES,pierced);   // đang lao tới: nhận ít sát thương hơn
+  if(t.key==='tanjiro'&&t.tanUlt) amt*=tanDefMul(TAN.ultTake,pierced);
   /* Sổ sát thương gây ra — Small Light chọn mục tiêu theo nó, và giải đấu lấy nó làm
      hiệu số. Hai luật:
        · VIỆN BINH ghi công cho CHỦ (`src.master`). Goku / Gohan / Ayanokouji là người
@@ -5008,6 +5115,11 @@ function counters(src,tgt){
   if(src&&src.key==='dora'&&!src.summon) src.drNoHit=0;
   // Mini Rasengan chỉ mở khi bị dí sát mà KHÔNG gây được sát thương: chạm được ai là reset
   if(src&&src.key==='kono'&&!src.summon) src.miniPress=0;
+  if(src&&src.key==='tanjiro'&&!src.summon&&!src.swapAs&&src.tanRed>0&&tgt&&tgt.alive){
+    tgt.regenSupp=Math.max(tgt.regenSupp||0,TAN.suppressT);
+    G.floats.push({x:tgt.x,y:tgt.y-104,txt:'REGENERATION SUPPRESSION',color:'#FF6B4A',
+      life:1.05,ml:1.05,banner:true,sc:.52});
+  }
   for(const f of [src,tgt]){
     if(!f||f.summon)continue;
     if(f.key==='kono'&&f.rage<20){ f.rage++; if(f.rage===20) say('Nộ khí đầy — RASENGAN sẵn sàng!','g'); }
@@ -5047,7 +5159,13 @@ function koFx(loser){
       r:4,life:1.4,ml:1.4});
     sfx('bea_down');
   }
-  G.kos.push({f:loser,t:0,puff:0,sup:loser.key==='superman'&&!loser.swapAs});
+  if(loser.key==='tanjiro'&&!loser.swapAs){
+    loser.pose='down'; loser.tanAct=null; loser.tanUlt=false; loser.tanRed=0;
+    loser.tanTrails=[];
+    sfx('ko');
+  }
+  G.kos.push({f:loser,t:0,puff:0,sup:loser.key==='superman'&&!loser.swapAs,
+              tan:loser.key==='tanjiro'&&!loser.swapAs});
   ring(loser.x,loser.y-10,140,loser.color,.5);
 }
 /* Một đấu thủ chính về 0 máu. Ở 1v1 thì trận xong ngay; ở hỗn chiến và đánh đội thì chỉ
@@ -5057,6 +5175,7 @@ function defeat(t,src){
   t.alive=false; t.hp=0;
   t.dash=null; t.lock=0; t.bind=null; t.domain=null;
   t.supCone=null; t.supHv=null; t.supFb=null; t.supMs=null; t.supCombo=null; t.drCone=null;
+  t.tanAct=null; t.tanUlt=false; t.tanTrails=[];
   if(t.beaShamac&&t.beaShamac.e) t.beaShamac.e.beaWarp=null;
   t.beaShamac=null; t.beaUlt=null; t.beaWarp=null;
   // ai đang nhắm vào người vừa gục thì bỏ nhắm, để lượt sau bốc lại đối thủ khác
@@ -5077,7 +5196,9 @@ function defeat(t,src){
     }
     sfx('ko');
     const left=aliveMains().length;
-    say(`${t.name} bị hạ gục — còn ${left} người trên sàn.`,'m');
+    say(t.key==='tanjiro'
+      ?`Tanjiro Kamado is defeated — ${left} fighter${left===1?'':'s'} remain.`
+      :`${t.name} bị hạ gục — còn ${left} người trên sàn.`,'m');
     return;
   }
   // chỉ còn một phe: chọn người thắng trong phe đó
@@ -5106,12 +5227,13 @@ function finish(w){
     // kết thúc, để lại là luồng hơi lạnh hay tia nhiệt treo cứng trên sàn
     f.supCone=null; f.supHv=null; f.supFb=null; f.supMs=null; f.supCombo=null;
     f.drCone=null;
+    f.tanAct=null; f.tanUlt=false; f.tanTrails=[];
   }
   G.proj.length=0; G.waves.length=0;
   G.floats.length=0; G.callBanner=null; G.freeze=0;
   G.timeWarp=null; setTheme('main');
   G.timers.length=0; G.fx.length=0;
-  sfx('ko'); say(G.over+' thắng!','g');
+  sfx('ko'); say(win&&win.key==='tanjiro'?'TANJIRO WINS!':G.over+' thắng!','g');
   /* Đang đánh một trận của giải thì ghi kết quả NGAY tại đây — G còn nguyên đội hình
      vừa đánh, ra khỏi hàm này là mấy con số sát thương không đọc lại được nữa. */
   if(compLive) compResult(win);
@@ -5818,7 +5940,8 @@ const canReflect=p=>PHYSICAL.has(p.type)&&!p.noReflect;
 function knock(f,vx,vy,power){
   if(!f||f.summon||f.eagle||(f.dash&&f.dash.guard))return;   // lúc này không bị hất văng
   const m=Math.hypot(vx,vy)||1;
-  const p=power*(f.kbTake||1)*supKbTake(f);  // đang bị Shrunk thì chịu thêm 40% lực đẩy
+  const tanRes=(f.key==='tanjiro'&&!f.swapAs&&f.tanMarked)?(1-TAN.markKbRes):1;
+  const p=power*(f.kbTake||1)*supKbTake(f)*tanRes;  // đang bị Shrunk thì chịu thêm 40% lực đẩy
   f.kbx=vx/m*p; f.kby=vy/m*p;
 }
 function addGoal(f){
@@ -5982,7 +6105,7 @@ function eagleAwaken(t){
     t.prewing=false;
     /* Hồi máu TRƯỚC khi chốt nhịp cháy: `eagleBurn` chia đều số máu còn lại vào
        EAGLE_BURN giây, nên hồi sau là quãng cháy vẫn tính theo máu cũ và anh chết non. */
-    const hoi=Math.min(t.maxHp-t.hp, t.maxHp*EAGLE_HEAL);
+    const hoi=Math.min(t.maxHp-t.hp, t.maxHp*EAGLE_HEAL*regenFactor(t));
     if(hoi>0){
       t.hp+=hoi;
       G.floats.push({x:t.x-34,y:t.y-52,txt:'+'+Math.round(hoi),color:'#7DEBAB',life:1.1,ml:1.1,sc:.62});
@@ -6333,7 +6456,7 @@ function suzApply(f){
 function suzHeal(f,pct,ofMax,mul){
   const k=(mul===undefined)?1:mul;
   if(k<=0)return;
-  const amt=Math.min(f.maxHp-f.hp, (ofMax?f.maxHp:f.hp)*pct*k);
+  const amt=Math.min(f.maxHp-f.hp, (ofMax?f.maxHp:f.hp)*pct*k*regenFactor(f));
   if(amt<=0)return;
   f.hp+=amt;
   G.floats.push({x:f.x-34,y:f.y-52,txt:'+'+Math.round(amt),color:'#7DEBAB',life:.95,ml:.95,sc:.62});
@@ -7267,6 +7390,7 @@ function gnSoulCds(key){
     case 'dora':     return {s1:0,s2:DORA.acCd,s3:DORA.slCd};
     case 'superman': return {s1:0,s2:SUP.hvCd,s3:SUP.fbCd,s4:SUP.msCd};
     case 'beatrice': return {s1:0,s2:BEA.shamacCd,s4:BEA.ultCd};
+    case 'tanjiro':  return {s1:0,s2:TAN.fluxCd,s3:TAN.sunCd};
     default:         return {s1:0};
   }
 }
@@ -7276,7 +7400,7 @@ const gnSoulDashCd=key=>key==='chichi'?CHICHI_DASH_CD:key==='shika'?SHIKA.stabCd
    2 / 3 trong CHARS[key].think, bỏ chiêu 1 và bỏ mấy chiêu ăn theo thanh tiến trình. */
 function gnSoulThink(f,e,d,auto){
   if(f.dash||f.bind||f.drAim||f.supHv||f.supFb||f.supMs||f.supMsDown>0||f.decT>0)return;
-  if(f.beaShamac||f.beaUlt)return;
+  if(f.beaShamac||f.beaUlt||f.tanAct)return;
   switch(f.gnSoul){
     case 'kono':
       if(f.cds.s2<=0&&(auto?d<420:keys['k'])){ f.cds.s2=cm(6.5); bunshin(f,e); return; }
@@ -7309,6 +7433,12 @@ function gnSoulThink(f,e,d,auto){
       if(f.cds.s4<=0&&d<SUP.msRange&&(auto||keys['u'])){ f.cds.s4=SUP.msCd; supermanMeteor(f,e); return; }
       if(f.cds.s3<=0&&d<SUP.fbRange*.9&&(auto||keys['l'])){ f.cds.s3=SUP.fbCd; supermanFreeze(f,e); return; }
       if(f.cds.s2<=0&&d<SUP.hvRange&&(auto||keys['k'])){ f.cds.s2=SUP.hvCd; supermanHeat(f,e); return; }
+      break;
+    case 'tanjiro':
+      /* The soul keeps Tanjiro's active forms, but not Opening Thread, the Mark or the
+         HP-threshold Ultimate. Those passives remain attached to his original body. */
+      if(f.cds.s3<=0&&(auto||keys['l'])){ f.cds.s3=TAN.sunCd; tanSunDance(f,e); return; }
+      if(f.cds.s2<=0&&(auto||keys['k'])){ f.cds.s2=TAN.fluxCd; tanConstantFlux(f,e); return; }
       break;
   }
   // đòn tay thì theo thân xác: đấm đá của Ginyu
@@ -7348,6 +7478,9 @@ function gnSoulTick(f,dt){
       supHvTick(f,dt);
       supFbTick(f,dt);
       break;
+    case 'tanjiro':
+      tanjiroTick(f,dt);
+      break;
   }
 }
 /* Đòn tay mượn của thân xác vừa cướp được: gọi thẳng chiêu 1 gốc của nhân vật đó, để
@@ -7365,6 +7498,7 @@ function gnBorrowBasic(f,e,d){
     /* Thân xác Superman: mượn đúng cú đấm đầu combo. Đừng gọi supCombo() — combo ba
        đòn chạy trong supermanTick(), mà hàm đó tắt hẳn khi swapAs đã bật. */
     case 'superman': if(d<reach){ f.cds.s1=SUP.hitCd; supBlow(f,e,0); } break;
+    case 'tanjiro':  if(d<reach){ f.cds.s1=TAN.basicGap; tanBasic(f,e); } break;
     default:        if(d<reach){ f.cds.s1=cm(GN.atkCd); ginyuStrike(f,e); } break;
   }
 }
@@ -7392,7 +7526,19 @@ const drCanTime=f=>!!f&&f.key==='dora'&&!f.summon&&!f.swapAs&&!f.tmDone&&!f.tm;
 /* beaStatus() chạy CUỐI: gnStatus GÁN ĐÈ mấy hệ số nên phải nằm sau nó, và Murak
    Protection thì phải có tiếng nói cuối cùng — miễn khống chế 100% nghĩa là gạt sạch mọi
    thứ làm chậm mà mấy hàm trên vừa nhân vào. */
-function statusTick(f,dt){ gnStatus(f,dt); summonStatus(f,dt); drStatus(f,dt); supStatus(f,dt); beaStatus(f,dt); }
+function statusTick(f,dt){ gnStatus(f,dt); summonStatus(f,dt); drStatus(f,dt); supStatus(f,dt); beaStatus(f,dt); tanStatus(f,dt); }
+function tanStatus(f,dt){
+  if(f.regenSupp>0) f.regenSupp=Math.max(0,f.regenSupp-dt);
+  if(f.openingThreads&&f.openingThreads.length){
+    for(const x of f.openingThreads) if(x)x.t-=dt;
+    f.openingThreads=f.openingThreads.filter(x=>x&&x.t>0&&x.owner&&x.owner.alive);
+  }
+  if(f.tanRed>0) f.tanRed=Math.max(0,f.tanRed-dt);
+  if(f.key==='tanjiro'&&!f.swapAs&&f.tanMarked){
+    f.moveMul*=TAN.markMove;
+    f.castMul*=TAN.markCast;
+  }
+}
 function drStatus(f,dt){
   for(const k of ['dis','shrunk','copter','fk','edSpeed']) if(f[k]>0) f[k]=Math.max(0,f[k]-dt);
   if(f.copCd>0) f.copCd=Math.max(0,f.copCd-dt);
@@ -7903,7 +8049,8 @@ function drTimeBack(f){
   }
   f.x=clamp(px,PAD,W-PAD); f.y=clamp(py,PAD+50,H-PAD-10);
   // hồi lại đúng lượng máu của lúc đó, nhưng không quá 20% máu tối đa
-  f.hp=Math.max(1,Math.min(ph,f.maxHp*DORA.tmHealCap));
+  const rewindHp=Math.max(1,Math.min(ph,f.maxHp*DORA.tmHealCap));
+  f.hp=Math.max(1,f.hp+Math.max(0,rewindHp-f.hp)*regenFactor(f));
   // xoá sạch debuff đang mang trên người anh — chỉ trên anh thôi
   f.stun=0; f.dis=0; f.shrunk=0; f.dots.length=0;
   f.gnDaze=0; f.gnRage=0; f.gnTired=0; f.gnSlow=0; f.gnSlowAfter=0;
@@ -8715,7 +8862,7 @@ function beaTarget(f){
 
 /* Có ai đó đang diễn màn ra mắt không (Ginyu bay vào, Anywhere Door, Superman đáp xuống,
    cửa Forbidden Library). Suốt mấy quãng đó cả sàn đứng chờ, không ai được làm gì. */
-const introOn=()=>!!G&&G.fighters.some(o=>o&&(o.gnEntry||o.drEntry||o.supEntry||o.beaEntry));
+const introOn=()=>!!G&&G.fighters.some(o=>o&&(o.gnEntry||o.drEntry||o.supEntry||o.beaEntry||o.tanEntry));
 
 /* ---- màn ra mắt: Forbidden Library ---- */
 function beatriceEnter(f){
@@ -9146,6 +9293,241 @@ function beaVec(f,e){
   return {x,y};
 }
 
+/* ---------- Tanjiro Kamado ---------- */
+function tanTarget(f){
+  let best=null,bd=Infinity;
+  for(const o of G.fighters){
+    if(!o||o===f||!o.alive||o.hp<=0||o.team===f.team||o.leaving>0||(o.summon&&!o.ally)||offField(o))continue;
+    const d=dist(f,o); if(d<bd){best=o;bd=d;}
+  }
+  return best;
+}
+function tanNearbyTarget(f,range,preferred){
+  if(preferred&&preferred.alive&&preferred.hp>0&&preferred.team!==f.team&&!offField(preferred)&&dist(f,preferred)<=range) return preferred;
+  let best=null,bd=Infinity;
+  for(const o of G.fighters){
+    if(!o||o===f||!o.alive||o.hp<=0||o.team===f.team||o.leaving>0||(o.summon&&!o.ally)||offField(o))continue;
+    const d=dist(f,o); if(d<=range&&d<bd){best=o;bd=d;}
+  }
+  return best;
+}
+function tanTrail(f,kind,target,big){
+  if(!f.tanTrails)f.tanTrails=[];
+  const a=target?Math.atan2(target.y-f.y,target.x-f.x):Math.atan2(f.ay||0,f.ax||f.face||1);
+  f.tanTrails.push({kind,x:f.x,y:f.y-26,a,life:big?.48:.30,ml:big?.48:.30,big:!!big});
+}
+function tanBanner(f,txt,color){
+  G.floats.push({x:f.x,y:f.y-120,txt,color:color||'#8FE9FF',life:1.25,ml:1.25,
+    banner:true,bubble:true,gold:true,big:true,sc:.72,tilt:rnd(-.04,.04)});
+}
+function tanjiroEnter(f){
+  const sy=f.team===0?-86:H+86;
+  f.startX=f.x; f.startY=f.y;
+  f.tanEntry={t:0,x0:f.x,y0:sy,x1:f.x,y1:f.y};
+  f.x=f.tanEntry.x0; f.y=f.tanEntry.y0; f.tanHide=false;
+  f.pose='run'; f.poseT=0;
+}
+function tanMarkOpening(f){
+  const e=tanTarget(f); if(!e)return;
+  e.openingThreads=(e.openingThreads||[]).filter(x=>x&&x.owner!==f);
+  e.openingThreads.push({owner:f,t:TAN.threadT,max:TAN.threadT});
+  tanBanner(f,'OPENING THREAD','#FFFFFF');
+  say(`Opening Thread marks ${e.name} for ${rts(TAN.threadT)}s.`,'g');
+}
+function tanBasic(f,e){
+  if(!e||!e.alive)return;
+  const i=f.tanCombo%3, pose=['slash1','slash2','surface'][i];
+  f.tanCombo=(i+1)%3;
+  f.cds.basic=TAN.basicGap;
+  setPose(f,pose,gs(.34)); aim(f,e,1.05); tanTrail(f,i===2?'water':'steel',e,i===2);
+  const landed=hurt(e,TAN.basic[i],f,false);
+  if(landed){
+    sfx(i===2?'drive':'hit');
+    if(i===2){
+      stunFx(e,TAN.surfaceStun,'spin'); knock(e,e.x-f.x,e.y-f.y,TAN.surfaceKb);
+      tanBanner(f,'WATER SURFACE SLASH','#8FE9FF');
+    }
+  }
+}
+function tanWaterWheel(f,e){
+  if(!e||!e.alive)return;
+  const a=Math.atan2(e.y-f.y,e.x-f.x);
+  f.tanAct={kind:'wheel',t:0,target:e,ang:a,hit:false,recover:false};
+  setPose(f,'wheel',TAN.wheelTravel+TAN.wheelRecover); aim(f,e,1.2);
+  tanBanner(f,'WATER WHEEL','#8FE9FF'); sfx('drive');
+}
+function tanConstantFlux(f,e){
+  if(!e||!e.alive)return;
+  f.tanAct={kind:'flux',t:0,target:e,i:0,next:TAN.fluxGap};
+  setPose(f,'flux',TAN.fluxGap*(TAN.fluxHit.length+1)); aim(f,e,1.1);
+  tanBanner(f,'CONSTANT FLUX','#8FE9FF'); sfx('drive');
+}
+function tanSunDance(f,e){
+  if(!e||!e.alive)return;
+  f.tanAct={kind:'sun',t:0,target:e,i:0,next:TAN.sunGap};
+  setPose(f,'sun',TAN.sunGap*(TAN.sunHit.length+1)); aim(f,e,1.2);
+  tanBanner(f,'DRAGON SUN HALO HEAD DANCE','#FF7A3D'); sfx('drive');
+}
+function tanUltimate(f,e){
+  if(!f.tanMarked||!e||!e.alive)return;
+  const gap=(TAN.ultT-TAN.ultFocus)/TAN.ultDmg.length;
+  f.tanAct={kind:'ultimate',t:0,target:e,i:0,next:TAN.ultFocus+gap,gap};
+  f.tanUlt=true; f.pose='ultimate'; f.poseT=TAN.ultT;
+  tanBanner(f,'TRANSPARENT WORLD','#FFF1D6'); sfx('wings');
+  say('Transparent World — Tanjiro reads the target and tightens his grip.','g');
+}
+function tanAwaken(f){
+  if(!f||f.tanMarkStarted||f.tanMarked||f.swapAs)return;
+  f.tanMarkStarted=true; f.tanMarkAnim=TAN.markT;
+  f.tanAct=null; f.tanUlt=false; f.pose='mark'; f.poseT=TAN.markT;
+  f.lock=Math.max(f.lock,TAN.markT);
+  tanBanner(f,'DEMON SLAYER MARK','#FF7A3D'); sfx('wings');
+  say('Demon Slayer Mark awakens — movement, attack, cast and resistance rise. No HP is restored.','g');
+}
+function tanFinishAct(f,red){
+  f.tanAct=null; f.tanUlt=false; f.pose='idle'; f.poseT=0;
+  if(red){
+    f.tanRed=TAN.redT;
+    tanBanner(f,'BRIGHT RED NICHIRIN BLADE','#FF4D3D');
+    say(`Bright Red Nichirin Blade lasts ${rts(TAN.redT)}s. Sword hits apply Regeneration Suppression.`,'g');
+  }
+}
+function tanMoveToward(f,x,y,spd,dt){
+  const dx=x-f.x,dy=y-f.y,d=Math.hypot(dx,dy)||1;
+  f.x=clamp(f.x+dx/d*spd*dt,PAD,W-PAD);
+  f.y=clamp(f.y+dy/d*spd*dt,PAD+50,H-PAD-10);
+  f.face=dx>=0?1:-1; f.moving=true;
+}
+/* He never retreats to stall. Outside melee he runs directly at the nearest enemy;
+   once in range he may circle, but there is no backwards/kiting vote in this vector. */
+function tanVec(f,e){
+  e=tanTarget(f)||e; if(!e)return {x:0,y:0};
+  const d=dist(f,e)||1,ux=(e.x-f.x)/d,uy=(e.y-f.y)/d,want=orbWant(f);
+  if(d>want+MELEE_BAND)return {x:ux,y:uy};
+  if(d<want-MELEE_BAND)return {x:-uy*f.strafe*.55,y:ux*f.strafe*.55};
+  return {x:-uy*f.strafe*.8,y:ux*f.strafe*.8};
+}
+function tanjiroTick(f,dt){
+  const E=f.tanEntry;
+  if(E){
+    for(const o of G.fighters) if(o.team!==f.team&&!(o.summon&&!o.ally))o.lock=Math.max(o.lock,.3);
+    f.lock=Math.max(f.lock,.3); E.t+=dt;
+    if(E.t<TAN.entrancePh[0]){
+      const q=clamp(E.t/TAN.entrancePh[0],0,1),z=q*q*(3-2*q);
+      f.x=E.x0+(E.x1-E.x0)*z; f.y=E.y0+(E.y1-E.y0)*z; f.pose='run';
+    }else if(E.t<TAN.entrancePh[1]){ f.x=E.x1; f.y=E.y1; f.pose='draw'; }
+    else { f.pose='ready'; }
+    if(E.t>=TAN.entranceT){
+      f.x=E.x1; f.y=E.y1; f.tanEntry=null; f.pose='idle'; f.poseT=0;
+      const e=tanTarget(f); if(e)aim(f,e,0);
+      say('Tanjiro draws his Black Nichirin Sword and enters a low fighting stance.','g');
+    }
+    return;
+  }
+  if(f.tanMarkAnim>0){
+    f.lock=Math.max(f.lock,.08); f.pose='mark'; f.tanMarkAnim=Math.max(0,f.tanMarkAnim-dt);
+    if(f.tanMarkAnim<=0){
+      f.tanMarked=true; f.cds.s4=0; f.pose='idle';
+      ring(f.x,f.y,138,'#FF7A3D',.55);
+      tanBanner(f,'SUN BREATHING: THIRTEENTH FORM UNLOCKED','#FFB14A');
+    }
+    return;
+  }
+  if(f.key==='tanjiro'&&!f.swapAs){
+    f.tanThreadCd-=dt;
+    if(f.tanThreadCd<=0){ f.tanThreadCd=TAN.threadCd; tanMarkOpening(f); }
+  }
+  if(f.tanTrails&&f.tanTrails.length){
+    for(const x of f.tanTrails)x.life-=dt;
+    f.tanTrails=f.tanTrails.filter(x=>x.life>0);
+  }
+  const A=f.tanAct; if(!A)return;
+  if(f.stun>0){ tanFinishAct(f,false); return; }
+  f.lock=Math.max(f.lock,.06); A.t+=dt;
+  if(A.kind==='wheel'){
+    if(!A.recover){
+      const e=A.target;
+      if(e&&e.alive&&!offField(e)){
+        const want=Math.atan2(e.y-f.y,e.x-f.x),dif=Math.atan2(Math.sin(want-A.ang),Math.cos(want-A.ang));
+        A.ang+=clamp(dif,-dt*.8,dt*.8); // only slight steering after take-off
+      }
+      f.x=clamp(f.x+Math.cos(A.ang)*TAN.wheelSpd*dt,PAD,W-PAD);
+      f.y=clamp(f.y+Math.sin(A.ang)*TAN.wheelSpd*dt,PAD+50,H-PAD-10);
+      f.face=Math.cos(A.ang)>=0?1:-1; f.moving=true;
+      if(!A.hit&&e&&e.alive&&!offField(e)&&dist(f,e)<f.r+e.r+18){
+        A.hit=true; tanTrail(f,'water',e,true);
+        if(hurt(e,TAN.wheelDmg,f,'WATER WHEEL','big')){
+          stunFx(e,TAN.wheelAir,'spin');
+          f.x=clamp(e.x-Math.cos(A.ang)*(f.r+e.r+8),PAD,W-PAD);
+          f.y=clamp(e.y-Math.sin(A.ang)*(f.r+e.r+8),PAD+50,H-PAD-10);
+        }
+        tanFinishAct(f,false); return;
+      }
+      if(A.t>=TAN.wheelTravel){ A.recover=true; A.t=0; f.pose='ready'; }
+    }else if(A.t>=TAN.wheelRecover){ tanFinishAct(f,false); }
+    return;
+  }
+  if(A.kind==='flux'){
+    const e=A.target;
+    if(e&&e.alive&&!offField(e)&&dist(f,e)>78)tanMoveToward(f,e.x,e.y,210,dt);
+    while(A.i<TAN.fluxHit.length&&A.t>=A.next){
+      const last=A.i===TAN.fluxHit.length-1, tg=tanNearbyTarget(f,105,A.target);
+      if(tg){
+        tanTrail(f,'water',tg,last);
+        if(hurt(tg,TAN.fluxHit[A.i],f,last?'CONSTANT FLUX':'', 'big')&&last){
+          knock(tg,tg.x-f.x,tg.y-f.y,TAN.fluxKb); stunFx(tg,TAN.fluxStun,'spin');
+        }
+      }
+      A.i++; A.next+=TAN.fluxGap;
+    }
+    if(A.i>=TAN.fluxHit.length&&A.t>=A.next-gs(.05))tanFinishAct(f,false);
+    return;
+  }
+  if(A.kind==='sun'){
+    let e=A.target&&A.target.alive?A.target:tanTarget(f); if(e)A.target=e;
+    if(e){
+      const side=A.i%2?1:-1,a=Math.atan2(e.y-f.y,e.x-f.x)+side*.48;
+      tanMoveToward(f,e.x-Math.cos(a)*54,e.y-Math.sin(a)*54,TAN.sunSpd,dt);
+    }
+    while(A.i<TAN.sunHit.length&&A.t>=A.next){
+      /* The opener stays on the chosen enemy; later passes may cut the closest fighter
+         along Tanjiro's actual route. Each pass still selects exactly one target. */
+      const last=A.i===TAN.sunHit.length-1,tg=tanNearbyTarget(f,112,A.i===0?A.target:null);
+      if(tg){
+        A.target=tg; tanTrail(f,'sun',tg,true);
+        if(hurt(tg,TAN.sunHit[A.i],f,last?'DRAGON SUN HALO HEAD DANCE':'','big')&&last){
+          knock(tg,tg.x-f.x,tg.y-f.y,TAN.sunKb); stunFx(tg,TAN.sunStun,'spin');
+        }
+      }
+      A.i++; A.next+=TAN.sunGap;
+    }
+    if(A.i>=TAN.sunHit.length&&A.t>=A.next-gs(.05))tanFinishAct(f,false);
+    return;
+  }
+  if(A.kind==='ultimate'){
+    f.tanUlt=true; f.pose='ultimate';
+    let e=A.target&&A.target.alive&&A.target.hp>0?A.target:tanTarget(f); if(e)A.target=e;
+    if(A.t<TAN.ultFocus){ f.moving=false; return; }
+    if(e&&!offField(e)){
+      const base=Math.atan2(e.y-f.y,e.x-f.x),off=[-.72,.58,0,1.02][A.i%4];
+      const a=base+off, gx=e.x-Math.cos(a)*54,gy=e.y-Math.sin(a)*54;
+      if(dist(f,e)>58||Math.hypot(gx-f.x,gy-f.y)>28)tanMoveToward(f,gx,gy,TAN.ultChase,dt);
+    }
+    while(A.i<TAN.ultDmg.length&&A.t>=A.next){
+      e=A.target&&A.target.alive&&A.target.hp>0?A.target:tanTarget(f); if(e)A.target=e;
+      const last=A.i===TAN.ultDmg.length-1;
+      if(e&&!offField(e)&&dist(f,e)<=TAN.ultRange){
+        tanTrail(f,'ultimate',e,last);
+        if(hurt(e,TAN.ultDmg[A.i],f,last?'FLAME DANCE':'','ult')&&last){
+          knock(e,e.x-f.x,e.y-f.y,TAN.sunKb); stunFx(e,TAN.ultDown,'spin');
+        }
+      }
+      A.i++; A.next+=A.gap;
+    }
+    if(A.t>=TAN.ultT)tanFinishAct(f,true);
+  }
+}
+
 /* ---------- AI ---------- */
 /* Cận chiến thì đứng cách nhau một quãng chứ đừng dán vào người ta. Tầm tay của cả
    ChiChi lẫn Horikita là r+r+16 = 68, nên điểm lượn phải nằm DƯỚI mốc đó mới ra đòn
@@ -9183,6 +9565,7 @@ function dodgeVec(f){
   return {x:dx,y:dy};
 }
 function aiVec(f,e){
+  if(f.key==='tanjiro'&&!f.summon&&!f.swapAs) return tanVec(f,e);
   const d=dist(f,e)||1, ux=(e.x-f.x)/d, uy=(e.y-f.y)/d;
   const wd=Math.hypot(f.wx-f.x,f.wy-f.y)||1, wxu=(f.wx-f.x)/wd, wyu=(f.wy-f.y)/wd;
   let x=0,y=0;
@@ -9328,6 +9711,7 @@ function step(dt){
     if(f.key==='dora'&&!f.summon&&f.alive&&!f.swapAs) doraTick(f,dt);
     if(f.key==='superman'&&!f.summon&&f.alive&&!f.swapAs) supermanTick(f,dt);
     if(f.key==='beatrice'&&!f.summon&&f.alive&&!f.swapAs) beatriceTick(f,dt);
+    if(f.key==='tanjiro'&&!f.summon&&f.alive&&!f.swapAs) tanjiroTick(f,dt);
     // người khiêu khích rời sàn thì đối thủ nhắm lại vào mục tiêu thật
     if(f.tauntBy&&(!f.tauntBy.alive||f.tauntBy.hp<=0||f.tauntBy.leaving>0||G.fighters.indexOf(f.tauntBy)<0)) f.tauntBy=null;
     if(f.outCut>0&&!(foeOf(f)&&foeOf(f).domain)) f.outCut=0;
@@ -9371,7 +9755,11 @@ function step(dt){
       G.cam.x+=(tx-G.cam.x)*Math.min(1,dt*3);
       G.cam.y+=(ty-G.cam.y)*Math.min(1,dt*3);
       // Doraemon thắng thì ngồi xuống ăn dorayaki chứ không đứng thủ thế
-      if(w.alive) setPose(w,(w.key==='dora'||w.key==='superman'||w.key==='beatrice')&&!w.swapAs?'win':'idle',0);
+      if(w.alive){
+        const wp=w.key==='tanjiro'&&!w.swapAs&&G.endT<.65?'ready'
+          :((w.key==='dora'||w.key==='superman'||w.key==='beatrice'||w.key==='tanjiro')&&!w.swapAs?'win':'idle');
+        setPose(w,wp,0);
+      }
       /* Superman thắng: nhìn quanh sàn một lượt rồi TỪ TỪ bay lên khỏi mặt đất, chống
          hai tay vào hông, áo choàng tung sau lưng. Không phá gì của sàn đấu cả. */
       if(w.alive&&w.key==='superman'&&!w.swapAs){
@@ -9489,8 +9877,15 @@ function step(dt){
   }
 
   for(const f of MAIN){                         // kiệt sức thì hồi chiêu chạy chậm 25%
-    const rate=dt*(f.exhaust>0?EXHAUST_MUL:1)*(f.prewing?PREWING_CAST:1)*(f.castBuff||1)*(f.castMul||1);
-    for(const key in f.cds) f.cds[key]=Math.max(0,f.cds[key]-rate);
+    const base=dt*(f.exhaust>0?EXHAUST_MUL:1)*(f.prewing?PREWING_CAST:1)*(f.castBuff||1);
+    const rate=base*(f.castMul||1);
+    for(const key in f.cds){
+      /* Tanjiro's basic clock is attack speed, not cast speed. External cast modifiers
+         still affect it as before; only his own Mark cast bonus is replaced by Mark attack speed. */
+      const ownCast=(f.key==='tanjiro'&&f.tanMarked)?TAN.markCast:1;
+      const r=(f.key==='tanjiro'&&key==='basic')?base*((f.castMul||1)/ownCast)*(f.tanMarked?TAN.markAtk:1):rate;
+      f.cds[key]=Math.max(0,f.cds[key]-r);
+    }
   }
   for(const f of MAIN){
     if(!f.alive||f.stun>0||f.lock>0)continue;
@@ -9536,6 +9931,9 @@ function step(dt){
     if(f.key==='superman' && !f.lsrDone && f.hp<=f.maxHp*SUP.lsrHp){
       supResolve(f);
     }
+    if(f.key==='tanjiro' && !f.tanMarkStarted && f.hp<f.maxHp*TAN.markHp){
+      tanAwaken(f);
+    }
     if(f.key==='shika' && !f.domainDone && f.hp<=f.maxHp*SHIKA.domainHp){
       naraDomain(f,foeOf(f));
     }
@@ -9579,7 +9977,7 @@ function step(dt){
     const a=G.fighters[i], b=G.fighters[j];
     if(!a||!b||!a.alive||!b.alive)continue;
     if(a.dash||b.dash||a.leaving>0||b.leaving>0)continue;
-    if(a.gnEntry||b.gnEntry||a.gnChange||b.gnChange)continue;   // đang bay vào sân / đang tung CHANGE
+    if(a.gnEntry||b.gnEntry||a.gnChange||b.gnChange||a.tanEntry||b.tanEntry||a.tanAct||b.tanAct)continue;
     if(a.drEntry||b.drEntry||a.edT>0||b.edT>0||a.tm||b.tm)continue;   // Doraemon: ra mắt / chui cửa / tua ngược
     const wa=(a.summon&&!a.ally)?0:1, wb=(b.summon&&!b.ally)?0:1;
     if(!wa&&!wb)continue;
@@ -10106,7 +10504,7 @@ function arenaFrame(){
 function groundShadows(){
   ctx.save();
   for(const f of G.fighters){
-    if(!f||f.hidden||f.drHide||f.supHide||!f.alive&&f.fade===0) continue;
+    if(!f||f.hidden||f.drHide||f.supHide||f.tanHide||!f.alive&&f.fade===0) continue;
     const air=(f.supAir||0)+(f.copter>0?DORA.copHover:0);   // bay cao thì bóng nhạt và tan ra
     const sz=(f.szMul||1)*(f.r||26);
     ctx.globalAlpha=.30*(f.fade===undefined?1:f.fade)/(1+air/90);
@@ -10122,8 +10520,80 @@ function camApply(){
 function head(x,y,s){ ctx.fillStyle='#F5CFA8'; ctx.beginPath(); ctx.arc(x,y,s,0,7); ctx.fill(); }
 function torso(x,y,w,h,c){ ctx.fillStyle=c; ctx.beginPath(); if(ctx.roundRect)ctx.roundRect(x-w/2,y,w,h,6); else ctx.rect(x-w/2,y,w,h); ctx.fill(); }
 
+function tanVector(f){
+  const y=-18,P=f.pose||'idle',t=G.t*10;
+  const bow=P==='win'?clamp((G.endT-.8)/.7,0,.42):0;
+  const kneel=P==='down';
+  ctx.save(); ctx.rotate(bow); if(kneel)ctx.translate(0,7);
+  // Demon Slayer uniform and wrapped calves.
+  ctx.fillStyle='#1D2528';
+  ctx.fillRect(-10,y+13,8,kneel?6:13+Math.sin(t)*1.5);
+  ctx.fillRect(3,y+13,8,kneel?12:13-Math.sin(t)*1.5);
+  ctx.fillStyle='#E8E3D5'; ctx.fillRect(-11,y+20,9,5); ctx.fillRect(3,y+20,9,5);
+  torso(0,y-5,25,28,'#202A2C');
+  ctx.fillStyle='#EFE8D6'; ctx.fillRect(-3,y-5,6,18);
+  // Green/black checkered haori, split into readable tiles instead of one flat cloak.
+  const tile=8;
+  for(let row=0;row<4;row++)for(let col=0;col<4;col++){
+    ctx.fillStyle=(row+col)%2?'#151A19':'#2E8B62';
+    ctx.fillRect(-16+col*tile,y-10+row*tile,tile+.4,tile+.4);
+  }
+  ctx.fillStyle='#F5CFA8'; ctx.fillRect(-20,y-5,7,14); ctx.fillRect(13,y-5,7,14);
+  head(0,y-22,12.5);
+  // Dark burgundy, tousled hair.
+  ctx.fillStyle='#4B1E27'; ctx.beginPath(); ctx.arc(0,y-26,13,Math.PI,2*Math.PI); ctx.fill();
+  for(let i=0;i<6;i++){
+    const x=-11+i*4.4; ctx.beginPath(); ctx.moveTo(x,y-29); ctx.lineTo(x+3,y-38-(i%2)*3); ctx.lineTo(x+6,y-28); ctx.fill();
+  }
+  ctx.fillStyle='#171421'; ctx.fillRect(-5,y-23,3.2,3.2); ctx.fillRect(4,y-23,3.2,3.2);
+  // Scar / Demon Slayer Mark on the left side of the forehead.
+  ctx.strokeStyle=f.tanMarked?'#B52420':'#8D4A3B'; ctx.lineWidth=f.tanMarked?2.8:1.8; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-8,y-31); ctx.lineTo(-4,y-27); ctx.lineTo(-7,y-24); ctx.stroke();
+  if(f.tanMarked){ ctx.beginPath(); ctx.moveTo(-7,y-32);ctx.lineTo(-1,y-29);ctx.lineTo(-5,y-24);ctx.stroke(); }
+  // Hanafuda earrings: white cards, red sun and dark rays.
+  for(const ex of [-12,12]){
+    ctx.fillStyle='#F5F0DF'; ctx.strokeStyle='#222'; ctx.lineWidth=.8; ctx.fillRect(ex-2.5,y-21,5,11); ctx.strokeRect(ex-2.5,y-21,5,11);
+    ctx.fillStyle='#C93B30'; ctx.beginPath(); ctx.arc(ex,y-16,1.5,0,7); ctx.fill();
+    ctx.strokeStyle='#444'; ctx.lineWidth=.6; ctx.beginPath();ctx.moveTo(ex-2,y-12);ctx.lineTo(ex,y-16);ctx.lineTo(ex+2,y-12);ctx.stroke();
+  }
+  // Black Nichirin Sword. During victory it is sheathed; after the Ultimate it glows red.
+  let ang=-.72;
+  if(P==='slash1')ang=-1.32; else if(P==='slash2')ang=.48; else if(P==='surface')ang=-.14;
+  else if(P==='wheel')ang=G.t*18; else if(P==='flux')ang=G.t*22;
+  else if(P==='sun'||P==='ultimate')ang=-1.0+Math.sin(G.t*24)*1.15;
+  else if(P==='draw')ang=-.2; else if(P==='ready'||P==='mark')ang=-.88;
+  else if(P==='down')ang=.92; else if(P==='win')ang=2.55;
+  if(P==='ultimate'&&f.tanAct){
+    const forms=[-1.55,0,.12,1.15,-.65,.65];
+    ang=forms[(f.tanAct.i||0)%forms.length];
+  }
+  const handX=9,handY=y-1;
+  if(P==='win'){
+    ctx.strokeStyle='#16191D';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-22,y+7);ctx.lineTo(27,y+13);ctx.stroke();
+    ctx.strokeStyle='#3D3430';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-21,y+5);ctx.lineTo(26,y+11);ctx.stroke();
+  }
+  ctx.save();ctx.translate(handX,handY);ctx.rotate(ang);
+  ctx.strokeStyle='#1B1719';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-7,0);ctx.lineTo(7,0);ctx.stroke();
+  ctx.strokeStyle='#C8B36B';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(5,-6);ctx.lineTo(5,6);ctx.stroke();
+  ctx.strokeStyle=f.tanRed>0?'#FF3B2F':'#111820';ctx.lineWidth=f.tanRed>0?4:3.2;
+  if(f.tanRed>0){ctx.shadowColor='#FF523D';ctx.shadowBlur=10;}
+  const bladeEnd=P==='win'?10:49;
+  ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(bladeEnd,0);ctx.stroke();ctx.shadowBlur=0;
+  if(P!=='win'){
+    ctx.strokeStyle='#C6D0D4';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(8,-1.6);ctx.lineTo(48,-1.6);ctx.stroke();
+  }
+  ctx.restore();
+  if(f.injured){
+    ctx.strokeStyle='#7E2430';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(-12,y+1);ctx.lineTo(-4,y+8);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(5,y-7);ctx.lineTo(12,y);ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function vector(f){
   const t=G.t*10, y=-18, sw=f.moving?Math.sin(t)*3:0;
+  if(f.key==='tanjiro'){ tanVector(f); return; }
   if(f.key==='kono'){
     ctx.fillStyle='#4C7CE0'; ctx.beginPath(); ctx.moveTo(-4,y-6);
     ctx.quadraticCurveTo(-38,y-16+Math.sin(t)*5,-50,y+2);
@@ -10614,7 +11084,16 @@ function sprite(f){
   }
   let arr=set[pk];
   if(!arr||!arr.length){
-    if(pk==='bicycle') arr=set.atk1||set.idle;
+    if(f.key==='tanjiro'&&['run','draw','ready'].includes(pk)) arr=set[pk]||set.idle;
+    else if(f.key==='tanjiro'&&['slash1','slash2','surface'].includes(pk)) arr=set[pk]||set.slash1||set.idle;
+    else if(f.key==='tanjiro'&&pk==='wheel') arr=set.wheel||set.surface||set.slash1||set.idle;
+    else if(f.key==='tanjiro'&&pk==='flux') arr=set.flux||set.surface||set.slash2||set.idle;
+    else if(f.key==='tanjiro'&&pk==='sun') arr=set.sun||set.ultimate||set.slash1||set.idle;
+    else if(f.key==='tanjiro'&&pk==='ultimate') arr=set.ultimate||set.sun||set.slash1||set.idle;
+    else if(f.key==='tanjiro'&&pk==='mark') arr=set.mark||set.ready||set.idle;
+    else if(f.key==='tanjiro'&&pk==='win') arr=set.win||set.idle;
+    else if(f.key==='tanjiro'&&pk==='down') arr=set.down||set.injured||set.hurt||set.idle;
+    else if(pk==='bicycle') arr=set.atk1||set.idle;
     else if(pk==='stab') arr=set.atk1||set.idle;          // chưa có ảnh đâm thì mượn ảnh phóng shuriken
     else if(pk==='lazy') arr=set.hurt||set.idle;          // chưa có ảnh nằm lười thì mượn ảnh đứng
     else if(pk==='scared') arr=set.block||set.idle;
@@ -10686,6 +11165,7 @@ function drawFighter(f){
   if(f.drHide)return;                          // Doraemon còn trong lòng Anywhere Door
   if(f.supHide)return;                         // Superman còn là bóng người trên cao
   if(f.beaHide)return;                         // Beatrice còn ở trong Forbidden Library
+  if(f.tanHide)return;
   const img=sprite(f);
   const mv=f.moveAmt!==undefined?clamp(f.moveAmt,0,1):(f.moving?1:0);
   const hop = Math.abs(Math.sin(G.t*7.5))*7*mv + Math.sin(G.t*2.4)*2.5*(1-mv);
@@ -13101,6 +13581,81 @@ function drawFloat(f){
    cờ gold chính là ranh giới giữa "lời nói" và "hiệu ứng chiêu". */
 function chatFloat(f){ return !!(f.banner&&f.bubble&&!f.gold); }
 
+/* Tanjiro's breathing effects are painted trails only. Nothing here enters G.proj,
+   chooses a target or deals damage: the water/solar dragons remain connected to the
+   sword path and can never become independent summons or ranged attacks. */
+function drawTanjiroFx(){
+  if(G.over)return;                         // victory/defeat clears every water and heat effect
+  ctx.save();
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  // Opening Thread: one thin white line from the black blade to the marked fighter.
+  for(const target of G.fighters){
+    if(!target||!target.alive||!target.openingThreads)continue;
+    for(const mark of target.openingThreads){
+      const owner=mark&&mark.owner;
+      if(!owner||!owner.alive||owner.tanHide||mark.t<=0)continue;
+      const sx=owner.x+(owner.face||1)*43, sy=owner.y-28;
+      const ex=target.x, ey=target.y-27;
+      const mx=(sx+ex)/2, my=(sy+ey)/2-10-Math.sin(G.t*9)*3;
+      ctx.globalAlpha=.42+.42*clamp(mark.t/(mark.max||TAN.threadT),0,1);
+      ctx.strokeStyle='#FFFFFF'; ctx.lineWidth=1.35;
+      ctx.shadowColor='#FFFFFF'; ctx.shadowBlur=5;
+      ctx.beginPath(); ctx.moveTo(sx,sy); ctx.quadraticCurveTo(mx,my,ex,ey); ctx.stroke();
+      ctx.shadowBlur=0;
+    }
+  }
+  for(const f of G.fighters){
+    if(!f||!f.alive||f.key!=='tanjiro'||f.swapAs||f.tanHide)continue;
+    // The Mark creates body heat; water and solar effects remain exclusive to sword paths.
+    if(f.tanMarked||f.tanMarkAnim>0){
+      const pulse=.75+Math.sin(G.t*10)*.12;
+      ctx.globalAlpha=(f.tanMarkAnim>0?.34:.16)*pulse;
+      const g=ctx.createRadialGradient(f.x,f.y-25,5,f.x,f.y-25,55);
+      g.addColorStop(0,'rgba(255,116,45,.85)'); g.addColorStop(1,'rgba(255,66,30,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(f.x,f.y-25,42,62,0,0,7); ctx.fill();
+    }
+    const A=f.tanAct;
+    if(A&&A.kind==='ultimate'){
+      const focus=clamp(A.t/TAN.ultFocus,0,1);
+      if(A.t<TAN.ultFocus){
+        ctx.globalAlpha=.25+.5*focus; ctx.strokeStyle='#FFF2D5'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.ellipse(f.x,f.y-48,25-focus*8,10-focus*3,0,0,7); ctx.stroke();
+        ctx.beginPath(); ctx.arc(f.x,f.y-48,3+focus*2,0,7); ctx.stroke();
+      }else{
+        // Fake Rainbow is an afterimage of Tanjiro's own movement, never a damaging entity.
+        const a=Math.atan2(f.ay||0,f.ax||f.face||1);
+        for(let i=1;i<=3;i++){
+          ctx.globalAlpha=.10/i; ctx.strokeStyle=i%2?'#FF7847':'#FFF2D5'; ctx.lineWidth=5-i;
+          ctx.beginPath(); ctx.ellipse(f.x-Math.cos(a)*i*17,f.y-30-Math.sin(a)*i*17,13,31,a,0,7); ctx.stroke();
+        }
+      }
+    }
+    for(const tr of f.tanTrails||[]){
+      const q=clamp(tr.life/(tr.ml||.3),0,1), big=tr.big?1:0;
+      const water=tr.kind==='water', solar=tr.kind==='sun'||tr.kind==='ultimate';
+      const col=water?'#69DAFF':(solar?'#FF6939':'#EAF6FA');
+      const len=big?90:58, bend=(water?24:solar?19:9)*(Math.sin(G.t*15)>0?1:-1);
+      const sx=tr.x+Math.cos(tr.a)*7, sy=tr.y+Math.sin(tr.a)*7;
+      const ex=tr.x+Math.cos(tr.a)*len, ey=tr.y+Math.sin(tr.a)*len;
+      const nx=-Math.sin(tr.a),ny=Math.cos(tr.a),mx=(sx+ex)/2+nx*bend,my=(sy+ey)/2+ny*bend;
+      ctx.globalAlpha=q*(water?.8:solar?.82:.48); ctx.strokeStyle=col;
+      ctx.lineWidth=(big?11:6)*q+1; ctx.shadowColor=col; ctx.shadowBlur=big?16:8;
+      ctx.beginPath();ctx.moveTo(sx,sy);ctx.quadraticCurveTo(mx,my,ex,ey);ctx.stroke();
+      ctx.globalAlpha=q*.7;ctx.strokeStyle='#FFF7E7';ctx.lineWidth=1.6;
+      ctx.beginPath();ctx.moveTo(sx,sy);ctx.quadraticCurveTo(mx+nx*5,my+ny*5,ex,ey);ctx.stroke();
+      // A connected crest/head silhouette on the final large trail, never detached.
+      if(big&&(water||solar)){
+        ctx.fillStyle=col;ctx.globalAlpha=q*.66;ctx.shadowBlur=9;
+        ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(ex-Math.cos(tr.a)*15+nx*9,ey-Math.sin(tr.a)*15+ny*9);
+        ctx.lineTo(ex-Math.cos(tr.a)*10,ey-Math.sin(tr.a)*10);
+        ctx.lineTo(ex-Math.cos(tr.a)*15-nx*9,ey-Math.sin(tr.a)*15-ny*9);ctx.closePath();ctx.fill();
+      }
+      ctx.shadowBlur=0;
+    }
+  }
+  ctx.restore();
+}
+
 function draw(){
   ctx.setTransform(S,0,0,S,0,0);
   ctx.fillStyle='#0C0920'; ctx.fillRect(0,0,W,H+HEADER);
@@ -13211,11 +13766,12 @@ function draw(){
     ctx.restore();
   }
   for(const p of G.proj) drawProj(p);
+  drawTanjiroFx();                         // thread, blade trails, Mark heat and afterimages
   for(const L of G.kos){
     /* Superman gục: chống một gối xuống trước, gượng dậy hai nhịp không nổi, rồi mới
        đổ hẳn — nên quãng nghiêng người bắt đầu muộn hơn mấy người kia. */
-    const f=L.f, pr=L.sup?clamp((L.t-.62)/.85,0,1):clamp(L.t/1.25,0,1);
-    const tryUp=(L.sup&&L.t<.62)?Math.abs(Math.sin(L.t*9))*3.5:0;
+    const f=L.f, pr=L.sup?clamp((L.t-.62)/.85,0,1):(L.tan?clamp((L.t-.68)/.82,0,1):clamp(L.t/1.25,0,1));
+    const tryUp=((L.sup||L.tan)&&L.t<.68)?Math.abs(Math.sin(L.t*9))*3.5:0;
     const img=sprite(f);
     ctx.save();
     ctx.globalAlpha=.28*(1-pr); ctx.fillStyle='#000';
@@ -13579,6 +14135,7 @@ function winnerBanner(){
   const dora=w.key==='dora'&&!w.swapAs;
   const sup=w.key==='superman'&&!w.swapAs;
   const bea=w.key==='beatrice'&&!w.swapAs;
+  const tan=w.key==='tanjiro'&&!w.swapAs;
   const head=G.mode==='team'?'WINNING TEAM':'WINNER';
   ctx.font='900 15px "Space Mono",monospace';
   ctx.lineWidth=6; ctx.strokeStyle='#000'; ctx.strokeText(head,0,-42);
@@ -13588,8 +14145,8 @@ function winnerBanner(){
   const team=G.mode==='team'&&G.winTeam!==null&&G.winTeam!==undefined
     ? G.fighters.filter(f=>f&&!f.summon&&f.team===G.winTeam) : null;
   const big=(team&&team.length>1)?team.map(f=>f.name.toUpperCase()).join(' + ')
-    :(dora?'DORAEMON WINS!':(sup?'SUPERMAN WINS!':(bea?'BEATRICE WINS!':w.name.toUpperCase())));
-  let bsize=(team&&team.length>1)?34:(dora||sup||bea?38:46);
+    :(dora?'DORAEMON WINS!':(sup?'SUPERMAN WINS!':(bea?'BEATRICE WINS!':(tan?'TANJIRO WINS!':w.name.toUpperCase()))));
+  let bsize=(team&&team.length>1)?34:(dora||sup||bea||tan?38:46);
   ctx.font=`900 ${bsize}px "Be Vietnam Pro",sans-serif`;
   const room=W-56;
   if(ctx.measureText(big).width>room){

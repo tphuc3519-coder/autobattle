@@ -93,6 +93,12 @@ window.__beaEmtOn=beaEmtOn; window.__beaEmtBlock=beaEmtBlock; window.__beaReflec
 window.__beaElMinya=beaElMinya; window.__beaUltHit=beaUltHit; window.__beaErode=beaErode;
 window.__beaSlowOn=beaSlowOn; window.__beaStatus=beaStatus; window.__beaVector=beaVector;
 window.__beaVec=beaVec; window.__aiVec=aiVec; window.__beaEroStacks=beaEroStacks;
+window.__TAN=TAN; window.__tanjiroEnter=tanjiroEnter; window.__tanjiroTick=tanjiroTick;
+window.__tanMarkOpening=tanMarkOpening; window.__tanBasic=tanBasic; window.__tanWaterWheel=tanWaterWheel;
+window.__tanConstantFlux=tanConstantFlux; window.__tanSunDance=tanSunDance;
+window.__tanUltimate=tanUltimate; window.__tanAwaken=tanAwaken; window.__tanTarget=tanTarget;
+window.__tanOpeningReady=tanOpeningReady; window.__regenFactor=regenFactor;
+window.__drawTanjiroFx=drawTanjiroFx; window.__tanVector=tanVector;
 /* nạp hàng loạt ảnh / tiếng */
 window.__bulkSprMatch=bulkSprMatch; window.__bulkSfxMatch=bulkSfxMatch;
 window.__bulkSprites=bulkSprites; window.__bulkSfxFiles=bulkSfxFiles;
