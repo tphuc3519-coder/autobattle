@@ -8,7 +8,7 @@ giao diện **Việt / Anh** đổi được bằng một nút.
 
 | | |
 |---|---|
-| **10 đấu thủ** | mỗi người một hồ sơ: vai trò, chín trục sức mạnh, bộ chiêu mô tả gọn, và phần "xem chi tiết số liệu" cho ai muốn soi từng con số. Tanjiro Kamado dùng hệ combo cận chiến, Demon Slayer Mark và Ultimate mở khoá theo HP |
+| **10 đấu thủ** | mỗi người một hồ sơ: vai trò, chín trục sức mạnh, bộ chiêu mô tả gọn, và phần "xem chi tiết số liệu" cho ai muốn soi từng con số. Tanjiro Kamado lượn, thăm dò và đổi góc trước khi vào combo; Demon Slayer Mark mở Ultimate theo HP |
 | **12 màn đấu** | Dojo · Night Street · Stadium · Forest · Deep Space · Sunset Roof · Volcano · Sky Temple · Frozen Peak · Desert Ruins · Crystal Cave · Sakura Garden — mỗi màn có một ô dán ảnh nền riêng |
 | **3 chế độ** | 1v1 · hỗn chiến 3–6 người · đánh đội 2–4 đội |
 | **2 ngôn ngữ** | Tiếng Việt / English, nút 🌐 ở thanh công cụ, trong màn chọn và trên màn tiêu đề |
