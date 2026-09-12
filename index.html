@@ -611,10 +611,13 @@
   body.arcade #charSelect[data-page="stage"] .cselModes,
   body.arcade #charSelect[data-page="stage"] #duelPane,
   body.arcade #charSelect[data-page="stage"] #multiPane{display:none}
-  body.arcade #charSelect[data-page="stage"] .sTiles{grid-template-columns:repeat(3,1fr);gap:12px}
+  /* Mười hai sàn: để ba cột thì thành bốn hàng và phải cuộn. `auto-fit` cho màn rộng
+     xếp bốn cột, màn hẹp tự rút về ba rồi hai. */
+  body.arcade #charSelect[data-page="stage"] .sTiles{
+    grid-template-columns:repeat(auto-fit,minmax(min(100%,232px),1fr));gap:12px}
   /* Màn chọn sàn chiếm cả màn hình nên ảnh phải CAO theo chiều cao màn, không thì sáu ô
      nằm tụm trên đỉnh và bỏ trống hai phần ba phía dưới. */
-  body.arcade #charSelect[data-page="stage"] .sTile img{height:clamp(124px,26vh,250px)}
+  body.arcade #charSelect[data-page="stage"] .sTile img{height:clamp(104px,19vh,190px)}
   /* Bước chọn MÀN thì hàng "xem skill / máu mọi nhân vật" chẳng còn liên quan gì nữa —
      giấu đi cho bước cuối chỉ còn đúng một việc phải làm. */
   body.arcade #charSelect[data-page="stage"] .cselOpts{display:none}
@@ -647,6 +650,70 @@
     clip-path:none;box-shadow:none;
     padding-left:max(0px,calc((100% - 1080px)/2));padding-right:max(0px,calc((100% - 1080px)/2))}
   body.arcade .dexPopBox::before{left:0;right:0}
+
+  /* ---- TRANG CHƠI: BƯỚC ĐẦU TIÊN LÀ CHỌN CHẾ ĐỘ ----
+     Người dùng: *"vào game ấn phát là chọn trc chế độ chơi, xong rồi mới vào phần chọn
+     nhân vật"*. Dải năm nút chế độ vốn nằm chen trên đầu màn chọn nhân vật; giờ nó có hẳn
+     một BƯỚC riêng và nở ra thành năm tấm thẻ to chiếm cả màn. Mấy bước sau thì dải đó
+     biến mất hẳn — đổi chế độ thì bấm "Quay lại". */
+  body.arcade #charSelect[data-step="mode"] .cselOpts,
+  body.arcade #charSelect[data-step="mode"] #tapHint,
+  body.arcade #charSelect[data-step="mode"] #pickRow,
+  body.arcade #charSelect[data-step="mode"] #teamNum,
+  body.arcade #charSelect[data-step="mode"] #cupSeed,
+  body.arcade #charSelect[data-step="mode"] #lgLegs,
+  body.arcade #charSelect[data-step="mode"] .cselBody,
+  body.arcade #charSelect[data-step="pick0"] .cselModes{display:none}
+  /* `.cselBox` vốn đã là flex cột nên chỉ việc đổi THỨ TỰ: tiêu đề → dòng phụ → thẻ chế
+     độ (chiếm hết chỗ dư, canh giữa) → hàng nút. Đừng dời markup, mấy bước kia đọc nó. */
+  body.arcade #charSelect[data-step="mode"] #cselCount{order:1;margin-bottom:0}
+  body.arcade #charSelect[data-step="mode"] .cselBar{order:3}
+  /* Năm tấm thẻ ĐỨNG, cao gần hết màn — không phải năm cái nút xếp một hàng mỏng dính.
+     `grid-auto-rows:1fr` cho hàng nào cũng cao bằng nhau, `margin:auto 0` canh cả khối vào
+     giữa chỗ dư. Trần 430px để màn hình cao không kéo thẻ dài ngoằng. */
+  body.arcade #charSelect[data-step="mode"] .cselModes{order:2;flex:1;min-height:0;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));grid-auto-rows:1fr;
+    gap:clamp(8px,1.2vw,14px);align-content:stretch;margin:auto 0;
+    max-height:min(100%,430px);counter-reset:mtab}
+  body.arcade #charSelect[data-step="mode"] .mTab{flex:none;gap:6px;justify-content:flex-end;
+    padding:clamp(12px,2vh,20px) clamp(10px,1.2vw,16px) clamp(16px,2.6vh,26px);overflow:hidden;
+    clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,20px 100%,0 calc(100% - 20px))}
+  /* Biểu tượng TO chiếm nửa trên tấm thẻ, cộng một quầng sáng theo màu riêng của chế độ —
+     `--mc` gắn thẳng vào nút trong markup. Năm thẻ vì vậy đọc ra năm thứ khác nhau ngay
+     cả khi chưa đọc chữ. */
+  body.arcade #charSelect[data-step="mode"] .mTab::after{content:attr(data-ico);order:-1;
+    font-size:clamp(34px,7vh,64px);line-height:1;margin-bottom:auto;
+    filter:drop-shadow(0 0 18px color-mix(in srgb,var(--mc,#fff) 70%,transparent))}
+  /* Số thứ tự mờ ở góc + vạt sáng màu chế độ hắt lên từ đáy: dấu hiệu "đây là một tấm thẻ
+     chọn", không phải một cái nút. Vẽ bằng `inset` vì góc vát cắt mất bóng ngoài (mục 2i). */
+  body.arcade #charSelect[data-step="mode"] .mTab::before{content:counter(mtab,decimal-leading-zero);
+    counter-increment:mtab;position:absolute;top:9px;left:13px;
+    font-family:"Space Mono",monospace;font-size:10.5px;letter-spacing:.1em;opacity:.45}
+  /* Vạt sáng màu chế độ nằm TRÊN nền tối, không `blend-mode:multiply` — trộn nhân vào nền
+     tím sẵn tối thì cả tấm thẻ đen sì, đo mắt thấy ngay. */
+  body.arcade #charSelect[data-step="mode"] .mTab{
+    background:radial-gradient(130% 62% at 50% 118%,color-mix(in srgb,var(--mc,#7E56FF) 42%,transparent),transparent 72%),
+      linear-gradient(180deg,#241D52,#130F2E)}
+  body.arcade #charSelect[data-step="mode"] .mTab:hover{
+    box-shadow:inset 0 0 0 1px var(--mc,#3A3272),inset 0 -40px 46px -34px var(--mc,#7E56FF)}
+  body.arcade #charSelect[data-step="mode"] .mTab b{font-size:clamp(14px,1.9vw,20px)}
+  body.arcade #charSelect[data-step="mode"] .mTab i{font-size:9.5px}
+  /* Thẻ đang chọn vẫn ĐẢO MÀU vàng đặc như dải nút cũ — phải khai LẠI ở đây, không thì
+     luật nền ngay trên (đặc hiệu cao hơn `.mTab.on`) nuốt mất và thẻ đang chọn thành đen. */
+  body.arcade #charSelect[data-step="mode"] .mTab.on{
+    background:linear-gradient(180deg,#FFD267,#F0A414);color:#2C1E00;
+    box-shadow:inset 0 0 0 2px #FFE9AE,inset 0 0 44px -14px #fff,0 0 34px -10px var(--gold)}
+  body.arcade #charSelect[data-step="mode"] .mTab.on i{color:#6B4A00}
+  body.arcade #charSelect[data-step="mode"] .mTab.on::before{opacity:.55;color:#6B4A00}
+  body.arcade #charSelect[data-step="mode"] .mTab.on::after{filter:drop-shadow(0 0 14px rgba(0,0,0,.35))}
+
+  /* ---- màn hỏi sàn TRƯỚC MỖI TRẬN ----
+     Dùng lại vỏ `.csel` nên nó tự ăn hết mấy luật toàn màn ở trên; chỉ phải chỉnh lưới
+     và giấu dải nút "Đánh lại / Đổi nhân vật" đang nằm đè bên dưới (z-index 65). */
+  #arcStage .sTiles{grid-template-columns:repeat(auto-fit,minmax(min(100%,232px),1fr));gap:12px}
+  #arcStage .sTile img{height:clamp(104px,19vh,190px)}
+  #arcStage .cselBody{display:flex;flex-direction:column;justify-content:center}
+  body:has(#arcStage:not(.off)) .arcOver{display:none}
 
   /* ---- TRANG CHƠI: chọn P1 xong mới tới P2 ----
      Người dùng bác lối để hai cột cạnh nhau: "màn chọn p1 xong r chọn p2 sau, để chung
@@ -1263,6 +1330,21 @@
     <div class="arcHint" id="vsHint" data-i18n="vsTap">Chạm để vào trận</div>
   </div>
 </div>
+<!-- Chọn sàn đấu TRƯỚC MỖI TRẬN. Người dùng: *"mỗi trận log vào có thể trc hết là chọn
+     stadium, giả sử như league match thì mỗi trận vào là đc chọn 1 background chứ k phải
+     là chọn 1 background cho cả league"*. Dùng lại vỏ .csel của màn chọn nhân vật nên
+     không phải dựng thêm một kiểu lớp phủ nữa. Chỉ có ở TRANG CHƠI. -->
+<div class="csel off" id="arcStage" style="z-index:67">
+  <div class="cselBox">
+    <h2 id="arcStageTitle">CHỌN <span>MÀN ĐẤU</span></h2>
+    <div class="cselSub" id="arcStageSub"></div>
+    <div class="cselBody"><div class="sTiles" id="arcStageList"></div></div>
+    <div class="cselBar">
+      <button id="arcStageGo" class="primary" type="button">⚔ VÀO TRẬN!</button>
+      <button type="button" data-lang-toggle title="Vietnamese / English">🌐 English</button>
+    </div>
+  </div>
+</div>
 <div class="arcOver off" id="arcOver">
   <button id="arcAgain" class="primary" type="button" data-i18n="again">↻ Đánh lại</button>
   <button id="arcPick" type="button" data-i18n="repick">⚔ Đổi nhân vật / màn</button>
@@ -1290,11 +1372,11 @@
   <div class="cselBox">
     <h2>CHỌN <span>NHÂN VẬT</span></h2>
     <div class="cselModes">
-      <button class="mTab on" id="mTabDuel" data-mode="duel" type="button"><b data-i18n="mDuel">⚔ Đấu tay đôi</b><i data-i18n="mDuelSub">1 vs 1</i></button>
-      <button class="mTab" id="mTabFfa" data-mode="ffa" type="button"><b data-i18n="mFfa">🔥 Hỗn chiến</b><i data-i18n="mFfaSub">3–6 người · last man standing</i></button>
-      <button class="mTab" id="mTabTeam" data-mode="team" type="button"><b data-i18n="mTeam">🛡 Đánh theo đội</b><i data-i18n="mTeamSub">2–4 đội · tối đa 8 người</i></button>
-      <button class="mTab" id="mTabLeague" data-mode="league" type="button"><b data-i18n="mLeague">🏆 Giải vòng tròn</b><i data-i18n="mLeagueSub">3–8 người · tính điểm</i></button>
-      <button class="mTab" id="mTabCup" data-mode="cup" type="button"><b data-i18n="mCup">🥇 Giải loại trực tiếp</b><i data-i18n="mCupSub">4 hoặc 8 người · bracket</i></button>
+      <button class="mTab on" id="mTabDuel" data-ico="⚔" style="--mc:#4DE2FF" data-mode="duel" type="button"><b data-i18n="mDuel">Đấu tay đôi</b><i data-i18n="mDuelSub">1 vs 1</i></button>
+      <button class="mTab" id="mTabFfa" data-ico="🔥" style="--mc:#FF7A4F" data-mode="ffa" type="button"><b data-i18n="mFfa">Hỗn chiến</b><i data-i18n="mFfaSub">3–6 người · last man standing</i></button>
+      <button class="mTab" id="mTabTeam" data-ico="🛡" style="--mc:#6BE39A" data-mode="team" type="button"><b data-i18n="mTeam">Đánh theo đội</b><i data-i18n="mTeamSub">2–4 đội · tối đa 8 người</i></button>
+      <button class="mTab" id="mTabLeague" data-ico="🏆" style="--mc:#FFC542" data-mode="league" type="button"><b data-i18n="mLeague">Giải vòng tròn</b><i data-i18n="mLeagueSub">3–8 người · tính điểm</i></button>
+      <button class="mTab" id="mTabCup" data-ico="🥇" style="--mc:#FF4FA3" data-mode="cup" type="button"><b data-i18n="mCup">Giải loại trực tiếp</b><i data-i18n="mCupSub">4 hoặc 8 người · bracket</i></button>
     </div>
     <div class="cselSub" id="cselCount">Chọn một nhân vật cho mỗi bên</div>
     <div class="cselOpts">
@@ -1419,9 +1501,9 @@ const L={
     music:'🎵 Nhạc nền', musicVol:'Âm lượng nhạc', vol:'Âm lượng', mute:'Tắt tiếng đòn',
     cselChar:'CHỌN <span>NHÂN VẬT</span>', cselStage:'CHỌN <span>MÀN ĐẤU</span>',
     go:'⚔ Vào trận', goNext:'Tiếp ▸ Chọn màn', goFight:'⚔ VÀO TRẬN!', back:'◂ Quay lại', close:'Đóng',
-    mDuel:'⚔ Đấu tay đôi', mDuelSub:'1 vs 1',
-    mFfa:'🔥 Hỗn chiến', mFfaSub:'3–6 người · last man standing',
-    mTeam:'🛡 Đánh theo đội', mTeamSub:'2–4 đội · tối đa 8 người',
+    mDuel:'Đấu tay đôi', mDuelSub:'1 vs 1',
+    mFfa:'Hỗn chiến', mFfaSub:'3–6 người · last man standing',
+    mTeam:'Đánh theo đội', mTeamSub:'2–4 đội · tối đa 8 người',
     sideL:'Bên trái', sideR:'Bên phải', stagePick:'Chọn màn đấu',
     again:'↻ Đánh lại', repick:'⚔ Đổi nhân vật / màn',
     recGo:'⏺ Quay 9:16 · 1080p', recStop:'⏹ Dừng quay ({t})', recWait:'⏳ Đang dựng video…',
@@ -1437,8 +1519,8 @@ const L={
     subTeamStep:'Chọn {lo}–{hi} người cho đội {n} · {cur}/{max} người trên sàn',
     rosterHint:'Bấm vào ô bên dưới để thêm người (tối thiểu {lo})',
     rmTeam:'✕ Bỏ đội', addTeam:'+ Thêm đội', rmFighter:'Bỏ ra khỏi đội hình',
-    mLeague:'🏆 Giải vòng tròn', mLeagueSub:'3–8 người · tính điểm',
-    mCup:'🥇 Giải loại trực tiếp', mCupSub:'4 hoặc 8 người · bracket',
+    mLeague:'Giải vòng tròn', mLeagueSub:'3–8 người · tính điểm',
+    mCup:'Giải loại trực tiếp', mCupSub:'4 hoặc 8 người · bracket',
     cselLeague:'CHỌN <span>DÀN ĐẤU THỦ</span>', cselCup:'XẾP <span>NHÁNH ĐẤU</span>',
     subLeague:'Giải vòng tròn — chọn {lo}–{hi} người, ai cũng gặp ai đúng một lượt',
     subLeague2:'Giải vòng tròn — chọn {lo}–{hi} người, ai cũng gặp ai hai lượt đi và về',
@@ -1467,6 +1549,10 @@ const L={
     cselP1:'CHỌN <span>NGƯỜI CHƠI 1</span>', cselP2:'CHỌN <span>NGƯỜI CHƠI 2</span>',
     goP2:'Tiếp ▸ Người chơi 2', p1:'Người chơi 1', p2:'Người chơi 2',
     subPick:'Chọn nhân vật cho {who} · {n} nhân vật',
+    cselMode:'CHỌN <span>CHẾ ĐỘ</span>', subMode:'Chọn kiểu trận đấu rồi mới tới nhân vật',
+    goMode:'Tiếp ▸ Chọn nhân vật',
+    stageEach:'CHỌN <span>MÀN ĐẤU</span>', stagePickSub:'Mỗi trận một sàn đấu — chọn lại tuỳ ý',
+    stageGo:'⚔ VÀO TRẬN!',
     pwChart:'Biểu đồ sức mạnh', pwTable:'Chấm điểm thang 100', pwAvg:'Trung bình',
     hpTip:'Máu khởi đầu của nhân vật này — chỉnh thoải mái',
     hpAll:'Máu mọi nhân vật', hpStd:'Chuẩn '+HP_STD,
@@ -1485,9 +1571,9 @@ const L={
     music:'🎵 Music', musicVol:'Music volume', vol:'Volume', mute:'Mute hits',
     cselChar:'SELECT <span>FIGHTER</span>', cselStage:'SELECT <span>STAGE</span>',
     go:'⚔ Fight', goNext:'Next ▸ Stage', goFight:'⚔ FIGHT!', back:'◂ Back', close:'Close',
-    mDuel:'⚔ Duel', mDuelSub:'1 vs 1',
-    mFfa:'🔥 Free-for-all', mFfaSub:'3–6 fighters · last one standing',
-    mTeam:'🛡 Team battle', mTeamSub:'2–4 teams · up to 8 fighters',
+    mDuel:'Duel', mDuelSub:'1 vs 1',
+    mFfa:'Free-for-all', mFfaSub:'3–6 fighters · last one standing',
+    mTeam:'Team battle', mTeamSub:'2–4 teams · up to 8 fighters',
     sideL:'Left side', sideR:'Right side', stagePick:'Select stage',
     again:'↻ Rematch', repick:'⚔ Change fighter / stage',
     recGo:'⏺ Record 9:16 · 1080p', recStop:'⏹ Stop ({t})', recWait:'⏳ Building video…',
@@ -1503,8 +1589,8 @@ const L={
     subTeamStep:'Pick {lo}–{hi} fighters for team {n} · {cur}/{max} on the field',
     rosterHint:'Tap a fighter below to add ({lo} minimum)',
     rmTeam:'✕ Remove team', addTeam:'+ Add team', rmFighter:'Remove from line-up',
-    mLeague:'🏆 League', mLeagueSub:'3–8 fighters · points table',
-    mCup:'🥇 Tournament', mCupSub:'4 or 8 fighters · bracket',
+    mLeague:'League', mLeagueSub:'3–8 fighters · points table',
+    mCup:'Tournament', mCupSub:'4 or 8 fighters · bracket',
     cselLeague:'PICK THE <span>LEAGUE</span>', cselCup:'SEED THE <span>BRACKET</span>',
     subLeague:'League — pick {lo}–{hi} fighters, everyone plays everyone once',
     subLeague2:'League — pick {lo}–{hi} fighters, everyone plays everyone twice, home and away',
@@ -1533,6 +1619,10 @@ const L={
     cselP1:'SELECT <span>PLAYER 1</span>', cselP2:'SELECT <span>PLAYER 2</span>',
     goP2:'Next ▸ Player 2', p1:'Player 1', p2:'Player 2',
     subPick:'Pick a fighter for {who} · {n} fighters',
+    cselMode:'SELECT <span>MODE</span>', subMode:'Pick how the match runs, then pick fighters',
+    goMode:'Next ▸ Fighters',
+    stageEach:'SELECT <span>STAGE</span>', stagePickSub:'A fresh stage for every match — your pick',
+    stageGo:'⚔ FIGHT!',
     pwChart:'Power chart', pwTable:'Rated out of 100', pwAvg:'Average',
     hpTip:'Starting HP for this fighter — set it to whatever you like',
     hpAll:'HP for everyone', hpStd:'Standard '+HP_STD,
@@ -1585,7 +1675,19 @@ const STAGES=[
   {key:'space',   name:'DEEP SPACE',    vn:'Vũ trụ',        sub:{vi:'Vũ trụ',en:'Orbital platform'},
    sky:'#05040F', far:'#140F2E', fog:'#C0A8FF'},
   {key:'roof',    name:'SUNSET ROOF',   vn:'Mái nhà hoàng hôn', sub:{vi:'Mái nhà hoàng hôn',en:'Sunset rooftop'},
-   sky:'#2A1030', far:'#5B2340', fog:'#FFC07A'}
+   sky:'#2A1030', far:'#5B2340', fog:'#FFC07A'},
+  {key:'volcano', name:'VOLCANO',       vn:'Miệng núi lửa', sub:{vi:'Miệng núi lửa',en:'Molten crater'},
+   sky:'#2A0A08', far:'#7A1E0E', fog:'#FF8A3D'},
+  {key:'temple',  name:'SKY TEMPLE',    vn:'Đền trên mây',  sub:{vi:'Đền trên mây',en:'Temple in the clouds'},
+   sky:'#1B2A4A', far:'#4E74A8', fog:'#CFE6FF'},
+  {key:'snow',    name:'FROZEN PEAK',   vn:'Đỉnh băng',     sub:{vi:'Đỉnh băng',en:'Frozen summit'},
+   sky:'#0E1C2E', far:'#2E5578', fog:'#BFEFFF'},
+  {key:'desert',  name:'DESERT RUINS',  vn:'Phế tích sa mạc', sub:{vi:'Phế tích sa mạc',en:'Sunbaked ruins'},
+   sky:'#3A2410', far:'#A87038', fog:'#FFD98A'},
+  {key:'cavern',  name:'CRYSTAL CAVE',  vn:'Hang pha lê',   sub:{vi:'Hang pha lê',en:'Crystal cavern'},
+   sky:'#0A0A1C', far:'#2A1A56', fog:'#9B7BFF'},
+  {key:'sakura',  name:'SAKURA GARDEN', vn:'Vườn anh đào',  sub:{vi:'Vườn anh đào',en:'Cherry blossom garden'},
+   sky:'#2A1428', far:'#6E3050', fog:'#FFC2DC'}
 ];
 const STAGE_KEYS=STAGES.map(s=>s.key);
 const stageOf=k=>STAGES.find(s=>s.key===(k||STAGE))||STAGES[0];
@@ -9741,7 +9843,7 @@ function stageArt(st){
     ctx.strokeStyle='rgba(160,140,255,.35)'; ctx.lineWidth=2;
     for(let x=0;x<=W;x+=64){ ctx.beginPath(); ctx.moveTo(x,HZ+40); ctx.lineTo(x,H); ctx.stroke(); }
     for(let y=HZ+40;y<=H;y+=48){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-  }else{                                                           // roof — mái nhà hoàng hôn
+  }else if(st.key==='roof'){                                      // mái nhà hoàng hôn
     const sky=ctx.createLinearGradient(0,0,0,HZ);
     sky.addColorStop(0,'#2A1030'); sky.addColorStop(.55,'#8E2F4A'); sky.addColorStop(1,'#FF9A4A');
     ctx.fillStyle=sky; ctx.fillRect(0,0,W,HZ);
@@ -9764,6 +9866,141 @@ function stageArt(st){
     ctx.fillStyle='#241021'; ctx.fillRect(W*.06,HZ-46,46,46);       // ống thông gió
     ctx.fillRect(W*.84,HZ-34,34,34);
     ctx.fillStyle='#2A1024'; ctx.fillRect(0,HZ-16,W,18);            // gờ tường
+  }else if(st.key==='volcano'){
+    for(let i=0;i<5;i++){                                          // vách núi đen dựng đứng
+      const x=i*W/4-W/8, bw=W/3.4, bh=HZ*(.5+sr(i+60)*.5);
+      ctx.fillStyle=i%2?'#1E0906':'#140605';
+      ctx.beginPath(); ctx.moveTo(x,HZ); ctx.lineTo(x+bw/2,HZ-bh); ctx.lineTo(x+bw,HZ); ctx.fill();
+    }
+    ctx.fillStyle='#FF6A1E'; ctx.globalAlpha=.5;                   // quầng lửa sau đỉnh núi
+    ctx.beginPath(); ctx.ellipse(W/2,HZ,W*.44,64,0,0,7); ctx.fill();
+    ctx.globalAlpha=1;
+    for(let i=0;i<34;i++){                                         // tàn lửa bay lên
+      ctx.globalAlpha=.25+sr(i+11)*.65;
+      ctx.fillStyle=sr(i)>.55?'#FFD27A':'#FF7A2E';
+      ctx.fillRect(sr(i)*W, HZ-sr(i+21)*HZ, 2.4, 4.6);
+    }
+    ctx.globalAlpha=1;
+    const f=ctx.createLinearGradient(0,HZ,0,H);
+    f.addColorStop(0,'#2E1410'); f.addColorStop(1,'#150808');
+    ctx.fillStyle=f; ctx.fillRect(0,HZ,W,H-HZ);
+    for(let i=0;i<7;i++){                                          // khe nham thạch nứt trên sàn
+      const y=HZ+18+i*((H-HZ)/7), w0=W*(.3+sr(i+5)*.55);
+      const gl=ctx.createLinearGradient(0,y,0,y+9);
+      gl.addColorStop(0,'rgba(255,160,60,0)'); gl.addColorStop(.5,'#FF8A3D'); gl.addColorStop(1,'rgba(255,120,40,0)');
+      ctx.fillStyle=gl; ctx.fillRect(W*sr(i+31)*.5,y,w0,9);
+    }
+  }else if(st.key==='temple'){
+    for(let i=0;i<9;i++){                                          // biển mây dưới chân đền
+      ctx.globalAlpha=.18+sr(i)*.2; ctx.fillStyle='#EAF2FF';
+      ctx.beginPath(); ctx.ellipse(W*sr(i+13), HZ-14-sr(i+2)*80, 78+sr(i+8)*80, 20+sr(i)*12, 0, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    ctx.fillStyle='#8A2E2A'; ctx.fillRect(W/2-132,58,264,16);       // mái ngói đỏ
+    ctx.beginPath(); ctx.moveTo(W/2-150,74); ctx.lineTo(W/2+150,74); ctx.lineTo(W/2+118,88); ctx.lineTo(W/2-118,88); ctx.fill();
+    ctx.fillStyle='#C9A24A';                                        // cột đền
+    for(const x of [W/2-96,W/2-34,W/2+26,W/2+84]) ctx.fillRect(x,88,14,HZ-88);
+    ctx.fillStyle='#5E4A2A'; ctx.fillRect(W/2-140,HZ-12,280,14);
+    const f=ctx.createLinearGradient(0,HZ,0,H);
+    f.addColorStop(0,'#D9D2C0'); f.addColorStop(1,'#9E9684');
+    ctx.fillStyle=f; ctx.fillRect(0,HZ,W,H-HZ);
+    ctx.strokeStyle='rgba(80,70,50,.32)'; ctx.lineWidth=2;           // phiến đá lát
+    for(let y=HZ+20;y<H;y+=34){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    for(let x=0;x<=W;x+=78){ ctx.beginPath(); ctx.moveTo(x,HZ); ctx.lineTo(x,H); ctx.stroke(); }
+  }else if(st.key==='snow'){
+    for(let i=0;i<6;i++){                                          // dãy núi tuyết
+      const x=i*W/5-W/10, bw=W/2.6, bh=HZ*(.45+sr(i+70)*.5);
+      ctx.fillStyle=i%2?'#2E5578':'#20405E';
+      ctx.beginPath(); ctx.moveTo(x,HZ); ctx.lineTo(x+bw/2,HZ-bh); ctx.lineTo(x+bw,HZ); ctx.fill();
+      ctx.fillStyle='#EAF6FF';                                      // chóp tuyết
+      ctx.beginPath(); ctx.moveTo(x+bw/2-bw*.15,HZ-bh*.74); ctx.lineTo(x+bw/2,HZ-bh); ctx.lineTo(x+bw/2+bw*.15,HZ-bh*.74); ctx.fill();
+    }
+    for(let i=0;i<90;i++){                                          // bông tuyết rơi
+      ctx.globalAlpha=.3+sr(i+4)*.6; ctx.fillStyle='#fff';
+      ctx.fillRect(sr(i)*W, sr(i+50)*HZ, 2, 2);
+    }
+    ctx.globalAlpha=1;
+    const f=ctx.createLinearGradient(0,HZ,0,H);
+    f.addColorStop(0,'#E6F3FF'); f.addColorStop(1,'#A9C6DE');
+    ctx.fillStyle=f; ctx.fillRect(0,HZ,W,H-HZ);
+    ctx.globalAlpha=.3; ctx.fillStyle='#7FB6DC';                    // gò tuyết thổi thành luống
+    for(let i=0;i<6;i++){
+      ctx.beginPath(); ctx.ellipse(W*sr(i+90), HZ+34+i*42, 130+sr(i)*90, 13, 0, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }else if(st.key==='desert'){
+    ctx.fillStyle='#FFE9A8'; ctx.beginPath(); ctx.arc(W*.72,64,40,0,7); ctx.fill();   // mặt trời trắng
+    for(let i=0;i<4;i++){                                           // cồn cát xa
+      ctx.fillStyle=['#8A5E28','#9C6C2E','#B07C36','#C08C42'][i];
+      ctx.beginPath(); ctx.ellipse(W*(.15+i*.27), HZ+10, W*.4, 46+i*10, 0, 0, 7); ctx.fill();
+    }
+    for(const [x,h,w0] of [[W*.12,120,30],[W*.24,74,22],[W*.8,96,26]]){   // cột đá đổ nát
+      ctx.fillStyle='#C4A96E'; ctx.fillRect(x,HZ-h,w0,h);
+      ctx.fillStyle='#A88C52'; ctx.fillRect(x-5,HZ-h-9,w0+10,9);
+    }
+    const f=ctx.createLinearGradient(0,HZ,0,H);
+    f.addColorStop(0,'#D8A85A'); f.addColorStop(1,'#A87038');
+    ctx.fillStyle=f; ctx.fillRect(0,HZ,W,H-HZ);
+    ctx.globalAlpha=.16; ctx.fillStyle='#5A3A14';                    // vân cát gợn
+    for(let i=0;i<9;i++){
+      ctx.beginPath(); ctx.ellipse(W*sr(i+120), HZ+26+i*30, 150+sr(i)*80, 7, 0, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }else if(st.key==='cavern'){
+    ctx.fillStyle='#0A0A1C'; ctx.fillRect(0,0,W,HZ);
+    for(let i=0;i<14;i++){                                          // nhũ đá rủ từ trần
+      const x=i*W/13+sr(i+140)*16, h=30+sr(i+7)*90;
+      ctx.fillStyle=i%2?'#1E1640':'#17102F';
+      ctx.beginPath(); ctx.moveTo(x-11,0); ctx.lineTo(x+11,0); ctx.lineTo(x,h); ctx.fill();
+    }
+    for(let i=0;i<11;i++){                                          // tinh thể phát sáng
+      const x=W*sr(i+200), y=HZ-20-sr(i+3)*120, h=26+sr(i+9)*52;
+      ctx.globalAlpha=.85; ctx.fillStyle=sr(i)>.5?'#9B7BFF':'#5BE0FF';
+      ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x+9,y); ctx.lineTo(x-9,y); ctx.fill();
+      ctx.globalAlpha=.22;
+      ctx.beginPath(); ctx.arc(x,y-h*.5,30,0,7); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    const f=ctx.createLinearGradient(0,HZ,0,H);
+    f.addColorStop(0,'#2A1F56'); f.addColorStop(1,'#120E2A');
+    ctx.fillStyle=f; ctx.fillRect(0,HZ,W,H-HZ);
+    for(let i=0;i<7;i++){                                           // tinh thể mọc lên từ sàn
+      const x=W*sr(i+300), h=22+sr(i+40)*40;
+      ctx.globalAlpha=.7; ctx.fillStyle='#7A5BE0';
+      ctx.beginPath(); ctx.moveTo(x,H-8-h); ctx.lineTo(x+8,H-8); ctx.lineTo(x-8,H-8); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    ctx.strokeStyle='rgba(155,123,255,.22)'; ctx.lineWidth=2;
+    for(let y=HZ+26;y<H;y+=40){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  }else{                                                            // sakura — vườn anh đào
+    const sky=ctx.createLinearGradient(0,0,0,HZ);
+    sky.addColorStop(0,'#2A1428'); sky.addColorStop(1,'#8A4060');
+    ctx.fillStyle=sky; ctx.fillRect(0,0,W,HZ);
+    ctx.fillStyle='#FFE4EE'; ctx.globalAlpha=.85;                   // trăng
+    ctx.beginPath(); ctx.arc(W*.8,58,32,0,7); ctx.fill(); ctx.globalAlpha=1;
+    for(let i=0;i<5;i++){                                           // cây anh đào
+      const x=i*W/4-W/8+sr(i+400)*30;
+      ctx.fillStyle='#3A1F2E'; ctx.fillRect(x-7,HZ-120,14,124);
+      ctx.strokeStyle='#3A1F2E'; ctx.lineWidth=5;
+      ctx.beginPath(); ctx.moveTo(x,HZ-88); ctx.lineTo(x-34,HZ-124); ctx.moveTo(x,HZ-96); ctx.lineTo(x+32,HZ-130); ctx.stroke();
+      for(let k=0;k<7;k++){                                         // tán hoa
+        ctx.globalAlpha=.75+sr(i*9+k)*.25;
+        ctx.fillStyle=sr(i*5+k)>.5?'#FFC2DC':'#FF9EC4';
+        ctx.beginPath(); ctx.arc(x-46+sr(i*11+k)*92, HZ-136+sr(i*13+k)*52, 22+sr(i+k)*16, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha=1;
+    }
+    for(let i=0;i<46;i++){                                          // cánh hoa bay
+      ctx.globalAlpha=.4+sr(i+60)*.55; ctx.fillStyle='#FFD3E4';
+      ctx.beginPath(); ctx.ellipse(sr(i)*W, sr(i+33)*H, 3.6, 2.2, sr(i+9)*3, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    const f=ctx.createLinearGradient(0,HZ,0,H);
+    f.addColorStop(0,'#4E3040'); f.addColorStop(1,'#2A1A26');
+    ctx.fillStyle=f; ctx.fillRect(0,HZ,W,H-HZ);
+    ctx.globalAlpha=.14; ctx.fillStyle='#FFC2DC';                   // cánh hoa rụng phủ nền
+    for(let i=0;i<40;i++) ctx.fillRect(sr(i+500)*W, HZ+sr(i+510)*(H-HZ), 4, 3);
+    ctx.globalAlpha=1;
   }
 }
 /* Sàn đấu: có ảnh nền dán vào ô của màn thì ảnh THẮNG, chưa có thì vẽ vector. */
@@ -14904,9 +15141,13 @@ const cselDuel=()=>ARCADE&&TMP.mode==='duel';
    đang có, nên đổi số đội là danh sách bước tự dài ngắn theo. */
 function cselSteps(){
   if(!ARCADE) return ['chars','stage'];
-  if(TMP.mode==='duel') return ['p1','p2','stage'];
-  if(TMP.mode==='team') return TMP.teams.map((_,i)=>'t'+i).concat('stage');
-  return ['chars','stage'];
+  /* Bấm PRESS START là ra ngay MÀN CHỌN CHẾ ĐỘ, xong mới tới nhân vật — người dùng:
+     "vào game ấn phát là chọn trc chế độ chơi, xong rồi mới vào phần chọn nhân vật".
+     Xưởng KHÔNG có bước này (`dataset.page='all'`), mọi test cũ bấm #cselGo một phát
+     là vào trận. */
+  if(TMP.mode==='duel') return ['mode','p1','p2','stage'];
+  if(TMP.mode==='team') return ['mode'].concat(TMP.teams.map((_,i)=>'t'+i),'stage');
+  return ['mode','chars','stage'];
 }
 const teamStep=()=>{ const m=/^t(\d+)$/.exec(cselPage); return m?+m[1]:-1; };
 function cselFix(){                       // đổi chế độ giữa chừng thì kéo bước về cho hợp lệ
@@ -14922,6 +15163,7 @@ function stepReady(){
     const L=TMP.teams[i]||[];
     return L.length>=TEAM_MIN&&L.length<=TEAM_MAX&&tmpTotal()<=TEAM_TOTAL;
   }
+  if(cselPage==='mode') return true;          // chế độ nào cũng có sẵn một đội hình mặc định
   if(cselPage==='chars') return tmpReady();
   return cselPage==='stage'?tmpReady():true;
 }
@@ -14935,6 +15177,7 @@ function setTeamCount(n){
 /* Dòng phụ dưới tiêu đề. Ở trang chơi nó nói thẳng đang chọn cho ai — và phải gọi được
    từ `cselPaint()` nữa, không thì bấm "Tiếp" xong chữ vẫn đứng ở bước trước. */
 function cselSubText(){
+  if(ARCADE&&cselPage==='mode') return t('subMode');
   if(ARCADE&&(cselPage==='p1'||cselPage==='p2'))
     return tf('subPick',{who:cselPage==='p1'?t('p1'):t('p2'),n:CKEYS.length});
   const i=teamStep();
@@ -14950,9 +15193,10 @@ function cselPaint(){
   cselFix();
   box.dataset.page=ARCADE?cselPage:'all';
   const st=cselSteps(), i=st.indexOf(cselPage), last=i===st.length-1, ti=teamStep();
-  box.dataset.step=cselPage==='stage'?'stage':(i===0?'pick0':'pick');
+  box.dataset.step=cselPage==='mode'?'mode':cselPage==='stage'?'stage':(i<=1?'pick0':'pick');
   const h2=box.querySelector&&box.querySelector('h2');
-  if(h2) h2.innerHTML=cselPage==='stage'?t('cselStage')
+  if(h2) h2.innerHTML=cselPage==='mode'?t('cselMode')
+                     :cselPage==='stage'?t('cselStage')
                      :cselPage==='p1'?t('cselP1'):cselPage==='p2'?t('cselP2')
                      :ti>=0?tf('cselTeamN',{n:ti+1})
                      :(ARCADE&&TMP.mode==='league')?t('cselLeague')
@@ -14960,6 +15204,7 @@ function cselPaint(){
                      :(ARCADE&&TMP.mode==='ffa')?t('cselFfa'):t('cselChar');
   const giai=TMP.mode==='league'||TMP.mode==='cup';
   el('cselGo').textContent=!ARCADE?t('go'):(last?(giai?t('goComp'):t('goFight'))
+                     :cselPage==='mode'?t('goMode')
                      :cselPage==='p1'?t('goP2')
                      /* chỉ ghi "Tiếp ▸ Đội n+1" khi bước KẾ TIẾP đúng là một đội nữa;
                         đội cuối thì bước sau là chọn màn, phải ghi "Tiếp ▸ Chọn màn" */
@@ -14989,7 +15234,7 @@ function pickRowPaint(){
     return src?`<img alt="" src="${src}">`:`<span class="e" style="color:${C.color}">${C.emoji}</span>`;
   };
   if(cselDuel()){
-    if(cselPage==='p1') return tat();
+    if(cselPage==='p1'||cselPage==='mode') return tat();
     row.classList.remove('off');
     row.innerHTML=['a','b'].map(slot=>{
       const key=TMP[slot], C=CHARS[key];
@@ -15016,6 +15261,47 @@ function arcFight(){
   running=true; el('play').textContent=t('pause');
   vsShow();
 }
+/* ---------- chọn sàn đấu TRƯỚC MỖI TRẬN ----------
+   Người dùng: *"mỗi trận log vào có thể trc hết là chọn stadium, giả sử như league match
+   thì mỗi trận vào là đc chọn 1 background chứ k phải là chọn 1 background cho cả league"*.
+   Vì vậy màn này chen vào TRƯỚC `arcFight()` ở hai cửa: bấm ▶ trong bảng xếp hạng và bấm
+   "Đánh lại" sau khi hết trận. Trận ĐẦU TIÊN thì không cần — bước `stage` của màn chọn
+   nhân vật vừa hỏi xong rồi.
+   Chỉ có ở TRANG CHƠI; xưởng gọi thẳng hàm tiếp theo, mọi test cũ không đổi một nhịp nào. */
+let stagePickCb=null;
+function stagePaint(){
+  const box=document.getElementById('arcStageList'); if(!box) return;
+  box.innerHTML='';
+  for(const st of STAGES){
+    const b=document.createElement('button');
+    b.type='button'; b.className='sTile'+(st.key===STAGE?' on':''); b.dataset.stage=st.key;
+    b.innerHTML=`<img alt="" src="${stageThumb(st.key)}"><span class="sCap"><b>${st.name}</b><i>${tr(st.sub)||st.vn}</i></span>`;
+    b.addEventListener('click',()=>{ sfx('ui_tap'); STAGE=st.key; stagePaint(); });
+    box.appendChild(b);
+  }
+  const h2=document.getElementById('arcStageTitle'); if(h2) h2.innerHTML=t('stageEach');
+  const sub=document.getElementById('arcStageSub'); if(sub) sub.textContent=t('stagePickSub');
+  const go=document.getElementById('arcStageGo'); if(go) go.textContent=t('stageGo');
+}
+function stagePickOpen(cb){
+  const box=document.getElementById('arcStage');
+  if(!ARCADE||!box){ cb(); return; }
+  stagePickCb=cb;
+  stagePaint();
+  box.classList.remove('off');
+  sfx('ui_board');
+}
+function stagePickGo(){
+  const box=document.getElementById('arcStage'); if(box) box.classList.add('off');
+  const cb=stagePickCb; stagePickCb=null;
+  /* Sàn vừa chọn cũng thành sàn mặc định của giải, nên `compPlayNext()` không kéo ngược
+     về sàn cũ ở trận sau. */
+  if(COMP) COMP.stage=STAGE;
+  sfx('ui_next');
+  if(cb) cb();
+}
+if(document.getElementById('arcStageGo'))
+  document.getElementById('arcStageGo').addEventListener('click',stagePickGo);
 /* ---------- màn VS trước trận ----------
    Người dùng gửi ảnh màn chọn của Street Fighter II và chốt: "icon nhân vật rồi VS rõ ràng
    rồi mới vào". `vsOn` chặn `step()` nên trận đứng yên hẳn — kể cả mấy màn ra mắt (Ginyu
@@ -15075,7 +15361,11 @@ if(document.getElementById('arcVs'))
 /* Ba nút của màn giải đấu. Đặt ở đây vì phải dùng arcFight() ngay bên trên. */
 if(document.getElementById('compGo'))
   document.getElementById('compGo').addEventListener('click',()=>{
-    if(compPlayNext()){ compBoardClose(); arcFight(); }
+    if(!compNextMatch()) return;
+    compBoardClose();                     // đóng bảng TRƯỚC rồi mới hỏi sàn, không thì
+    stagePickOpen(()=>{                   // lúc chọn xong bảng loé ra một khung hình
+      if(compPlayNext()) arcFight(); else compOpen();
+    });
   });
 if(document.getElementById('compPick'))
   document.getElementById('compPick').addEventListener('click',()=>{
@@ -15199,7 +15489,7 @@ if(ARCADE){
     if(COMP&&!compDone()){ compOpen(); return; }
     cselPage=cselSteps()[0]; openCsel();
   });
-  el('arcAgain').addEventListener('click',()=>{ newGame(); arcFight(); });
+  el('arcAgain').addEventListener('click',()=>{ stagePickOpen(()=>{ newGame(); arcFight(); }); });
   el('arcPick').addEventListener('click',()=>{ cselPage=cselSteps()[0]; openCsel(); });
   /* Trận xong thì hiện dải nút chơi lại — kiểm mỗi khung hình cho khỏi phải cắm thêm
      móc vào finish(), vì finish() còn được gọi từ nhiều đường khác nhau. */

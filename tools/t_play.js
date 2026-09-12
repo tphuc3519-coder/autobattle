@@ -69,8 +69,31 @@ function wavUrl() {
   await page.click('#arcStart');
   await page.waitForTimeout(300);
   ok(await page.locator('#charSelect').isVisible(), 'bam START thi mo man chon nhan vat');
+  /* ---------- BƯỚC ĐẦU TIÊN LÀ CHỌN CHẾ ĐỘ ----------
+     Người dùng: "vào game ấn phát là chọn trc chế độ chơi, xong rồi mới vào phần chọn
+     nhân vật". Dải năm nút chế độ giờ nở ra thành một màn riêng, và mấy bước sau thì
+     nó biến mất hẳn. */
+  const md = await page.evaluate(() => ({
+    page: document.getElementById('charSelect').dataset.page,
+    step: document.getElementById('charSelect').dataset.step,
+    h2: document.querySelector('#charSelect h2').textContent,
+    the: [...document.querySelectorAll('.cselModes .mTab')].filter(b => b.offsetParent).length,
+    luoi: [...document.querySelectorAll('#listA .cTile')].filter(b => b.offsetParent).length,
+    lui: !document.getElementById('cselBack').classList.contains('off')
+  }));
+  ok(md.page === 'mode', `bam START la ra man CHON CHE DO truoc (${md.page})`);
+  ok(md.step === 'mode', `mang data-step mode (${md.step})`);
+  ok(/MODE|CHE DO|CHẾ ĐỘ/i.test(md.h2), `tieu de ghi dang chon che do (${md.h2})`);
+  ok(md.the === 5, `du nam the che do tren man rieng (${md.the})`);
+  ok(md.luoi === 0, 'man chon che do chua hien luoi nhan vat');
+  ok(!md.lui, 'buoc dau khong co nut quay lai');
+  await page.click('#cselGo');
+  await page.waitForTimeout(250);
   ok(await page.evaluate(() => document.getElementById('charSelect').dataset.page) === 'p1',
-     'dung o trang chon NGUOI CHOI 1 truoc');
+     'chon che do xong moi toi NGUOI CHOI 1');
+  ok(await page.evaluate(() =>
+       [...document.querySelectorAll('.cselModes .mTab')].filter(b => b.offsetParent).length) === 0,
+     'sang buoc chon nhan vat thi dai che do bien mat');
   ok(!await page.locator('#stageList .sTile').first().isVisible(), 'trang nhan vat thi chua hien luoi man');
 
   /* Chọn P1 xong mới tới P2 — người dùng bác lối để hai cột cạnh nhau.
@@ -195,6 +218,17 @@ function wavUrl() {
      Đây là lối `t_comp.js` đã dùng cho `#compGo` / `#arcComp`. */
   await page.evaluate(() => document.getElementById('arcAgain').click());
   await page.waitForTimeout(300);
+  /* MỖI TRẬN MỘT SÀN — người dùng: "mỗi trận log vào có thể trc hết là chọn stadium".
+     Bấm "Đánh lại" thì hỏi sàn trước, chứ không lao thẳng vào sàn cũ. */
+  ok(await page.evaluate(() => !document.getElementById('arcStage').classList.contains('off')),
+     'bam Danh lai thi hoi CHON SAN truoc');
+  ok(await page.evaluate(() => document.querySelectorAll('#arcStageList .sTile').length) === 12,
+     'man hoi san liet ke du muoi hai san');
+  await page.evaluate(() => document.querySelector('#arcStageList .sTile[data-stage="roof"]').click());
+  await page.evaluate(() => document.getElementById('arcStageGo').click());
+  await page.waitForTimeout(300);
+  ok(await page.evaluate(() => window.__STAGE()) === 'roof',
+     'san vua chon an vao tran moi (roof)');
   await page.evaluate(() => { const e = document.getElementById('arcVs');
                               if (e && !e.classList.contains('off')) e.click(); });   // bỏ qua màn VS của trận mới
   await page.waitForTimeout(400);
@@ -216,6 +250,10 @@ function wavUrl() {
   await page.click('#pick');
   await page.waitForTimeout(250);
   await page.click('#mTabTeam');
+  await page.waitForTimeout(250);
+  ok(await page.evaluate(() => document.getElementById('charSelect').dataset.page) === 'mode',
+     'bam Doi nhan vat cung ve man CHON CHE DO truoc');
+  await page.click('#cselGo');                       // chốt chế độ rồi mới tới đội hình
   await page.waitForTimeout(300);
   const d1 = await page.evaluate(() => ({
     page: document.getElementById('charSelect').dataset.page,

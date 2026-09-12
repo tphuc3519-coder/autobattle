@@ -39,7 +39,7 @@ File dài ~7500 dòng. Các khu ngăn nhau bằng comment `/* ---------- tên --
 | `AI` | `MELEE_MIN/MAX/BAND/GAP`, `orbWant()`, `aiVec()`, `dodgeVec()`, `playerVec()` |
 | `step` | một hàm to — toàn bộ mô phỏng một bước 1/120 giây |
 | `draw` | `vector()`, `sprite()`, `drawFighter()`, `drawGarden()`, `drawForestGrip()`, `bombAt()`, `tendril()`, phân cảnh, băng-rôn |
-| `màn đấu` | `STAGES`, `stageArt()`, `arenaFloor()` — sáu sàn đấu và ô dán ảnh nền |
+| `màn đấu` | `STAGES`, `stageArt()`, `arenaFloor()` — mười hai sàn đấu và ô dán ảnh nền |
 | `gói phát hành` | `packBuild()` / `packLoad()` — đường đưa ảnh, tiếng sang trang chơi |
 | `loop` / `ghi hình sàn đấu` / `màn chọn nhân vật` | vòng `requestAnimationFrame`, quay video (`recFrame()` dựng khung dọc 9:16), ba nút chế độ `.mTab`, dựng thẻ `.cTile` và dải đội hình `.cChip` |
 
@@ -2076,7 +2076,7 @@ trận của giải vẫn là hai người đứng hai đầu sàn y như đấu
 
 Kiểm bằng `node tools/t_comp.js`.
 
-## 2d. Sáu màn đấu và sàn đấu đã tân trang
+## 2d. Mười hai màn đấu và sàn đấu đã tân trang
 
 Người dùng: *"thiết kế như game street fighter… có screen chọn màn với chọn nhân vật luôn"*
 và *"tân trang sàn đấu luôn"*. Hai thứ đó nằm chung một chỗ.
@@ -2091,6 +2091,23 @@ và *"tân trang sàn đấu luôn"*. Hai thứ đó nằm chung một chỗ.
 | `forest` | FOREST | thân cây, tán lá, sương là là mặt đất |
 | `space` | DEEP SPACE | sao, tinh vân, hành tinh, sàn kim loại kẻ ô |
 | `roof` | SUNSET ROOF | trời hoàng hôn, chân trời nhà cao tầng, mái ngói chạy về phía xa |
+| `volcano` | VOLCANO | vách núi đen, quầng lửa sau đỉnh, tàn lửa bay lên, khe nham thạch trên sàn |
+| `temple` | SKY TEMPLE | biển mây, mái ngói đỏ trên bốn cột vàng, sàn đá lát |
+| `snow` | FROZEN PEAK | dãy núi chóp tuyết, tuyết rơi, luống tuyết bị gió thổi |
+| `desert` | DESERT RUINS | mặt trời trắng, cồn cát chồng lớp, cột đá đổ nát, vân cát gợn |
+| `cavern` | CRYSTAL CAVE | nhũ đá rủ từ trần, tinh thể tím-lam phát sáng cả trên lẫn dưới |
+| `sakura` | SAKURA GARDEN | trăng, năm cây anh đào, cánh hoa bay và rụng phủ nền |
+
+> **Sáu màn sau thêm cùng một lượt với màn chọn chế độ** *(người dùng: "thêm thêm khoảng
+> 6 background nữa cho thành 12 background")*. Mỗi màn mới chỉ cần **ba chỗ**: một dòng
+> trong `STAGES`, một nhánh trong `stageArt()`, xong. Ô dán ảnh nền tự có vì nhóm `stages`
+> trong `SETS` đọc thẳng `STAGES`, bảng nhạc nền (`BGM_SLOTS`) cũng vậy — **đừng đi thêm
+> tay vào hai chỗ đó**. `t_stage.js` đếm số màn và đòi **mỗi màn một tông màu trung bình
+> riêng**, nên màu mới phải khác hẳn sáu màu cũ; `t_ui.js` đọc số ô nhạc qua
+> `2 + STAGES.length` chứ không ghim con số.
+>
+> **Nhánh cuối của `stageArt()` là `else` trần (sakura), không phải `else if`** — thêm màn
+> nữa thì chèn `else if` vào TRƯỚC nó, đừng thêm sau.
 
 > **Màn rừng KHÔNG mang tên nhà Nara.** Người dùng chốt: *"bỏ chữ khu rừng nara mà thay
 > thành rừng bthg trong khi chọn sàn"* — đây là một sàn đấu bình thường, ai đánh cũng được,
@@ -2148,9 +2165,30 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
 
   | Chế độ | Các bước |
   |---|---|
-  | đấu tay đôi | `p1` → `p2` → `stage` |
-  | hỗn chiến | `chars` (một khung đội hình) → `stage` |
-  | **đánh đội** | **`t0` → `t1` → … → `stage`** — mỗi đội một bước |
+  | đấu tay đôi | **`mode`** → `p1` → `p2` → `stage` |
+  | hỗn chiến · giải vòng tròn · giải loại trực tiếp | **`mode`** → `chars` (một khung đội hình) → `stage` |
+  | **đánh đội** | **`mode`** → **`t0` → `t1` → … → `stage`** — mỗi đội một bước |
+
+  > **BƯỚC ĐẦU TIÊN LÀ CHỌN CHẾ ĐỘ** — người dùng: *"vào game ấn phát là chọn trc chế độ
+  > chơi, xong rồi mới vào phần chọn nhân vật"*. Dải năm nút `.cselModes` vốn chen trên
+  > đầu màn chọn nhân vật; giờ nó có hẳn một bước riêng và **biến mất hẳn ở mấy bước sau**
+  > (`data-step="pick0"` cũng giấu nó đi). Đổi chế độ thì bấm **Quay lại**.
+  > - `data-step` giờ có **bốn** giá trị: `mode` · `pick0` · `pick` · `stage`. Bước chọn
+  >   ĐẦU TIÊN (`pick0`) giờ ở **chỉ số 1** chứ không phải 0 — `cselPaint()` đọc `i<=1`.
+  > - Trên màn đó `.cselModes` thành **lưới thẻ đứng cao gần hết màn**: `grid-auto-rows:1fr`,
+  >   `margin:auto 0` canh cả khối vào giữa, trần `430px` để màn cao không kéo thẻ dài ngoằng.
+  >   Mỗi nút mang `data-ico` (biểu tượng to, vẽ bằng `::after` + `order:-1`) và `--mc`
+  >   (màu riêng của chế độ, dùng cho vạt sáng hắt lên từ đáy và quầng quanh biểu tượng).
+  > - **Emoji đã TÁCH khỏi chuỗi nhãn** (`mDuel` không còn `⚔` ở đầu) và chuyển sang
+  >   `data-ico` — để nó ở cả hai chỗ là ra hai cái emoji cùng một nghĩa, một to một bé.
+  > - **Thẻ đang chọn phải khai LẠI nền vàng trong chính khối `[data-step="mode"]`**: luật
+  >   nền của khối đó đặc hiệu hơn `.mTab.on`, không khai lại là thẻ đang chọn thành đen sì.
+  >   Đã dính đúng một lần. Cùng họ: **đừng dùng `background-blend-mode:multiply`** cho vạt
+  >   màu — trộn nhân vào nền tím vốn đã tối thì cả tấm thẻ đen kịt.
+  > - `stepReady()` cho bước `mode` **luôn đúng**: chế độ nào cũng có sẵn một đội hình mặc định.
+  > - Mọi cửa vào màn chọn đều đã đọc `cselSteps()[0]` nên tự ra bước `mode`, **đừng ghim
+  >   `'p1'` vào chỗ nào**. Kéo theo: test nào bấm `#arcStart` hay `#pick` rồi làm việc ngay
+  >   với lưới nhân vật thì phải chèn **một cú `#cselGo`** (đã sửa `t_play` · `t_comp` · `t_dex`).
 
   > **Đánh đội đi TỪNG ĐỘI MỘT**, đúng quy trình của 1v1 — người dùng chốt: *"chọn đội 1
   > trước đội 2 sau — quy trình như 1v1 chứ"*. Số bước ăn theo `TMP.teams.length`, nên đổi
@@ -2283,6 +2321,27 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
     chớp ra **cặp đấu của trận TRƯỚC** còn sót trong `G.fighters`. Người dùng quay được đúng
     cảnh đó: bấm "Khai mạc giải" mà hiện ra `Captain Ginyu vs ChiChi` trong khi trận đầu của
     giải là `ChiChi vs Konohamaru`. Gác bằng `if(!compOn()) arcFight();`.
+- **MỖI TRẬN MỘT SÀN — `#arcStage` / `stagePickOpen()`.** Người dùng: *"mỗi trận log vào
+  có thể trc hết là chọn stadium, giả sử như league match thì mỗi trận vào là đc chọn 1
+  background chứ k phải là chọn 1 background cho cả league"*. Vì vậy màn hỏi sàn chen vào
+  **TRƯỚC `arcFight()`** ở đúng **hai cửa**: nút ▶ trong bảng xếp hạng (`#compGo`) và nút
+  *Đánh lại* (`#arcAgain`). Trận **đầu tiên** thì không hỏi — bước `stage` của màn chọn
+  nhân vật vừa hỏi xong rồi.
+  - `stagePickOpen(cb)` giữ lại hàm cần chạy trong `stagePickCb` rồi mở lớp phủ; bấm
+    **⚔ VÀO TRẬN!** (`#arcStageGo`) thì đóng lớp phủ và gọi `cb()`. `!ARCADE` thì gọi
+    thẳng `cb()` — **xưởng không bao giờ thấy màn này**, mọi test cũ không đổi một nhịp nào.
+  - Chốt sàn xong **gán luôn `COMP.stage=STAGE`**, nên `compPlayNext()` (vốn kéo `STAGE` về
+    `COMP.stage`) không lôi ngược về sàn của trận trước. Không phải sửa `compPlayNext()`.
+  - `#compGo` phải **`compBoardClose()` TRƯỚC** khi mở màn hỏi sàn, không thì lúc chọn xong
+    bảng xếp hạng loé ra đúng một khung hình. Và hỏi `compNextMatch()` trước để giải đã
+    xong thì không mở màn hỏi sàn suông.
+  - Lớp phủ đặt **z-index 67**, trên `.arcOver` (65), cộng `body:has(#arcStage:not(.off))
+    .arcOver{display:none}` — thiếu chỗ đó thì dải *Đánh lại / Đổi nhân vật* nằm chình ình
+    giữa màn hỏi sàn.
+  - Dùng lại vỏ `.csel` + `.sTiles` + `stageThumb()` của màn chọn nhân vật, **đừng dựng
+    kiểu lớp phủ thứ hai**. Khoá chữ là **`stageEach`**, KHÔNG phải `stagePick` — `stagePick`
+    đã có từ trước (dòng phụ `Chọn màn đấu · DOJO` dưới bước `stage`) và trùng tên là nó in
+    nguyên chuỗi `SELECT <span>STAGE</span>` ra màn hình. Đã dính đúng một lần.
 - **GIỮ MÀN WINNER RỒI MỚI HIỆN DẢI NÚT.** Người dùng chốt: *"lúc thắng rồi thì hold lại để
   hiện winner, xong sau đó cho người chơi nút tự chuyển"*. `#arcOver` chỉ bật khi
   **`G.endT >= 2`** — đúng lúc `G.announced` mở ra băng-rôn và pháo giấy. Trước đó nút nhảy ra
@@ -2376,9 +2435,10 @@ thẻ chiêu, rồi `<details>` "xem chi tiết số liệu" mở ra **mảng `C
 ### Nhạc nền — mặc định TẮT, nhạc là của bạn
 
 - `MUSIC.on = false` và `MUSIC.synth = false` ngay từ đầu: mở game lên là im lặng.
-- `BGM_SLOTS` = **8 ô**: `bgm_menu` · `bgm_battle` (dùng chung khi màn chưa có nhạc riêng) ·
-  sáu ô theo sáu màn. Nạp file ở bảng **🎵 Nhạc nền của bạn** trong xưởng, lưu vào kho theo
-  đúng tên ô.
+- `BGM_SLOTS` = **`2 + STAGES.length` ô** (hiện là 14): `bgm_menu` · `bgm_battle` (dùng
+  chung khi màn chưa có nhạc riêng) · một ô cho MỖI màn. Nó đọc thẳng `STAGES` nên **thêm
+  sàn đấu là bảng tự dài ra một ô** — đừng gõ tay. Nạp file ở bảng **🎵 Nhạc nền của bạn**
+  trong xưởng, lưu vào kho theo đúng tên ô.
 - Nhạc chạy bằng thẻ `<audio loop>`, **không** đi qua `decodeAudioData` — file nhạc dài,
   giải mã cả bài ra buffer là ngốn bộ nhớ mà chẳng để làm gì.
 - **Mọi chỗ bật nhạc gọi `musicStart()`**, đừng gọi thẳng `startMusic()` nữa. Ba nấc:
@@ -3369,7 +3429,8 @@ node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4
                         # số ô trong lưới chứ không ghim số, dòng phụ và hàng thể thức đếm
                         # đúng theo), khối kết quả đã đá bị cắt còn 40 trận gần nhất,
                         # bảng xếp hạng cộng điểm và xếp thứ tự đúng, dàn đấu
-                        # thủ bấm là bật/tắt chứ không có bản sao, sơ đồ nhánh 8 người đủ ba
+                        # thủ bấm là bật/tắt chứ không có bản sao, MỖI TRẬN của giải được
+                        # chọn một sàn riêng trước khi vào, sơ đồ nhánh 8 người đủ ba
                         # vòng + trận tranh hạng ba, 5 người thì khoá nút vào giải, xếp nhánh
                         # bốc thăm / tự xếp (bấm hai người là tráo chỗ), hiệu số = MÁU CÒN
                         # LẠI của người thắng (+137 / −137, dòng kết quả in 0–137) và giải
@@ -3419,11 +3480,14 @@ node tools/t_dex.js     # chạm hai lần vào ô nhân vật thì bật bảng
                         # chấm điểm, chi tiết thì có đủ chín dòng — biểu đồ có ở CẢ HAI), máu chuẩn
                         # 800 và ba đường chỉnh máu chạy được ngay trên trang chơi, màn rừng đã bỏ
                         # chữ Nara mà tuyệt chiêu của Shikamaru thì vẫn giữ
-node tools/t_stage.js   # sáu màn đấu: mỗi màn một tông màu riêng, dán ảnh nền thì ảnh thắng
+node tools/t_stage.js   # mười hai màn đấu: mỗi màn một tông màu riêng, dán ảnh nền thì ảnh thắng
                         # hình vector, thẻ chọn màn có ảnh vẽ thật, màn đã chọn được lưu,
                         # và sàn có bóng đổ dưới chân
 node tools/t_play.js    # hai trang: play.html đúng bằng bản dựng từ index.html, đã cắt sạch
-                        # bảng xưởng, luồng arcade từng bước (tiêu đề → P1 → P2 → màn → đánh,
+                        # bảng xưởng, luồng arcade từng bước (tiêu đề → CHẾ ĐỘ → P1 → P2 →
+                        # màn → đánh, màn chế độ có đủ năm thẻ và chưa hiện lưới nhân vật,
+                        # sang bước sau thì dải chế độ biến mất; bấm Đánh lại thì hỏi CHỌN
+                        # SÀN trước và sàn vừa chọn ăn vào trận mới,
                         # mỗi bước chỉ hiện một cột, dải "đã chọn" giữ P1 lại, Quay lại về
                         # đúng bước trước), ĐÁNH ĐỘI cũng từng đội một (t0 → t1 → màn, mỗi
                         # bước một khung, hàng chọn số đội chỉ có ở bước đầu, đổi sang 3 đội
