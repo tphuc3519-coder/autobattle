@@ -26,15 +26,15 @@ const near=(a,b,e=.03)=>Math.abs(a-b)<=e;
         .every(x=>text.includes(x)), vietnamese:/[À-ỹ]/.test(text), chart:D.pw};
   });
   ok(cfg.hp===cfg.std,'Maximum HP comes from the shared stat system',`${cfg.hp}/${cfg.std}`);
-  ok(near(cfg.entrance,1.5)&&cfg.basic.join('/')==='18/18/28'&&cfg.basicCd===.75,
+  ok(near(cfg.entrance,1.5)&&cfg.basic.join('/')==='20/20/35'&&cfg.basicCd===.65,
     'entrance and Limitless Combat values are exact');
-  ok(cfg.blue.join('/')==='55/30/8.5/0.55/0.6'&&cfg.red.join('/')==='80/11/0.7/0.45/0.75',
+  ok(cfg.blue.join('/')==='70/40/7/0.45/0.8'&&cfg.red.join('/')==='100/9/0.6/0.4/1',
     'Blue and Red values are exact');
-  ok(cfg.purple.join('/')==='150/0.6/22/1.6/4'&&cfg.domain.join('/')==='32/1.2/0.8/2/3',
+  ok(cfg.purple.join('/')==='180/0.7/18/1.4/3'&&cfg.domain.join('/')==='26/1/0.7/3/4',
     'Purple and Unlimited Void values are exact');
-  ok(cfg.inf.join('/')==='2/3/5.5','Infinity is two charges with 3s delay and 5.5s recharge');
+  ok(cfg.inf.join('/')==='3/2/4','Infinity is three charges with 2s delay and 4s recharge');
   ok(cfg.names&&!cfg.vietnamese,'all Gojo names, statuses and display copy are English');
-  ok(cfg.chart.cmb<=25&&cfg.chart.cc>=80&&cfg.chart.dur<=80,'power chart reflects no low-HP comeback and strong but bounded control');
+  ok(cfg.chart.cmb<=25&&cfg.chart.cc>=90,'power chart reflects no low-HP comeback and elite control');
 
   console.log('\n=== 2. Entrance freezes the opponent for all four phases ===');
   const ent=await page.evaluate(()=>{
@@ -51,19 +51,19 @@ const near=(a,b,e=.03)=>Math.abs(a-b)<=e;
   console.log('\n=== 3. Infinity blocks only direct hits and recharges on its own clock ===');
   const inf=await page.evaluate(()=>{
     const G=window.__G(),f=G.fighters.find(x=>x.key==='gojo'),e=G.fighters.find(x=>x.key==='chichi'),X=window.__GOJO;
-    f.gojoEntry=null;f.gojoHide=false;f.hp=1000;f.maxHp=1000;f.infinity=2;f.infinityLock=0;f.infinityDelay=0;f.infinityTick=0;
+    f.gojoEntry=null;f.gojoHide=false;f.hp=1000;f.maxHp=1000;f.infinity=3;f.infinityLock=0;f.infinityDelay=0;f.infinityTick=0;
     e.dmgOut=1;const h0=f.hp,direct=window.__hurt(f,80,e,false,'big');
     const h1=f.hp,dot=window.__hurt(f,20,e,false,'dot');
-    window.__hurt(f,30,e,false,'big');
+    window.__hurt(f,30,e,false,'big');window.__hurt(f,30,e,false,'big');
     const empty=f.infinity,h2=f.hp;window.__hurt(f,30,e,false,'big');const exposed=h2-f.hp;
-    f.infinity=1;f.infinityDelay=X.infinityDelay;f.infinityTick=0;
+    f.infinity=2;f.infinityDelay=X.infinityDelay;f.infinityTick=0;
     window.__gojoStatus(f,X.infinityDelay-.001);const before=f.infinity;
     window.__gojoStatus(f,.002);window.__gojoStatus(f,X.infinityStep);const after=f.infinity;
     return {direct,dot,blocked:h0-h1,dotDamage:h1-f.hp+exposed-30,empty,exposed,before,after};
   });
   ok(!inf.direct&&inf.blocked===0,'a direct hit consumes one charge and deals no damage');
   ok(inf.dot&&inf.empty===0&&inf.exposed===30,'DoT bypasses Infinity and direct hits land once charges are empty');
-  ok(inf.before===1&&inf.after===2,'passive recharge waits 3s, then restores one charge after 5.5s');
+  ok(inf.before===2&&inf.after===3,'passive recharge waits 2s, then restores one charge after 4s');
 
   console.log('\n=== 4. Blue restores once; Purple consumes all charges and stays fixed ===');
   const skills=await page.evaluate(()=>{
@@ -73,15 +73,15 @@ const near=(a,b,e=.03)=>Math.abs(a-b)<=e;
       f.x=260;f.y=350;e.x=360;e.y=350;};
     prep();f.infinity=1;let h=e.hp;window.__gojoBlue(f,e);for(let i=0;i<200&&f.gojoAct;i++)window.__gojoTick(f,1/120);
     const blue=h-e.hp,restored=f.infinity;
-    prep();f.infinity=2;h=e.hp;window.__gojoPurple(f,e);const spent=f.infinity,lock=f.infinityLock*window.__RT,ang=f.gojoAct.ang;
+    prep();f.infinity=3;h=e.hp;window.__gojoPurple(f,e);const spent=f.infinity,lock=f.infinityLock*window.__RT,ang=f.gojoAct.ang;
     e.y+=120;for(let i=0;i<500&&(f.gojoAct||f.gojoShots.length);i++)window.__gojoTick(f,1/120);
     const missed=h-e.hp,fixed=ang;
-    prep();f.infinity=2;e.dmgRes=.5;h=e.hp;window.__gojoPurple(f,e);for(let i=0;i<500&&(f.gojoAct||f.gojoShots.length);i++)window.__gojoTick(f,1/120);
+    prep();f.infinity=3;e.dmgRes=.5;h=e.hp;window.__gojoPurple(f,e);for(let i=0;i<500&&(f.gojoAct||f.gojoShots.length);i++)window.__gojoTick(f,1/120);
     return {blue,restored,spent,lock,missed,fixed,purple:h-e.hp};
   });
-  ok(skills.blue===55&&skills.restored===2,'Blue deals 55 and restores exactly one shared Infinity charge');
-  ok(skills.spent===0&&near(skills.lock,4,.04)&&skills.missed===0,'Purple consumes all charges immediately and can miss its fixed line');
-  ok(near(skills.purple,97.5,.01),'Purple ignores 30% of a target\'s 50% damage reduction',skills.purple);
+  ok(skills.blue===70&&skills.restored===2,'Blue deals 70 and restores exactly one shared Infinity charge');
+  ok(skills.spent===0&&near(skills.lock,3,.04)&&skills.missed===0,'Purple consumes all charges immediately and can miss its fixed line');
+  ok(near(skills.purple,117,.01),'Purple ignores 30% of a target\'s 50% damage reduction',skills.purple);
 
   console.log('\n=== 5. Unlimited Void deals zero and transitions into Overwhelmed ===');
   const domain=await page.evaluate(()=>{
@@ -94,10 +94,10 @@ const near=(a,b,e=.03)=>Math.abs(a-b)<=e;
     e.moveMul=1;e.castMul=1;window.__gojoStatus(e,0);
     return {damage:1000-hp,over,stun,overwhelmed:e.overwhelmed*window.__RT,move:e.moveMul,cast:e.castMul};
   });
-  ok(domain.damage===0&&near(domain.over,2,.04)&&near(domain.stun,2,.04),
-    'Unlimited Void applies 2s Information Overload and deals 0 damage');
-  ok(near(domain.overwhelmed,3,.04)&&domain.move===.65&&domain.cast===.75,
-    'Information Overload transitions to 3s Overwhelmed: −35% move, −25% attack/cast');
+  ok(domain.damage===0&&near(domain.over,3,.04)&&near(domain.stun,3,.04),
+    'Unlimited Void applies 3s Information Overload and deals 0 damage');
+  ok(near(domain.overwhelmed,4,.04)&&domain.move===.5&&domain.cast===.6,
+    'Information Overload transitions to 4s Overwhelmed: −50% move, −40% attack/cast');
 
   ok(errors.length===0,'no browser page errors',errors[0]);
   await browser.close();

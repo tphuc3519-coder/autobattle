@@ -2360,17 +2360,17 @@ const TAN={
    Maximum HP intentionally does not live here: mkChar() reads the shared HP.gojo value. */
 const GOJO={
   entranceT:gs(1.5), entrancePh:[gs(.4),gs(.8),gs(1.2),gs(1.5)],
-  infinityMax:2, infinityDelay:gs(3), infinityStep:gs(5.5), purpleLock:gs(4),
+  infinityMax:3, infinityDelay:gs(2), infinityStep:gs(4), purpleLock:gs(3),
   sixEyesAccuracy:.85,
-  basic:[18,18,28], basicCd:gs(.75), basicRange:92, basicStun:gs(.3), basicPull:48,
-  blueDmg:55, blueSplash:30, blueCd:gs(8.5), blueWind:gs(.55), blueRange:370,
-  blueRadius:90, blueMax:2, blueStun:gs(.6), bluePull:180,
-  redDmg:80, redCd:gs(11), redWind:gs(.7), redBreak:gs(.45), redSpeed:420,
-  redStun:gs(.75), redKb:780, // nerfed knockback keeps Red strong without resetting the whole fight
-  purpleDmg:150, purpleSecond:.60, purpleCd:gs(22), purpleWind:gs(1.6),
-  purpleSpeed:340, purplePierce:2, purpleKb:930,
-  domainCd:gs(32), domainWind:gs(1.2), domainBreak:gs(.8), domainRange:240,
-  overloadT:gs(2), overwhelmedT:gs(3), overwhelmedMove:.65, overwhelmedAtk:.75, overwhelmedCast:.75,
+  basic:[20,20,35], basicCd:gs(.65), basicRange:92, basicStun:gs(.4), basicPull:58,
+  blueDmg:70, blueSplash:40, blueCd:gs(7), blueWind:gs(.45), blueRange:390,
+  blueRadius:96, blueMax:3, blueStun:gs(.8), bluePull:210,
+  redDmg:100, redCd:gs(9), redWind:gs(.6), redBreak:gs(.4), redSpeed:430,
+  redStun:gs(1), redKb:930, // exponential knock() decay integrates to roughly 25% of the 620px arena
+  purpleDmg:180, purpleSecond:.70, purpleCd:gs(18), purpleWind:gs(1.4),
+  purpleSpeed:360, purplePierce:2, purpleKb:1080,
+  domainCd:gs(26), domainWind:gs(1), domainBreak:gs(.7), domainRange:260,
+  overloadT:gs(3), overwhelmedT:gs(4), overwhelmedMove:.50, overwhelmedAtk:.60, overwhelmedCast:.60,
   midMin:145, midMax:225, aiThinkMin:gs(.18), aiThinkMax:gs(.38)
 };
 const CHARS={
@@ -3048,12 +3048,12 @@ const DEX={
       {tag:'P',name:'Bright Red Nichirin Blade',vi:`For ${rts(TAN.redT)}s after the Ultimate, sword hits apply Regeneration Suppression: −${Math.round(TAN.suppressHeal*100)}% HP recovery for ${rts(TAN.suppressT)}s, no stacking and no extra damage.`,en:`For ${rts(TAN.redT)}s after the Ultimate, sword hits apply Regeneration Suppression: −${Math.round(TAN.suppressHeal*100)}% HP recovery for ${rts(TAN.suppressT)}s, no stacking and no extra damage.`}
     ]}
   ,gojo:{ role:{vi:'Mage · Controller',en:'Mage · Controller'}, st:{pow:4,spd:4,rng:4,def:5},
-    pw:{dmg:68,dur:78,mob:61,as:72,rng:78,cc:84,uti:82,con:74,cmb:20},
-    bio:{vi:'A mid-range space controller who rotates Blue, Red and Purple behind two finite Infinity charges. Unlimited Void wins space rather than dealing damage, and the kit has no low-HP comeback mechanic.',
-         en:'A mid-range space controller who rotates Blue, Red and Purple behind two finite Infinity charges. Unlimited Void wins space rather than dealing damage, and the kit has no low-HP comeback mechanic.'},
+    pw:{dmg:78,dur:91,mob:61,as:79,rng:82,cc:95,uti:90,con:86,cmb:20},
+    bio:{vi:'A mid-range space controller who rotates Blue, Red and Purple behind three finite Infinity charges. Unlimited Void wins space rather than dealing damage, and the kit has no low-HP comeback mechanic.',
+         en:'A mid-range space controller who rotates Blue, Red and Purple behind three finite Infinity charges. Unlimited Void wins space rather than dealing damage, and the kit has no low-HP comeback mechanic.'},
     skills:[
       {tag:'P',name:'Six Eyes',vi:'Adds 15% accuracy to Blue, Red and Purple and filters out clones or afterimages; it grants no automatic dodge, healing or cooldown reduction.',en:'Adds 15% accuracy to Blue, Red and Purple and filters out clones or afterimages; it grants no automatic dodge, healing or cooldown reduction.'},
-      {tag:'P',name:'Infinity',vi:`${GOJO.infinityMax} shared charges each negate one direct hit. Recovery waits ${rts(GOJO.infinityDelay)}s after the latest block, then returns one charge every ${rts(GOJO.infinityStep)}s. DoT, sure-hit Domains, true damage and explicit bypasses pass through.`,en:`${GOJO.infinityMax} shared charges each negate one direct hit. Recovery waits ${rts(GOJO.infinityDelay)}s after the latest block, then returns one charge every ${rts(GOJO.infinityStep)}s. DoT, sure-hit Domains, true damage and explicit bypasses pass through.`},
+      {tag:'P',name:'Infinity',vi:`Three shared charges each negate one direct hit. Recovery waits ${rts(GOJO.infinityDelay)}s after the latest block, then returns one charge every ${rts(GOJO.infinityStep)}s. DoT, sure-hit Domains, true damage and explicit bypasses pass through.`,en:`Three shared charges each negate one direct hit. Recovery waits ${rts(GOJO.infinityDelay)}s after the latest block, then returns one charge every ${rts(GOJO.infinityStep)}s. DoT, sure-hit Domains, true damage and explicit bypasses pass through.`},
       {tag:'1',name:'Limitless Combat',vi:`Three close strikes for ${GOJO.basic.join(' / ')} damage. Blue-Enhanced Strike pulls lightly and applies ${rts(GOJO.basicStun)}s hit stun without restoring Infinity.`,en:`Three close strikes for ${GOJO.basic.join(' / ')} damage. Blue-Enhanced Strike pulls lightly and applies ${rts(GOJO.basicStun)}s hit stun without restoring Infinity.`},
       {tag:'1',name:'Cursed Technique Lapse: Blue',vi:`Pulls and stuns up to ${GOJO.blueMax} enemies after ${rts(GOJO.blueWind)}s: ${GOJO.blueDmg} to the primary and ${GOJO.blueSplash} to each secondary. A cast that lands restores exactly one Infinity charge.`,en:`Pulls and stuns up to ${GOJO.blueMax} enemies after ${rts(GOJO.blueWind)}s: ${GOJO.blueDmg} to the primary and ${GOJO.blueSplash} to each secondary. A cast that lands restores exactly one Infinity charge.`},
       {tag:'2',name:'Cursed Technique Reversal: Red',vi:`A non-homing straight projectile for ${GOJO.redDmg}, strong knockback and ${rts(GOJO.redStun)}s stun. It hits the first fighter and can be dodged or interrupted during its opening.`,en:`A non-homing straight projectile for ${GOJO.redDmg}, strong knockback and ${rts(GOJO.redStun)}s stun. It hits the first fighter and can be dodged or interrupted during its opening.`},
