@@ -1,0 +1,52 @@
+name: Rebalance Conan clue loop
+
+on:
+  push:
+    branches: [balance/conan-clue-rework]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: conan-rebalance
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.event.head_commit.message == 'Run Conan rebalance'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: balance/conan-clue-rework
+
+      - name: Apply Conan rebalance
+        run: |
+          set -e
+          python3 tools/rebalance_conan.py
+          python3 tools/mk_play.py
+
+      - name: Validate
+        run: |
+          set -e
+          node tools/t_conan.js
+          python3 - <<'PY'
+          import pathlib,re,subprocess
+          for html in ('index.html','play.html'):
+              text=pathlib.Path(html).read_text(encoding='utf-8')
+              for i,block in enumerate(re.findall(r'<script(?:[^>]*)>(.*?)</script>',text,re.S)):
+                  f=pathlib.Path(f'/tmp/{html}-{i}.js')
+                  f.write_text(block,encoding='utf-8')
+                  subprocess.run(['node','--check',str(f)],check=True)
+          PY
+          git diff --check
+
+      - name: Commit final rebalance
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/rebalance-conan.yml tools/rebalance_conan.py .conan-rebalance-trigger
+          git add index.html play.html README.md CLAUDE.md tools/t_conan.js
+          git commit -m "Rework Conan clue loop and lower damage"
+          git push origin HEAD:balance/conan-clue-rework
