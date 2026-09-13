@@ -1,0 +1,137 @@
+progress 8/128
+progress 16/128
+progress 24/128
+progress 32/128
+progress 40/128
+progress 48/128
+progress 56/128
+progress 64/128
+progress 72/128
+progress 80/128
+progress 88/128
+progress 96/128
+progress 104/128
+progress 112/128
+progress 120/128
+progress 128/128
+{
+  "generatedAt": "2026-09-13T13:35:04.804Z",
+  "clueMax": 6,
+  "matchesPerOpponent": 16,
+  "maxGameSeconds": 120,
+  "matchups": {
+    "gojo": {
+      "matches": 16,
+      "wins": 2,
+      "losses": 14,
+      "draws": 0,
+      "winRate": 12.5,
+      "avgTime": 31.4,
+      "avgConanHp": 13.9,
+      "avgOppHp": 152.6,
+      "avgConanDamage": 647.4,
+      "avgOppDamage": 786.1,
+      "winsAsA": 1,
+      "winsAsB": 1
+    },
+    "tanjiro": {
+      "matches": 16,
+      "wins": 2,
+      "losses": 14,
+      "draws": 0,
+      "winRate": 12.5,
+      "avgTime": 23.2,
+      "avgConanHp": 6.5,
+      "avgOppHp": 161.3,
+      "avgConanDamage": 638.8,
+      "avgOppDamage": 793.5,
+      "winsAsA": 1,
+      "winsAsB": 1
+    },
+    "dora": {
+      "matches": 16,
+      "wins": 13,
+      "losses": 3,
+      "draws": 0,
+      "winRate": 81.3,
+      "avgTime": 51.7,
+      "avgConanHp": 127.5,
+      "avgOppHp": 22.9,
+      "avgConanDamage": 830.2,
+      "avgOppDamage": 672.5,
+      "winsAsA": 7,
+      "winsAsB": 6
+    },
+    "ginyu": {
+      "matches": 16,
+      "wins": 5,
+      "losses": 11,
+      "draws": 0,
+      "winRate": 31.3,
+      "avgTime": 42.9,
+      "avgConanHp": 2.5,
+      "avgOppHp": 124.8,
+      "avgConanDamage": 475.3,
+      "avgOppDamage": 597.5,
+      "winsAsA": 3,
+      "winsAsB": 2
+    },
+    "suzune": {
+      "matches": 16,
+      "wins": 6,
+      "losses": 10,
+      "draws": 0,
+      "winRate": 37.5,
+      "avgTime": 34.1,
+      "avgConanHp": 90.4,
+      "avgOppHp": 68.6,
+      "avgConanDamage": 750,
+      "avgOppDamage": 709.6,
+      "winsAsA": 2,
+      "winsAsB": 4
+    },
+    "shika": {
+      "matches": 16,
+      "wins": 0,
+      "losses": 16,
+      "draws": 0,
+      "winRate": 0,
+      "avgTime": 43.5,
+      "avgConanHp": 0,
+      "avgOppHp": 259.8,
+      "avgConanDamage": 540.2,
+      "avgOppDamage": 800,
+      "winsAsA": 0,
+      "winsAsB": 0
+    },
+    "superman": {
+      "matches": 16,
+      "wins": 11,
+      "losses": 5,
+      "draws": 0,
+      "winRate": 68.8,
+      "avgTime": 34.3,
+      "avgConanHp": 161.4,
+      "avgOppHp": 72.1,
+      "avgConanDamage": 727.9,
+      "avgOppDamage": 638.6,
+      "winsAsA": 4,
+      "winsAsB": 7
+    },
+    "beatrice": {
+      "matches": 16,
+      "wins": 5,
+      "losses": 11,
+      "draws": 0,
+      "winRate": 31.3,
+      "avgTime": 30,
+      "avgConanHp": 12,
+      "avgOppHp": 44.8,
+      "avgConanDamage": 755.2,
+      "avgOppDamage": 788,
+      "winsAsA": 3,
+      "winsAsB": 2
+    }
+  },
+  "errors": []
+}
