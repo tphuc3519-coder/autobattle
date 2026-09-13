@@ -1841,22 +1841,27 @@ Gojo là `Mage · Controller · Mid-range – Space Control – Burst`. Mọi co
 `GOJO`; thời gian người chơi đi qua `gs()`. Không khai HP trong `GOJO`: `mkChar()` luôn đọc
 `HP.gojo`, mặc định bằng `HP_STD`, để màn chọn có thể chỉnh Maximum HP như các đấu thủ khác.
 
-- `Infinity` là một pool dùng chung đúng 2 charge. Mỗi direct hit tiêu một charge và khiến
+- `Infinity` là một pool dùng chung 2 charge sau balance pass. Mỗi direct hit tiêu một charge và khiến
   `hurt()` trả `false`, nên phần stun/slow/knockback theo sau cũng không được gắn. DoT,
   ground damage, true damage, sure-hit Domain, Body Swap, Time Manipulation và explicit
-  bypass không đi qua lớp chặn này. Sau hit gần nhất chờ 3 giây, rồi mỗi 5.5 giây hồi một.
+  bypass không đi qua lớp chặn này. Sau hit gần nhất chờ 3 giây, rồi mỗi 7 giây hồi một.
 - `Six Eyes` dùng `gojoTarget()` để chỉ chọn đấu thủ thật gần nhất; summons, clone và
   afterimage không bao giờ thành mục tiêu. Blue/Red/Purple truyền accuracy multiplier vào
   `hurt()`, không biến nó thành auto-dodge, hồi máu hay giảm cooldown.
-- `Limitless Combat` là basic 18/18/28 ở nhịp 0.75 giây. Hit thứ ba kéo nhẹ + hit stun,
+- `Limitless Combat` là basic 16/16/24 ở nhịp 0.85 giây. Hit thứ ba kéo nhẹ + hit stun,
   nhưng không hồi Infinity.
-- `Blue` chốt một điểm không gian, sau 0.55 giây kéo tối đa 2 địch; main 55, secondary 30,
-  stun 0.6 giây. Cả cast chỉ hồi đúng một charge nếu có ít nhất một hit thật sự trúng.
+- `Blue` chốt một điểm không gian, sau 0.55 giây kéo tối đa 2 địch; main 55, secondary 25,
+  stun 0.5 giây. Cả cast chỉ hồi đúng một charge nếu có ít nhất một hit thật sự trúng.
 - `Red` và `Purple` bay thẳng theo góc đã chốt, không homing. Red dừng ở người đầu tiên.
-  Purple tiêu sạch charge ngay lúc bắt đầu, khoá hồi tự nhiên 4 giây, xuyên tối đa hai
-  fighter (150 / 90) và bỏ qua 30% damage reduction.
+  Purple tiêu sạch charge ngay lúc bắt đầu, khoá hồi tự nhiên 6 giây, xuyên tối đa hai
+  fighter (135 / 68) và bỏ qua 15% damage reduction.
 - `Unlimited Void` gây đúng 0 damage. Chỉ người trong bán kính lúc Domain hình thành nhận
-  `Information Overload` 2 giây; sau đó `Overwhelmed` 3 giây (−35% move, −25% attack/cast).
+  `Information Overload` 1.6 giây; sau đó `Overwhelmed` 2.5 giây (−30% move, −20% attack/cast).
+- Đầu trận skill được mở theo nhịp 3 / 6.5 / 13 / 17 giây (Blue / Red / Purple / Domain),
+  nên Gojo không còn mở Domain rồi xả cả rotation lên một mục tiêu đang bất động.
+- Power chart sau nerf là Damage 62 · Durability 74 · Mobility 55 · Attack Speed 65 ·
+  Range 75 · CC 78 · Utility 78 · Consistency 68 · Comeback 20. Đây là chart của kit đã
+  stagger cooldown, không giữ lại các mốc 90+ từ phiên bản có 3 Infinity Charge và Domain 3s.
 - AI ưu tiên Domain → Purple → Red → Blue → basic, nhưng di chuyển bằng waypoint, strafe
   và jitter trong dải mid-range. Hết Infinity không làm AI chạy trốn hoặc giữ Blue lại.
 - `gojoVector()` giữ tóc trắng, blindfold và đồng phục đen nguyên vẹn cả lúc thấp máu.
