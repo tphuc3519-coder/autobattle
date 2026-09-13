@@ -1835,6 +1835,36 @@ Kiểm bằng `node tools/t_beatrice.js`.
 > để lực kéo 1.15 ngang ngửa tổng nhiễu 1.15 là cô trôi hẳn ra ngoài tầm rồi đứng đó không
 > bắn được ai.
 
+### Satoru Gojo
+
+Gojo là `Mage · Controller · Mid-range – Space Control – Burst`. Mọi con số nằm trong
+`GOJO`; thời gian người chơi đi qua `gs()`. Không khai HP trong `GOJO`: `mkChar()` luôn đọc
+`HP.gojo`, mặc định bằng `HP_STD`, để màn chọn có thể chỉnh Maximum HP như các đấu thủ khác.
+
+- `Infinity` là một pool dùng chung đúng 3 charge. Mỗi direct hit tiêu một charge và khiến
+  `hurt()` trả `false`, nên phần stun/slow/knockback theo sau cũng không được gắn. DoT,
+  ground damage, true damage, sure-hit Domain, Body Swap, Time Manipulation và explicit
+  bypass không đi qua lớp chặn này. Sau hit gần nhất chờ 2 giây, rồi mỗi 4 giây hồi một.
+- `Six Eyes` dùng `gojoTarget()` để chỉ chọn đấu thủ thật gần nhất; summons, clone và
+  afterimage không bao giờ thành mục tiêu. Blue/Red/Purple truyền accuracy multiplier vào
+  `hurt()`, không biến nó thành auto-dodge, hồi máu hay giảm cooldown.
+- `Limitless Combat` là basic 20/20/35 ở nhịp 0.65 giây. Hit thứ ba kéo nhẹ + hit stun,
+  nhưng không hồi Infinity.
+- `Blue` chốt một điểm không gian, sau 0.45 giây kéo tối đa 3 địch; main 70, secondary 40,
+  stun 0.8 giây. Cả cast chỉ hồi đúng một charge nếu có ít nhất một hit thật sự trúng.
+- `Red` và `Purple` bay thẳng theo góc đã chốt, không homing. Red dừng ở người đầu tiên.
+  Purple tiêu sạch charge ngay lúc bắt đầu, khoá hồi tự nhiên 3 giây, xuyên tối đa hai
+  fighter (180 / 126) và bỏ qua 30% damage reduction.
+- `Unlimited Void` gây đúng 0 damage. Chỉ người trong bán kính lúc Domain hình thành nhận
+  `Information Overload` 3 giây; sau đó `Overwhelmed` 4 giây (−50% move, −40% attack/cast).
+- AI ưu tiên Domain → Purple → Red → Blue → basic, nhưng di chuyển bằng waypoint, strafe
+  và jitter trong dải mid-range. Hết Infinity không làm AI chạy trốn hoặc giữ Blue lại.
+- `gojoVector()` giữ tóc trắng, blindfold và đồng phục đen nguyên vẹn cả lúc thấp máu.
+  Blindfold chỉ kéo xuống trong Unlimited Void rồi trở lại; defeat không máu me.
+- Toàn bộ tên, role, skill, buff/debuff, gauge, banner và log riêng của Gojo là tiếng Anh.
+
+Kiểm riêng bằng `node tools/t_gojo.js`.
+
 ### Tanjiro Kamado
 
 Tanjiro là `Swordsman · Melee – Pursuit – Finisher`. Mọi con số nằm trong `TAN`; thời gian
@@ -3708,7 +3738,7 @@ node tools/t_tanjiro.js # Tanjiro: HP đọc từ HP_STD, màn vào sân 1.5s, O
 > đo theo dòng thời gian lệch hẳn, và `t_suzune.js` có thể chạy quá `timeout`. Chạy từng bộ
 > một khi cần con số chính xác.
 
-> **`t_reg.js` giờ chạy 55 trận** (10 nhân vật), theo đợt 5 trang một lượt. Máy test yếu thì mỗi trận trôi
+> **`t_reg.js` giờ chạy toàn bộ cặp đấu của 11 nhân vật**, theo đợt 5 trang một lượt. Máy test yếu thì mỗi trận trôi
 > chậm hẳn và nhiều trận báo "còn đánh" thay vì "kết thúc" — đó là chuyện bình thường,
 > mục cần xem là dòng cuối `DAT 55/55 tran sach loi`. Muốn soi kỹ một cặp thì chạy riêng.
 

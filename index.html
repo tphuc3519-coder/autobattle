@@ -1368,7 +1368,7 @@
 <div class="wrap">
   <header>
     <h1>MULTIVERSE <span>BATTLER</span></h1>
-    <div class="sub" data-i18n="tagline">Đấu trường đa vũ trụ · 10 đấu thủ · 12 màn</div>
+    <div class="sub" data-i18n="tagline">Đấu trường đa vũ trụ · 11 đấu thủ · 12 màn</div>
   </header>
 
   <div class="bar">
@@ -1552,7 +1552,7 @@
 <div class="arc off" id="arcTitle">
   <div>
     <div class="arcLogo">MULTIVERSE<b>BATTLER</b></div>
-    <div class="arcTag">10 fighters · 12 stages · auto battle</div>
+    <div class="arcTag">11 fighters · 12 stages · auto battle</div>
     <button id="arcStart" class="primary" type="button">PRESS START</button>
     <div style="margin-top:14px"><button type="button" data-lang-toggle title="Vietnamese / English">🌐 English</button></div>
     <div class="arcHint" data-i18n="arcHint">Chọn nhân vật, chọn màn rồi ngồi xem máy đánh với máy</div>
@@ -1705,13 +1705,13 @@ let vsOn=false, vsTimer=0;
 const keys={};
 
 /* ---------- sprite slots ---------- */
-const SPR={stages:{},kono:{},chichi:{},tsubasa:{},shika:{},suzune:{},ginyu:{},dora:{},superman:{},beatrice:{},tanjiro:{},ayanokouji:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
-const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',suzune:'#7FC8FF',ginyu:'#A05CFF',dora:'#2B9BE8',superman:'#2E5BD8',beatrice:'#C77DFF',tanjiro:'#39B87F'};
+const SPR={stages:{},kono:{},chichi:{},tsubasa:{},shika:{},suzune:{},ginyu:{},dora:{},superman:{},beatrice:{},tanjiro:{},gojo:{},ayanokouji:{},nara:{},garden:{},goku:{},gohan:{},hyuga:{},misaki:{},wakabayashi:{},ishizaki:{}};
+const COLORS={kono:'#63B4FF',chichi:'#FF4D6D',tsubasa:'#2ED573',shika:'#9B8CFF',suzune:'#7FC8FF',ginyu:'#A05CFF',dora:'#2B9BE8',superman:'#2E5BD8',beatrice:'#C77DFF',tanjiro:'#39B87F',gojo:'#78D9FF'};
 /* Superman đứng riêng ở 800 máu — cả bộ chiêu của anh cân theo đúng thanh máu đó. */
 /* Máu chuẩn của cả bảng. Người chơi chỉnh thoải mái ở màn chọn nhân vật (ô HP_MIN..HP_MAX),
    nút "Chuẩn" đưa mọi người về đúng con số này. */
 const HP_STD=800, HP_MIN=100, HP_MAX=9999;
-const HP={kono:800,chichi:800,tsubasa:800,shika:800,suzune:800,ginyu:800,dora:800,superman:800,beatrice:800,tanjiro:HP_STD};
+const HP={kono:800,chichi:800,tsubasa:800,shika:800,suzune:800,ginyu:800,dora:800,superman:800,beatrice:800,tanjiro:HP_STD,gojo:HP_STD};
 const CAST={mul:1.8};
 const cm=v=>v*CAST.mul;
 /* ---------- ngôn ngữ ----------
@@ -1732,7 +1732,7 @@ const cm=v=>v*CAST.mul;
 let LANG='en';
 const L={
   vi:{
-    tagline:'Đấu trường đa vũ trụ · 10 đấu thủ · 12 màn',
+    tagline:'Đấu trường đa vũ trụ · 11 đấu thủ · 12 màn',
     pick:'⚔ Chọn nhân vật', play:'Bắt đầu', pause:'Tạm dừng', resume:'Tiếp tục', reset:'Đánh lại',
     mAuto:'Máy vs Máy', mP1:'Điều khiển bên trái', mP2:'Điều khiển bên phải',
     spSlow:'Chậm 0.7x', spNormal:'Gốc 1x', spFast:'Nhanh 1.5x', spFaster:'Nhanh 2x',
@@ -1802,7 +1802,7 @@ const L={
     musicNone:'Chưa có file nhạc nền nào nên đang dùng nhạc tự tạo. Muốn nhạc của bạn thì nạp file vào ô nhạc ở trang xưởng rồi xuất gói.'
   },
   en:{
-    tagline:'Cross-universe arena · 10 fighters · 12 stages',
+    tagline:'Cross-universe arena · 11 fighters · 12 stages',
     pick:'⚔ Select fighter', play:'Start', pause:'Pause', resume:'Resume', reset:'Rematch',
     mAuto:'CPU vs CPU', mP1:'Control left side', mP2:'Control right side',
     spSlow:'Slow 0.7x', spNormal:'Normal 1x', spFast:'Fast 1.5x', spFaster:'Fast 2x',
@@ -1943,6 +1943,7 @@ const SETS=[
   {key:'superman', name:'Superman', poses:[['idle','Thủ thế'],['fly','Bay (Kryptonian Flight)'],['land','Tiếp đất bằng một chân'],['punch','Đấm tay phải (đòn 1)'],['punch2','Xoay người đấm tay trái (đòn 2)'],['upper','Uppercut (đòn 3)'],['heat','Heat Vision'],['freeze','Freeze Breath'],['meteor','Meteor Strike (lao xuống)'],['down','Ngã sau khi Meteor Strike trượt'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Ăn mừng (chống hông, bay lên)'],['ko','Gục xuống']]},
   {key:'beatrice', name:'Beatrice', poses:[['idle','Thủ thế (khoanh tay)'],['minya','Minya (bắn tinh thể)'],['shamac','Al Shamac (giơ tay)'],['murak','Murak (bay lên, vòng phép)'],['emt','E.M.T (kén kết giới)'],['elminya','El Minya (mở sách, vòng phép)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Ăn mừng (đóng sách, khoanh tay)'],['down','Gục xuống (quỳ rồi ngã)']]},
   {key:'tanjiro', name:'Tanjiro Kamado', poses:[['idle','Thủ thế với Nichirin Sword'],['run','Chạy vào sân'],['draw','Rút Nichirin Sword'],['ready','Hạ thấp trọng tâm'],['slash1','First Slash'],['slash2','Second Slash'],['surface','Water Surface Slash'],['wheel','Water Wheel'],['flux','Constant Flux'],['sun','Dragon Sun Halo Head Dance'],['mark','Demon Slayer Mark'],['ultimate','Sun Breathing: Thirteenth Form'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Tra kiếm và cúi đầu'],['down','Quỳ rồi ngã xuống']]},
+  {key:'gojo', name:'Satoru Gojo', poses:[['idle','Combat stance'],['entry','Space distortion entrance'],['adjust','Adjust blindfold'],['strike1','Limitless Combat · strike 1'],['strike2','Limitless Combat · strike 2'],['bluehit','Blue-Enhanced Strike'],['blue','Cursed Technique Lapse: Blue'],['red','Cursed Technique Reversal: Red'],['purple','Hollow Technique: Purple'],['domain','Domain Expansion: Unlimited Void'],['hurt','Hit reaction'],['injured','Injured'],['win','Victory'],['down','Defeat']]},
   {key:'ayanokouji', name:'Ayanokouji', poses:[['idle','Đứng'],['guard','Đỡ đòn thay Horikita'],['strike','Đòn đột kích'],['leave','Rời sàn đấu']]},
   {key:'nara', name:'Con nai nhà Nara', poses:[['idle','Đứng cạnh Shikamaru trong lãnh địa']]},
   {key:'garden', name:'Phong cảnh lãnh địa', poses:[['idle','Ảnh nền khu rừng nhà Nara']]},
@@ -2457,6 +2458,24 @@ const TAN={
   resetMin:gs(.55), resetMax:gs(1.05),
   wheelAiMin:gs(3.5), wheelAiMax:gs(6), formChance:.28
 };
+/* ---------- Satoru Gojo ----------
+   All Gojo-facing copy is English. Timings are authored in player seconds through gs().
+   Maximum HP intentionally does not live here: mkChar() reads the shared HP.gojo value. */
+const GOJO={
+  entranceT:gs(1.5), entrancePh:[gs(.4),gs(.8),gs(1.2),gs(1.5)],
+  infinityMax:3, infinityDelay:gs(2), infinityStep:gs(4), purpleLock:gs(3),
+  sixEyesAccuracy:.85,
+  basic:[20,20,35], basicCd:gs(.65), basicRange:92, basicStun:gs(.4), basicPull:58,
+  blueDmg:70, blueSplash:40, blueCd:gs(7), blueWind:gs(.45), blueRange:390,
+  blueRadius:96, blueMax:3, blueStun:gs(.8), bluePull:210,
+  redDmg:100, redCd:gs(9), redWind:gs(.6), redBreak:gs(.4), redSpeed:430,
+  redStun:gs(1), redKb:930, // exponential knock() decay integrates to roughly 25% of the 620px arena
+  purpleDmg:180, purpleSecond:.70, purpleCd:gs(18), purpleWind:gs(1.4),
+  purpleSpeed:360, purplePierce:2, purpleKb:1080,
+  domainCd:gs(26), domainWind:gs(1), domainBreak:gs(.7), domainRange:260,
+  overloadT:gs(3), overwhelmedT:gs(4), overwhelmedMove:.50, overwhelmedAtk:.60, overwhelmedCast:.60,
+  midMin:145, midMax:225, aiThinkMin:gs(.18), aiThinkMax:gs(.38)
+};
 const CHARS={
   kono:{
     name:'Konohamaru', short:'Kono', tag:'Ninja · Ranged', emoji:'🌀', color:'#63B4FF', alt:'#8FD0FF',
@@ -2826,6 +2845,45 @@ const CHARS={
       return {pct:clamp(1-w/TAN.ultCd,0,1),fill:'#FF8A3D',txt:w<=0?'Sun Breathing: Thirteenth Form ready':`Thirteenth Form: ${(w*RT).toFixed(1)}s`};
     }
   }
+  ,gojo:{
+    name:'Satoru Gojo', short:'Gojo', tag:'Mage · Controller · Mid-range – Space Control – Burst', emoji:'◉', color:'#78D9FF', alt:'#B99CFF',
+    role:'ranged', want:185, speed:102, dodge:.72, male:true, spriteH:132,
+    skills:[
+      `<b>Entrance</b> Space distorts, Gojo appears with one hand in his pocket, adjusts his blindfold and assumes a combat stance. Exactly ${rts(GOJO.entranceT)}s; every opponent waits.`,
+      `<b>Passive · Six Eyes</b> Blue, Red and Purple gain 15% accuracy. Gojo identifies real fighters rather than afterimages or clones, but cannot target an untargetable opponent. No automatic dodge, healing or cooldown reduction.`,
+      `<b>Passive · Infinity</b> Starts with ${GOJO.infinityMax} shared charges. Each direct hit consumes one charge and blocks its damage and control. DoT, existing ground damage, true damage, sure-hit Domains, Body Swap, Time Manipulation and explicit bypasses ignore it. Recovery starts ${rts(GOJO.infinityDelay)}s after the latest block, then restores one charge every ${rts(GOJO.infinityStep)}s.`,
+      `<b>Basic · Limitless Combat</b> One strike every ${rts(GOJO.basicCd)}s: ${GOJO.basic.join(' / ')} = ${GOJO.basic.reduce((a,b)=>a+b,0)} damage. Blue-Enhanced Strike lightly pulls the target and applies ${rts(GOJO.basicStun)}s hit stun, but never restores Infinity.`,
+      `<b>1 · Cursed Technique Lapse: Blue</b> ${GOJO.blueDmg} damage · ${rts(GOJO.blueCd)}s cooldown. After ${rts(GOJO.blueWind)}s it pulls and stuns for ${rts(GOJO.blueStun)}s. Up to ${GOJO.blueMax} enemies: the primary takes ${GOJO.blueDmg}, secondary targets ${GOJO.blueSplash}; any landed hit restores exactly one Infinity charge per cast.`,
+      `<b>2 · Cursed Technique Reversal: Red</b> ${GOJO.redDmg} damage · ${rts(GOJO.redCd)}s cooldown. A dodgeable straight projectile after ${rts(GOJO.redWind)}s, hitting only the first fighter, knocking them back and stunning for ${rts(GOJO.redStun)}s. A stun in the first ${rts(GOJO.redBreak)}s cancels it for half cooldown.`,
+      `<b>3 · Hollow Technique: Purple</b> ${GOJO.purpleDmg} damage · ${rts(GOJO.purpleCd)}s cooldown. Immediately empties Infinity and locks its recovery for ${rts(GOJO.purpleLock)}s. After ${rts(GOJO.purpleWind)}s, a fixed straight projectile ignores 30% of damage reduction and can pierce two fighters; the second takes ${Math.round(GOJO.purpleDmg*GOJO.purpleSecond)}. Interrupting before release refunds no charges and leaves 70% cooldown.`,
+      `<b>Ultimate · Domain Expansion: Unlimited Void</b> 0 damage · ${rts(GOJO.domainCd)}s cooldown. Enemies inside the formed Domain suffer <b>Information Overload</b> for ${rts(GOJO.overloadT)}s, then <b>Overwhelmed</b> for ${rts(GOJO.overwhelmedT)}s: −50% move, −40% attack and cast speed. A stun in the first ${rts(GOJO.domainBreak)}s cancels the wind-up for 60% cooldown; once formed, ordinary attacks cannot interrupt it.`
+    ],
+    init(f){
+      f.cds={s1:0,s2:0,s3:0,s4:0,basic:0};
+      f.gojoEntry=null; f.gojoHide=false; f.gojoAct=null; f.gojoCombo=0;
+      f.infinity=GOJO.infinityMax; f.infinityDelay=0; f.infinityTick=0; f.infinityLock=0;
+      f.gojoShots=[]; f.gojoThink=rnd(GOJO.aiThinkMin,GOJO.aiThinkMax); f.gojoDomain=0;
+      gojoEnter(f);
+    },
+    think(f,e,d,auto){
+      if(f.gojoEntry||f.gojoAct)return;
+      e=gojoTarget(f); if(!e)return; d=dist(f,e);
+      if(auto&&f.gojoThink>0)return;
+      const use=k=>auto||keys[k];
+      if(f.cds.s4<=0&&d<=GOJO.domainRange&&use('u')){ f.cds.s4=GOJO.domainCd; gojoDomain(f,e); return; }
+      if(f.cds.s3<=0&&d<520&&use('l')){ f.cds.s3=GOJO.purpleCd; gojoPurple(f,e); return; }
+      if(f.cds.s2<=0&&d<520&&use('k')){ f.cds.s2=GOJO.redCd; gojoRed(f,e); return; }
+      if(f.cds.s1<=0&&d<=GOJO.blueRange&&use('j')){ f.cds.s1=GOJO.blueCd; gojoBlue(f,e); return; }
+      if(f.cds.basic<=0&&d<=GOJO.basicRange&&(auto||keys['j'])){ gojoBasic(f,e); return; }
+      if(auto)f.gojoThink=rnd(GOJO.aiThinkMin,GOJO.aiThinkMax);
+    },
+    gauge:f=>{
+      const n=Math.max(0,Math.min(GOJO.infinityMax,f.infinity|0));
+      const icons=Array.from({length:GOJO.infinityMax},(_,i)=>i<n?'∞':'·').join(' ');
+      const lock=f.infinityLock>0?` · recovery locked ${(f.infinityLock*RT).toFixed(1)}s`:'';
+      return {pct:n/GOJO.infinityMax,fill:'#78D9FF',txt:`Infinity  ${icons}${lock}`};
+    }
+  }
 };
 const CKEYS=Object.keys(CHARS);
 
@@ -3091,6 +3149,19 @@ const DEX={
       {tag:'P',name:'Demon Slayer Mark',vi:`Below ${Math.round(TAN.markHp*100)}% Maximum HP, permanently gains move, attack, cast, status and knockback resistance bonuses. Unlocks the Ultimate; grants no healing or direct damage.`,en:`Below ${Math.round(TAN.markHp*100)}% Maximum HP, permanently gains move, attack, cast, status and knockback resistance bonuses. Unlocks the Ultimate; grants no healing or direct damage.`},
       {tag:'U',name:'Sun Breathing: Thirteenth Form',vi:`After Transparent World focus, links twelve forms for up to ${TAN.ultDmg.reduce((a,b)=>a+b,0)} damage. Finishes with Flame Dance and ${rts(TAN.ultDown)}s knockdown.`,en:`After Transparent World focus, links twelve forms for up to ${TAN.ultDmg.reduce((a,b)=>a+b,0)} damage. Finishes with Flame Dance and ${rts(TAN.ultDown)}s knockdown.`},
       {tag:'P',name:'Bright Red Nichirin Blade',vi:`For ${rts(TAN.redT)}s after the Ultimate, sword hits apply Regeneration Suppression: −${Math.round(TAN.suppressHeal*100)}% HP recovery for ${rts(TAN.suppressT)}s, no stacking and no extra damage.`,en:`For ${rts(TAN.redT)}s after the Ultimate, sword hits apply Regeneration Suppression: −${Math.round(TAN.suppressHeal*100)}% HP recovery for ${rts(TAN.suppressT)}s, no stacking and no extra damage.`}
+    ]}
+  ,gojo:{ role:{vi:'Mage · Controller',en:'Mage · Controller'}, st:{pow:4,spd:4,rng:4,def:5},
+    pw:{dmg:78,dur:91,mob:61,as:79,rng:82,cc:95,uti:90,con:86,cmb:20},
+    bio:{vi:'A mid-range space controller who rotates Blue, Red and Purple behind three finite Infinity charges. Unlimited Void wins space rather than dealing damage, and the kit has no low-HP comeback mechanic.',
+         en:'A mid-range space controller who rotates Blue, Red and Purple behind three finite Infinity charges. Unlimited Void wins space rather than dealing damage, and the kit has no low-HP comeback mechanic.'},
+    skills:[
+      {tag:'P',name:'Six Eyes',vi:'Adds 15% accuracy to Blue, Red and Purple and filters out clones or afterimages; it grants no automatic dodge, healing or cooldown reduction.',en:'Adds 15% accuracy to Blue, Red and Purple and filters out clones or afterimages; it grants no automatic dodge, healing or cooldown reduction.'},
+      {tag:'P',name:'Infinity',vi:`Three shared charges each negate one direct hit. Recovery waits ${rts(GOJO.infinityDelay)}s after the latest block, then returns one charge every ${rts(GOJO.infinityStep)}s. DoT, sure-hit Domains, true damage and explicit bypasses pass through.`,en:`Three shared charges each negate one direct hit. Recovery waits ${rts(GOJO.infinityDelay)}s after the latest block, then returns one charge every ${rts(GOJO.infinityStep)}s. DoT, sure-hit Domains, true damage and explicit bypasses pass through.`},
+      {tag:'1',name:'Limitless Combat',vi:`Three close strikes for ${GOJO.basic.join(' / ')} damage. Blue-Enhanced Strike pulls lightly and applies ${rts(GOJO.basicStun)}s hit stun without restoring Infinity.`,en:`Three close strikes for ${GOJO.basic.join(' / ')} damage. Blue-Enhanced Strike pulls lightly and applies ${rts(GOJO.basicStun)}s hit stun without restoring Infinity.`},
+      {tag:'1',name:'Cursed Technique Lapse: Blue',vi:`Pulls and stuns up to ${GOJO.blueMax} enemies after ${rts(GOJO.blueWind)}s: ${GOJO.blueDmg} to the primary and ${GOJO.blueSplash} to each secondary. A cast that lands restores exactly one Infinity charge.`,en:`Pulls and stuns up to ${GOJO.blueMax} enemies after ${rts(GOJO.blueWind)}s: ${GOJO.blueDmg} to the primary and ${GOJO.blueSplash} to each secondary. A cast that lands restores exactly one Infinity charge.`},
+      {tag:'2',name:'Cursed Technique Reversal: Red',vi:`A non-homing straight projectile for ${GOJO.redDmg}, strong knockback and ${rts(GOJO.redStun)}s stun. It hits the first fighter and can be dodged or interrupted during its opening.`,en:`A non-homing straight projectile for ${GOJO.redDmg}, strong knockback and ${rts(GOJO.redStun)}s stun. It hits the first fighter and can be dodged or interrupted during its opening.`},
+      {tag:'3',name:'Hollow Technique: Purple',vi:`Consumes every Infinity charge immediately, then fires a fixed line for ${GOJO.purpleDmg}. It ignores 30% of damage reduction, pierces at most two targets and deals ${Math.round(GOJO.purpleSecond*100)}% damage to the second.`,en:`Consumes every Infinity charge immediately, then fires a fixed line for ${GOJO.purpleDmg}. It ignores 30% of damage reduction, pierces at most two targets and deals ${Math.round(GOJO.purpleSecond*100)}% damage to the second.`},
+      {tag:'U',name:'Domain Expansion: Unlimited Void',vi:`Deals no damage. Enemies caught at formation lose all actions for ${rts(GOJO.overloadT)}s, then suffer −50% move and −40% attack/cast speed for ${rts(GOJO.overwhelmedT)}s.`,en:`Deals no damage. Enemies caught at formation lose all actions for ${rts(GOJO.overloadT)}s, then suffer −50% move and −40% attack/cast speed for ${rts(GOJO.overwhelmedT)}s.`}
     ]}
 };
 
@@ -3362,7 +3433,7 @@ const SFX_GROUPS={
   crit:'Chung', throw:'Konohamaru', punch:'ChiChi', kick:'Ozora Tsubasa',
   shika_lazy:'Shikamaru', suz_think:'Horikita Suzune', aya_appear:'Ayanokouji',
   ginyu_fly:'Captain Ginyu', dora_door:'Doraemon', sup_enter:'Superman',
-  bea_door:'Beatrice', ui_start:'Giao diện'
+  bea_door:'Beatrice', gojo_entry:'Satoru Gojo', ui_start:'Giao diện'
 };
 const SFX_EVENTS=[
   ['crit','Chí mạng'],['stun','Choáng'],['charm','Bị mê hoặc'],['shock','Bị điện giật'],['burn','Bị thiêu đốt'],
@@ -3442,6 +3513,17 @@ const SFX_EVENTS=[
   ['bea_reflect','E.M.T Reflection hắt đòn trở lại'],
   ['bea_elminya','El Minya — vòng phép mở ra sau lưng'],
   ['bea_down','Beatrice bị hạ gục'],
+
+  ['gojo_entry','Gojo enters through distorted space'],
+  ['gojo_infinity','Infinity blocks a direct hit'],
+  ['gojo_strike','Limitless Combat strike'],
+  ['gojo_blue','Cursed Technique Lapse: Blue'],
+  ['gojo_red','Cursed Technique Reversal: Red'],
+  ['gojo_purple','Hollow Technique: Purple'],
+  ['gojo_domain','Domain Expansion: Unlimited Void'],
+  ['gojo_overload','Information Overload'],
+  ['gojo_win','Satoru Gojo victory'],
+  ['gojo_down','Satoru Gojo defeat'],
 
   /* Ô của GIAO DIỆN, không phải của trận đấu: tiếng bấm nút, tiếng lật bước, tiếng màn VS
      và tiếng bảng xếp hạng. Chín ô này chỉ kêu lúc người chơi bấm tay nên đừng để chúng
@@ -3819,6 +3901,25 @@ function synth(name,c,g){
                       [0,.25,.5].forEach(d=>tone(c,g,{type:'triangle',f0:1180,f1:520,dur:.18,vol:.12,delay:d})); break;
     case 'bea_down':  tone(c,g,{type:'sine',f0:520,f1:130,dur:.7,vol:.18});
                       noise(c,g,{dur:.5,f0:1400,f1:200,vol:.12,type:'lowpass'}); break;
+    case 'gojo_entry':tone(c,g,{type:'sine',f0:180,f1:980,dur:.75,vol:.16});
+                      noise(c,g,{dur:.8,f0:400,f1:3200,vol:.11,q:1.5}); break;
+    case 'gojo_infinity':tone(c,g,{type:'sine',f0:1300,f1:520,dur:.24,vol:.17});
+                      tone(c,g,{type:'triangle',f0:650,f1:260,dur:.3,vol:.1}); break;
+    case 'gojo_strike':noise(c,g,{dur:.12,f0:2600,f1:500,vol:.18});
+                      tone(c,g,{type:'triangle',f0:340,f1:90,dur:.14,vol:.2}); break;
+    case 'gojo_blue': tone(c,g,{type:'sine',f0:760,f1:120,dur:.6,vol:.22});
+                      noise(c,g,{dur:.6,f0:2600,f1:300,vol:.13,q:1.4}); break;
+    case 'gojo_red':  tone(c,g,{type:'sawtooth',f0:220,f1:1180,dur:.42,vol:.2});
+                      noise(c,g,{dur:.42,f0:500,f1:3600,vol:.15,q:1.2}); break;
+    case 'gojo_purple':tone(c,g,{type:'sawtooth',f0:90,f1:720,dur:1.2,vol:.24});
+                      tone(c,g,{type:'sine',f0:45,f1:240,dur:1.25,vol:.18});
+                      noise(c,g,{dur:1.1,f0:500,f1:4200,vol:.16,q:1.8}); break;
+    case 'gojo_domain':[0,.12,.24,.36].forEach((d,i)=>tone(c,g,{type:'sine',f0:220+i*220,f1:330+i*260,dur:.8,vol:.12,delay:d}));
+                      noise(c,g,{dur:1.5,f0:300,f1:4600,vol:.12,q:2}); break;
+    case 'gojo_overload':[0,.08,.16,.24].forEach((d,i)=>tone(c,g,{type:'triangle',f0:1500-i*180,f1:900+i*120,dur:.18,vol:.08,delay:d})); break;
+    case 'gojo_win':  [659.25,783.99,987.77,1318.5].forEach((f,i)=>tone(c,g,{type:'triangle',f0:f,f1:f,dur:i===3?.7:.14,vol:.14,delay:i*.13})); break;
+    case 'gojo_down': tone(c,g,{type:'sine',f0:620,f1:90,dur:.9,vol:.18});
+                      noise(c,g,{dur:.5,f0:1200,f1:180,vol:.1,type:'lowpass'}); break;
     /* ---- giao diện ----
        Tiếng bấm nút thì phải GỌN và NHẸ: người chơi bấm cả chục lần trong một lượt chọn
        nhân vật, để dài hay để to là nghe nhức đầu ngay. Cả chín ô đều dưới .2 âm lượng
@@ -4421,6 +4522,7 @@ const BULK_CHAR={
   tsubasa:['tsubasa','ozora'], shika:['shikamaru','shika'],
   suzune:['horikita','suzune','suz'], ginyu:['ginyu','captain ginyu'],
   dora:['doraemon','dora'], superman:['superman','clark','sup'],
+  gojo:['satoru gojo','gojo','satoru'],
   ayanokouji:['ayanokouji','kiyotaka','aya'], nara:['nara','con nai','deer','nai'],
   garden:['garden','khu rung','phong canh','background'],
   goku:['goku'], gohan:['gohan'], hyuga:['hyuga'], misaki:['misaki'],
@@ -4974,6 +5076,11 @@ function mk(o){
     tanEntry:null, tanHide:false, tanAct:null, tanCombo:0, tanThreadCd:0,
     tanMarked:false, tanMarkStarted:false, tanMarkAnim:0, tanUlt:false, tanRed:0, tanTrails:null,
     tanThink:0, tanReset:0, tanWheelWait:0,
+    /* Gojo's control effects can live on any fighter; Infinity remains one shared pool
+       on Gojo himself even in multi-fighter battles. */
+    infoOverload:0, infoOwner:null, overwhelmed:0,
+    gojoEntry:null, gojoHide:false, gojoAct:null, gojoCombo:0, gojoShots:null,
+    infinity:0, infinityDelay:0, infinityTick:0, infinityLock:0, gojoThink:0, gojoDomain:0,
     hist:[], histT:0, startX:0, startY:0,
     bind:null, bindGuard:false, bindPending:false, lazyTalk:0, wakeT:0, domain:null, domainDone:false, domainA:0, dashCd:0, kbx:0, kby:0, driveAura:0, quota:{drive:0,bic:0}, lock:0, twinBusy:false, hidden:false, unhideT:0, eagle:false, eagleAcc:0, eagleT:0, eagleBurn:0, eagleDone:false, summonDone:false
   },o);
@@ -5037,7 +5144,7 @@ function aliveTeams(){
 /* Một người có còn là đối thủ hợp lệ của f không. Chỉ soi ĐẤU THỦ CHÍNH: đồng minh
    (Ayanokouji) và viện binh không bao giờ là "đối thủ theo phe", họ chỉ bị nhắm vào
    qua khiêu khích — đúng ranh giới foeOf / aimTarget ở mục 2 của CLAUDE.md. */
-const foeOk=(f,o)=>!!o&&o!==f&&!o.summon&&o.team!==f.team&&o.alive&&o.hp>0&&G.fighters.indexOf(o)>=0;
+const foeOk=(f,o)=>!!o&&o!==f&&!o.summon&&o.team!==f.team&&o.alive&&o.hp>0&&!offField(o)&&G.fighters.indexOf(o)>=0;
 function nearestFoe(f){
   let best=null, bd=Infinity;
   for(const o of G.fighters){
@@ -5149,10 +5256,10 @@ function newGame(){
   G.k=G.fighters[0];
   G.c=G.fighters.find(f=>f.team!==G.k.team)||G.fighters[1]||G.fighters[0];
   if(typeof resetSfxPos==='function') resetSfxPos();
-  const tanMatch=G.fighters.some(f=>f.key==='tanjiro'&&!f.summon);
-  if(tanMatch&&PMODE==='team')     say(`Team battle ready. ${teamLabel(0)} vs ${teamLabel(1)}.`,'g');
-  else if(tanMatch&&PMODE==='ffa') say(`Free-for-all ready — ${G.fighters.length} fighters, last one standing wins.`,'g');
-  else if(tanMatch)                say(`Battle ready. ${G.k.name} vs ${G.c.name}.`,'g');
+  const englishMatch=G.fighters.some(f=>(f.key==='tanjiro'||f.key==='gojo')&&!f.summon);
+  if(englishMatch&&PMODE==='team')     say(`Team battle ready. ${teamLabel(0)} vs ${teamLabel(1)}.`,'g');
+  else if(englishMatch&&PMODE==='ffa') say(`Free-for-all ready — ${G.fighters.length} fighters, last one standing wins.`,'g');
+  else if(englishMatch)                say(`Battle ready. ${G.k.name} vs ${G.c.name}.`,'g');
   else if(PMODE==='team')          say(`Trận đấu theo đội sẵn sàng. ${teamLabel(0)} vs ${teamLabel(1)}.`,'g');
   else if(PMODE==='ffa')           say(`Hỗn chiến ${G.fighters.length} người sẵn sàng — ai còn đứng cuối cùng thì thắng.`,'g');
   else                             say(`Trận đấu sẵn sàng. ${G.k.name} vs ${G.c.name}.`,'g');
@@ -5214,6 +5321,7 @@ function stunFx(f,dur,kind){
   /* Đọc TRẠNG THÁI chứ không đọc f.key: hồn Shikamaru ngồi trong thân xác Ginyu vẫn
      kết ấn được dải bóng, nên cú cắt ngang cũng phải với tới được nó. */
   if(f.bind||(f.dash&&f.dash.kind==='stab')) shikaInterrupt(f);
+  if(f.key==='gojo'&&!f.swapAs&&f.gojoAct) gojoInterrupt(f);
   return true;
 }
 function aim(f,e,power){
@@ -5239,7 +5347,7 @@ function tryEvade(t,kind,accuracyMul){
   if(!(t.evade>0)||kind==='dot'||kind==='domain')return false;
   // Đang choáng thì đứng như trời trồng: không lách được cú nào. Vẫn cộng dồn tỉ lệ
   // ở dưới, vì đó vẫn là một đòn thường ăn vào người.
-  if(t.stun<=0&&chance(t.evade*(accuracyMul===undefined?1:accuracyMul))){
+  if(t.stun<=0&&!(t.infoOverload>0)&&chance(t.evade*(accuracyMul===undefined?1:accuracyMul))){
     G.floats.push({x:t.x,y:t.y-88,txt:'DODGE',color:'#CFC6FF',life:.9,ml:.9,banner:true,sc:.62});
     return true;
   }
@@ -5254,7 +5362,7 @@ function tryEvade(t,kind,accuracyMul){
    nấp trong màn ra mắt (Anywhere Door / bóng người trên cao), đang trong phân cảnh Time
    Machine, hay đang mang lớp miễn thương. hurt() có sẵn từng lớp chặn này; gom lại một
    hàm để mấy chỗ KHÔNG đi qua hurt() — như tia CHANGE của Ginyu — dùng chung, khỏi lệch. */
-const offField=f=>!!f&&(f.edT>0||f.drHide||f.supHide||f.beaHide||f.tanHide||!!f.tm||!!f.gnChange||f.invuln>0||f.leaving>0);
+const offField=f=>!!f&&(f.edT>0||f.drHide||f.supHide||f.beaHide||f.tanHide||f.gojoHide||!!f.tm||!!f.gnChange||f.invuln>0||f.leaving>0);
 const tanOpeningReady=(t,src,kind)=>!!(t&&src&&src.key==='tanjiro'&&!src.summon&&!src.swapAs&&kind!=='dot'&&
   t.openingThreads&&t.openingThreads.some(x=>x&&x.owner===src&&x.t>0));
 const tanDefMul=(mul,pierce)=>pierce&&mul<1?1-(1-mul)*(1-TAN.threadPierce):mul;
@@ -5267,7 +5375,7 @@ function tanOpeningConsume(t,src){
   return true;
 }
 const regenFactor=f=>(f&&f.regenSupp>0)?(1-TAN.suppressHeal):1;
-function hurt(t,amt,src,crit,kind,tint,raw){
+function hurt(t,amt,src,crit,kind,tint,raw,accuracyMul){
   if(!t.alive||G.over)return false;
   if(t.leaving>0)return false;              // Ayanokouji đang rời sàn: không ăn đòn nữa
   // Ayanokouji nhảy vào đỡ thay: suốt quãng này Horikita không mất một giọt máu nào
@@ -5283,6 +5391,10 @@ function hurt(t,amt,src,crit,kind,tint,raw){
     ring(t.x,t.y,52,'#FF9AD5',.3);
     return false;
   }
+  /* Infinity is a finite hit shield, not invulnerability. It is checked after true
+     off-field/barrier gates and before accuracy/evasion, so one direct collision consumes
+     exactly one charge and blocks that hit's damage, stun, slow and knockback. */
+  if(gojoInfinityBlock(t,kind))return false;
   /* Ginyu mượn chiêu tay của thân xác vừa cướp được: tay chân người ta anh dùng
      chưa quen nên trượt là chuyện thường. Chỉ ăn vào chiêu MƯỢN, chiêu của chính
      anh (raw=true) thì vẫn ngắm chuẩn. */
@@ -5291,7 +5403,7 @@ function hurt(t,amt,src,crit,kind,tint,raw){
     return false;
   }
   const opening=tanOpeningReady(t,src,kind);
-  if(tryEvade(t,kind,opening?TAN.threadDodgeMul:1))return false;
+  if(tryEvade(t,kind,opening?Math.min(TAN.threadDodgeMul,accuracyMul===undefined?1:accuracyMul):(accuracyMul===undefined?1:accuracyMul)))return false;
   if(src&&!raw&&src.dmgOut!==undefined&&src.dmgOut!==1) amt*=src.dmgOut;
   if(src&&src.outCut>0) amt*=(1-src.outCut);   // đứng trong lãnh địa thì đánh yếu hẳn
   /* E.M.T — kén kết giới của Beatrice chặn 100% sát thương và phản lại 20% chỗ vừa chặn.
@@ -5310,20 +5422,22 @@ function hurt(t,amt,src,crit,kind,tint,raw){
     t.beaLog.push({t:G.t,src});
   }
   if(t.vuln>0) amt*=1.5;                    // dính Twin Shot: nhận thêm 50% sát thương
-  if(t.eagle) amt*=tanDefMul(.3,pierced);                      // Wings of the Eagle: miễn 70% sát thương
-  else if(t.prewing) amt*=tanDefMul(PREWING_RES,pierced);      // Pre-Wings: miễn 35% sát thương
+  const gojoPurple=kind==='gojoPurple';
+  const dm=m=>{ let v=tanDefMul(m,pierced); return gojoPurple&&v<1?1-(1-v)*.70:v; };
+  if(t.eagle) amt*=dm(.3);                      // Wings of the Eagle: miễn 70% sát thương
+  else if(t.prewing) amt*=dm(PREWING_RES);      // Pre-Wings: miễn 35% sát thương
   /* Man of Steel: da thép chắn đòn vật lý và đạn năng lượng, nhưng KHÔNG chắn được
      sát thương duy trì (burn / poison / true damage) lẫn sát thương của lãnh địa —
      hai loại đó đi đường kind 'dot' và 'domain'. supResist() đã gộp cả buff giảm
      sát thương khác vào rồi mới chặn ở trần 60%, nên đừng nhân t.dmgRes thêm lần nữa. */
   if(t.key==='superman'&&!t.swapAs){
-    if(kind!=='dot'&&kind!=='domain') amt*=tanDefMul(supResist(t),pierced);
+    if(kind!=='dot'&&kind!=='domain') amt*=dm(supResist(t));
   }
-  else if(t.dmgRes>0) amt*=tanDefMul(1-t.dmgRes,pierced);    // Horikita form 3: miễn thương cộng dồn theo mốc điểm lớp
+  else if(t.dmgRes>0) amt*=dm(1-t.dmgRes);    // Horikita form 3: miễn thương cộng dồn theo mốc điểm lớp
   // Ginyu: hưng phấn thì ăn thêm 50% sát thương (xuyên qua phòng thủ), thăm dò thì chỉ ăn 40%
-  if(t.dmgTake!==undefined&&t.dmgTake!==1) amt*=tanDefMul(t.dmgTake,pierced);
-  if(t.dash&&t.dash.guard) amt*=tanDefMul(CHICHI_DASH_RES,pierced);   // đang lao tới: nhận ít sát thương hơn
-  if(t.key==='tanjiro'&&t.tanUlt) amt*=tanDefMul(TAN.ultTake,pierced);
+  if(t.dmgTake!==undefined&&t.dmgTake!==1) amt*=dm(t.dmgTake);
+  if(t.dash&&t.dash.guard) amt*=dm(CHICHI_DASH_RES);   // đang lao tới: nhận ít sát thương hơn
+  if(t.key==='tanjiro'&&t.tanUlt) amt*=dm(TAN.ultTake);
   /* Sổ sát thương gây ra — Small Light chọn mục tiêu theo nó, và giải đấu lấy nó làm
      hiệu số. Hai luật:
        · VIỆN BINH ghi công cho CHỦ (`src.master`). Goku / Gohan / Ayanokouji là người
@@ -5436,8 +5550,13 @@ function koFx(loser){
     loser.tanTrails=[];
     sfx('ko');
   }
+  if(loser.key==='gojo'&&!loser.swapAs){
+    loser.pose='down'; loser.gojoAct=null; loser.gojoShots=[]; loser.gojoDomain=0;
+    loser.infinity=0; ring(loser.x,loser.y-22,105,'#DDF8FF',.46);
+    sfx('gojo_down');
+  }
   G.kos.push({f:loser,t:0,puff:0,sup:loser.key==='superman'&&!loser.swapAs,
-              tan:loser.key==='tanjiro'&&!loser.swapAs});
+              tan:loser.key==='tanjiro'&&!loser.swapAs,gojo:loser.key==='gojo'&&!loser.swapAs});
   ring(loser.x,loser.y-10,140,loser.color,.5);
 }
 /* Một đấu thủ chính về 0 máu. Ở 1v1 thì trận xong ngay; ở hỗn chiến và đánh đội thì chỉ
@@ -5448,6 +5567,7 @@ function defeat(t,src){
   t.dash=null; t.lock=0; t.bind=null; t.domain=null;
   t.supCone=null; t.supHv=null; t.supFb=null; t.supMs=null; t.supCombo=null; t.drCone=null;
   t.tanAct=null; t.tanUlt=false; t.tanTrails=[];
+  t.gojoAct=null; t.gojoShots=[]; t.gojoDomain=0;
   if(t.beaShamac&&t.beaShamac.e) t.beaShamac.e.beaWarp=null;
   t.beaShamac=null; t.beaUlt=null; t.beaWarp=null;
   // ai đang nhắm vào người vừa gục thì bỏ nhắm, để lượt sau bốc lại đối thủ khác
@@ -5470,6 +5590,7 @@ function defeat(t,src){
     const left=aliveMains().length;
     say(t.key==='tanjiro'
       ?`Tanjiro Kamado is defeated — ${left} fighter${left===1?'':'s'} remain.`
+      :t.key==='gojo'?`Satoru Gojo is defeated — ${left} fighter${left===1?'':'s'} remain.`
       :`${t.name} bị hạ gục — còn ${left} người trên sàn.`,'m');
     return;
   }
@@ -5500,12 +5621,15 @@ function finish(w){
     f.supCone=null; f.supHv=null; f.supFb=null; f.supMs=null; f.supCombo=null;
     f.drCone=null;
     f.tanAct=null; f.tanUlt=false; f.tanTrails=[];
+    f.gojoAct=null; f.gojoShots=[]; f.gojoDomain=0;
   }
   G.proj.length=0; G.waves.length=0;
   G.floats.length=0; G.callBanner=null; G.freeze=0;
   G.timeWarp=null; setTheme('main');
   G.timers.length=0; G.fx.length=0;
-  sfx('ko'); say(win&&win.key==='tanjiro'?'TANJIRO WINS!':G.over+' thắng!','g');
+  sfx('ko');
+  if(win&&win.key==='gojo')say('SATORU GOJO WINS!','g');
+  else say(win&&win.key==='tanjiro'?'TANJIRO WINS!':G.over+' thắng!','g');
   /* Đang đánh một trận của giải thì ghi kết quả NGAY tại đây — G còn nguyên đội hình
      vừa đánh, ra khỏi hàm này là mấy con số sát thương không đọc lại được nữa. */
   if(compLive) compResult(win);
@@ -7590,6 +7714,10 @@ function ginyuPossess(g,t){
     o.supHv=null; o.supFb=null; o.supMs=null; o.supCombo=null; o.supEntry=null;
     o.supFly=0; o.supMsDown=0; o.supAir=0; o.supHide=false; o.supCone=null; o.lsr=0; o.fatigue=0;
   }
+  for(const o of [g,t]){
+    o.gojoAct=null; o.gojoShots=[]; o.gojoEntry=null; o.gojoHide=false; o.gojoDomain=0;
+    o.infinity=0; o.infinityDelay=0; o.infinityTick=0; o.infinityLock=0;
+  }
   G.freeze=1.8; G.freezeAt=t;
   G.flashScreen=1;
   sfx('ginyu_swap');
@@ -7663,6 +7791,7 @@ function gnSoulCds(key){
     case 'superman': return {s1:0,s2:SUP.hvCd,s3:SUP.fbCd,s4:SUP.msCd};
     case 'beatrice': return {s1:0,s2:BEA.shamacCd,s4:BEA.ultCd};
     case 'tanjiro':  return {s1:0,s2:TAN.fluxCd,s3:TAN.sunCd};
+    case 'gojo':     return {s1:0,s2:GOJO.redCd,s3:GOJO.purpleCd};
     default:         return {s1:0};
   }
 }
@@ -7672,7 +7801,7 @@ const gnSoulDashCd=key=>key==='chichi'?CHICHI_DASH_CD:key==='shika'?SHIKA.stabCd
    2 / 3 trong CHARS[key].think, bỏ chiêu 1 và bỏ mấy chiêu ăn theo thanh tiến trình. */
 function gnSoulThink(f,e,d,auto){
   if(f.dash||f.bind||f.drAim||f.supHv||f.supFb||f.supMs||f.supMsDown>0||f.decT>0)return;
-  if(f.beaShamac||f.beaUlt||f.tanAct)return;
+  if(f.beaShamac||f.beaUlt||f.tanAct||f.gojoAct)return;
   switch(f.gnSoul){
     case 'kono':
       if(f.cds.s2<=0&&(auto?d<420:keys['k'])){ f.cds.s2=cm(6.5); bunshin(f,e); return; }
@@ -7711,6 +7840,10 @@ function gnSoulThink(f,e,d,auto){
          HP-threshold Ultimate. Those passives remain attached to his original body. */
       if(f.cds.s3<=0&&(auto||keys['l'])){ f.cds.s3=TAN.sunCd; tanSunDance(f,e); return; }
       if(f.cds.s2<=0&&(auto||keys['k'])){ f.cds.s2=TAN.fluxCd; tanConstantFlux(f,e); return; }
+      break;
+    case 'gojo':
+      if(f.cds.s3<=0&&(auto?d<520:keys['l'])){ f.cds.s3=GOJO.purpleCd; gojoPurple(f,e); return; }
+      if(f.cds.s2<=0&&(auto?d<520:keys['k'])){ f.cds.s2=GOJO.redCd; gojoRed(f,e); return; }
       break;
   }
   // đòn tay thì theo thân xác: đấm đá của Ginyu
@@ -7753,6 +7886,9 @@ function gnSoulTick(f,dt){
     case 'tanjiro':
       tanjiroTick(f,dt);
       break;
+    case 'gojo':
+      gojoTick(f,dt);
+      break;
   }
 }
 /* Đòn tay mượn của thân xác vừa cướp được: gọi thẳng chiêu 1 gốc của nhân vật đó, để
@@ -7771,6 +7907,7 @@ function gnBorrowBasic(f,e,d){
        đòn chạy trong supermanTick(), mà hàm đó tắt hẳn khi swapAs đã bật. */
     case 'superman': if(d<reach){ f.cds.s1=SUP.hitCd; supBlow(f,e,0); } break;
     case 'tanjiro':  if(d<reach){ f.cds.s1=TAN.basicGap; tanBasic(f,e); } break;
+    case 'gojo':     if(d<GOJO.basicRange){ f.cds.s1=GOJO.basicCd; gojoBasic(f,e); } break;
     default:        if(d<reach){ f.cds.s1=cm(GN.atkCd); ginyuStrike(f,e); } break;
   }
 }
@@ -7798,7 +7935,37 @@ const drCanTime=f=>!!f&&f.key==='dora'&&!f.summon&&!f.swapAs&&!f.tmDone&&!f.tm;
 /* beaStatus() chạy CUỐI: gnStatus GÁN ĐÈ mấy hệ số nên phải nằm sau nó, và Murak
    Protection thì phải có tiếng nói cuối cùng — miễn khống chế 100% nghĩa là gạt sạch mọi
    thứ làm chậm mà mấy hàm trên vừa nhân vào. */
-function statusTick(f,dt){ gnStatus(f,dt); summonStatus(f,dt); drStatus(f,dt); supStatus(f,dt); beaStatus(f,dt); tanStatus(f,dt); }
+function statusTick(f,dt){ gnStatus(f,dt); summonStatus(f,dt); drStatus(f,dt); supStatus(f,dt); beaStatus(f,dt); tanStatus(f,dt); gojoStatus(f,dt); }
+function gojoStatus(f,dt){
+  let overloadEnded=false;
+  if(f.infoOverload>0){
+    const was=f.infoOverload;
+    f.infoOverload=Math.max(0,f.infoOverload-dt);
+    if(was>0&&f.infoOverload<=0){
+      f.overwhelmed=Math.max(f.overwhelmed||0,GOJO.overwhelmedT);
+      overloadEnded=true;
+      G.floats.push({x:f.x,y:f.y-108,txt:'OVERWHELMED',color:'#B99CFF',life:1.05,ml:1.05,banner:true,sc:.58});
+    }
+  }
+  if(f.overwhelmed>0){
+    if(!overloadEnded)f.overwhelmed=Math.max(0,f.overwhelmed-dt);
+    f.moveMul*=GOJO.overwhelmedMove;
+    f.castMul*=GOJO.overwhelmedCast;
+  }
+  if(f.key!=='gojo'||f.swapAs)return;
+  if(f.infinityLock>0){
+    f.infinityLock=Math.max(0,f.infinityLock-dt); f.infinityTick=0; f.infinityDelay=0;
+  }else if(f.infinity<GOJO.infinityMax){
+    if(f.infinityDelay>0) f.infinityDelay=Math.max(0,f.infinityDelay-dt);
+    else {
+      f.infinityTick+=dt;
+      while(f.infinityTick>=GOJO.infinityStep&&f.infinity<GOJO.infinityMax){
+        f.infinityTick-=GOJO.infinityStep; f.infinity++;
+        G.floats.push({x:f.x,y:f.y-112,txt:'INFINITY CHARGE',color:'#78D9FF',life:.9,ml:.9,banner:true,sc:.52});
+      }
+    }
+  }else f.infinityTick=0;
+}
 function tanStatus(f,dt){
   if(f.regenSupp>0) f.regenSupp=Math.max(0,f.regenSupp-dt);
   if(f.openingThreads&&f.openingThreads.length){
@@ -9134,7 +9301,7 @@ function beaTarget(f){
 
 /* Có ai đó đang diễn màn ra mắt không (Ginyu bay vào, Anywhere Door, Superman đáp xuống,
    cửa Forbidden Library). Suốt mấy quãng đó cả sàn đứng chờ, không ai được làm gì. */
-const introOn=()=>!!G&&G.fighters.some(o=>o&&(o.gnEntry||o.drEntry||o.supEntry||o.beaEntry||o.tanEntry));
+const introOn=()=>!!G&&G.fighters.some(o=>o&&(o.gnEntry||o.drEntry||o.supEntry||o.beaEntry||o.tanEntry||o.gojoEntry));
 
 /* ---- màn ra mắt: Forbidden Library ---- */
 function beatriceEnter(f){
@@ -9565,6 +9732,169 @@ function beaVec(f,e){
   return {x,y};
 }
 
+/* ================= Satoru Gojo ================= */
+const gojoTarget=f=>nearestFoe(f); // Six Eyes ignores summons/clones and always selects the nearest real fighter.
+function gojoBanner(f,txt,color,focus){
+  G.floats.push({x:f.x,y:f.y-126,txt,color:color||'#78D9FF',life:1.25,ml:1.25,
+    banner:true,bubble:true,gold:true,big:true,focus:!!focus,sc:.68,tilt:rnd(-.035,.035)});
+}
+function gojoEnter(f){
+  f.startX=f.x; f.startY=f.y;
+  f.gojoEntry={t:0,x:f.x,y:f.y}; f.gojoHide=true; f.pose='entry'; f.poseT=0;
+  sfx('gojo_entry');
+}
+function gojoInfinityBlock(t,kind){
+  if(!t||t.key!=='gojo'||t.summon||t.swapAs||t.infinity<=0)return false;
+  if(['dot','ground','true','domain','swap','time','infinity-bypass'].includes(kind))return false;
+  t.infinity--; t.infinityDelay=GOJO.infinityDelay; t.infinityTick=0;
+  ring(t.x,t.y-22,72,'#B9EEFF',.34);
+  G.floats.push({x:t.x,y:t.y-112,txt:'INFINITY',color:'#DDF8FF',life:.85,ml:.85,banner:true,gold:true,sc:.62});
+  sfx('gojo_infinity');
+  return true;
+}
+function gojoInterrupt(f){
+  const A=f&&f.gojoAct; if(!A)return false;
+  let cut=false;
+  if(A.kind==='blue')cut=true;
+  else if(A.kind==='red'&&A.t<=GOJO.redBreak){ f.cds.s2=GOJO.redCd*.50; cut=true; }
+  else if(A.kind==='purple'){ f.cds.s3=GOJO.purpleCd*.70; cut=true; }
+  else if(A.kind==='domain'&&A.t<=GOJO.domainBreak){ f.cds.s4=GOJO.domainCd*.60; cut=true; }
+  if(!cut)return false;
+  f.gojoAct=null; f.pose='hurt'; f.poseT=Math.max(f.poseT||0,.24); f.lock=0;
+  gojoBanner(f,'TECHNIQUE INTERRUPTED','#D8D5E7');
+  return true;
+}
+function gojoBasic(f,e){
+  if(!e||!e.alive)return;
+  const i=f.gojoCombo%3; f.gojoCombo=(i+1)%3; f.cds.basic=GOJO.basicCd;
+  setPose(f,i===0?'strike1':(i===1?'strike2':'bluehit'),gs(.28)); aim(f,e,1.02);
+  const hit=hurt(e,GOJO.basic[i],f,false,undefined,undefined,false);
+  sfx('gojo_strike');
+  if(hit&&i===2){
+    knock(e,f.x-e.x,f.y-e.y,GOJO.basicPull); stunFx(e,GOJO.basicStun,'spin');
+    gojoBanner(f,'BLUE-ENHANCED STRIKE','#78D9FF');
+  }
+  f.gojoThink=rnd(GOJO.aiThinkMin,GOJO.aiThinkMax);
+}
+function gojoBlue(f,e){
+  if(!e||!e.alive)return;
+  f.gojoAct={kind:'blue',t:0,target:e,cx:e.x,cy:e.y,fired:false};
+  setPose(f,'blue',GOJO.blueWind); aim(f,e,.6); gojoBanner(f,'CURSED TECHNIQUE LAPSE: BLUE','#55C9FF');
+}
+function gojoRed(f,e){
+  if(!e||!e.alive)return;
+  const a=Math.atan2(bodyCY(e)-(f.y-28),e.x-f.x);
+  f.gojoAct={kind:'red',t:0,target:e,ang:a,fired:false};
+  setPose(f,'red',GOJO.redWind); aim(f,e,.45); gojoBanner(f,'CURSED TECHNIQUE REVERSAL: RED','#FF536A');
+}
+function gojoPurple(f,e){
+  if(!e||!e.alive)return;
+  const a=Math.atan2(bodyCY(e)-(f.y-28),e.x-f.x);
+  f.infinity=0; f.infinityDelay=0; f.infinityTick=0; f.infinityLock=GOJO.purpleLock;
+  f.gojoAct={kind:'purple',t:0,target:e,ang:a,fired:false};
+  setPose(f,'purple',GOJO.purpleWind); aim(f,e,.35);
+  gojoBanner(f,'HOLLOW TECHNIQUE: PURPLE','#B779FF',true);
+  say('Hollow Technique: Purple consumes every Infinity charge. Recovery is locked for 3 seconds.','g');
+}
+function gojoDomain(f,e){
+  if(!e||!e.alive)return;
+  f.gojoAct={kind:'domain',t:0,target:e,formed:false};
+  setPose(f,'domain',GOJO.domainWind); aim(f,e,0);
+  gojoBanner(f,'DOMAIN EXPANSION: UNLIMITED VOID','#D9C7FF',true);
+}
+function gojoShot(f,type,a){
+  const speed=type==='red'?GOJO.redSpeed:GOJO.purpleSpeed;
+  f.gojoShots.push({type,x:f.x+Math.cos(a)*30,y:f.y-28+Math.sin(a)*30,
+    vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:type==='red'?14:22,life:gs(2.2),hitList:[]});
+}
+function gojoShotsTick(f,dt){
+  if(!f.gojoShots)return;
+  for(let i=f.gojoShots.length-1;i>=0;i--){
+    const p=f.gojoShots[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt;
+    let gone=p.life<=0||p.x<PAD-35||p.x>W-PAD+35||p.y<PAD||p.y>H-PAD+30;
+    if(!gone){
+      for(const o of G.fighters){
+        if(!foeOk(f,o)||p.hitList.includes(o)||!hitsBody(p,o))continue;
+        p.hitList.push(o);
+        if(p.type==='red'){
+          const hit=hurt(o,GOJO.redDmg,f,'REVERSAL: RED','gojoRed',undefined,false,GOJO.sixEyesAccuracy);
+          if(hit){ knock(o,p.vx,p.vy,GOJO.redKb); stunFx(o,GOJO.redStun,'spin'); }
+          gone=true;
+        }else{
+          const dmg=p.hitList.length===1?GOJO.purpleDmg:Math.round(GOJO.purpleDmg*GOJO.purpleSecond);
+          const hit=hurt(o,dmg,f,'HOLLOW PURPLE','gojoPurple',undefined,false,GOJO.sixEyesAccuracy);
+          if(hit)knock(o,p.vx,p.vy,GOJO.purpleKb);
+          if(p.hitList.length>=GOJO.purplePierce)gone=true;
+        }
+        if(gone)break;
+      }
+    }
+    if(gone)f.gojoShots.splice(i,1);
+  }
+}
+function gojoTick(f,dt){
+  const E=f.gojoEntry;
+  if(E){
+    for(const o of G.fighters)if(o!==f&&o.team!==f.team)o.lock=Math.max(o.lock,.3);
+    f.lock=Math.max(f.lock,.3); E.t+=dt;
+    f.x=E.x; f.y=E.y;
+    if(E.t<GOJO.entrancePh[0]){ f.gojoHide=true; f.pose='entry'; }
+    else if(E.t<GOJO.entrancePh[1]){ f.gojoHide=false; f.pose='entry'; }
+    else if(E.t<GOJO.entrancePh[2]){ f.gojoHide=false; f.pose='adjust'; }
+    else { f.gojoHide=false; f.pose='idle'; }
+    if(E.t>=GOJO.entranceT){
+      f.gojoEntry=null; f.gojoHide=false; f.pose='idle'; f.lock=0;
+      const e=gojoTarget(f); if(e)aim(f,e,0);
+      say('Satoru Gojo adjusts his blindfold and takes a relaxed combat stance.','g');
+    }
+    return;
+  }
+  f.gojoThink=Math.max(0,(f.gojoThink||0)-dt);
+  f.gojoDomain=Math.max(0,(f.gojoDomain||0)-dt);
+  gojoShotsTick(f,dt);
+  const A=f.gojoAct; if(!A)return;
+  A.t+=dt; f.lock=Math.max(f.lock,.06);
+  if(A.kind==='blue'&&A.t>=GOJO.blueWind&&!A.fired){
+    A.fired=true; sfx('gojo_blue'); ring(A.cx,A.cy,GOJO.blueRadius,'#55C9FF',.45);
+    const all=G.fighters.filter(o=>foeOk(f,o)&&dist(o,{x:A.cx,y:A.cy})<=GOJO.blueRadius);
+    all.sort((a,b)=>(a===A.target?-1:b===A.target?1:dist(a,{x:A.cx,y:A.cy})-dist(b,{x:A.cx,y:A.cy})));
+    let landed=false;
+    all.slice(0,GOJO.blueMax).forEach((o,i)=>{
+      const hit=hurt(o,o===A.target?GOJO.blueDmg:GOJO.blueSplash,f,o===A.target?'LAPSE: BLUE':false,'gojoBlue',undefined,false,GOJO.sixEyesAccuracy);
+      if(hit){ landed=true; knock(o,A.cx-o.x,A.cy-o.y,GOJO.bluePull); stunFx(o,GOJO.blueStun,'spin'); }
+    });
+    if(landed){
+      const before=f.infinity;
+      f.infinity=Math.min(GOJO.infinityMax,f.infinity+1);
+      if(f.infinity>before)G.floats.push({x:f.x,y:f.y-108,txt:'INFINITY CHARGE +1',color:'#78D9FF',life:.9,ml:.9,banner:true,sc:.54});
+    }
+    f.gojoAct=null; f.pose='idle'; f.lock=0; f.gojoThink=rnd(GOJO.aiThinkMin,GOJO.aiThinkMax); return;
+  }
+  if(A.kind==='red'&&A.t>=GOJO.redWind&&!A.fired){
+    A.fired=true; gojoShot(f,'red',A.ang); sfx('gojo_red');
+    f.gojoAct=null; f.pose='idle'; f.lock=0; f.gojoThink=rnd(GOJO.aiThinkMin,GOJO.aiThinkMax); return;
+  }
+  if(A.kind==='purple'&&A.t>=GOJO.purpleWind&&!A.fired){
+    A.fired=true; gojoShot(f,'purple',A.ang); sfx('gojo_purple'); G.flashScreen=Math.max(G.flashScreen,.10);
+    f.gojoAct=null; f.pose='idle'; f.lock=0; f.gojoThink=rnd(GOJO.aiThinkMin,GOJO.aiThinkMax); return;
+  }
+  if(A.kind==='domain'&&A.t>=GOJO.domainWind&&!A.formed){
+    A.formed=true; f.gojoDomain=GOJO.overloadT; sfx('gojo_domain');
+    const caught=G.fighters.filter(o=>foeOk(f,o)&&dist(f,o)<=GOJO.domainRange);
+    for(const o of caught){
+      o.infoOverload=Math.max(o.infoOverload||0,GOJO.overloadT); o.infoOwner=f;
+      o.foe=null; o.foeT=0;
+      o.stun=Math.max(o.stun,GOJO.overloadT); o.stunKind='domain';
+      if(o.bind||(o.dash&&o.dash.kind==='stab'))shikaInterrupt(o);
+      if(o.key==='gojo'&&o.gojoAct)gojoInterrupt(o);
+      G.floats.push({x:o.x,y:o.y-112,txt:'INFORMATION OVERLOAD',color:'#D9C7FF',life:1.15,ml:1.15,banner:true,gold:true,sc:.54});
+    }
+    sfx('gojo_overload');
+    say(`Unlimited Void captures ${caught.length} fighter${caught.length===1?'':'s'} and deals 0 damage.`,'g');
+    f.gojoAct=null; f.pose='idle'; f.lock=0; f.gojoThink=rnd(GOJO.aiThinkMin,GOJO.aiThinkMax);
+  }
+}
+
 /* ---------- Tanjiro Kamado ---------- */
 function tanTarget(f){
   let best=null,bd=Infinity;
@@ -9858,6 +10188,17 @@ function aiVec(f,e){
   if(f.key==='dora'&&!f.summon) return doraVec(f,e);
   // Beatrice giữ mục tiêu trong tầm 5R nhưng không bao giờ tự xáp vào cự ly cận chiến
   if(f.key==='beatrice'&&!f.summon) return beaVec(f,e);
+  /* Gojo patrols a mid-range band with the same waypoint/jitter language as the rest of
+     the roster. Infinity reaching zero never flips him into a retreat state. */
+  if(f.key==='gojo'&&!f.summon){
+    const ge=gojoTarget(f)||e,gd0=dist(f,ge)||1,gux=(ge.x-f.x)/gd0,guy=(ge.y-f.y)/gd0;
+    if(gd0>GOJO.midMax){ x+=gux*.82; y+=guy*.82; }
+    else if(gd0<GOJO.midMin){ x-=gux*.58; y-=guy*.58; }
+    else { x+=-guy*f.strafe*.62; y+=gux*f.strafe*.62; }
+    x+=wxu*.54+f.jx*.34; y+=wyu*.54+f.jy*.34;
+    const gd=dodgeVec(f); x+=gd.x*1.15; y+=gd.y*1.15;
+    return {x,y};
+  }
   // Superman đang bay: bay là để ĐUỔI, nên nhắm thẳng vào địch chứ không lượn vòng
   if(f.key==='superman'&&!f.summon&&f.supFly>0) return supFlyVec(f,e);
   if(f.role==='ranged'){
@@ -9948,7 +10289,7 @@ function step(dt){
     /* Hỗn chiến / đánh đội: cứ 3~6 giây thì bốc lại đối thủ gần nhất. Bám dính như vậy
        để AI không giật qua giật lại giữa hai người đứng ngang nhau, mà vẫn đánh với ai
        đang ở cạnh mình chứ không đuổi theo một người ở tận đầu kia sàn. */
-    if(!f.summon){
+    if(!f.summon&&!(f.infoOverload>0)){
       f.foeT-=dt;
       if(f.foeT<=0){ f.foeT=rnd(3,6); const nf=nearestFoe(f); if(nf) f.foe=nf; }
     }
@@ -9983,6 +10324,7 @@ function step(dt){
     if(f.key==='superman'&&!f.summon&&f.alive&&!f.swapAs) supermanTick(f,dt);
     if(f.key==='beatrice'&&!f.summon&&f.alive&&!f.swapAs) beatriceTick(f,dt);
     if(f.key==='tanjiro'&&!f.summon&&f.alive&&!f.swapAs) tanjiroTick(f,dt);
+    if(f.key==='gojo'&&!f.summon&&f.alive&&!f.swapAs) gojoTick(f,dt);
     // người khiêu khích rời sàn thì đối thủ nhắm lại vào mục tiêu thật
     if(f.tauntBy&&(!f.tauntBy.alive||f.tauntBy.hp<=0||f.tauntBy.leaving>0||G.fighters.indexOf(f.tauntBy)<0)) f.tauntBy=null;
     if(f.outCut>0&&!(foeOf(f)&&foeOf(f).domain)) f.outCut=0;
@@ -10028,9 +10370,10 @@ function step(dt){
       // Doraemon thắng thì ngồi xuống ăn dorayaki chứ không đứng thủ thế
       if(w.alive){
         const wp=w.key==='tanjiro'&&!w.swapAs&&G.endT<.65?'ready'
-          :((w.key==='dora'||w.key==='superman'||w.key==='beatrice'||w.key==='tanjiro')&&!w.swapAs?'win':'idle');
+          :((w.key==='dora'||w.key==='superman'||w.key==='beatrice'||w.key==='tanjiro'||w.key==='gojo')&&!w.swapAs?'win':'idle');
         setPose(w,wp,0);
       }
+      if(w.alive&&w.key==='gojo'&&!w.swapAs&&!w.gojoWonSaid){ w.gojoWonSaid=true; sfx('gojo_win'); }
       /* Superman thắng: nhìn quanh sàn một lượt rồi TỪ TỪ bay lên khỏi mặt đất, chống
          hai tay vào hông, áo choàng tung sau lưng. Không phá gì của sàn đấu cả. */
       if(w.alive&&w.key==='superman'&&!w.swapAs){
@@ -10062,7 +10405,7 @@ function step(dt){
     const e=aimTarget(f)||foeOf(f);
     if(!e)continue;
     let v={x:0,y:0};
-    if(f.stun>0||f.lock>0||f.dash||f.lazy) v={x:0,y:0};   // ngồi lười thì không nhúc nhích
+    if(f.stun>0||f.lock>0||f.dash||f.lazy||f.infoOverload>0) v={x:0,y:0};   // ngồi lười thì không nhúc nhích
     else if(isPlayer(f)) v=playerVec();
     else v=aiVec(f,aimTarget(f)||e);
     if(f.lunge>.35 && !isPlayer(f)){ v.x=f.ax; v.y=f.ay; }
@@ -10159,7 +10502,7 @@ function step(dt){
     }
   }
   for(const f of MAIN){
-    if(!f.alive||f.stun>0||f.lock>0)continue;
+    if(!f.alive||f.stun>0||f.lock>0||f.infoOverload>0)continue;
     const auto=!isPlayer(f)||autoSkill;
     const C=CHARS[f.key];
     const tg=aimTarget(f);
@@ -10248,7 +10591,7 @@ function step(dt){
     const a=G.fighters[i], b=G.fighters[j];
     if(!a||!b||!a.alive||!b.alive)continue;
     if(a.dash||b.dash||a.leaving>0||b.leaving>0)continue;
-    if(a.gnEntry||b.gnEntry||a.gnChange||b.gnChange||a.tanEntry||b.tanEntry||a.tanAct||b.tanAct)continue;
+    if(a.gnEntry||b.gnEntry||a.gnChange||b.gnChange||a.tanEntry||b.tanEntry||a.tanAct||b.tanAct||a.gojoEntry||b.gojoEntry||a.gojoAct||b.gojoAct)continue;
     if(a.drEntry||b.drEntry||a.edT>0||b.edT>0||a.tm||b.tm)continue;   // Doraemon: ra mắt / chui cửa / tua ngược
     const wa=(a.summon&&!a.ally)?0:1, wb=(b.summon&&!b.ally)?0:1;
     if(!wa&&!wb)continue;
@@ -10775,7 +11118,7 @@ function arenaFrame(){
 function groundShadows(){
   ctx.save();
   for(const f of G.fighters){
-    if(!f||f.hidden||f.drHide||f.supHide||f.tanHide||!f.alive&&f.fade===0) continue;
+    if(!f||f.hidden||f.drHide||f.supHide||f.tanHide||f.gojoHide||!f.alive&&f.fade===0) continue;
     const air=(f.supAir||0)+(f.copter>0?DORA.copHover:0);   // bay cao thì bóng nhạt và tan ra
     const sz=(f.szMul||1)*(f.r||26);
     ctx.globalAlpha=.30*(f.fade===undefined?1:f.fade)/(1+air/90);
@@ -10862,9 +11205,52 @@ function tanVector(f){
   ctx.restore();
 }
 
+function gojoVector(f){
+  const y=-20,P=f.pose||'idle',t=G.t*10;
+  const down=P==='down', domain=P==='domain'||f.gojoDomain>0, win=P==='win';
+  ctx.save(); ctx.rotate(down?.58:(P==='hurt'?.16:0)); if(down)ctx.translate(0,10);
+  // Tall adult silhouette in an intact black Jujutsu High uniform.
+  ctx.fillStyle='#10141C';
+  ctx.fillRect(-10,y+14,8,down?8:18+Math.sin(t)*1.2);
+  ctx.fillRect(3,y+14,8,down?13:18-Math.sin(t)*1.2);
+  torso(0,y-9,24,28,'#111722');
+  ctx.fillStyle='#253143';ctx.fillRect(-3,y-9,6,26);
+  ctx.fillStyle='#0A0D13';ctx.fillRect(-11,y+11,22,5);
+  ctx.fillStyle='#F3D6C1';
+  if(P==='blue'||P==='red'||P==='purple'){
+    ctx.fillRect(10,y-8,22,6);ctx.beginPath();ctx.arc(32,y-5,4.2,0,7);ctx.fill();
+    if(P==='purple'){ctx.fillRect(-31,y-8,22,6);ctx.beginPath();ctx.arc(-31,y-5,4.2,0,7);ctx.fill();}
+  }else if(domain){
+    ctx.fillRect(-18,y-12,7,17);ctx.fillRect(11,y-12,7,17);
+  }else if(P==='strike1'||P==='strike2'||P==='bluehit'){
+    const reach=P==='bluehit'?30:23;ctx.fillRect(10,y-6,reach,7);ctx.fillRect(-17,y-4,7,14);
+  }else{
+    ctx.fillRect(-18,y-5,7,15);if(!(P==='entry'||win))ctx.fillRect(11,y-5,7,15);
+  }
+  head(0,y-27,13.5);
+  ctx.fillStyle='#F2F6FF';ctx.beginPath();ctx.arc(0,y-32,14,Math.PI,2*Math.PI);ctx.fill();
+  for(let i=0;i<8;i++){
+    const x=-13+i*3.7,h=7+(i%3)*4;
+    ctx.beginPath();ctx.moveTo(x,y-34);ctx.lineTo(x+2,y-44-h);ctx.lineTo(x+5,y-33);ctx.fill();
+  }
+  if(domain){
+    ctx.fillStyle='#9FEAFF';ctx.shadowColor='#7ADFFF';ctx.shadowBlur=8;
+    ctx.beginPath();ctx.ellipse(-5,y-27,3.2,2.2,0,0,7);ctx.ellipse(5,y-27,3.2,2.2,0,0,7);ctx.fill();ctx.shadowBlur=0;
+    ctx.fillStyle='#0C1018';ctx.fillRect(-12,y-21,24,4);
+  }else{
+    ctx.fillStyle='#090C12';ctx.beginPath();if(ctx.roundRect)ctx.roundRect(-13,y-32,26,9,4);else ctx.rect(-13,y-32,26,9);ctx.fill();
+  }
+  if(win){
+    ctx.strokeStyle='#8B5A50';ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(2,y-20,4,.15,Math.PI-.2);ctx.stroke();
+    ctx.fillStyle='#F3D6C1';ctx.beginPath();ctx.arc(12,y-29,3.6,0,7);ctx.fill();
+  }
+  ctx.restore();
+}
+
 function vector(f){
   const t=G.t*10, y=-18, sw=f.moving?Math.sin(t)*3:0;
   if(f.key==='tanjiro'){ tanVector(f); return; }
+  if(f.key==='gojo'){ gojoVector(f); return; }
   if(f.key==='kono'){
     ctx.fillStyle='#4C7CE0'; ctx.beginPath(); ctx.moveTo(-4,y-6);
     ctx.quadraticCurveTo(-38,y-16+Math.sin(t)*5,-50,y+2);
@@ -11325,7 +11711,7 @@ function sprite(f){
      nhân vật kia — đọc nhầm thì nạp ảnh vào injured2/injured3 vẫn không hiện. */
   const injArr = f.key==='suzune' ? (f.form>=3 ? (set.injured3||set.injured2) : set.injured2)
                                   : set.injured;
-  const inj = f.injured && injArr && injArr.length;
+  const inj = f.key!=='gojo' && f.injured && injArr && injArr.length;
   // tơi tả: chỉ thay ảnh đứng / trúng đòn, còn ra chiêu vẫn chạy ảnh riêng
   if(inj && (pk==='idle'||pk==='hurt')) pk='injured';
   // lúc này: ảnh đứng đổi sang dáng có cánh
@@ -11364,6 +11750,14 @@ function sprite(f){
     else if(f.key==='tanjiro'&&pk==='mark') arr=set.mark||set.ready||set.idle;
     else if(f.key==='tanjiro'&&pk==='win') arr=set.win||set.idle;
     else if(f.key==='tanjiro'&&pk==='down') arr=set.down||set.injured||set.hurt||set.idle;
+    else if(f.key==='gojo'&&['entry','adjust'].includes(pk)) arr=set[pk]||set.idle;
+    else if(f.key==='gojo'&&['strike1','strike2','bluehit'].includes(pk)) arr=set[pk]||set.strike1||set.idle;
+    else if(f.key==='gojo'&&pk==='blue') arr=set.blue||set.bluehit||set.idle;
+    else if(f.key==='gojo'&&pk==='red') arr=set.red||set.strike2||set.idle;
+    else if(f.key==='gojo'&&pk==='purple') arr=set.purple||set.red||set.blue||set.idle;
+    else if(f.key==='gojo'&&pk==='domain') arr=set.domain||set.adjust||set.idle;
+    else if(f.key==='gojo'&&pk==='win') arr=set.win||set.adjust||set.idle;
+    else if(f.key==='gojo'&&pk==='down') arr=set.down||set.injured||set.hurt||set.idle;
     else if(pk==='bicycle') arr=set.atk1||set.idle;
     else if(pk==='stab') arr=set.atk1||set.idle;          // chưa có ảnh đâm thì mượn ảnh phóng shuriken
     else if(pk==='lazy') arr=set.hurt||set.idle;          // chưa có ảnh nằm lười thì mượn ảnh đứng
@@ -11437,6 +11831,7 @@ function drawFighter(f){
   if(f.supHide)return;                         // Superman còn là bóng người trên cao
   if(f.beaHide)return;                         // Beatrice còn ở trong Forbidden Library
   if(f.tanHide)return;
+  if(f.gojoHide)return;
   const img=sprite(f);
   const mv=f.moveAmt!==undefined?clamp(f.moveAmt,0,1):(f.moving?1:0);
   const hop = Math.abs(Math.sin(G.t*7.5))*7*mv + Math.sin(G.t*2.4)*2.5*(1-mv);
@@ -13956,6 +14351,64 @@ function drawTanjiroFx(){
   ctx.restore();
 }
 
+function drawGojoDomain(){
+  const owner=G.fighters.find(f=>f&&f.alive&&f.key==='gojo'&&!f.swapAs&&f.gojoDomain>0);
+  if(!owner)return;
+  const a=clamp(owner.gojoDomain/GOJO.overloadT,0,1);
+  ctx.save();
+  ctx.globalAlpha=.58*Math.min(1,(1-a)*5+.18);ctx.fillStyle='#03020B';ctx.fillRect(10,10,W-20,H-20);
+  ctx.translate(owner.x,owner.y-22);
+  for(let i=0;i<70;i++){
+    const ang=i*2.399+G.t*.08, r=35+(i*47)%GOJO.domainRange;
+    ctx.globalAlpha=.10+.18*((i%7)/7);ctx.fillStyle=i%3?'#D9C7FF':'#78D9FF';
+    ctx.beginPath();ctx.arc(Math.cos(ang)*r,Math.sin(ang)*r*.68,1+(i%3)*.55,0,7);ctx.fill();
+  }
+  ctx.globalAlpha=.32;ctx.strokeStyle='#D9C7FF';ctx.lineWidth=2.4;
+  ctx.beginPath();ctx.ellipse(0,0,GOJO.domainRange,GOJO.domainRange*.72,0,0,7);ctx.stroke();
+  ctx.restore();
+}
+function drawGojoFx(){
+  ctx.save();ctx.lineCap='round';
+  for(const f of G.fighters){
+    if(!f||f.key!=='gojo'||f.swapAs)continue;
+    if(f.gojoEntry){
+      const q=clamp(f.gojoEntry.t/GOJO.entrancePh[0],0,1);
+      ctx.translate(f.x,f.y-24);ctx.strokeStyle='#BFEFFF';ctx.lineWidth=1.5;
+      for(let i=0;i<7;i++){
+        ctx.globalAlpha=(1-q)*.45;ctx.beginPath();ctx.ellipse(0,0,18+i*8,34+i*5,G.t*1.7+i*.5,0,7);ctx.stroke();
+      }
+      ctx.translate(-f.x,-(f.y-24));
+    }
+    if(f.alive&&f.infinity>0&&!f.gojoHide){
+      ctx.globalAlpha=.055+.02*f.infinity;ctx.strokeStyle='#DDF8FF';ctx.lineWidth=1.4;
+      ctx.beginPath();ctx.ellipse(f.x,f.y-24,28+f.infinity*2,48+f.infinity*2,0,0,7);ctx.stroke();
+    }
+    if(G.over&&G.winner===f&&f.alive&&G.endT<1.2){
+      ctx.globalAlpha=.26*(1-G.endT/1.2);ctx.strokeStyle='#DDF8FF';ctx.lineWidth=3;
+      ctx.beginPath();ctx.ellipse(f.x,f.y-24,40+G.endT*18,58+G.endT*18,0,0,7);ctx.stroke();
+    }
+    for(const p of f.gojoShots||[]){
+      const purple=p.type==='purple',col=purple?'#A75CFF':'#FF405C',core=purple?'#F0D8FF':'#FFE0E5';
+      const a=Math.atan2(p.vy,p.vx),L=purple?105:62;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(a);ctx.shadowColor=col;ctx.shadowBlur=purple?24:16;
+      const g=ctx.createLinearGradient(-L,0,18,0);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,col);
+      ctx.globalAlpha=.58;ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(-L,0);ctx.lineTo(0,-p.r*.8);ctx.lineTo(18,0);ctx.lineTo(0,p.r*.8);ctx.closePath();ctx.fill();
+      ctx.globalAlpha=.95;ctx.fillStyle=col;ctx.beginPath();ctx.arc(0,0,p.r,0,7);ctx.fill();
+      ctx.fillStyle=core;ctx.beginPath();ctx.arc(3,-2,p.r*.42,0,7);ctx.fill();ctx.restore();
+    }
+  }
+  for(const o of G.fighters){
+    if(!o||!o.alive)continue;
+    if(o.infoOverload>0){
+      ctx.globalAlpha=.6;ctx.strokeStyle='#D9C7FF';ctx.lineWidth=1.8;
+      for(let i=0;i<5;i++){const a=G.t*2+i*1.257;ctx.beginPath();ctx.arc(o.x+Math.cos(a)*24,o.y-48+Math.sin(a)*10,3,0,7);ctx.stroke();}
+    }else if(o.overwhelmed>0){
+      ctx.globalAlpha=.3;ctx.strokeStyle='#9C8BC5';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(o.x,o.y-22,30,48,0,0,7);ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
 function draw(){
   ctx.setTransform(S,0,0,S,0,0);
   ctx.fillStyle='#070B13'; ctx.fillRect(0,0,W,H+HEADER);
@@ -13965,6 +14418,7 @@ function draw(){
   ctx.beginPath(); ctx.rect(10,10,W-20,H-20); ctx.clip();
   camApply();
   arenaFloor();
+  drawGojoDomain();
   drawGarden();
   if(G.timeWarp) drawTimeWarp();
   drawDoraDoors();
@@ -14066,12 +14520,13 @@ function draw(){
     ctx.restore();
   }
   for(const p of G.proj) drawProj(p);
+  drawGojoFx();
   drawTanjiroFx();                         // thread, blade trails, Mark heat and afterimages
   for(const L of G.kos){
     /* Superman gục: chống một gối xuống trước, gượng dậy hai nhịp không nổi, rồi mới
        đổ hẳn — nên quãng nghiêng người bắt đầu muộn hơn mấy người kia. */
-    const f=L.f, pr=L.sup?clamp((L.t-.62)/.85,0,1):(L.tan?clamp((L.t-.68)/.82,0,1):clamp(L.t/1.25,0,1));
-    const tryUp=((L.sup||L.tan)&&L.t<.68)?Math.abs(Math.sin(L.t*9))*3.5:0;
+    const f=L.f, pr=L.sup?clamp((L.t-.62)/.85,0,1):(L.tan||L.gojo?clamp((L.t-.68)/.82,0,1):clamp(L.t/1.25,0,1));
+    const tryUp=((L.sup||L.tan||L.gojo)&&L.t<.68)?Math.abs(Math.sin(L.t*9))*3.5:0;
     const img=sprite(f);
     ctx.save();
     ctx.globalAlpha=.28*(1-pr); ctx.fillStyle='#000';
@@ -14436,6 +14891,7 @@ function winnerBanner(){
   const sup=w.key==='superman'&&!w.swapAs;
   const bea=w.key==='beatrice'&&!w.swapAs;
   const tan=w.key==='tanjiro'&&!w.swapAs;
+  const gojo=w.key==='gojo'&&!w.swapAs;
   const head=G.mode==='team'?'WINNING TEAM':'WINNER';
   ctx.font='900 15px "Space Mono",monospace';
   ctx.lineWidth=6; ctx.strokeStyle='#000'; ctx.strokeText(head,0,-42);
@@ -14445,8 +14901,8 @@ function winnerBanner(){
   const team=G.mode==='team'&&G.winTeam!==null&&G.winTeam!==undefined
     ? G.fighters.filter(f=>f&&!f.summon&&f.team===G.winTeam) : null;
   const big=(team&&team.length>1)?team.map(f=>f.name.toUpperCase()).join(' + ')
-    :(dora?'DORAEMON WINS!':(sup?'SUPERMAN WINS!':(bea?'BEATRICE WINS!':(tan?'TANJIRO WINS!':w.name.toUpperCase()))));
-  let bsize=(team&&team.length>1)?34:(dora||sup||bea||tan?38:46);
+    :(dora?'DORAEMON WINS!':(sup?'SUPERMAN WINS!':(bea?'BEATRICE WINS!':(tan?'TANJIRO WINS!':(gojo?'SATORU GOJO WINS!':w.name.toUpperCase())))));
+  let bsize=(team&&team.length>1)?34:(dora||sup||bea||tan||gojo?38:46);
   ctx.font=`900 ${bsize}px "Be Vietnam Pro",sans-serif`;
   const room=W-56;
   if(ctx.measureText(big).width>room){
