@@ -15,26 +15,27 @@ const near=(a,b,e=.03)=>Math.abs(a-b)<=e;
     const text=[C.name,C.tag,...C.skills,D.role.vi,D.role.en,D.bio.vi,D.bio.en,
       ...D.skills.flatMap(s=>[s.name,s.vi,s.en])].join(' ');
     return {hp:window.__HP.gojo,std:window.__HP_STD,entrance:X.entranceT*RT,basic:X.basic,
-      basicCd:X.basicCd*RT,blue:[X.blueDmg,X.blueSplash,X.blueCd*RT,X.blueWind*RT,X.blueStun*RT],
+      basicCd:X.basicCd*RT,blue:[X.blueDmg,X.blueSplash,X.blueCd*RT,X.blueWind*RT,X.blueStun*RT,X.blueMax],
       red:[X.redDmg,X.redCd*RT,X.redWind*RT,X.redBreak*RT,X.redStun*RT],
-      purple:[X.purpleDmg,X.purpleSecond,X.purpleCd*RT,X.purpleWind*RT,X.purpleLock*RT],
+      purple:[X.purpleDmg,X.purpleSecond,X.purpleBypass,X.purpleCd*RT,X.purpleWind*RT,X.purpleLock*RT],
       domain:[X.domainCd*RT,X.domainWind*RT,X.domainBreak*RT,X.overloadT*RT,X.overwhelmedT*RT],
-      inf:[X.infinityMax,X.infinityDelay*RT,X.infinityStep*RT],
+      inf:[X.infinityMax,X.infinityDelay*RT,X.infinityStep*RT],open:[X.openBlue*RT,X.openRed*RT,X.openPurple*RT,X.openDomain*RT],
       names:['Satoru Gojo','Mage','Controller','Six Eyes','Infinity','Infinity Charge','Limitless Combat',
         'Blue-Enhanced Strike','Cursed Technique Lapse: Blue','Cursed Technique Reversal: Red',
         'Hollow Technique: Purple','Domain Expansion: Unlimited Void','Information Overload','Overwhelmed']
         .every(x=>text.includes(x)), vietnamese:/[À-ỹ]/.test(text), chart:D.pw};
   });
   ok(cfg.hp===cfg.std,'Maximum HP comes from the shared stat system',`${cfg.hp}/${cfg.std}`);
-  ok(near(cfg.entrance,1.5)&&cfg.basic.join('/')==='18/18/28'&&cfg.basicCd===.75,
+  ok(near(cfg.entrance,1.5)&&cfg.basic.join('/')==='16/16/24'&&cfg.basicCd===.85,
     'entrance and Limitless Combat values are exact');
-  ok(cfg.blue.join('/')==='55/30/8.5/0.55/0.6'&&cfg.red.join('/')==='80/11/0.7/0.45/0.75',
+  ok(cfg.blue.join('/')==='55/25/10/0.55/0.5/2'&&cfg.red.join('/')==='75/13/0.75/0.5/0.6',
     'Blue and Red values are exact');
-  ok(cfg.purple.join('/')==='150/0.6/22/1.6/4'&&cfg.domain.join('/')==='32/1.2/0.8/2/3',
+  ok(cfg.purple.join('/')==='135/0.5/0.15/26/1.7/6'&&cfg.domain.join('/')==='34/1.2/0.85/1.6/2.5',
     'Purple and Unlimited Void values are exact');
-  ok(cfg.inf.join('/')==='2/3/5.5','Infinity is two charges with 3s delay and 5.5s recharge');
+  ok(cfg.inf.join('/')==='2/3/7','Infinity is two charges with 3s delay and 7s recharge');
+  ok(cfg.open.join('/')==='3/6.5/13/17','opening cooldowns prevent an immediate full rotation');
   ok(cfg.names&&!cfg.vietnamese,'all Gojo names, statuses and display copy are English');
-  ok(cfg.chart.cmb<=25&&cfg.chart.cc>=80&&cfg.chart.dur<=80,'power chart reflects no low-HP comeback and strong but bounded control');
+  ok(cfg.chart.cmb<=25&&cfg.chart.dur<=75&&cfg.chart.cc<80,'power chart reflects no low-HP comeback and the nerfed defense/control');
 
   console.log('\n=== 2. Entrance freezes the opponent for all four phases ===');
   const ent=await page.evaluate(()=>{
@@ -63,7 +64,7 @@ const near=(a,b,e=.03)=>Math.abs(a-b)<=e;
   });
   ok(!inf.direct&&inf.blocked===0,'a direct hit consumes one charge and deals no damage');
   ok(inf.dot&&inf.empty===0&&inf.exposed===30,'DoT bypasses Infinity and direct hits land once charges are empty');
-  ok(inf.before===1&&inf.after===2,'passive recharge waits 3s, then restores one charge after 5.5s');
+  ok(inf.before===1&&inf.after===2,'passive recharge waits 3s, then restores one charge after 7s');
 
   console.log('\n=== 4. Blue restores once; Purple consumes all charges and stays fixed ===');
   const skills=await page.evaluate(()=>{
@@ -80,8 +81,8 @@ const near=(a,b,e=.03)=>Math.abs(a-b)<=e;
     return {blue,restored,spent,lock,missed,fixed,purple:h-e.hp};
   });
   ok(skills.blue===55&&skills.restored===2,'Blue deals 55 and restores exactly one shared Infinity charge');
-  ok(skills.spent===0&&near(skills.lock,4,.04)&&skills.missed===0,'Purple consumes all charges immediately and can miss its fixed line');
-  ok(near(skills.purple,97.5,.01),'Purple ignores 30% of a target\'s 50% damage reduction',skills.purple);
+  ok(skills.spent===0&&near(skills.lock,6,.04)&&skills.missed===0,'Purple consumes all charges immediately and can miss its fixed line');
+  ok(near(skills.purple,77.625,.01),'Purple ignores 15% of a target\'s 50% damage reduction',skills.purple);
 
   console.log('\n=== 5. Unlimited Void deals zero and transitions into Overwhelmed ===');
   const domain=await page.evaluate(()=>{
@@ -94,10 +95,10 @@ const near=(a,b,e=.03)=>Math.abs(a-b)<=e;
     e.moveMul=1;e.castMul=1;window.__gojoStatus(e,0);
     return {damage:1000-hp,over,stun,overwhelmed:e.overwhelmed*window.__RT,move:e.moveMul,cast:e.castMul};
   });
-  ok(domain.damage===0&&near(domain.over,2,.04)&&near(domain.stun,2,.04),
-    'Unlimited Void applies 2s Information Overload and deals 0 damage');
-  ok(near(domain.overwhelmed,3,.04)&&domain.move===.65&&domain.cast===.75,
-    'Information Overload transitions to 3s Overwhelmed: −35% move, −25% attack/cast');
+  ok(domain.damage===0&&near(domain.over,1.6,.04)&&near(domain.stun,1.6,.04),
+    'Unlimited Void applies 1.6s Information Overload and deals 0 damage');
+  ok(near(domain.overwhelmed,2.5,.04)&&domain.move===.7&&domain.cast===.8,
+    'Information Overload transitions to 2.5s Overwhelmed: −30% move, −20% attack/cast');
 
   ok(errors.length===0,'no browser page errors',errors[0]);
   await browser.close();
