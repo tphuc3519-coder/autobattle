@@ -100,6 +100,11 @@ window.__tanUltimate=tanUltimate; window.__tanAwaken=tanAwaken; window.__tanTarg
 window.__tanOpeningReady=tanOpeningReady; window.__regenFactor=regenFactor;
 window.__drawTanjiroFx=drawTanjiroFx; window.__tanVector=tanVector;
 window.__tanResetRhythm=tanResetRhythm;
+window.__GOJO=GOJO; window.__gojoEnter=gojoEnter; window.__gojoTick=gojoTick;
+window.__gojoBasic=gojoBasic; window.__gojoBlue=gojoBlue; window.__gojoRed=gojoRed;
+window.__gojoPurple=gojoPurple; window.__gojoDomain=gojoDomain; window.__gojoTarget=gojoTarget;
+window.__gojoInfinityBlock=gojoInfinityBlock; window.__gojoInterrupt=gojoInterrupt;
+window.__gojoStatus=gojoStatus; window.__gojoVector=gojoVector; window.__drawGojoFx=drawGojoFx;
 /* nạp hàng loạt ảnh / tiếng */
 window.__bulkSprMatch=bulkSprMatch; window.__bulkSfxMatch=bulkSfxMatch;
 window.__bulkSprites=bulkSprites; window.__bulkSfxFiles=bulkSfxFiles;
