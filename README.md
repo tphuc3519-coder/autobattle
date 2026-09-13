@@ -8,7 +8,7 @@ giao diện **Việt / Anh** đổi được bằng một nút.
 
 | | |
 |---|---|
-| **11 đấu thủ** | mỗi người một hồ sơ: vai trò, chín trục sức mạnh, bộ chiêu mô tả gọn, và phần "xem chi tiết số liệu" cho ai muốn soi từng con số. Tanjiro dùng basic combo và nhịp melee tự nhiên; Satoru Gojo giữ cự ly trung bình, quản lý ba Infinity Charge hữu hạn và dùng Unlimited Void để kiểm soát không gian mà không gây damage |
+| **11 đấu thủ** | mỗi người một hồ sơ: vai trò, chín trục sức mạnh, bộ chiêu mô tả gọn, và phần "xem chi tiết số liệu" cho ai muốn soi từng con số. Tanjiro dùng basic combo và nhịp melee tự nhiên; Satoru Gojo giữ cự ly trung bình, quản lý hai Infinity Charge hữu hạn và dùng Unlimited Void để kiểm soát không gian mà không gây damage |
 | **12 màn đấu** | Dojo · Night Street · Stadium · Forest · Deep Space · Sunset Roof · Volcano · Sky Temple · Frozen Peak · Desert Ruins · Crystal Cave · Sakura Garden — mỗi màn có một ô dán ảnh nền riêng |
 | **3 chế độ** | 1v1 · hỗn chiến 3–6 người · đánh đội 2–4 đội |
 | **Giao diện hiện đại** | hệ màu graphite/navy, điểm nhấn cyan–gold tiết chế, màn chọn toàn màn hình, bảng hồ sơ gọn và HUD trong trận dễ đọc trên cả desktop lẫn điện thoại |
