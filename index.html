@@ -1123,6 +1123,245 @@
   @keyframes uiJust{0%{background:rgba(255,197,66,.30)}100%{background:rgba(255,197,66,0)}}
   .lgTab td.r i{font-style:normal;font-size:9px;margin-left:2px}
   .lgTab td.r i.up{color:#5BE39A} .lgTab td.r i.dn{color:#FF8FA3}
+
+  /* ---------- 2026 premium interface refresh ----------
+     Giữ nguyên toàn bộ DOM, engine và power chart; lớp này chỉ thống nhất lại ngôn ngữ
+     hình ảnh của trang chơi. Ít tím hơn, ít góc vát hơn, tương phản rõ và chỉ dùng ánh
+     sáng ở nơi cần dẫn mắt: lựa chọn hiện tại, CTA và màu riêng của đấu thủ. */
+  :root{
+    --ink:#050811;--panel:#0B111D;--panel2:#111A2A;--line:#263249;
+    --paper:#F4F7FC;--mute:#8E9AAF;--gold:#FFC95C;--gold2:#FFF0C2;
+    --s1:#0B111D;--s2:#101827;--s3:#151F31;--line2:#3A4964;--ink2:#070B13;
+    --cyan:#55D9FF;--mag:#FF638C;--r1:10px;--r2:14px;--r3:20px;
+    --e1:0 1px 2px rgba(0,0,0,.42);--e2:0 18px 50px rgba(0,0,0,.46);
+    --e3:0 34px 90px rgba(0,0,0,.66);--glow:0 0 28px -10px var(--gold)
+  }
+  body{
+    background:
+      radial-gradient(900px 520px at 50% -12%,rgba(71,103,180,.24),transparent 68%),
+      radial-gradient(720px 580px at -8% 40%,rgba(50,197,235,.08),transparent 65%),
+      radial-gradient(760px 620px at 108% 32%,rgba(255,76,126,.07),transparent 66%),
+      linear-gradient(180deg,#070B14 0%,#03060C 100%);
+    color:var(--paper)
+  }
+  body::after{opacity:.018}
+  button,select{
+    background:linear-gradient(180deg,rgba(25,36,55,.96),rgba(13,21,35,.96));
+    border-color:rgba(137,156,190,.18);border-radius:var(--r1);color:#E9EEF7;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.055),0 4px 12px rgba(0,0,0,.18)
+  }
+  button:hover,select:hover{
+    background:linear-gradient(180deg,#21304A,#121D30);border-color:rgba(101,211,255,.42)
+  }
+  select option{background:#0D1523}
+  label.chk{background:rgba(14,22,36,.82);border-color:rgba(137,156,190,.16);border-radius:var(--r1)}
+  button.primary{
+    clip-path:none;border-radius:11px;border:1px solid rgba(255,238,185,.62);
+    background:linear-gradient(135deg,#FFE08A 0%,#FFC24F 55%,#F09B2E 100%);
+    color:#241700;box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 9px 24px rgba(226,148,35,.2)
+  }
+  button.primary:hover{
+    background:linear-gradient(135deg,#FFF0BE,#FFD168 58%,#F6AA38);
+    box-shadow:inset 0 1px 0 #fff,0 11px 30px rgba(235,163,48,.3)
+  }
+
+  /* Public game shell: logo, controls, arena and side panels share one calm surface
+     system. The arena stays dominant; utility controls visually recede. */
+  body.arcade{padding:20px 18px 42px}
+  body.arcade .wrap{max-width:1160px}
+  body.arcade .wrap>header{
+    min-height:58px;margin:0;padding:7px 4px 14px 17px;border-bottom:1px solid rgba(148,163,184,.13)
+  }
+  body.arcade .wrap>header::before{top:8px;bottom:15px;width:3px;background:linear-gradient(180deg,var(--cyan),var(--gold))}
+  body.arcade .wrap>header::after{width:min(300px,36%);height:1px;background:linear-gradient(90deg,var(--cyan),transparent)}
+  body.arcade header h1{
+    font-size:clamp(21px,3.2vw,31px);font-style:normal;letter-spacing:.025em;
+    text-shadow:0 8px 28px rgba(0,0,0,.55)
+  }
+  body.arcade header h1 span{color:var(--gold)}
+  body.arcade .wrap>header .sub{
+    border:1px solid rgba(148,163,184,.14);border-radius:999px;clip-path:none;
+    background:rgba(12,19,32,.76);box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+    color:#9EABBE;letter-spacing:.12em
+  }
+  body.arcade .wrap>header .sub::before{content:'●';color:#5DE29A;margin-right:8px;text-shadow:0 0 10px #5DE29A}
+  body.arcade .bar{
+    padding:10px 12px;margin:12px 0 14px;border:1px solid rgba(148,163,184,.14);
+    border-radius:15px;clip-path:none;background:rgba(10,16,28,.78);
+    -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.045),0 14px 36px rgba(0,0,0,.22)
+  }
+  body.arcade .bar::before{left:18px;right:18px;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:.42}
+  body.arcade .bar>button,body.arcade .bar>select,body.arcade .bar>label.chk{height:36px}
+  body.arcade .stage{
+    padding:8px;border:1px solid rgba(148,163,184,.16);border-radius:20px;clip-path:none;
+    background:linear-gradient(145deg,rgba(20,30,48,.94),rgba(5,9,16,.98));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 24px 70px rgba(0,0,0,.44)
+  }
+  body.arcade .stage::before{left:22px;right:22px;top:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),var(--gold),transparent);opacity:.78}
+  body.arcade .stage::after{display:none}
+  body.arcade canvas{border-radius:13px;background:#070B13}
+  body.arcade .card{
+    margin-top:12px;padding:14px 15px;border:1px solid rgba(148,163,184,.13);
+    border-radius:16px;clip-path:none;background:linear-gradient(180deg,rgba(15,24,39,.94),rgba(7,12,21,.96));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 12px 32px rgba(0,0,0,.22)
+  }
+  body.arcade .card h3{color:#A4B0C3;letter-spacing:.14em}
+  body.arcade .card h3::before{background:var(--cyan);box-shadow:0 0 10px rgba(85,217,255,.75)}
+  body.arcade #log div{border-bottom-color:rgba(148,163,184,.09)}
+  body.arcade .card.help{color:#8794A8;background:rgba(9,15,25,.86)}
+  body.arcade kbd{background:#121D2D;border-color:#293750;color:#DCE5F2;border-radius:6px}
+
+  @media(min-width:1040px){
+    body.arcade .wrap{grid-template-columns:minmax(0,1fr) 310px;column-gap:18px}
+    body.arcade .wrap>.card:has(#log){border-radius:18px}
+  }
+
+  /* Full-screen flow: calmer backdrop, stronger hierarchy and generous spacing. */
+  body.arcade .cselBox{
+    padding:clamp(18px,2.8vh,30px) max(18px,calc((100% - 1120px)/2)) clamp(14px,2vh,22px);
+    background:
+      radial-gradient(70% 42% at 50% -8%,rgba(73,112,190,.23),transparent 72%),
+      radial-gradient(38% 32% at 0 100%,rgba(49,198,235,.07),transparent 72%),
+      linear-gradient(180deg,#0A101C,#04070E)
+  }
+  body.arcade .cselBox::before{height:1px;background:linear-gradient(90deg,transparent,var(--cyan),var(--gold),transparent)}
+  body.arcade .cselBox h2{
+    font-size:clamp(27px,5vw,46px);font-style:normal;letter-spacing:.025em;
+    text-shadow:0 12px 36px rgba(0,0,0,.58)
+  }
+  body.arcade .cselSub{color:#8E9AAF;letter-spacing:.14em;margin-top:8px}
+  body.arcade .cselSub::after{background:linear-gradient(90deg,rgba(116,137,173,.32),transparent)}
+  body.arcade .cselBar{
+    gap:9px;padding:14px 0 0;margin-top:14px;border-top-color:rgba(148,163,184,.13);
+    background:linear-gradient(180deg,transparent,rgba(4,7,14,.92) 34%)
+  }
+  body.arcade #charSelect[data-step="mode"] .cselModes{
+    gap:12px;max-height:min(100%,410px);grid-template-columns:repeat(5,minmax(150px,1fr))
+  }
+  body.arcade #charSelect[data-step="mode"] .mTab{
+    padding:18px 14px 22px;border:1px solid rgba(148,163,184,.15);border-radius:18px;clip-path:none;
+    background:linear-gradient(180deg,rgba(21,32,51,.96),rgba(9,15,26,.98));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 14px 30px rgba(0,0,0,.2)
+  }
+  body.arcade #charSelect[data-step="mode"] .mTab:hover{
+    border-color:color-mix(in srgb,var(--mc,#55D9FF) 52%,transparent);
+    background:linear-gradient(180deg,rgba(31,45,69,.98),rgba(11,18,30,.98));
+    box-shadow:inset 0 0 36px -26px var(--mc,#55D9FF),0 18px 38px rgba(0,0,0,.28)
+  }
+  body.arcade #charSelect[data-step="mode"] .mTab.on{
+    color:#F8FAFF;border-color:color-mix(in srgb,var(--mc,#FFC95C) 74%,#fff 8%);
+    background:linear-gradient(180deg,color-mix(in srgb,var(--mc,#FFC95C) 24%,#172236),#0C1422 76%);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--mc,#FFC95C) 38%,transparent),
+      inset 0 -42px 54px -48px var(--mc,#FFC95C),0 18px 42px rgba(0,0,0,.3)
+  }
+  body.arcade #charSelect[data-step="mode"] .mTab.on i,
+  body.arcade #charSelect[data-step="mode"] .mTab.on::before{color:#B8C3D4}
+  body.arcade #charSelect[data-step="mode"] .mTab.on::after{filter:drop-shadow(0 0 18px var(--mc,#FFC95C))}
+
+  body.arcade .cselCol{
+    padding:13px;border:1px solid rgba(148,163,184,.13);border-radius:18px;
+    background:linear-gradient(180deg,rgba(16,25,41,.86),rgba(7,12,21,.9))
+  }
+  body.arcade .cTile{
+    border:1px solid rgba(148,163,184,.14);border-radius:17px;clip-path:none;
+    background:linear-gradient(180deg,rgba(22,33,53,.95),rgba(9,15,26,.98));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 20px rgba(0,0,0,.18)
+  }
+  body.arcade .cTile:hover{
+    border-color:color-mix(in srgb,var(--c,#55D9FF) 58%,transparent);
+    background:linear-gradient(180deg,color-mix(in srgb,var(--c,#55D9FF) 14%,#1A263B),#0B1321)
+  }
+  body.arcade .cTile.on{
+    border-color:color-mix(in srgb,var(--c,#FFC95C) 78%,#fff 10%);
+    background:linear-gradient(180deg,color-mix(in srgb,var(--c,#FFC95C) 21%,#1C2940),#0A111E);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c,#FFC95C) 32%,transparent),
+      0 14px 32px rgba(0,0,0,.28)
+  }
+  body.arcade .cTile::after{left:14px;right:14px;bottom:0;height:2px;border-radius:999px;background:var(--c,var(--cyan));opacity:.7}
+  body.arcade .cTile.on::after{height:3px;background:var(--c,var(--gold));box-shadow:0 0 12px var(--c,var(--gold))}
+  body.arcade .cAva{border-radius:15px;background:radial-gradient(circle at 50% 34%,color-mix(in srgb,var(--c,#55D9FF) 24%,#10192A),#070C15);border-color:color-mix(in srgb,var(--c,#55D9FF) 58%,transparent)}
+  body.arcade .cName{font-style:normal;letter-spacing:.025em}
+  body.arcade .pickChip{border:1px solid rgba(148,163,184,.15);border-radius:12px;clip-path:none;background:rgba(15,24,39,.92)}
+  body.arcade .pickChip.now{border-color:rgba(255,201,92,.65);box-shadow:inset 0 0 20px -14px var(--gold)}
+  body.arcade .cRoster{border-color:rgba(148,163,184,.17);border-radius:13px;background:#080E18}
+  body.arcade #multiPane .cselCol{border-radius:18px;background:linear-gradient(180deg,rgba(16,25,41,.9),rgba(7,12,21,.92))}
+
+  body.arcade .sTile,#arcStage .sTile{
+    border:1px solid rgba(148,163,184,.14);border-radius:17px;clip-path:none;
+    background:#080D16;box-shadow:0 10px 28px rgba(0,0,0,.24)
+  }
+  body.arcade .sTile:hover,#arcStage .sTile:hover{border-color:rgba(85,217,255,.42);box-shadow:0 15px 34px rgba(0,0,0,.3)}
+  body.arcade .sTile.on,#arcStage .sTile.on{border-color:rgba(255,201,92,.82);box-shadow:inset 0 0 0 1px rgba(255,201,92,.3),0 16px 36px rgba(0,0,0,.34)}
+  body.arcade .sTile.on::after,#arcStage .sTile.on::after{border-top-width:20px;border-left-width:20px}
+  body.arcade .sTile .sCap,#arcStage .sTile .sCap{padding:42px 12px 11px;background:linear-gradient(180deg,transparent,rgba(4,8,14,.96) 74%)}
+  body.arcade .sTile b,#arcStage .sTile b{font-style:normal;letter-spacing:.04em}
+
+  /* Fighter detail is a focused sheet instead of another full-screen wall. Data and
+     chart geometry are untouched; only the surrounding hierarchy changes. */
+  body.arcade .dexPop{padding:16px;background:rgba(2,5,10,.78);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+  body.arcade .dexPopBox{
+    width:min(980px,calc(100% - 16px));height:auto;max-width:980px;max-height:calc(100vh - 32px);
+    border:1px solid rgba(148,163,184,.18);border-radius:22px;clip-path:none;
+    background:linear-gradient(180deg,#111A2A,#070C15);box-shadow:var(--e3)
+  }
+  body.arcade .dexPopBox::before{left:24px;right:24px;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),var(--gold),transparent)}
+  body.arcade .dexPopBar{padding:13px 16px;border-bottom-color:rgba(148,163,184,.12)}
+  body.arcade .dexPopBody{padding:16px 18px 20px}
+  body.arcade .cDetail{border-radius:16px;clip-path:none;background:linear-gradient(180deg,#101929,#090F1A);box-shadow:inset 0 0 0 1px rgba(148,163,184,.12)}
+  body.arcade .dexPopBody .cDetail{background:none;box-shadow:none}
+  body.arcade .sk{border-bottom-color:rgba(148,163,184,.1)}
+  body.arcade .skTag{background:#142036;border-color:#2A3953;border-radius:8px}
+  body.arcade .pwBar{background:#172238}
+
+  /* Title and VS retain drama but lose the heavy chromatic shadow treatment. */
+  #arcBoot,#arcTitle{
+    background:
+      radial-gradient(ellipse at 50% 34%,rgba(60,91,157,.36),transparent 54%),
+      radial-gradient(ellipse at 50% 110%,rgba(85,217,255,.09),transparent 55%),
+      linear-gradient(180deg,#08101D,#02050A)
+  }
+  #arcTitle::after{opacity:.28;filter:blur(42px)}
+  .arcLogo{font-style:normal;letter-spacing:.035em;text-shadow:0 18px 46px rgba(0,0,0,.7)}
+  .arcLogo b{color:var(--gold);text-shadow:0 12px 36px rgba(234,167,52,.24)}
+  .arcTag{color:#A5B1C3;letter-spacing:.19em}
+  #arcStart{border-radius:13px;clip-path:none;min-width:220px}
+  #arcVs{
+    background:
+      radial-gradient(ellipse at 50% 82%,color-mix(in srgb,var(--vsFog,#7799BB) 18%,transparent),transparent 58%),
+      linear-gradient(180deg,#0A111D,#02050A 76%)
+  }
+  #arcVs::before{background:linear-gradient(100deg,transparent calc(50% - 1px),rgba(255,255,255,.12) 50%,transparent calc(50% + 1px))}
+  #arcVs::after{opacity:.56}
+  .vsBig b{text-shadow:0 5px 0 #503000,0 0 34px rgba(255,201,92,.72)}
+  .vsName{font-style:normal;text-shadow:0 8px 24px rgba(0,0,0,.75),0 0 14px currentColor}
+  .vsStage{border:1px solid rgba(148,163,184,.2);border-radius:999px;clip-path:none;background:rgba(5,10,17,.72);box-shadow:none}
+
+  .nextM,.brM{border:1px solid rgba(148,163,184,.14);border-radius:16px;clip-path:none;background:linear-gradient(180deg,#121D30,#090F1B);box-shadow:0 12px 28px rgba(0,0,0,.2)}
+  .nextM::before{left:18px;right:18px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+  .rsRow{border-radius:10px;background:linear-gradient(90deg,#111C2E,#090F1A);box-shadow:inset 2px 0 0 #40516D}
+
+  @media(max-width:920px){
+    body.arcade #charSelect[data-step="mode"] .cselModes{grid-template-columns:repeat(2,minmax(150px,1fr));max-height:none;overflow:auto}
+    body.arcade #charSelect[data-step="mode"] .mTab{min-height:132px}
+  }
+  @media(max-width:560px){
+    body.arcade{padding:10px 8px 28px}
+    body.arcade .bar{padding:8px;gap:6px;border-radius:13px}
+    body.arcade .wrap>header .sub{display:none}
+    body.arcade .stage{padding:5px;border-radius:15px}
+    body.arcade canvas{border-radius:10px}
+    body.arcade .cselBox{padding:16px 12px 12px}
+    body.arcade #charSelect[data-step="mode"] .cselModes{gap:8px}
+    body.arcade #charSelect[data-step="mode"] .mTab{min-height:118px;padding:14px 10px 16px;border-radius:14px}
+    body.arcade .cTile{border-radius:14px}
+    body.arcade .sTile,#arcStage .sTile{border-radius:13px}
+    body.arcade .dexPop{padding:8px}
+    body.arcade .dexPopBox{width:100%;max-height:calc(100vh - 16px);border-radius:17px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  }
 </style>
 </head>
 <body>
@@ -10504,7 +10743,7 @@ function arenaFloor(){
   if(img){ try{ ctx.drawImage(img,0,0,W,H); }catch(e){ stageArt(st); } }
   else stageArt(st);
 }
-/* Khung sàn đấu kiểu thùng máy arcade: viền đen dày, một nét sáng theo TÔNG MÀU CỦA MÀN
+/* Khung sàn đấu kiểu thùng máy arcade: viền graphite gọn, một nét sáng theo TÔNG MÀU CỦA MÀN
    đang đấu, bốn ngoặc góc, và một lớp tối dồn ra rìa cho nhân vật nổi lên giữa sàn.
    Lớp tối dựng MỘT LẦN rồi giữ lại (`VIGN`) — gradient phủ kín màn mà tạo lại mỗi khung
    hình thì nặng, đúng cảnh báo ở mục 7 của CLAUDE.md. */
@@ -10520,13 +10759,13 @@ function vignette(){
 function arenaFrame(){
   ctx.save();
   const st=stageOf();
-  ctx.strokeStyle='#000'; ctx.lineWidth=12; ctx.strokeRect(6,6,W-12,H-12);
-  ctx.globalAlpha=.55; ctx.strokeStyle=st.fog; ctx.lineWidth=2;
-  ctx.strokeRect(13,13,W-26,H-26);
-  ctx.globalAlpha=1; ctx.lineWidth=4; ctx.lineCap='square';
-  for(const [cx,cy,dx,dy] of [[13,13,1,1],[W-13,13,-1,1],[13,H-13,1,-1],[W-13,H-13,-1,-1]]){
+  ctx.strokeStyle='#070B13'; ctx.lineWidth=8; ctx.strokeRect(5,5,W-10,H-10);
+  ctx.globalAlpha=.62; ctx.strokeStyle=st.fog; ctx.lineWidth=1.5;
+  ctx.strokeRect(10,10,W-20,H-20);
+  ctx.globalAlpha=.92; ctx.lineWidth=3; ctx.lineCap='round';
+  for(const [cx,cy,dx,dy] of [[11,11,1,1],[W-11,11,-1,1],[11,H-11,1,-1],[W-11,H-11,-1,-1]]){
     ctx.beginPath();
-    ctx.moveTo(cx+dx*26,cy); ctx.lineTo(cx,cy); ctx.lineTo(cx,cy+dy*26);
+    ctx.moveTo(cx+dx*22,cy); ctx.lineTo(cx,cy); ctx.lineTo(cx,cy+dy*22);
     ctx.stroke();
   }
   ctx.restore();
@@ -11641,11 +11880,29 @@ function drawStun(f,hy){
    dấu hiệu phe duy nhất đọc được ngay ở cỡ trong trận, vì vòng dưới chân hay bị chính
    dòng tên đè lên. */
 function bar(x,y,w,h,pct,fill,text,textCol,edge){
-  ctx.fillStyle='#fff'; ctx.fillRect(x,y,w,h);
-  ctx.fillStyle=fill; ctx.fillRect(x,y,w*clamp(pct,0,1),h);
-  if(edge){ ctx.strokeStyle='#000'; ctx.lineWidth=5; ctx.strokeRect(x,y,w,h); }
-  ctx.strokeStyle=edge||'#000'; ctx.lineWidth=3; ctx.strokeRect(x,y,w,h);
-  ctx.fillStyle=textCol||'#000';
+  const radius=Math.min(5,h*.34), amount=w*clamp(pct,0,1);
+  const rounded=(rx,ry,rw,rh,rr)=>{
+    const r=Math.min(rr,rw/2,rh/2);
+    ctx.beginPath();
+    ctx.moveTo(rx+r,ry); ctx.lineTo(rx+rw-r,ry); ctx.quadraticCurveTo(rx+rw,ry,rx+rw,ry+r);
+    ctx.lineTo(rx+rw,ry+rh-r); ctx.quadraticCurveTo(rx+rw,ry+rh,rx+rw-r,ry+rh);
+    ctx.lineTo(rx+r,ry+rh); ctx.quadraticCurveTo(rx,ry+rh,rx,ry+rh-r);
+    ctx.lineTo(rx,ry+r); ctx.quadraticCurveTo(rx,ry,rx+r,ry); ctx.closePath();
+  };
+  ctx.save();
+  ctx.shadowColor='rgba(0,0,0,.38)'; ctx.shadowBlur=8; ctx.shadowOffsetY=3;
+  rounded(x,y,w,h,radius); ctx.fillStyle='#080D16'; ctx.fill();
+  ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+  if(amount>0){
+    ctx.save(); rounded(x,y,w,h,radius); ctx.clip();
+    ctx.fillStyle=fill; ctx.fillRect(x,y,amount,h);
+    ctx.globalAlpha=.2; ctx.fillStyle='#fff'; ctx.fillRect(x,y,amount,Math.max(2,h*.25));
+    ctx.restore();
+  }
+  rounded(x,y,w,h,radius); ctx.strokeStyle=edge||'rgba(201,215,235,.72)';
+  ctx.lineWidth=edge?2.5:1.5; ctx.stroke();
+  ctx.fillStyle=textCol||'#F7FAFC';
+  ctx.shadowColor='rgba(0,0,0,.78)'; ctx.shadowBlur=3; ctx.shadowOffsetY=1;
   ctx.textAlign='center'; ctx.textBaseline='middle';
   /* Chữ phải nằm gọn trong khung. Cỡ 15px cố định thì hễ con số lên hai ba chữ số là
      tràn hẳn ra ngoài thanh — thu cỡ chữ vừa đủ để vừa, và chốt thêm maxWidth làm chặn
@@ -11660,6 +11917,7 @@ function bar(x,y,w,h,pct,fill,text,textCol,edge){
   }
   ctx.fillText(text,x+w/2,y+h/2+1,room);
   ctx.textBaseline='alphabetic';
+  ctx.restore();
 }
 /* Chữ rực lửa: dùng cho tên và tên hiệu ứng lúc Wings of the Eagle.
    Chữ nằm hẳn ngoài khung thanh máu, có quầng lửa và lưỡi lửa bốc lên. */
@@ -13455,14 +13713,23 @@ function versusBox(){
   }
   const bw=Math.min(total+34,W-16), bh=38, bx=(W-bw)/2, by=(HEADER-bh)/2;
 
-  ctx.fillStyle='#fff'; ctx.fillRect(bx,by,bw,bh);
-  ctx.strokeStyle='#000'; ctx.lineWidth=4; ctx.strokeRect(bx,by,bw,bh);
+  const rr=10;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(bx+rr,by); ctx.lineTo(bx+bw-rr,by); ctx.quadraticCurveTo(bx+bw,by,bx+bw,by+rr);
+  ctx.lineTo(bx+bw,by+bh-rr); ctx.quadraticCurveTo(bx+bw,by+bh,bx+bw-rr,by+bh);
+  ctx.lineTo(bx+rr,by+bh); ctx.quadraticCurveTo(bx,by+bh,bx,by+bh-rr);
+  ctx.lineTo(bx,by+rr); ctx.quadraticCurveTo(bx,by,bx+rr,by); ctx.closePath();
+  ctx.shadowColor='rgba(0,0,0,.34)'; ctx.shadowBlur=14; ctx.shadowOffsetY=4;
+  ctx.fillStyle='rgba(8,13,22,.94)'; ctx.fill();
+  ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+  ctx.strokeStyle='#344158'; ctx.lineWidth=1.5; ctx.stroke();
   // dải màu dưới đáy khung: chia đều cho từng người có tên trên băng-rôn
   const cols=seg.filter(g=>!g.small);
   cols.forEach((g,i)=>{
     ctx.globalAlpha=g.out?.35:1;
     ctx.fillStyle=g.color;
-    ctx.fillRect(bx+3+(bw-6)*i/cols.length,by+bh-6,(bw-6)/cols.length,3);
+    ctx.fillRect(bx+8+(bw-16)*i/cols.length,by+bh-5,(bw-16)/cols.length,2);
   });
   ctx.globalAlpha=1;
 
@@ -13485,6 +13752,7 @@ function versusBox(){
   }
   ctx.globalAlpha=1;
   ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  ctx.restore();
 }
 /* Tên chiêu và tên hiệu ứng nổi lềnh khềnh khắp sàn thì rối mắt, nên thu nhỏ lại:
    băng-rôn cỡ đầy đủ còn 74%, mấy dòng phụ vốn đã nhỏ sẵn (có sc, không big) chỉ bớt
@@ -13690,7 +13958,7 @@ function drawTanjiroFx(){
 
 function draw(){
   ctx.setTransform(S,0,0,S,0,0);
-  ctx.fillStyle='#0C0920'; ctx.fillRect(0,0,W,H+HEADER);
+  ctx.fillStyle='#070B13'; ctx.fillRect(0,0,W,H+HEADER);
   versusBox();
   ctx.setTransform(S,0,0,S,0,HEADER*S);
   ctx.save();
