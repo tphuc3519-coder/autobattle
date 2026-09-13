@@ -2880,6 +2880,29 @@ rộng. **Đổi cỡ ô thì nhớ đếm lại xem một hàng được mấy 
 **4 · Ô chọn màn cao theo chiều cao MÀN HÌNH** (`clamp(124px,26vh,250px)`): màn chọn giờ
 chiếm cả màn, để ảnh cao cố định thì sáu ô tụm trên đỉnh và bỏ trống hai phần ba phía dưới.
 
+### Lớp hoàn thiện 2026 — graphite, kính tối và điểm nhấn tiết chế
+
+Sau khi người dùng chốt số liệu và power chart, giao diện được đưa về một hệ thị giác ít
+ồn hơn. Khối override cuối `<style>` là lớp đang có hiệu lực và **cố ý thay thế** một số
+thử nghiệm neon/vát góc ở trên:
+
+- nền graphite/navy và kính tối thay cho các mảng tím đặc; cyan dùng cho trạng thái/thông
+  tin, gold chỉ dành cho hành động chính và lựa chọn;
+- bỏ `clip-path` trên card và nút, dùng bo góc 10/14/20px, viền mảnh và bóng mềm để vùng
+  bấm rõ, không mất góc chạm trên mobile;
+- header, toolbar, sàn đấu và nhật ký vẫn giữ bộ xương hai cột, nhưng giảm glow, tăng khoảng
+  thở và phân cấp chữ;
+- màn chọn mode/nhân vật/stage giữ toàn màn hình; card dùng màu riêng của fighter làm vạch
+  nhận diện thay vì phủ cả card;
+- bảng chi tiết chuyển thành sheet giữa màn hình có chiều rộng tối đa 980px; **không đổi dữ
+  liệu, công thức hay hình học của power chart**;
+- HUD canvas dùng track tối, chữ trắng và viền mảnh; banner VS cùng ngôn ngữ với vỏ ngoài;
+- breakpoint 920/560px và `prefers-reduced-motion` là một phần của hệ, không được bỏ khi
+  thêm hiệu ứng mới.
+
+Nếu chỉnh tiếp, ưu tiên sửa token trong khối override cuối rồi kiểm cả `index.html` và bản
+dựng `play.html`; đừng khôi phục nền tím dày, glow phủ toàn chữ hoặc góc vát diện rộng.
+
 ### Luật cũ vẫn nguyên giá trị
 
 Mọi thứ ở mục 2h **không đổi**: chuyển động lặp mãi chỉ được đổi `opacity` / `box-shadow` /
