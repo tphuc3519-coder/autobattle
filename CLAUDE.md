@@ -3890,8 +3890,8 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 
 - All Conan-facing game text is English; Japanese character audio may be supplied later.
 - Never hard-code Conan's Maximum HP inside `CONAN`; use the shared `HP.conan` value.
-- Clues are per enemy and cap at five. **Only a landed basic Deduction adds a Clue: one hit = one Clue.** Active-skill observation, Wristwatch and Skateboard never add Clues.
-- Five Clues = Case Solved. Case Solved is consumed by Decisive Evidence / One Truth Prevails: 38 damage + 1.5s stun, and it uses evidence rather than a football.
+- Clues are per enemy and cap at eight. A landed basic Deduction always adds exactly one Clue. Auxiliary Clues from an observed enemy active skill, a landed Wristwatch, and at most one Skateboard miss-read per enemy/ride count toward the same total.
+- Eight total Clues = Case Solved. Case Solved is consumed by Decisive Evidence / One Truth Prevails: 38 damage + 1.5s stun, and it uses evidence rather than a football.
 - The only football attack is Soccer Ball Shot through the Power-Enhancing Kick Shoes: 85 damage, 15s cooldown, 3s stun, about 35% arena knockback.
 - Conan's sustained damage and attack speed are intentionally low: Deduction is 6 damage every 1.6s; Wristwatch is 2 damage; Skateboard collision is 18 damage.
 - No low-HP awakening, comeback buff, healing, resurrection, Shinichi transformation, firearm or lethal weapon.

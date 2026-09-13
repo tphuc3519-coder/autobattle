@@ -2381,7 +2381,7 @@ const GOJO={
    shared HP.conan entry, exactly like the other modern fighters. */
 const CONAN={
   entranceT:gs(1.5), entrancePh:[gs(.6),gs(1),gs(1.3),gs(1.5)],
-  clueMax:5,
+  clueMax:8,
   /* Basic is now the clue engine: slow, low-damage deduction checks instead of footballs. */
   basicDmg:6, basicCd:gs(1.6), basicWind:gs(.55), basicRange:360,
   /* The ONLY football attack: exactly once every 15 player seconds when available. */
@@ -2389,7 +2389,7 @@ const CONAN={
   needleDmg:2, needleCd:gs(12), needleWind:gs(.38), needleSpeed:610,
   drowsyT:gs(.8), sleepT:gs(2.5), wakeDmg:60, groggyT:gs(2),
   skateCd:gs(10), skateT:gs(1.8), skateMove:2.5, skateTake:.50, skateDmg:18, skatePush:390,
-  /* Five landed basics solve a case. Decisive Evidence is the low-damage stun payoff. */
+  /* Eight total Clues solve a case. Basic hits are the main source; auxiliary Clues also count. */
   ultDmg:38, ultCd:gs(.5), ultWind:gs(.7), ultStun:gs(1.5),
   midMin:175, midMax:285
 };
@@ -2807,17 +2807,17 @@ const CHARS={
     role:'ranged', want:225, speed:106, dodge:.78, male:true, spriteH:88,
     skills:[
       `<b>Entrance · Turbo Engine Skateboard</b> Exactly ${rts(CONAN.entranceT)}s: skate in, jump off, stop the board with one foot, then adjust the glasses. Every opponent waits until the sequence ends.`,
-      `<b>Special Mechanic · Detective's Insight</b> Clues now come <b>only from Conan's basic deduction</b>. Every landed basic adds exactly 1 Clue to that enemy. At ${CONAN.clueMax} Clues the target becomes <b>Case Solved</b>; the case is then spent on Decisive Evidence. No skill observation, Wristwatch hit or Skateboard miss can add Clues.`,
-      `<b>Basic · Deduction</b> ${CONAN.basicDmg} damage every ${rts(CONAN.basicCd)}s after a ${rts(CONAN.basicWind)}s thinking beat. No football is created. A landed deduction adds exactly <b>1 Clue</b> to that target; ${CONAN.clueMax} landed deductions create <b>Case Solved</b>.`,
+      `<b>Special Mechanic · Detective's Insight</b> Every landed basic deduction adds exactly <b>1 Clue</b> to that enemy. <b>Auxiliary Clues count toward the same total</b>: observing that enemy use an active skill in range, landing the Stun-Gun Wristwatch, or making that enemy miss Conan during one Skateboard ride can each add 1 Clue. At ${CONAN.clueMax} total Clues the target becomes <b>Case Solved</b>.`,
+      `<b>Basic · Deduction</b> ${CONAN.basicDmg} damage every ${rts(CONAN.basicCd)}s after a ${rts(CONAN.basicWind)}s thinking beat. No football is created. Every landed deduction adds exactly <b>1 Clue</b>. Case Solved triggers at <b>${CONAN.clueMax} total Clues</b>, including auxiliary Clues.`,
       `<b>1 · Soccer Ball Shot · Power-Enhancing Kick Shoes</b> ${CONAN.kickDmg} damage · <b>${rts(CONAN.kickCd)}s cooldown</b>. This is Conan's only football attack. After ${rts(CONAN.kickWind)}s he kicks one large belt-made ball in a fixed straight line. The first fighter hit is knocked back about <b>35% of the arena</b> and stunned for <b>${rts(CONAN.kickStun)}s</b>. If Conan is stunned before the kick, the ball disappears and only 50% cooldown remains.`,
-      `<b>2 · Stun-Gun Wristwatch</b> ${CONAN.needleDmg} damage · ${rts(CONAN.needleCd)}s cooldown. One straight tranquilizer needle stops on the first fighter and applies <b>Drowsy</b> for ${rts(CONAN.drowsyT)}s (−50% move, −30% cast speed), then <b>Asleep</b> for ${rts(CONAN.sleepT)}s. Sleep ends early after ${CONAN.wakeDmg} damage; an early wake applies <b>Groggy</b> for ${rts(CONAN.groggyT)}s. It grants no Clue.`,
-      `<b>3 · Turbo Engine Skateboard</b> ${rts(CONAN.skateT)}s · ${rts(CONAN.skateCd)}s cooldown. +150% move speed, −50% damage taken and movement ignores slow/root, but Conan is not invulnerable and can still be stunned or knocked down. The first collision deals only ${CONAN.skateDmg} damage and pushes sideways without stun. It grants no Clue.`,
+      `<b>2 · Stun-Gun Wristwatch</b> ${CONAN.needleDmg} damage · ${rts(CONAN.needleCd)}s cooldown. One straight tranquilizer needle stops on the first fighter, adds <b>1 auxiliary Clue</b>, and applies <b>Drowsy</b> for ${rts(CONAN.drowsyT)}s (−50% move, −30% cast speed), then <b>Asleep</b> for ${rts(CONAN.sleepT)}s. Sleep ends early after ${CONAN.wakeDmg} damage; an early wake applies <b>Groggy</b> for ${rts(CONAN.groggyT)}s.`,
+      `<b>3 · Turbo Engine Skateboard</b> ${rts(CONAN.skateT)}s · ${rts(CONAN.skateCd)}s cooldown. +150% move speed, −50% damage taken and movement ignores slow/root, but Conan is not invulnerable and can still be stunned or knocked down. The first collision deals only ${CONAN.skateDmg} damage and pushes sideways without stun. Each enemy can grant at most <b>1 auxiliary Clue per ride</b> if their attack misses Conan during the ride.`,
       `<b>Case Solved · Decisive Evidence / One Truth Prevails</b> <b>Locked – Gather ${CONAN.clueMax} Clues</b>. When a target reaches Case Solved, Conan spends the case after a ${rts(CONAN.ultWind)}s proof-selection beat and presents the decisive evidence directly — <b>no football</b>. A landed conclusion deals ${CONAN.ultDmg} damage and stuns for ${rts(CONAN.ultStun)}s. A dodge, invulnerability or full barrier still consumes the solved case.`
     ],
     init(f){
       f.cds={s1:CONAN.kickCd*.65,s2:CONAN.needleCd*.55,s3:CONAN.skateCd*.45,s4:0,basic:0};
       f.conanEntry=null; f.conanAct=null; f.conanShots=[]; f.conanSkate=null;
-      f.conanClues=new Map(); f.conanDamageBy=new Map();
+      f.conanClues=new Map(); f.conanSeenCds=new Map(); f.conanDamageBy=new Map();
       f.conanWonSaid=false; conanEnter(f);
     },
     think(f,e,d,auto){
@@ -3121,14 +3121,14 @@ const DEX={
     ]}
   ,conan:{ role:{vi:'Strategist · Controller',en:'Strategist · Controller'}, st:{pow:2,spd:3,rng:4,def:2},
     pw:{dmg:42,dur:46,mob:82,as:48,rng:74,cc:92,uti:90,con:72,cmb:20},
-    bio:{vi:'A slower controller built around deduction rather than damage. Every landed basic adds one Clue; five solve the case and unlock a low-damage Decisive Evidence stun. His only football attack is the 15-second Soccer Ball Shot.',
-         en:'A slower controller built around deduction rather than damage. Every landed basic adds one Clue; five solve the case and unlock a low-damage Decisive Evidence stun. His only football attack is the 15-second Soccer Ball Shot.'},
+    bio:{vi:'A slower controller built around deduction rather than damage. Every landed basic adds one Clue; auxiliary reads also count, and eight total Clues solve the case. His only football attack is the 15-second Soccer Ball Shot.',
+         en:'A slower controller built around deduction rather than damage. Every landed basic adds one Clue; auxiliary reads also count, and eight total Clues solve the case. His only football attack is the 15-second Soccer Ball Shot.'},
     skills:[
-      {tag:'P',name:"Detective's Insight",vi:`Only landed basics add Clues: +1 per hit, ${CONAN.clueMax} Clues = Case Solved. Other gadgets never add Clues.`,en:`Only landed basics add Clues: +1 per hit, ${CONAN.clueMax} Clues = Case Solved. Other gadgets never add Clues.`},
-      {tag:'1',name:'Deduction',vi:`A slow ${CONAN.basicDmg}-damage basic every ${rts(CONAN.basicCd)}s. No ball; every landed deduction adds exactly one Clue.`,en:`A slow ${CONAN.basicDmg}-damage basic every ${rts(CONAN.basicCd)}s. No ball; every landed deduction adds exactly one Clue.`},
+      {tag:'P',name:"Detective's Insight",vi:`Every landed basic gives +1 Clue. Auxiliary Clues from active-skill reads, Wristwatch hits and one Skateboard miss-read per enemy/ride count toward the same ${CONAN.clueMax}-Clue Case Solved threshold.`,en:`Every landed basic gives +1 Clue. Auxiliary Clues from active-skill reads, Wristwatch hits and one Skateboard miss-read per enemy/ride count toward the same ${CONAN.clueMax}-Clue Case Solved threshold.`},
+      {tag:'1',name:'Deduction',vi:`A slow ${CONAN.basicDmg}-damage basic every ${rts(CONAN.basicCd)}s. No ball; every landed deduction adds exactly one Clue toward ${CONAN.clueMax}.`,en:`A slow ${CONAN.basicDmg}-damage basic every ${rts(CONAN.basicCd)}s. No ball; every landed deduction adds exactly one Clue toward ${CONAN.clueMax}.`},
       {tag:'1',name:'Soccer Ball Shot',vi:`The only football attack: ${CONAN.kickDmg} damage every ${rts(CONAN.kickCd)}s, ${rts(CONAN.kickStun)}s stun and about 35% arena knockback.`,en:`The only football attack: ${CONAN.kickDmg} damage every ${rts(CONAN.kickCd)}s, ${rts(CONAN.kickStun)}s stun and about 35% arena knockback.`},
-      {tag:'2',name:'Stun-Gun Wristwatch',vi:`Only ${CONAN.needleDmg} damage; Drowsy → Asleep. Sleep breaks after ${CONAN.wakeDmg} damage and then becomes Groggy. Grants no Clue.`,en:`Only ${CONAN.needleDmg} damage; Drowsy → Asleep. Sleep breaks after ${CONAN.wakeDmg} damage and then becomes Groggy. Grants no Clue.`},
-      {tag:'3',name:'Turbo Engine Skateboard',vi:`For ${rts(CONAN.skateT)}s Conan moves at 2.5× base speed and takes half damage. First collision is only ${CONAN.skateDmg}; no Clue.`,en:`For ${rts(CONAN.skateT)}s Conan moves at 2.5× base speed and takes half damage. First collision is only ${CONAN.skateDmg}; no Clue.`},
+      {tag:'2',name:'Stun-Gun Wristwatch',vi:`Only ${CONAN.needleDmg} damage; a landed needle adds 1 auxiliary Clue, then Drowsy → Asleep. Sleep breaks after ${CONAN.wakeDmg} damage and becomes Groggy.`,en:`Only ${CONAN.needleDmg} damage; a landed needle adds 1 auxiliary Clue, then Drowsy → Asleep. Sleep breaks after ${CONAN.wakeDmg} damage and becomes Groggy.`},
+      {tag:'3',name:'Turbo Engine Skateboard',vi:`For ${rts(CONAN.skateT)}s Conan moves at 2.5× base speed and takes half damage. First collision is only ${CONAN.skateDmg}; one miss-read per enemy/ride can add an auxiliary Clue.`,en:`For ${rts(CONAN.skateT)}s Conan moves at 2.5× base speed and takes half damage. First collision is only ${CONAN.skateDmg}; one miss-read per enemy/ride can add an auxiliary Clue.`},
       {tag:'U',name:'Decisive Evidence · One Truth Prevails',vi:`At ${CONAN.clueMax} Clues Conan spends Case Solved on direct evidence: ${CONAN.ultDmg} damage and ${rts(CONAN.ultStun)}s stun. No football.`,en:`At ${CONAN.clueMax} Clues Conan spends Case Solved on direct evidence: ${CONAN.ultDmg} damage and ${rts(CONAN.ultStun)}s stun. No football.`}
     ]}
 
@@ -5374,7 +5374,10 @@ function hurt(t,amt,src,crit,kind,tint,raw,accuracyMul){
   }
   const opening=tanOpeningReady(t,src,kind);
   let acc=accuracyMul===undefined?1:accuracyMul;
-  if(tryEvade(t,kind,opening?Math.min(TAN.threadDodgeMul,acc):acc))return false;
+  if(tryEvade(t,kind,opening?Math.min(TAN.threadDodgeMul,acc):acc)){
+    if(t.key==='conan'&&!t.swapAs&&t.conanSkate&&src&&src.team!==t.team) conanSkateMiss(t,src);
+    return false;
+  }
   if(src&&!raw&&src.dmgOut!==undefined&&src.dmgOut!==1) amt*=src.dmgOut;
   if(src&&src.outCut>0) amt*=(1-src.outCut);   // đứng trong lãnh địa thì đánh yếu hẳn
   /* E.M.T — kén kết giới của Beatrice chặn 100% sát thương và phản lại 20% chỗ vừa chặn.
@@ -9913,8 +9916,28 @@ function conanRecordIncoming(f,src,amt){
   if(!src||src.team===f.team)return;
   const M=conanMap(f,'conanDamageBy'); M.set(src,(M.get(src)||0)+Math.max(0,amt||0));
 }
+function conanWatchSkills(f){
+  const M=conanMap(f,'conanSeenCds');
+  for(const o of G.fighters){
+    if(!foeOk(f,o)||dist(f,o)>360)continue;
+    const c=o.cds||{}, now=[c.s1||0,c.s2||0,c.s3||0,c.s4||0], prev=M.get(o);
+    if(prev){
+      let used=false;
+      for(let i=0;i<4;i++) if(now[i]>prev[i]+gs(.18)){used=true;break;}
+      if(used) conanAddClue(f,o,'ACTIVE SKILL READ');
+    }
+    M.set(o,now);
+  }
+}
 function conanOnBasicHit(f,t){
   conanAddClue(f,t,'DEDUCTION');
+}
+function conanSkateMiss(f,src){
+  const S=f.conanSkate;if(!S)return;
+  if(!(S.missed instanceof Set))S.missed=new Set();
+  const who=src&&src.summon?src.master:src;
+  if(!who||who.team===f.team||S.missed.has(who))return;
+  S.missed.add(who);conanAddClue(f,who,'SKATEBOARD READ');
 }
 function conanBasic(f,e){
   if(!e||!e.alive)return; f.cds.basic=CONAN.basicCd;
@@ -9999,6 +10022,7 @@ function conanShotsTick(f,dt){
         }else if(p.type==='needle'){
           const hit=hurt(o,CONAN.needleDmg,f,false,'conanNeedle');
           if(hit){
+            conanAddClue(f,o,'STUN-GUN WRISTWATCH');
             o.conanDrowsy=CONAN.drowsyT; o.conanSleep=0; o.conanGroggy=0;
             G.floats.push({x:o.x,y:o.y-104,txt:'DROWSY',color:'#AFC3EE',life:.9,ml:.9,banner:true,sc:.52});
           }
@@ -10019,9 +10043,10 @@ function conanTick(f,dt){
     }else if(E.t<CONAN.entrancePh[1]){f.x=E.ex;f.y=E.ey;f.pose='jump';}
     else if(E.t<CONAN.entrancePh[2]){f.x=E.ex;f.y=E.ey;f.pose='stop';}
     else {f.x=E.ex;f.y=E.ey;f.pose='adjust';}
-    if(E.t>=CONAN.entranceT){f.conanEntry=null;f.pose='idle';f.lock=0;}
+    if(E.t>=CONAN.entranceT){f.conanEntry=null;f.pose='idle';f.lock=0;conanWatchSkills(f);}
     return;
   }
+  conanWatchSkills(f);
   conanShotsTick(f,dt);
   if(f.conanSkate){
     const S=f.conanSkate; S.t-=dt; f.lock=Math.max(f.lock,.06); f.pose='skate';
