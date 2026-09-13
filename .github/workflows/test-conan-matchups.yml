@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   simulate:
-    if: github.event.head_commit.message == 'Run Conan matchup simulation'
+    if: github.event.head_commit.message == 'Run Conan matchup simulation v2'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,13 +17,16 @@ jobs:
           ref: test/conan-matchups
       - name: Run matchup simulation
         run: |
-          set -e
-          node tools/t_conan_matchups.js
-      - name: Commit results
-        if: always()
+          set +e
+          node tools/t_conan_matchups.js > tools/conan_matchup_run.log 2>&1
+          code=$?
+          echo $code > tools/conan_matchup_exit_code.txt
+          cat tools/conan_matchup_run.log
+          exit 0
+      - name: Commit results and log
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tools/conan_matchup_results.json || true
+          git add tools/conan_matchup_results.json tools/conan_matchup_run.log tools/conan_matchup_exit_code.txt 2>/dev/null || true
           git commit -m "Record Conan matchup simulation" || true
           git push origin HEAD:test/conan-matchups
