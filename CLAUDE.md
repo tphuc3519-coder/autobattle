@@ -2880,28 +2880,29 @@ rộng. **Đổi cỡ ô thì nhớ đếm lại xem một hàng được mấy 
 **4 · Ô chọn màn cao theo chiều cao MÀN HÌNH** (`clamp(124px,26vh,250px)`): màn chọn giờ
 chiếm cả màn, để ảnh cao cố định thì sáu ô tụm trên đỉnh và bỏ trống hai phần ba phía dưới.
 
-### Lớp hoàn thiện 2026 — graphite, kính tối và điểm nhấn tiết chế
+### Lớp hoàn thiện 2026 — Anime Arcade
 
-Sau khi người dùng chốt số liệu và power chart, giao diện được đưa về một hệ thị giác ít
-ồn hơn. Khối override cuối `<style>` là lớp đang có hiệu lực và **cố ý thay thế** một số
-thử nghiệm neon/vát góc ở trên:
+Sau khi xem bản graphite tối giản, người dùng chốt hướng **Anime Arcade** và yêu cầu nâng
+cấp toàn diện, không chỉ đổi lớp sơn. Khối override cuối `<style>` là lớp đang có hiệu lực
+và **cố ý thay thế** các lượt thử giao diện ở trên:
 
-- nền graphite/navy và kính tối thay cho các mảng tím đặc; cyan dùng cho trạng thái/thông
-  tin, gold chỉ dành cho hành động chính và lựa chọn;
-- bỏ `clip-path` trên card và nút, dùng bo góc 10/14/20px, viền mảnh và bóng mềm để vùng
-  bấm rõ, không mất góc chạm trên mobile;
-- header, toolbar, sàn đấu và nhật ký vẫn giữ bộ xương hai cột, nhưng giảm glow, tăng khoảng
-  thở và phân cấp chữ;
-- màn chọn mode/nhân vật/stage giữ toàn màn hình; card dùng màu riêng của fighter làm vạch
-  nhận diện thay vì phủ cả card;
-- bảng chi tiết chuyển thành sheet giữa màn hình có chiều rộng tối đa 980px; **không đổi dữ
-  liệu, công thức hay hình học của power chart**;
-- HUD canvas dùng track tối, chữ trắng và viền mảnh; banner VS cùng ngôn ngữ với vỏ ngoài;
+- màn tiêu đề dùng key art `assets/art/tanjiro-splash-arcade.webp`; ảnh chỉ là nền, logo,
+  nút và chữ vẫn là HTML nên nét, đổi ngôn ngữ được và không dính chữ giả trong ảnh;
+- nền mực/navy, halftone và mảng chéo tạo chất manga; cyan dùng cho chuyển động, vermilion
+  cho đối kháng, gold cho CTA/lựa chọn — không quay lại nền tím phủ toàn màn;
+- nút chính, mode card, fighter card, stage card và bảng giải dùng góc cắt nhỏ cùng viền
+  màu ở chân; vùng giữa vẫn rộng, glow chỉ nằm ở trạng thái chọn;
+- title, loading, VS, result, tournament, header, toolbar, arena, battle log, character
+  select, stage select và detail sheet đều đi chung một ngôn ngữ — không còn màn đẹp màn cũ;
+- bảng chi tiết vẫn rộng tối đa 980px; **không đổi dữ liệu, công thức hay hình học của power
+  chart**, chỉ đổi khung, nhãn và thanh trình bày;
+- HUD canvas dùng track tối, chữ trắng và viền mảnh; vỏ arena có ba nét cyan/gold/vermilion;
 - breakpoint 920/560px và `prefers-reduced-motion` là một phần của hệ, không được bỏ khi
   thêm hiệu ứng mới.
 
 Nếu chỉnh tiếp, ưu tiên sửa token trong khối override cuối rồi kiểm cả `index.html` và bản
-dựng `play.html`; đừng khôi phục nền tím dày, glow phủ toàn chữ hoặc góc vát diện rộng.
+dựng `play.html`; đừng thay key art bằng base64 trong HTML, đừng phủ halftone lên khuôn mặt
+fighter và đừng để glow che chữ hay lấn vào vùng chiến đấu.
 
 ### Luật cũ vẫn nguyên giá trị
 
