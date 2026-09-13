@@ -9,12 +9,16 @@ permissions:
 
 jobs:
   simulate:
-    if: github.event.head_commit.message == 'Run Conan matchup simulation v3'
+    if: github.event.head_commit.message == 'Run Conan matchup simulation v4'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: test/conan-matchups
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
       - name: Run matchup simulation
         run: |
           set +e
