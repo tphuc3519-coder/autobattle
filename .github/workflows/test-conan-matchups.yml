@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   simulate:
-    if: github.event.head_commit.message == 'Run Conan matchup simulation v5'
+    if: github.event.head_commit.message == 'Run Conan matchup simulation v6'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,17 +22,17 @@ jobs:
       - name: Run matchup simulation
         run: |
           set +e
-          node tools/t_conan_matchups.js > tools/conan_matchup_run.log 2>&1
+          node tools/t_conan_matchups.js > tools/conan_matchup_run_6clue.log 2>&1
           code=$?
-          echo $code > tools/conan_matchup_exit_code.txt
-          cat tools/conan_matchup_run.log
+          echo $code > tools/conan_matchup_exit_code_6clue.txt
+          cat tools/conan_matchup_run_6clue.log
           exit 0
       - name: Commit results and log
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f tools/conan_matchup_run.log tools/conan_matchup_exit_code.txt
-          [ ! -f tools/conan_matchup_rows.json ] || git add -f tools/conan_matchup_rows.json
-          [ ! -f tools/conan_matchup_results.json ] || git add -f tools/conan_matchup_results.json
-          git commit -m "Record Conan matchup simulation" || true
+          git add -f tools/conan_matchup_run_6clue.log tools/conan_matchup_exit_code_6clue.txt
+          [ ! -f tools/conan_matchup_rows_6clue.json ] || git add -f tools/conan_matchup_rows_6clue.json
+          [ ! -f tools/conan_matchup_results_6clue.json ] || git add -f tools/conan_matchup_results_6clue.json
+          git commit -m "Record six-clue Conan matchup simulation" || true
           git push origin HEAD:test/conan-matchups
