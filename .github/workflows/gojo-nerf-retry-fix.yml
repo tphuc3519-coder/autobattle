@@ -1,0 +1,36 @@
+name: Fix one-shot Gojo nerf workflow
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/gojo-nerf-retry-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make replacements duplicate-safe and retrigger
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/gojo-emergency-nerf.yml')
+          s=p.read_text(encoding='utf-8')
+          a="if n != 1:\n                      raise SystemExit(f'{path}: expected exactly 1 match, got {n}: {old[:120]!r}')\n                  s = s.replace(old, new, 1)"
+          b="if n < 1:\n                      raise SystemExit(f'{path}: expected at least 1 match, got {n}: {old[:120]!r}')\n                  s = s.replace(old, new)"
+          if s.count(a)!=1:
+              raise SystemExit('could not locate strict replacement helper')
+          p.write_text(s.replace(a,b,1),encoding='utf-8')
+          PY
+          rm .github/workflows/gojo-nerf-retry-fix.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/gojo-emergency-nerf.yml .github/workflows/gojo-nerf-retry-fix.yml
+          git commit -m 'fix: retry Gojo emergency nerf workflow'
+          git push origin HEAD:main
