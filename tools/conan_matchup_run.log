@@ -1,26 +1,25 @@
-node:internal/modules/cjs/loader:1430
-  const err = new Error(message);
-              ^
+progress 8/128
+progress 16/128
+progress 24/128
+progress 32/128
+progress 40/128
+progress 48/128
+progress 56/128
+progress 64/128
+progress 72/128
+progress 80/128
+progress 88/128
+progress 96/128
+progress 104/128
+progress 112/128
+progress 120/128
+progress 128/128
+/home/runner/work/autobattle/autobattle/tools/t_conan_matchups.js:74
+      avg=x=>+(x.reduce((s,r)=>s+(r[x]||0),0)/a.length).toFixed(1);
+                 ^
 
-Error: Cannot find module '/opt/node22/lib/node_modules/playwright'
-Require stack:
-- /home/runner/work/autobattle/autobattle/tools/probe.js
-- /home/runner/work/autobattle/autobattle/tools/t_conan_matchups.js
-    at Function._resolveFilename (node:internal/modules/cjs/loader:1430:15)
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
-    at Function._load (node:internal/modules/cjs/loader:1216:25)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
-    at Module.require (node:internal/modules/cjs/loader:1527:12)
-    at require (node:internal/modules/helpers:147:16)
-    at playwright (/home/runner/work/autobattle/autobattle/tools/probe.js:179:22)
-    at /home/runner/work/autobattle/autobattle/tools/t_conan_matchups.js:12:20
-    at Object.<anonymous> (/home/runner/work/autobattle/autobattle/tools/t_conan_matchups.js:83:3) {
-  code: 'MODULE_NOT_FOUND',
-  requireStack: [
-    '/home/runner/work/autobattle/autobattle/tools/probe.js',
-    '/home/runner/work/autobattle/autobattle/tools/t_conan_matchups.js'
-  ]
-}
+TypeError: x.reduce is not a function
+    at avg (/home/runner/work/autobattle/autobattle/tools/t_conan_matchups.js:74:18)
+    at /home/runner/work/autobattle/autobattle/tools/t_conan_matchups.js:76:15
 
 Node.js v22.23.2
