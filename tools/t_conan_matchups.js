@@ -47,10 +47,10 @@ const CONCURRENCY=8;
           // team/duel end sometimes leaves the winning main in G.winner only later in draw();
           // use remaining HP as a last-resort tie-break solely for a completed duel.
           const ranked=mains.slice().sort((x,y)=>(y.hp||0)-(x.hp||0));
-          if(ranked.length&&ranked[0].hp>ranked[1].hp)winner=ranked[0].key;
+          if(ranked.length>1&&ranked[0].hp>ranked[1].hp)winner=ranked[0].key;
         }
         const c=mains.find(f=>f.key==='conan');
-        const o=mains.find(f=>f.key!== 'conan');
+        const o=mains.find(f=>f.key!=='conan');
         return {winner,over:!!G.over,t:+(G.t-t0).toFixed(2),conanHp:c?+c.hp.toFixed(1):null,oppHp:o?+o.hp.toFixed(1):null,
           conanDmg:c?+(c.dmgDealt||0).toFixed(1):null,oppDmg:o?+(o.dmgDealt||0).toFixed(1):null,
           clueMax:window.__CHARS.conan?8:null};
@@ -66,12 +66,14 @@ const CONCURRENCY=8;
     console.log(`progress ${Math.min(i+CONCURRENCY,jobs.length)}/${jobs.length}`);
   }
   await browser.close();
+  // Save raw rows before aggregation so a reporting bug can never discard the simulations again.
+  fs.writeFileSync('tools/conan_matchup_rows.json',JSON.stringify(rows,null,2));
 
   const summary={generatedAt:new Date().toISOString(),matchesPerOpponent:N,maxGameSeconds:MAX_SIM,matchups:{},errors:[]};
   for(const opp of OPP){
     const a=rows.filter(r=>r.opp===opp), wins=a.filter(r=>r.winner==='conan').length,
       losses=a.filter(r=>r.winner===opp).length, draws=a.length-wins-losses,
-      avg=x=>+(x.reduce((s,r)=>s+(r[x]||0),0)/a.length).toFixed(1);
+      avg=k=>+(a.reduce((sum,r)=>sum+(r[k]||0),0)/a.length).toFixed(1);
     summary.matchups[opp]={matches:a.length,wins,losses,draws,winRate:+(wins/a.length*100).toFixed(1),
       avgTime:avg('t'),avgConanHp:avg('conanHp'),avgOppHp:avg('oppHp'),avgConanDamage:avg('conanDmg'),avgOppDamage:avg('oppDmg'),
       winsAsA:a.filter(r=>r.side==='A'&&r.winner==='conan').length,winsAsB:a.filter(r=>r.side==='B'&&r.winner==='conan').length};
