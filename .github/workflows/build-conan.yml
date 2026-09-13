@@ -1,0 +1,49 @@
+name: Build Conan Edogawa
+
+on:
+  push:
+    branches: [feature/conan-edogawa]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/conan-edogawa
+
+      - name: Apply Conan fighter patch
+        run: |
+          set -e
+          python3 tools/add_conan.py
+          python3 tools/mk_play.py
+
+      - name: Validate Conan integration
+        run: |
+          set -e
+          node tools/t_conan.js
+          python3 - <<'PY'
+          import pathlib, re, subprocess
+          for html in ('index.html','play.html'):
+              text=pathlib.Path(html).read_text(encoding='utf-8')
+              blocks=re.findall(r'<script(?:[^>]*)>(.*?)</script>', text, re.S)
+              for i, block in enumerate(blocks):
+                  p=pathlib.Path(f'/tmp/{html}-{i}.js')
+                  p.write_text(block, encoding='utf-8')
+                  subprocess.run(['node','--check',str(p)],check=True)
+          PY
+          git diff --check
+
+      - name: Commit Conan fighter
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/build-conan.yml tools/add_conan.py
+          git add index.html play.html README.md CLAUDE.md tools/t_conan.js
+          git commit -m "Add Conan Edogawa fighter"
+          git push origin HEAD:feature/conan-edogawa
