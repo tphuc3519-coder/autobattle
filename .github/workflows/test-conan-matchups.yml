@@ -1,0 +1,29 @@
+name: Test Conan matchups
+
+on:
+  push:
+    branches: [test/conan-matchups]
+
+permissions:
+  contents: write
+
+jobs:
+  simulate:
+    if: github.event.head_commit.message == 'Run Conan matchup simulation'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: test/conan-matchups
+      - name: Run matchup simulation
+        run: |
+          set -e
+          node tools/t_conan_matchups.js
+      - name: Commit results
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/conan_matchup_results.json || true
+          git commit -m "Record Conan matchup simulation" || true
+          git push origin HEAD:test/conan-matchups
