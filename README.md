@@ -11,7 +11,7 @@ giao diện **Việt / Anh** đổi được bằng một nút.
 | **10 đấu thủ** | mỗi người một hồ sơ: vai trò, chín trục sức mạnh, bộ chiêu mô tả gọn, và phần "xem chi tiết số liệu" cho ai muốn soi từng con số. Tanjiro Kamado di chuyển theo nhịp melee chung như ChiChi, lấy basic combo làm đòn đánh chính và chỉ thỉnh thoảng dùng Breathing Form; Demon Slayer Mark mở Ultimate theo HP |
 | **12 màn đấu** | Dojo · Night Street · Stadium · Forest · Deep Space · Sunset Roof · Volcano · Sky Temple · Frozen Peak · Desert Ruins · Crystal Cave · Sakura Garden — mỗi màn có một ô dán ảnh nền riêng |
 | **3 chế độ** | 1v1 · hỗn chiến 3–6 người · đánh đội 2–4 đội |
-| **Anime Arcade UI** | splash art Tanjiro toàn màn hình, ngôn ngữ mực–halftone–mảng chéo, cyan/vermilion/gold, màn chọn giàu chuyển động và HUD trong trận rõ trên cả desktop lẫn điện thoại |
+| **Giao diện hiện đại** | hệ màu graphite/navy, điểm nhấn cyan–gold tiết chế, màn chọn toàn màn hình, bảng hồ sơ gọn và HUD trong trận dễ đọc trên cả desktop lẫn điện thoại |
 | **2 ngôn ngữ** | Tiếng Việt / English, nút 🌐 ở thanh công cụ, trong màn chọn và trên màn tiêu đề |
 | **Nhạc nền của bạn** | mặc định **tắt**; nạp nhạc riêng cho từng màn ở trang xưởng rồi bật ở thanh công cụ |
 
