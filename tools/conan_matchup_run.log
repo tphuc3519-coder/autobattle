@@ -14,12 +14,123 @@ progress 104/128
 progress 112/128
 progress 120/128
 progress 128/128
-/home/runner/work/autobattle/autobattle/tools/t_conan_matchups.js:74
-      avg=x=>+(x.reduce((s,r)=>s+(r[x]||0),0)/a.length).toFixed(1);
-                 ^
-
-TypeError: x.reduce is not a function
-    at avg (/home/runner/work/autobattle/autobattle/tools/t_conan_matchups.js:74:18)
-    at /home/runner/work/autobattle/autobattle/tools/t_conan_matchups.js:76:15
-
-Node.js v22.23.2
+{
+  "generatedAt": "2026-09-13T13:27:52.993Z",
+  "matchesPerOpponent": 16,
+  "maxGameSeconds": 120,
+  "matchups": {
+    "gojo": {
+      "matches": 16,
+      "wins": 1,
+      "losses": 15,
+      "draws": 0,
+      "winRate": 6.3,
+      "avgTime": 30.3,
+      "avgConanHp": 9.5,
+      "avgOppHp": 217.8,
+      "avgConanDamage": 582.2,
+      "avgOppDamage": 790.5,
+      "winsAsA": 1,
+      "winsAsB": 0
+    },
+    "tanjiro": {
+      "matches": 16,
+      "wins": 0,
+      "losses": 16,
+      "draws": 0,
+      "winRate": 0,
+      "avgTime": 23.5,
+      "avgConanHp": 0,
+      "avgOppHp": 203.3,
+      "avgConanDamage": 596.8,
+      "avgOppDamage": 800,
+      "winsAsA": 0,
+      "winsAsB": 0
+    },
+    "dora": {
+      "matches": 16,
+      "wins": 4,
+      "losses": 12,
+      "draws": 0,
+      "winRate": 25,
+      "avgTime": 50.4,
+      "avgConanHp": 44.7,
+      "avgOppHp": 78.8,
+      "avgConanDamage": 751.3,
+      "avgOppDamage": 755.3,
+      "winsAsA": 3,
+      "winsAsB": 1
+    },
+    "ginyu": {
+      "matches": 16,
+      "wins": 0,
+      "losses": 16,
+      "draws": 0,
+      "winRate": 0,
+      "avgTime": 34.3,
+      "avgConanHp": 0,
+      "avgOppHp": 226,
+      "avgConanDamage": 574,
+      "avgOppDamage": 800,
+      "winsAsA": 0,
+      "winsAsB": 0
+    },
+    "suzune": {
+      "matches": 16,
+      "wins": 5,
+      "losses": 11,
+      "draws": 0,
+      "winRate": 31.3,
+      "avgTime": 33.1,
+      "avgConanHp": 31.6,
+      "avgOppHp": 105.4,
+      "avgConanDamage": 721.6,
+      "avgOppDamage": 768.4,
+      "winsAsA": 3,
+      "winsAsB": 2
+    },
+    "shika": {
+      "matches": 16,
+      "wins": 0,
+      "losses": 16,
+      "draws": 0,
+      "winRate": 0,
+      "avgTime": 42.6,
+      "avgConanHp": 0,
+      "avgOppHp": 273.2,
+      "avgConanDamage": 526.8,
+      "avgOppDamage": 800,
+      "winsAsA": 0,
+      "winsAsB": 0
+    },
+    "superman": {
+      "matches": 16,
+      "wins": 8,
+      "losses": 8,
+      "draws": 0,
+      "winRate": 50,
+      "avgTime": 34.4,
+      "avgConanHp": 45.2,
+      "avgOppHp": 97.6,
+      "avgConanDamage": 702.4,
+      "avgOppDamage": 754.8,
+      "winsAsA": 5,
+      "winsAsB": 3
+    },
+    "beatrice": {
+      "matches": 16,
+      "wins": 2,
+      "losses": 14,
+      "draws": 0,
+      "winRate": 12.5,
+      "avgTime": 29.9,
+      "avgConanHp": 3.2,
+      "avgOppHp": 130.4,
+      "avgConanDamage": 669.6,
+      "avgOppDamage": 796.8,
+      "winsAsA": 1,
+      "winsAsB": 1
+    }
+  },
+  "errors": []
+}
