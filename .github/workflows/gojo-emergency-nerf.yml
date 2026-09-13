@@ -29,9 +29,9 @@ jobs:
               s = p.read_text(encoding='utf-8')
               for old, new in pairs:
                   n = s.count(old)
-                  if n != 1:
-                      raise SystemExit(f'{path}: expected exactly 1 match, got {n}: {old[:120]!r}')
-                  s = s.replace(old, new, 1)
+                  if n < 1:
+                      raise SystemExit(f'{path}: expected at least 1 match, got {n}: {old[:120]!r}')
+                  s = s.replace(old, new)
               p.write_text(s, encoding='utf-8')
 
           patch('index.html', [
@@ -111,7 +111,6 @@ jobs:
           PY
 
           python3 tools/mk_play.py
-          rm .github/workflows/gojo-emergency-nerf.yml
 
       - name: Commit balance patch
         shell: bash
@@ -119,6 +118,6 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html play.html tools/t_gojo.js README.md CLAUDE.md .github/workflows/gojo-emergency-nerf.yml
+          git add index.html play.html tools/t_gojo.js README.md CLAUDE.md
           git commit -m 'balance: emergency nerf Satoru Gojo'
           git push origin HEAD:main
