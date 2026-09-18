@@ -11,6 +11,9 @@
    3. Horikita — quyết định đúng 75% ở form 2 / 80% ở form 3, form 3 hồi máu theo
       MÁU TỐI ĐA, bốn bậc cộng dồn, Ayanokouji lần 2 có 65% máu của cô.
    Chạy: node tools/t_buff.js */
+/* Mọi mục dưới đây soi HẰNG SỐ ĐÃ KHAI (viết theo NHỊP GỐC CŨ rồi bọc gs()), nên quy
+   đổi bằng `window.__LRT` chứ không phải hệ số hiển thị `window.__RT` (giờ bằng 1).
+   Xem mục 1 của CLAUDE.md: mốc 2x cũ đã thành tốc độ gốc. */
 const { openGame } = require('./probe.js');
 
 let hong = 0;
@@ -80,21 +83,37 @@ const ok = (ten, dat, ghi) => {
     const dr = await page.evaluate(() => new Promise(res => {
       const G = window.__G(), WH = window.__WH();
       const t = G.fighters.find(f => f.key === 'tsubasa'), e = G.fighters.find(f => f.key === 'kono');
+      /* Dọn sàn trước khi đo: đạn/sóng/hẹn giờ còn sót từ mấy mục trên vẫn đang bay và
+         chúng đẩy Konohamaru theo hướng khác, nên quãng đo được hụt hẳn (82px trên mốc
+         124px). Dọn xong thì chỉ còn đúng cú Drive Shot tác động lên anh. */
+      G.proj.length = 0; G.waves.length = 0; G.timers.length = 0;
       e.hp = e.maxHp; e.evade = 0; e.dodge = 0; e.dmgRes = 0; e.invuln = 0;
       e.eagle = false; e.prewing = false; e.kbTake = 1; e.kbx = 0; e.kby = 0;
+      e.exhaust = 0; e.shrunk = 0; e.stun = 0; e.dash = null; e.dvx = 0; e.dvy = 0;
+      t.dash = null; t.eagle = false;
       t.x = 160; t.y = 300; e.x = 200; e.y = 300;
       const hp0 = e.hp, x0 = e.x;
       window.__ballHit({ type: 'drive', dmg: window.__TSU.driveDmg, owner: t,
                          vx: 300, vy: 0, x: e.x - 30, y: e.y }, e);
       const mat = hp0 - e.hp;
+      /* CHẠY TAY từng bước bằng `__step`, đừng lấy mẫu theo dòng thời gian thật.
+         Bản trước bám `setInterval(10ms)` trong lúc trận vẫn chạy nên phép đo dính hai
+         thứ nhiễu: bước chân của chính Konohamaru, và nhịp gốc của trận — đổi nhịp gốc
+         một cái là số đo nhảy hẳn (đo được 182px trên mốc 124px). Chạy tay thì kết quả
+         cố định: 132px, và không còn phụ thuộc thanh tốc độ nữa.
+         Khoá chân Tsubasa cho anh khỏi sút thêm quả nữa vào giữa phép đo. */
       let far = 0;
-      const id = setInterval(() => {
+      e.stun = 0; e.dvx = 0; e.dvy = 0;
+      for (let i = 0; i < 1200; i++) {
+        /* Khoá chân CẢ HAI: Tsubasa khỏi sút thêm quả nữa, còn Konohamaru thì vẫn đang đi
+           ngược về phía Tsubasa nên bước chân của anh TRỪ bớt vào quãng bị hất (đo ra 99px
+           trên mốc 124px). Khoá rồi thì chỉ còn đúng lực đẩy. */
+        t.lock = 9; e.lock = 9;
+        window.__step(1 / 120);
         far = Math.max(far, e.x - x0);
-        if (Math.hypot(e.kbx, e.kby) < 1) {
-          clearInterval(id); res({ mat: Math.round(mat), di: Math.round(far), W: WH.W });
-        }
-      }, 10);
-      setTimeout(() => { clearInterval(id); res({ mat: Math.round(mat), di: Math.round(far), W: WH.W }); }, 20000);
+        if (i > 4 && Math.hypot(e.kbx, e.kby) < 1) break;
+      }
+      res({ mat: Math.round(mat), di: Math.round(far), W: WH.W });
     }));
     ok('Drive Shot ăn đúng 90 dmg', dr.mat === 90, `${dr.mat} dmg`);
     ok(`Drive Shot hất lùi khoảng 20% sàn (~${Math.round(dr.W * .2)}px)`,
@@ -106,7 +125,7 @@ const ok = (ten, dat, ghi) => {
       e.hp = e.maxHp; e.evade = 0; e.dodge = 0; e.invuln = 0;
       e.stun = 0; e.vuln = 0; e.ccRes = 0; e.gnCcRes = 0; e.prewing = false;
       window.__ballHit({ type: 'twin', dmg: 150, owner: t, vx: 300, vy: 0, x: e.x, y: e.y }, e);
-      return { stun: e.stun, vuln: e.vuln, rt: window.__RT };
+      return { stun: e.stun, vuln: e.vuln, rt: window.__LRT };
     });
     ok('Twin Shot choáng dài thêm 0.5s (4 -> 4.5 giây người chơi)',
       Math.abs(tw.stun * tw.rt - 4.5) < .05, `${(tw.stun * tw.rt).toFixed(2)}s`);
@@ -153,7 +172,7 @@ const ok = (ten, dat, ghi) => {
         t.x = WH.W / 2; t.y = WH.H / 2; t.moveMul = 1;
         window.__tsuPinTick(t, 1 / 120);
       }
-      return { mo, mulLucMo, giua: t.tsuRun, mul: S.pinMul, rt: window.__RT };
+      return { mo, mulLucMo, giua: t.tsuRun, mul: S.pinMul, rt: window.__LRT };
     });
     ok('bị dồn sát mép sàn đúng 2 giây người chơi thì cửa thoát mở',
       pin.mo > 0 && Math.abs(pin.mo * pin.rt - 2) < .1, `${(pin.mo * pin.rt).toFixed(2)}s`);

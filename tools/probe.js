@@ -12,6 +12,12 @@ const SRC = path.join(ROOT, 'index.html');
 /* Những thứ test hay cần. Thêm vào đây chứ đừng sửa index.html. */
 const HOOKS = `
 window.__G=()=>G; window.__ac=ac; window.__RT=RT; window.__SHIKA=SHIKA;
+/* Hai hệ số KHÁC NHAU kể từ lúc mốc 2x cũ thành tốc độ gốc:
+     __RT  = hệ số HIỂN THỊ (giây trong trận -> giây người chơi thấy), giờ bằng 1.
+     __LRT = hệ số KHAI HẰNG cũ, vẫn bằng 2 — gs(15) vẫn ra 7.5.
+   Mục nào soi 'hằng này khai đúng N giây chưa' thì dùng __LRT; mục nào soi 'người
+   chơi đọc được bao nhiêu' thì dùng __RT. */
+window.__LRT=LRT;
 window.__SFXBUF=SFXBUF; window.__sfx=n=>sfx(n); window.__SFXE=SFX_EVENTS;
 window.__SFXMAX=SFX_MAXLEN; window.__SFXGROUPS=SFX_GROUPS; window.__SFXALIAS=SFX_ALIAS;
 window.__Store=Store; window.__SPR=SPR; window.__SFXSRC=SFXSRC; window.__SLOT=SLOT;

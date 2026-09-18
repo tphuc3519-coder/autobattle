@@ -1,5 +1,8 @@
 /* Satoru Gojo — contract test for shared HP, Infinity, techniques and Domain rules.
    Run: node tools/t_gojo.js */
+/* Mọi mục dưới đây soi HẰNG SỐ ĐÃ KHAI (viết theo NHỊP GỐC CŨ rồi bọc gs()), nên quy
+   đổi bằng `window.__LRT` chứ không phải hệ số hiển thị `window.__RT` (giờ bằng 1).
+   Xem mục 1 của CLAUDE.md: mốc 2x cũ đã thành tốc độ gốc. */
 const { openGame } = require('./probe');
 
 let pass=0,fail=0;
@@ -11,7 +14,7 @@ const near=(a,b,e=.03)=>Math.abs(a-b)<=e;
 
   console.log('\n=== 1. Shared HP, English copy and exact constants ===');
   const cfg=await page.evaluate(()=>{
-    const X=window.__GOJO,D=window.__DEX.gojo,C=window.__CHARS.gojo,RT=window.__RT;
+    const X=window.__GOJO,D=window.__DEX.gojo,C=window.__CHARS.gojo,RT=window.__LRT;
     const text=[C.name,C.tag,...C.skills,D.role.vi,D.role.en,D.bio.vi,D.bio.en,
       ...D.skills.flatMap(s=>[s.name,s.vi,s.en])].join(' ');
     return {hp:window.__HP.gojo,std:window.__HP_STD,entrance:X.entranceT*RT,basic:X.basic,
@@ -41,7 +44,7 @@ const near=(a,b,e=.03)=>Math.abs(a-b)<=e;
     const G=window.__G(),f=G.fighters.find(x=>x.key==='gojo'),e=G.fighters.find(x=>x.key==='chichi');
     const x=e.x,y=e.y,h=e.hp,poses=new Set();let n=0;
     while(f.gojoEntry&&n++<400){window.__step(1/120);poses.add(f.pose);}
-    return {seconds:G.t*window.__RT,moved:Math.hypot(e.x-x,e.y-y),damage:h-e.hp,poses:[...poses],done:!f.gojoEntry};
+    return {seconds:G.t*window.__LRT,moved:Math.hypot(e.x-x,e.y-y),damage:h-e.hp,poses:[...poses],done:!f.gojoEntry};
   });
   ok(ent.done&&near(ent.seconds,1.5,.04),'entrance completes at exactly 1.5 player seconds',ent.seconds.toFixed(3));
   ok(ent.moved<1&&ent.damage===0,'the opponent waits without moving or attacking');
@@ -73,7 +76,7 @@ const near=(a,b,e=.03)=>Math.abs(a-b)<=e;
       f.x=260;f.y=350;e.x=360;e.y=350;};
     prep();f.infinity=1;let h=e.hp;window.__gojoBlue(f,e);for(let i=0;i<200&&f.gojoAct;i++)window.__gojoTick(f,1/120);
     const blue=h-e.hp,restored=f.infinity;
-    prep();f.infinity=2;h=e.hp;window.__gojoPurple(f,e);const spent=f.infinity,lock=f.infinityLock*window.__RT,ang=f.gojoAct.ang;
+    prep();f.infinity=2;h=e.hp;window.__gojoPurple(f,e);const spent=f.infinity,lock=f.infinityLock*window.__LRT,ang=f.gojoAct.ang;
     e.y+=120;for(let i=0;i<500&&(f.gojoAct||f.gojoShots.length);i++)window.__gojoTick(f,1/120);
     const missed=h-e.hp,fixed=ang;
     prep();f.infinity=2;e.dmgRes=.5;h=e.hp;window.__gojoPurple(f,e);for(let i=0;i<500&&(f.gojoAct||f.gojoShots.length);i++)window.__gojoTick(f,1/120);
@@ -89,10 +92,10 @@ const near=(a,b,e=.03)=>Math.abs(a-b)<=e;
     f.gojoEntry=null;f.gojoHide=false;f.gojoAct=null;f.stun=0;f.lock=0;f.x=270;f.y=350;
     e.x=380;e.y=350;e.hp=1000;e.stun=0;e.infoOverload=0;e.overwhelmed=0;
     window.__gojoDomain(f,e);for(let i=0;i<300&&f.gojoAct;i++)window.__gojoTick(f,1/120);
-    const hp=e.hp,over=e.infoOverload*window.__RT,stun=e.stun*window.__RT;
+    const hp=e.hp,over=e.infoOverload*window.__LRT,stun=e.stun*window.__LRT;
     window.__gojoStatus(e,X.overloadT+.01);
     e.moveMul=1;e.castMul=1;window.__gojoStatus(e,0);
-    return {damage:1000-hp,over,stun,overwhelmed:e.overwhelmed*window.__RT,move:e.moveMul,cast:e.castMul};
+    return {damage:1000-hp,over,stun,overwhelmed:e.overwhelmed*window.__LRT,move:e.moveMul,cast:e.castMul};
   });
   ok(domain.damage===0&&near(domain.over,2.5,.04)&&near(domain.stun,2.5,.04),
     'Unlimited Void applies 2.5s Information Overload and deals 0 damage');

@@ -49,7 +49,9 @@ function ok(name, pass, note) {
 
     // đúng công thức nhạt dần
     const share = [0, K.core, (K.core + K.r) / 2, K.r - 1, K.r + 5].map(d => +window.__kunaiShare(d).toFixed(3));
-    return { dem, sdmg, kdmg, giua, riaTrong, ngoai, share, K, W: WH.W, RT: window.__RT };
+    /* Mấy mục dưới soi HẰNG SỐ đã khai (viết theo nhịp gốc CŨ) nên quy đổi bằng __LRT,
+       không phải hệ số hiển thị __RT — xem mục 1 của CLAUDE.md. */
+    return { dem, sdmg, kdmg, giua, riaTrong, ngoai, share, K, W: WH.W, RT: window.__LRT };
   });
 
   ok('phi tiêu thường lên 25 dmg', r.sdmg === 25, `${r.sdmg} dmg`);
@@ -67,7 +69,7 @@ function ok(name, pass, note) {
     r.share[0] === 1 && r.share[1] === 1 && r.share[2] > r.K.min && r.share[2] < 1 &&
     Math.abs(r.share[3] - r.K.min) < .02 && r.share[4] === 0,
     `lõi ${r.share[1]} · giữa ${r.share[2]} · sát mép ${r.share[3]} · ngoài ${r.share[4]}`);
-  ok('ai dính vụ nổ cũng bén lửa 5 dmg/s trong 3 giây người chơi',
+  ok('kunai khai đúng 5 dmg/s trong 3 giây theo nhịp gốc CŨ (người chơi thấy 10 dmg/s · 1.5s)',
     r.giua.chay === 1 && r.riaTrong.chay === 1 && r.ngoai.chay === 0 &&
     r.K.burn / r.RT === 5 && Math.abs(r.K.burnT * r.RT - 3) < .01,
     `${r.K.burn / r.RT} dmg/s · ${(r.K.burnT * r.RT).toFixed(1)}s`);
@@ -123,11 +125,11 @@ function ok(name, pass, note) {
     window.__counters(k, e);
     const sauKhiTrung = +k.miniPress.toFixed(3);
     return { xa, ban: +ban.toFixed(2), mat, day: Math.round(day), dang, cd, sauKhiTrung,
-             K, W: WH.W, RT: window.__RT };
+             K, W: WH.W, RT: window.__LRT };
   });
 
   ok('đứng xa thì đồng hồ bị vây không chạy', mini.xa === 0);
-  ok('bị dí sát đúng 2.5 giây người chơi thì Mini Rasengan bung ra',
+  ok('bị dí sát đúng 2.5 giây theo nhịp gốc CŨ thì Mini Rasengan bung ra',
     mini.ban > 0 && Math.abs(mini.ban - mini.K.miniT) < .05,
     `bung ra ở giây ${(mini.ban * mini.RT).toFixed(2)} người chơi`);
   ok('Mini Rasengan gây đúng 40 dmg', mini.mat === mini.K.mini, `${mini.mat} dmg`);
@@ -135,7 +137,7 @@ function ok(name, pass, note) {
     Math.abs(mini.day - mini.W * mini.K.miniKb) < mini.W * .04,
     `bay ${mini.day}px (chuẩn ~${Math.round(mini.W * mini.K.miniKb)}px)`);
   ok('dùng lại đúng dáng Rasengan', mini.dang === 'ulti', `dáng "${mini.dang}"`);
-  ok('hồi chiêu 12 giây người chơi',
+  ok('hồi chiêu khai đúng 12 giây theo nhịp gốc CŨ (người chơi thấy 6s)',
     Math.abs(mini.cd - mini.K.miniCd) < .05, `${(mini.cd * mini.RT).toFixed(1)}s người chơi`);
   ok('gây được sát thương thì đồng hồ bị vây về 0', mini.sauKhiTrung === 0);
 

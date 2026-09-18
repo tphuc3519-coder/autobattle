@@ -24,7 +24,11 @@ const MOC = 60;          // giây trong trận, đủ để một trận ngã ng
     await page.click(`#listA .cTile[data-key="${a}"]`);
     await page.click(`#listB .cTile[data-key="${c}"]`);
     await page.click('#cselGo');
-    await page.selectOption('#speed', '1');       // chạy nhanh cho đỡ tốn thời gian thật
+    /* Giá trị của ô chọn CHÍNH LÀ speedMul, tức số giây TRONG TRẬN trôi qua mỗi giây
+       thật. Giữ nguyên '1' — mốc gốc mới chạy đúng bằng nhịp của mốc nhanh nhất cũ;
+       kéo lên '2' là nhịp trong trận nhanh gấp đôi và mọi phép đo lấy mẫu theo giờ
+       thật mất một nửa độ phân giải. */
+    await page.selectOption('#speed', '1');
     await page.click('#play');
 
     const r = await page.evaluate(moc => new Promise(res => {

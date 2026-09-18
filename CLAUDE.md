@@ -10,6 +10,18 @@ build, không có dependency. Mở file bằng trình duyệt là chạy.
 Vì mọi thứ nằm trong IIFE nên **không có biến nào lộ ra `window`** — muốn test tự động
 thì phải tạo bản sao có gắn thêm móc (xem mục Kiểm thử).
 
+> ### ⏱ ĐỌC TRƯỚC KHI ĐỌC BẤT KỲ CON SỐ THỜI GIAN NÀO TRONG TÀI LIỆU NÀY
+>
+> **Mốc "2x" cũ giờ là TỐC ĐỘ GỐC** (xem mục 1). Vì vậy mọi chỗ trong tài liệu này viết
+> *"N giây người chơi"* là nói theo **nhịp gốc CŨ** — người chơi bây giờ thấy **N/2 giây**.
+> Con số trong ngoặc `gs(N)` cũng vậy: `gs(15)` vẫn là 7.5 giây-trong-trận, nhưng 7.5 giây
+> đó giờ là **7.5 giây thật** chứ không còn là 15.
+>
+> **Giá trị GIÂY-TRONG-TRẬN của mọi hằng số cân bằng thì KHÔNG đổi một bit nào** (đo lại
+> 612 hằng, tất cả y nguyên), nên mọi mô tả cơ chế, mọi tương quan mạnh-yếu, mọi bài học
+> ghi trong tài liệu này vẫn đúng nguyên. Chỉ có **quãng thời gian thật mà người chơi ngồi
+> đếm** là giảm một nửa, và **mọi chữ hiển thị** đã tự đổi theo vì chúng bọc `rts()`.
+
 ---
 
 ## 0. Bản đồ `index.html`
@@ -192,29 +204,69 @@ Người dùng bác bản trước bằng ba câu, và cả ba đều là luật
 
 ## 1. Quy đổi thời gian — đọc kỹ trước khi sửa bất kỳ con số nào
 
-Thanh tốc độ ghi **"Gốc 1x"**, nhưng giá trị thật là `speedMul = 0.5`. Nghĩa là:
+> **MỐC "2x" CŨ GIỜ LÀ TỐC ĐỘ GỐC.** Người dùng chốt: *"bây giờ chỉnh tốc 2x là tốc độ gốc
+> cho trò chơi này (thay đổi thông số mô tả hết toàn bộ — đây là hard job nên làm thật kĩ
+> nhé)"*. Trận chạy **nhanh gấp đôi** bản trước, và mọi con số thời gian người chơi đọc
+> được **giảm đúng một nửa**, còn mọi con số sát thương-mỗi-giây **gấp đôi** (cùng bấy
+> nhiêu dmg, dồn vào nửa thời gian).
 
-> **1 giây trong trận = 2 giây người chơi ngồi đếm.**
+Thanh tốc độ ghi **"Gốc 1x"** và giá trị thật cũng là `speedMul = 1`. Nghĩa là:
+
+> **1 giây trong trận = 1 giây người chơi ngồi đếm.**
 
 ```js
-const BASE_SPEED = 0.5, RT = 1/BASE_SPEED;   // RT = 2
+const BASE_SPEED = 1, RT = 1/BASE_SPEED;     // RT = 1 — hệ số HIỂN THỊ
 const rts = sec => String(+(sec*RT).toFixed(2));  // giây-trong-trận -> giây người chơi (chỉ để HIỂN THỊ)
-const gs  = sec => sec/RT;                        // giây người chơi -> giây-trong-trận (để KHAI HẰNG SỐ)
+const LRT = 2;                                    // hệ số KHAI HẰNG cũ (nhịp gốc 0.5 ngày xưa)
+const gs  = sec => sec/LRT;                       // hằng khai theo nhịp cũ -> giây-trong-trận
 ```
 
-Ba quy tắc bắt buộc:
+**Hai hệ số này KHÁC VIỆC NHAU, tuyệt đối đừng gộp lại:**
+
+| | Là gì | Giá trị |
+|---|---|---|
+| `RT` | giây-trong-trận → giây người chơi **thấy** | **1** |
+| `LRT` | hệ số của **lối khai hằng đời đầu** (mấy trăm hằng bọc `gs()`) | **2** |
+| `VRT` | hệ số của **file tiếng** trong `assets/voice` | **= LRT** |
+
+Gộp `LRT` về `RT` là mọi hằng bọc `gs()` **nhân đôi giá trị trong trận** trong khi hằng
+khai thẳng thì đứng yên — tức vỡ tương quan cân bằng giữa các nhân vật. Đợt đổi nhịp này đo
+lại **612 hằng số cân bằng, không con nào xê dịch một bit**; giữ nguyên con số đó là điều
+kiện của mọi lần sửa sau.
+
+Bốn quy tắc bắt buộc:
 
 1. **Hằng số thời gian trong code tính bằng giây-trong-trận.** `EXHAUST_T = 4` nghĩa là
-   người chơi thấy 8 giây.
+   người chơi thấy **4 giây** (trước đây là 8).
 2. **Mọi chữ hiển thị cho người chơi phải bọc `rts()`.** Không bao giờ in thẳng hằng số ra
-   màn hình hay ra bảng kỹ năng.
+   màn hình hay ra bảng kỹ năng — bọc rồi thì đổi nhịp gốc là bảng tự đúng theo, không phải
+   sửa tay một dòng nào. Mấy chỗ từng in thẳng (quãng tua của Time Machine, thời lượng lãnh
+   địa Nara, mấy dòng thẻ Phiêu lưu) đã sửa hết, **đừng dựng lại lối in thô**.
 3. **Sát thương duy trì (`dots[].dps`) tính theo giây-trong-trận**, nên khi khai phải nhân
-   `RT`: muốn "5 dmg mỗi giây người chơi" thì viết `5*RT`. Ngược lại lúc hiển thị thì chia
-   lại: `SHIKA.bleedDps/RT`.
+   **`LRT`**: `KUNAI_BURN_DPS = 5*LRT` = 10 dmg mỗi giây-trong-trận. Lúc hiển thị thì chia
+   `RT`: `SHIKA.bleedDps/RT` giờ in ra **10**, không phải 5 — vẫn đúng bấy nhiêu tổng dmg.
+4. **Hằng số nào KHAI THEO NHỊP CŨ thì đọc qua `rts(gs(x))` khi muốn hiển thị**, đừng in
+   thẳng `x`. `DORA.tmBackLo = 3.5` là con số khai theo nhịp cũ, người chơi phải thấy
+   **1.75**.
 
-Nhóm hằng số của Shikamaru khai theo giây người chơi rồi bọc `gs()` cho dễ đọc
-(`stabCd: gs(15)` = 15 giây người chơi = 7.5 giây trong trận). Các nhân vật cũ khai thẳng
-bằng giây-trong-trận. **Đừng trộn hai lối viết trong cùng một hằng số.**
+Nhóm hằng số của Shikamaru (và mọi nhân vật từ đó về sau) khai theo **nhịp gốc CŨ** rồi bọc
+`gs()` (`stabCd: gs(15)` = 7.5 giây-trong-trận = 7.5 giây thật). Các nhân vật cũ khai thẳng
+bằng giây-trong-trận. **Đừng trộn hai lối viết trong cùng một hằng số**, và **đừng đọc con
+số trong ngoặc `gs()` như là giây người chơi nữa** — muốn biết người chơi thấy bao nhiêu thì
+bọc `rts()`.
+
+**Thanh tốc độ** giờ là bội số của nhịp gốc mới: `0.7` · **`1`** · `1.5` · `2`.
+
+**Bộ test** có hai móc riêng cho hai hệ số: `window.__RT` (hiển thị) và `window.__LRT`
+(khai hằng). Mục nào soi *"hằng này khai đúng N giây chưa"* thì dùng `__LRT`; mục nào soi
+*"người chơi đọc được bao nhiêu"* thì dùng `__RT`.
+
+> **Bộ giọng trong `assets/voice` KHÔNG đổi theo.** Mấy file đó cắt theo nhịp gốc cũ (mỗi
+> đoạn `SUZ_BUBBLE*2` giây), nên `SFX_MAXLEN` / `SFX_SEG` bám `VRT = LRT` chứ không bám
+> `RT`: `SFX_SEG` là chỗ con trỏ nhảy tới đoạn thứ n **trong file**, hạ nó xuống là câu thứ
+> n bắt đầu lệch hẳn vào giữa câu trước. Muốn cắt tiếng bám sát nhịp mới thì **dựng lại cả
+> bộ** bằng `python3 tools/mk_voice.py` rồi mới hạ `VRT` — `mk_voice.py` và `t_voice.js`
+> cùng đọc `LRT` nên chúng tự đi theo.
 
 Vòng lặp chính dùng bước cố định:
 
@@ -2394,9 +2446,18 @@ Chọn ở **đầu màn chọn nhân vật** (`.mTab`, `#mTabDuel` / `#mTabFfa`
 | Chế độ | Bao nhiêu người | Chia phe thế nào | Thắng khi nào |
 |---|---|---|---|
 | `duel` | đúng 2 | phe 0 và phe 1 | đối thủ về 0 máu |
-| `ffa` | `FFA_MIN`–`FFA_MAX` = **3–6** | **mỗi người MỘT phe riêng** (`team` = số thứ tự) | chỉ còn **một người** đứng |
+| `ffa` | `FFA_MIN`–`FFA_MAX` = **3–8** | **mỗi người MỘT phe riêng** (`team` = số thứ tự) | chỉ còn **một người** đứng |
 | `team` | **`TEAM_MIN_N`–`TEAM_MAX_N` = 2–4 ĐỘI**, mỗi đội `TEAM_MIN`–`TEAM_MAX` = **1–3** người, cả sàn không quá `TEAM_TOTAL` = **8** | mỗi đội một phe (0, 1, 2, 3) | chỉ còn **một đội** còn người |
-| `relay` | **`RELAY_MIN_N`–`RELAY_MAX_N` = 2–4 ĐỘI**, mỗi đội `RELAY_MIN`–`RELAY_MAX` = **2–5** người, cả thảy không quá `RELAY_TOTAL` = **16** | mỗi đội một phe, nhưng **chỉ MỘT người mỗi đội có mặt trên sàn** | chỉ còn **một đội** còn người (kể cả người ngồi chờ) |
+| `relay` | **`RELAY_MIN_N`–`RELAY_MAX_N` = 2–4 ĐỘI**, mỗi đội `RELAY_MIN`–`RELAY_MAX` = **2–5** người, cả thảy không quá `RELAY_TOTAL` = `RELAY_MAX*RELAY_MAX_N` = **20** | mỗi đội một phe, nhưng **chỉ MỘT người mỗi đội có mặt trên sàn** | chỉ còn **một đội** còn người (kể cả người ngồi chờ) |
+
+> **TRẦN TỔNG NGƯỜI TRA THEO CHẾ ĐỘ — `squadTotal(m)`, lỗi thật đã sửa.** Người dùng báo:
+> *"lỗi bên relay mode là 1 team add 5 người xong qua team 2 chỉ add được 3 người"*. Chỗ
+> thêm người trong màn chọn ghim cứng `TEAM_TOTAL` (8) cho MỌI chế độ, nên đánh tuần tự xếp
+> đủ 5 người vào đội 1 là đội 2 chỉ còn đúng 3 suất. `tmpReady()` thì vốn đã đọc
+> `squadLim(mode).total` cho đúng — chỉ mỗi cái guard lúc bấm là sai. Giờ cả hai đi chung
+> `squadTotal(m)`: chế độ nhiều đội đọc `squadLim(m).total`, hỗn chiến đọc `FFA_MAX`, còn
+> lại là vô hạn. Kèm theo, `RELAY_TOTAL` tính thẳng ra `RELAY_MAX*RELAY_MAX_N` = **20** nên
+> **MỌI đội đều xếp kín được 5 người**, không đội nào phải nhường suất cho đội khác.
 
 > **Số ĐỘI cũng tuỳ chọn, không cắm cứng hai đội** (người dùng: *"theo team là tuỳ chọn
 > team"*). `ROSTERS.teams` là **mảng các đội**, mỗi đội là một mảng khoá nhân vật; màn chọn
@@ -2789,18 +2850,63 @@ CHƠI. Hai biến **khác việc nhau, đừng gộp**:
   `t_play` · `t_comp` · `t_dex`). Test đi qua xưởng (`openGame`) thì KHÔNG đụng gì — xưởng
   không có màn này.
 
-### Nút bấm trên màn hình — `#padWrap`
+### Nút bấm trên màn hình — `#padWrap`, lối HUD của game MOBA
 
-Người dùng chốt đúng hình dáng: *"w trên cùng a bên trái dưới, s giữa dưới w và d bên phải
-dưới"*. Nên hàng dưới là **A · S · D** và **W nằm một mình phía trên, thẳng cột với S**.
-`t_player.js` đo thẳng `getBoundingClientRect()` để chắc hình dáng đó.
+Người dùng gửi ảnh màn chơi Liên Quân và chốt: *"làm nút wasd và nút skill hiện nay **trên
+màn game** như vầy, đòn nào đánh tay hay đã qua skill thì cũng hiện dạng như vậy luôn cho
+nó hay"*. Hình dáng cần điều khiển vẫn giữ đúng câu chốt từ trước: *"w trên cùng a bên trái
+dưới, s giữa dưới w và d bên phải dưới"* — hàng dưới là **A · S · D**, **W nằm một mình
+phía trên, thẳng cột với S**. `t_player.js` đo thẳng `getBoundingClientRect()` để chắc hình
+dáng đó, nên **đừng đổi sang cần analog tròn**.
 
-- Đặt **NGAY DƯỚI canvas, đừng đè lên sàn**: ở chế độ phiêu lưu người chơi đứng sát mép dưới
-  sàn, lớp nút đè lên là che mất chính nhân vật mình đang cầm.
-- Bốn ô chiêu đọc tên THẲNG từ mảng `CHARS[key].skills` qua `padName()` (bóc phần
-  `<b>1</b> Tên chiêu`), nên thêm nhân vật mới là nút tự có chữ.
-- **Vòng hồi chiêu là một mảng tối dâng từ dưới lên**, chiều cao đặt qua biến `--cd`. Dùng
-  `height`, **không dùng `transform:scaleY`** — luật ở mục 2h.
+- **ĐÈ LÊN SÀN, không còn nằm dưới canvas.** Đây là chỗ ĐẢO NGƯỢC luật cũ *"đặt ngay dưới
+  canvas, đừng đè lên sàn"* — lý do cũ (che mất nhân vật ở chế độ Phiêu lưu) giải bằng
+  **CHỖ ĐẶT** chứ không bằng chỗ ngồi: cần điều khiển nằm hẳn góc **trái dưới**, cụm chiêu
+  nằm hẳn góc **phải dưới**, chừa trống nguyên dải giữa — mà `spawnSpots()` cho chế độ
+  Phiêu lưu thì đặt người chơi ở **giữa mép dưới**. Cả lớp `pointer-events:none`, chỉ các
+  nút mới bắt chạm, nên phần sàn còn lại không bị nuốt cú bấm nào.
+- Nút là **hình tròn kính mờ**, viền và quầng sáng ăn theo **màu nhân vật** (`--pc`, đặt
+  trong `padBuild()` từ `f.color` hoặc `COLORS[soul]`).
+- **Đòn thường (ô J) là ô TO nhất, nằm ngay góc**; ba ô chiêu xếp thành **cung tròn** quanh
+  nó ở 180° · 135° · 90°, bán kính `1.55·pb`.
+  > **BÁN KÍNH VÀ GÓC PHẢI ĐI VỚI NHAU.** Dây cung giữa hai ô cạnh nhau là `2·R·sin(Δ/2)`;
+  > với `R = 1.55·pb` và `Δ = 45°` thì ra `1.19·pb`, tức hở đúng một nhịp so với đường kính
+  > `pb`. Bản đầu để `R = 1.32·pb` với `Δ = 40~45°` nên dây cung chỉ còn `0.90·pb` và **ba
+  > ô chồng lên nhau**. Sửa lẻ một trong hai con số là lỗi quay lại.
+- **Vòng hồi chiêu là mảng tối QUAY theo kim đồng hồ** (`conic-gradient` đọc `--cdA`), cộng
+  **số giây to nằm giữa nút**. `padTick()` đặt cả `--cd` (phần trăm — `t_player.js` đọc
+  thẳng nó, giữ nguyên tên) lẫn `--cdA` (độ), và chỉ gán khi giá trị thật sự đổi.
+  `conic-gradient` là một lớp NỀN, không phải transform/animation, nên Playwright vẫn coi
+  nút là đứng yên — luật ở mục 2h giữ nguyên giá trị.
+  > **Số giây phải NGẮN**: từ 10 giây trở lên ghi số nguyên, dưới 10 mới ghi một chữ số
+  > thập phân. Để nguyên `rts()+'s'` thì "26.9s" tràn hẳn ra ngoài vòng tròn.
+
+#### `padName()` phải đọc được CẢ BA kiểu đầu dòng — lỗi thật đã sửa
+
+Mảng `skills` có ba lối viết đầu dòng, mà bản trước chỉ đọc được kiểu đầu nên **tám nhân
+vật mới ra nguyên "Skill 2"** trên nút:
+
+| Kiểu | Ai dùng |
+|---|---|
+| `<b>1</b> Tên chiêu — …` | nhân vật cũ (kono · chichi · tsubasa · shika) |
+| `<b>2 · Tên chiêu</b> …` | nhân vật mới |
+| `<b>Basic · Tên</b>` / `<b>Ultimate · Tên</b>` | nhân vật mới |
+
+`padHeads()` gom cả ba, `padTrim(s, name)` cắt cho gọn. Tham số `name` quan trọng: luật
+*"lấy khúc sau dấu hai chấm"* (để `Water Breathing, Second Form: Water Wheel` ra
+`Water Wheel`) **chỉ được áp cho vế TÊN**; áp nhầm lên phần mô tả thì nó bập vào dấu hai
+chấm giữa câu — đã dính đúng một lần: ô Ginyu Flash ra **"100 dmg"** vì câu mô tả có
+*"locks onto the foe: 100 dmg"*.
+
+`PAD_SLOTS` là bảng đè cho mấy ô mà mảng `skills` không đánh số (cú lao của ChiChi, Twin
+Shot của Tsubasa, cú đâm của Shikamaru, Rasengan của Konohamaru, hai ô của Horikita, tuyệt
+chiêu của Conan) — ghi thẳng tên bằng tiền tố `'='`.
+
+`PAD_CDS` là bảng đè **ô hồi chiêu**: gần hết bảng buộc `j→s1 · k→s2 · l→s3 · u→s4`, riêng
+**Sakura có ô đòn thường RIÊNG** (`cds.basic`) nên cả dãy dời đi một nhịp
+(`j→basic · k→s1 · l→s2 · u→s3`) — không có bảng này thì vòng hồi chiêu trên nút J của cô
+đọc nhầm sang Cherry Blossom Burst. **Soi `think()` của nhân vật trước khi thêm dòng vào
+hai bảng đó, đừng đoán.**
 - Mốc quy ra phần trăm đi qua `cdBase()`: hồi chiêu được đặt rải rác trong `think()` của từng
   nhân vật nên không có bảng nào tra được, vì vậy nó **nhớ con số lớn nhất đã thấy** ở ô đó.
   Xấu về lý thuyết nhưng đúng về mắt: vòng luôn đi từ đầy về rỗng.
@@ -2817,7 +2923,23 @@ Người dùng: *"chế độ người chơi làm màn hình vs khung rộng r�
 > lực đẩy tính theo % chiều dài sàn, tầm đánh, bán kính AoE, chỗ đứng lúc vào trận. Nới
 > chúng là lệch cả bảng cân bằng.
 
-Chỉ nới CSS: `body.human canvas#arena{width:min(92vw,calc(100vh - 230px),860px)}`. Hai chỗ
+Đã nới **hai lượt**. Lượt sau theo yêu cầu *"chỉnh ở chế độ chơi = tay thì màn hình rộng ra
+nữa"*, và nới được là nhờ lớp nút chuyển sang **đè lên sàn** nên không còn chiếm một dải
+riêng bên dưới:
+
+| | Trần tuyệt đối | Trừ theo chiều cao |
+|---|---|---|
+| lượt 1 | 860px | `100vh − 230px` |
+| **lượt 2 (đang dùng)** | **1180px** | **`100vh − 186px`** |
+
+Kèm theo: `body.human .bar` bó gọn thanh công cụ (`--ctl:28px`, gap 5px, chữ 11px) để trả
+chiều cao lại cho sàn — **KHÔNG giấu nút nào**, mấy bộ test bấm thẳng vào chúng.
+
+> Con số 186 **ĐO THẬT** chứ không đoán: đỉnh khung sàn nằm ở 206px trên màn 1280×900 với
+> thanh công cụ cũ, bó gọn lại còn ~197px. Đổi bố cục thanh công cụ thì **đo lại**, đừng vặn
+> theo cảm tính — quá tay là đáy sàn (chỗ đặt nút bấm) rơi ra ngoài màn hình.
+
+CSS hiện tại: `body.human canvas#arena{width:min(97vw,calc(100vh - 186px),1180px)}`. Hai chỗ
 dễ sai, đã dính đủ cả hai:
 1. **`max-width:none` là BẮT BUỘC** — luật `canvas{…;max-width:600px}` ở đầu file vẫn kẹp lại
    dù `width` đã nới. Thiếu dòng đó thì khung đứng nguyên 600px.
@@ -4518,6 +4640,44 @@ nên đổi độ phân giải không phải tính lại toạ độ. `recCanvas
 
 Bộ test nằm trong `tools/`, chạy bằng Node, không cần cài gì thêm:
 
+> **HAI MÓC THỜI GIAN, ĐỪNG DÙNG NHẦM.** Từ lúc mốc 2x cũ thành tốc độ gốc (mục 1),
+> `probe.js` bày ra hai hệ số:
+> - **`window.__LRT` = 2** — hệ số KHAI HẰNG cũ. Mục nào soi *"hằng này khai đúng N giây
+>   chưa"* thì dùng cái này. **Gần như mọi mục trong bộ test đều thuộc loại đó**, nên 69 chỗ
+>   đã đổi từ `__RT` sang `__LRT` một lượt.
+> - **`window.__RT` = 1** — hệ số HIỂN THỊ. Chỉ dùng khi mục đó soi đúng con số **người chơi
+>   đọc được trên màn hình**.
+>
+> **Thanh tốc độ trong test vẫn kéo tới `'1'`, ĐỪNG đổi sang `'2'`.** Giá trị của ô chọn
+> chính là `speedMul`, mà `speedMul` là **số giây TRONG TRẬN trôi qua mỗi giây thật** — nên
+> mốc `'1'` mới (gốc) chạy đúng bằng nhịp của mốc `'1'` cũ (nhanh nhất). Đổi sang `'2'` là
+> nhịp trong trận **nhanh gấp đôi**, mà mọi phép đo lại lấy mẫu bằng `setInterval` theo giờ
+> thật ⇒ độ phân giải tụt một nửa. Đã dính đúng một lượt: màn ra mắt Doraemon đo ra mốc
+> `0.60` thay vì `0.375`, combo ba đòn ra `0.40s`/`0.80s` thay vì `0.6s`, màn xuất hiện
+> Superman nhảy thẳng qua pha 1.
+>
+> Kéo theo đó, **mục nào đo bằng cách bám vị trí trong lúc trận VẪN CHẠY thì nên khoá chân
+> mục tiêu** (`e.lock = 9` mỗi nhịp lấy mẫu) và dọn sạch `G.proj` / `G.waves` / `G.timers`
+> còn sót từ mục trước: bước chân của chính mục tiêu cộng vào quãng đo được. Đo quãng hất
+> lùi của Drive Shot ra **182px trên mốc 124px** đúng vì thiếu chỗ đó.
+>
+> **Mục nào KHÔNG đụng tới `#speed` thì giờ chạy nhanh gấp đôi trong trận**, vì `BASE_SPEED`
+> lên 1. Hai chỗ đã phải sửa theo:
+> - `t_beatrice` (trận cướp xác): chờ thêm bấy nhiêu giây thật là aura của Ginyu kịp nổ, thế
+>   hưng phấn treo `dmgOut = 1.5` trên người anh mà `ginyuPossess()` chỉ xoá `gnState` chứ
+>   không dựng lại hệ số ⇒ đo lớp phòng thủ của thân xác ra 150 thay vì 100. Ghim
+>   `g.dmgOut = 1` trước khi đo.
+> - `t_bubble`: chữ nổi trôi lên 30px mỗi **giây trong trận**, nên chờ 250ms rồi đọc thẳng
+>   khung vừa vẽ là khối chữ đã trôi khỏi ô đang soi (nền trắng 50% → 44%). Giờ `dem()` ghim
+>   lại chỗ đứng rồi gọi `window.__draw()` một lượt ngay trước khi đọc điểm ảnh — đo ra
+>   **69.7% ở cả ba lượt**, hết phụ thuộc vào quãng thời gian đã trôi.
+>
+> **Phép đo nào cần độ phân giải sát giây thì chạy TAY từng bước trong MỘT lượt `evaluate`
+> đồng bộ** (`for(...) window.__step(1/120)`): vòng lặp đồng bộ chặn hẳn
+> `requestAnimationFrame` nên không nhịp nào của trận chen vào giữa. Combo ba đòn của
+> Doraemon đo bằng `setInterval` ra choáng `0.44s` trên mốc `0.60s` vì đồng hồ đã tụt mất
+> một chặng trước khi đọc được; chạy tay thì ra đúng con số.
+
 ```bash
 node tools/t_reg.js     # 55 cặp đấu, chạy theo đợt, bắt lỗi trang, xem cơ chế lớn có nổ không
 node tools/t_perf.js    # nhịp vẽ: một vệt bóng mờ không được tốn quá 8ms, tám vệt không được
@@ -4562,7 +4722,7 @@ node tools/t_modes.js   # ba chế độ đấu: 1v1 vẫn y như cũ (hai ngư�
                         # kia thì đội còn người thắng, chủ gục thì đồng minh rời sàn theo),
                         # đánh đội 3 đội (đồng đội đứng túm một cụm, quét sạch một đội mà
                         # còn hai đội thì trận vẫn chạy) và 4 đội (trần 4 đội / 8 người),
-                        # và một trận hỗn chiến 6 người chạy thật
+                        # và một trận hỗn chiến 6 người chạy thật (trần hỗn chiến giờ là 8)
 node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4/5/8/9/12 người, ai cũng gặp ai
                         # đúng một lượt), xếp được CẢ BẢNG nhân vật vào một giải (trần đọc
                         # số ô trong lưới chứ không ghim số, dòng phụ và hàng thể thức đếm
@@ -4849,6 +5009,13 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 ---
 
 ## 11. Còn treo
+
+- **`assets/voice/ginyu_force.wav` và `ginyu_change.wav` chưa được commit** dù
+  `manifest.json` đã liệt kê cả hai, nên `node tools/t_voice.js` chết ngay với `ENOENT`.
+  Lỗi này CÓ SẴN từ trước (đo trên cây sạch cũng hỏng y hệt), không phải do đợt sửa nào
+  gần đây. Chữa bằng cách chạy lại `python3 tools/mk_voice.py` trên máy có `espeak-ng` +
+  `mbrola` rồi commit đủ chín file.
+
 
 - Người dùng có lần nói tiếng bật dậy là ở **75% máu**, nhưng bản mô tả gốc và code đang để
   **80%** (`SHIKA.wakeHp = .80`). Đã hỏi hai lần chưa có câu trả lời — hiện giữ 80%.

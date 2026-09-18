@@ -11,6 +11,9 @@
      4. trần khống chế cứng 3.5 giây, phần thừa đổi thành làm chậm 40%;
      5. chữ hiển thị đều bằng tiếng Anh.
    Chạy: node tools/t_superman.js */
+/* Mọi mục dưới đây soi HẰNG SỐ ĐÃ KHAI (viết theo NHỊP GỐC CŨ rồi bọc gs()), nên quy
+   đổi bằng `window.__LRT` chứ không phải hệ số hiển thị `window.__RT` (giờ bằng 1).
+   Xem mục 1 của CLAUDE.md: mốc 2x cũ đã thành tốc độ gốc. */
 const { openGame } = require('./probe');
 
 const out = [];
@@ -71,7 +74,7 @@ function ok(name, pass, note) {
           res({ shadowEnd: +shadowEnd.toFixed(3), landAt: +landAt.toFixed(3),
                 foeFree, foeMoved: +foeMoved.toFixed(1), foeHurt: +foeHurt.toFixed(1),
                 foeStun: +foeStun.toFixed(2), airTop: +airTop.toFixed(0),
-                ph: SUP.entPh, tot: SUP.entT, RT: window.__RT });
+                ph: SUP.entPh, tot: SUP.entT, RT: window.__LRT });
         }
       }, 8);
       setTimeout(() => { clearInterval(id); res({ timeout: 1 }); }, 60000);
@@ -164,7 +167,7 @@ function ok(name, pass, note) {
       }
       return { hits, kb: +kb.toFixed(1), stun: +stun.toFixed(3), cd: +s.cds.s1.toFixed(3),
                W: window.__WH().W, SUP: { hit: SUP.hit, gap: SUP.hitGap, cd: SUP.hitCd, stun: SUP.upStun, kb: SUP.upKb },
-               RT: window.__RT };
+               RT: window.__LRT };
     });
     ok('combo đúng ba đòn 26 / 26 / 38 = 90 dmg',
       combo.hits.length === 3 && combo.hits[0].dmg === 26 && combo.hits[1].dmg === 26 &&
@@ -219,7 +222,7 @@ function ok(name, pass, note) {
                eyeRel: +((foot - eyeY) / s.spriteH).toFixed(2),
                near: +window.__supHvOdds(0, s).toFixed(2), mid: +window.__supHvOdds(300, s).toFixed(2),
                far: +window.__supHvOdds(620, s).toFixed(2),
-               SUP: { aim: SUP.hvAim, t: SUP.hvT, n: SUP.hvN, dmg: SUP.hvDmg }, RT: window.__RT };
+               SUP: { aim: SUP.hvAim, t: SUP.hvT, n: SUP.hvN, dmg: SUP.hvDmg }, RT: window.__LRT };
     });
     ok('gồng 0.65 giây người chơi rồi mới bắn',
       Math.abs(heat.aimEnd * heat.RT - .65) < .05, `gồng ${(heat.aimEnd * heat.RT).toFixed(2)}s`);
@@ -269,7 +272,7 @@ function ok(name, pass, note) {
       const cutByStun = !s.supHv;
       s.stun = 0; s.hp = s.maxHp;
       return { fly, brokeEarly, cdEarly, firing, survived, locked: Math.abs(ang1 - ang0) < .001,
-               cutByStun, cd: SUP.hvCd, cut: SUP.hvBreakCut, RT: window.__RT };
+               cutByStun, cd: SUP.hvCd, cut: SUP.hvBreakCut, RT: window.__LRT };
     });
     ok('đang bay thì độ chính xác Heat Vision trừ thêm 15%',
       Math.abs(heatMore.fly - .75) < .001, `sát mặt còn ${heatMore.fly}`);
@@ -321,7 +324,7 @@ function ok(name, pass, note) {
                SUP: { aim: SUP.fbAim, dmg: SUP.fbDmg, fz: SUP.fbFreeze, ch: SUP.fbChill,
                       move: SUP.fbChillMove, cast: SUP.fbChillCast,
                       edge: [SUP.fbEdgeDmg, SUP.fbEdgeFreeze, SUP.fbEdgeChill], max: SUP.fbMax },
-               RT: window.__RT };
+               RT: window.__LRT };
     });
     ok('hít vào 0.9 giây người chơi rồi mới thổi',
       Math.abs(cold.aimEnd * cold.RT - .9) < .05, `hít ${(cold.aimEnd * cold.RT).toFixed(2)}s`);
@@ -364,7 +367,7 @@ function ok(name, pass, note) {
       window.__CHARS.superman.think(s, e, 90, true);
       const onGround = !!s.supFb;
       s.supFb = null; e.vx = 0;
-      return { broke, cd, whileFlying, onGround, want: SUP.fbCd * SUP.fbBreakCut, RT: window.__RT };
+      return { broke, cd, whileFlying, onGround, want: SUP.fbCd * SUP.fbBreakCut, RT: window.__LRT };
     });
     ok('bị đánh trong 0.5 giây đầu: Freeze Breath đứt, hồi chiêu còn 60%',
       coldMore.broke && Math.abs(coldMore.cd - coldMore.want) < .001,
@@ -442,7 +445,7 @@ function ok(name, pass, note) {
                near: +window.__supMsOdds(0, s).toFixed(2), mid: +window.__supMsOdds(300, s).toFixed(2),
                far: +window.__supMsOdds(620, s).toFixed(2),
                W: window.__WH().W, SUP: { cd: SUP.msCd, cut: SUP.msCancelCut, kb: SUP.msKb, quakeT: SUP.msQuakeT },
-               RT: window.__RT };
+               RT: window.__LRT };
     });
     ok('quãng chuẩn bị dài đúng 1.2 giây người chơi rồi mới lao xuống',
       Math.abs(meteor.prepEnd * meteor.RT - 1.2) < .06, `${(meteor.prepEnd * meteor.RT).toFixed(2)}s`);
@@ -470,7 +473,7 @@ function ok(name, pass, note) {
 
     /* ---- toàn bộ sát thương đúng cỡ 70% so với bản đầu ---- */
     const cut = await page.evaluate(() => {
-      const SUP = window.__SUP, RT = window.__RT;
+      const SUP = window.__SUP, RT = window.__LRT;
       // [tên, số cũ, số mới]
       /* Luật áp cho TỪNG con số một, không phải cho tổng: đòn một và đòn hai của combo
          đều là 34 gốc nên mỗi cái tự làm tròn riêng. */
@@ -541,7 +544,7 @@ function ok(name, pass, note) {
       s.cds.s4 = 99; s.supMsDown = 0; s.lock = 0; s.pose = 'idle'; s.hp = s.maxHp;
       e.supQuake = 0; e.hp = e.maxHp;
       return { bang, loi, rim, xa, dmg: SUP.msQuakeDmg, T: SUP.msQuakeT,
-               R: SUP.msQuakeR, far: SUP.msQuakeFar, min: SUP.msQuakeMin, RT: window.__RT };
+               R: SUP.msQuakeR, far: SUP.msQuakeFar, min: SUP.msQuakeMin, RT: window.__LRT };
     });
     ok('trong lõi thì chấn động ăn đủ, ra mép ngoài thì nhạt dần, quá mép là không dính',
       aoe.bang.tam === 1 && aoe.bang.loi === 1 &&
@@ -575,7 +578,7 @@ function ok(name, pass, note) {
       e.stun = 0; e.frozen = 0; e.supSlow = 0; e.supCcAcc = 0; e.supCcT = 0;
       return { a: +a.hard.toFixed(3), b: +b.hard.toFixed(3), rest: +b.rest.toFixed(3),
                slow: +slow.toFixed(3), reset, c: +c.hard.toFixed(3),
-               cap: SUP.ccCap, RT: window.__RT };
+               cap: SUP.ccCap, RT: window.__LRT };
     });
     ok('đóng băng 2.2s rồi Meteor Strike thì chỉ quật ngã thêm 1.3s, không phải 1.5s',
       Math.abs(cc.a * cc.RT - 2.2) < .001 && Math.abs(cc.b * cc.RT - 1.3) < .001,
@@ -607,7 +610,7 @@ function ok(name, pass, note) {
       const fat = { t: +s.fatigue.toFixed(3), move: +s.moveMul.toFixed(3),
                     cast: +s.castMul.toFixed(3), res: +(1 - window.__supResist(s)).toFixed(3) };
       s.hp = s.maxHp;
-      res({ cdCut, on, fat, done: s.lsrDone, hp: Math.round(s.maxHp * SUP.lsrHp), RT: window.__RT,
+      res({ cdCut, on, fat, done: s.lsrDone, hp: Math.round(s.maxHp * SUP.lsrHp), RT: window.__LRT,
             SUP: { t: SUP.lsrT, fatT: SUP.fatT } });
     }));
     ok("Last Son's Resolve: +30% chạy, +25% ra chiêu, giảm sát thương lên 30%",
@@ -680,7 +683,7 @@ function ok(name, pass, note) {
       for (let i = 0; i < 800; i++) { e.x = s.x + 60; G.t += dt; window.__supermanTick(s, dt); }
       const stayed = s.supFly <= 0;
       return { onAt: +onAt.toFixed(3), move, air, landed, cd, stayed,
-               wait: SUP.flyWait, far: SUP.flyFar, W, RT: window.__RT };
+               wait: SUP.flyWait, far: SUP.flyFar, W, RT: window.__LRT };
     });
     ok('địch đứng xa hơn 50% sàn suốt 2 giây người chơi thì Superman mới cất cánh',
       fly.onAt > 0 && Math.abs(fly.onAt - fly.wait) < .06,

@@ -69,7 +69,9 @@ async function nhetBuffer(page, ten, giay) {
 
   /* ---------- 1. thanh tốc độ vẫn đổi nhịp TRẬN như cũ ----------
      Bỏ phần tiếng chạy theo tốc độ không được đụng tới chính thanh tốc độ. */
-  for (const [v, m] of [['0.35', .35], ['0.5', .5], ['0.75', .75], ['1', 1]]) {
+  /* Mốc 2x CŨ giờ là tốc độ gốc, nên bốn giá trị của thanh tốc độ là bội số của nhịp
+     gốc mới: 0.7 · 1 · 1.5 · 2. */
+  for (const [v, m] of [['0.7', .7], ['1', 1], ['1.5', 1.5], ['2', 2]]) {
     await doiToc(v);
     gan(await page.evaluate(() => window.__speedMul()), m, .001, `thanh toc do ${v} => speedMul ${m}`);
   }
@@ -84,10 +86,10 @@ async function nhetBuffer(page, ten, giay) {
     const os = s.osc.filter(o => o.t0 !== null && o.t1 !== null);
     return Math.max(...os.map(o => o.t1 - o.t0));
   };
-  const goc = await ngan('0.5');
-  gan(await ngan('0.75'), goc, .01, 'tieng tu tao o 1.5x NGAN Y NGUYEN');
-  gan(await ngan('1'), goc, .01, 'tieng tu tao o 2x NGAN Y NGUYEN (khong bi cut)');
-  gan(await ngan('0.35'), goc, .01, 'tieng tu tao o 0.7x NGAN Y NGUYEN');
+  const goc = await ngan('1');
+  gan(await ngan('1.5'), goc, .01, 'tieng tu tao o 1.5x NGAN Y NGUYEN');
+  gan(await ngan('2'), goc, .01, 'tieng tu tao o 2x NGAN Y NGUYEN (khong bi cut)');
+  gan(await ngan('0.7'), goc, .01, 'tieng tu tao o 0.7x NGAN Y NGUYEN');
 
   /* ---------- 3. file thu sẵn: playbackRate luôn là 1 ----------
      Đây chính là chỗ làm tiếng méo ở 2x — đọc buffer gấp đôi thì cao giọng lên hẳn. */
@@ -101,7 +103,7 @@ async function nhetBuffer(page, ten, giay) {
     const b = s.buf.filter(x => x.t0 !== null && x.dur > 1);
     return b.length ? b[b.length - 1].rate : 0;
   };
-  for (const v of ['0.5', '0.75', '1', '0.35'])
+  for (const v of ['1', '1.5', '2', '0.7'])
     gan(await rateCua(v), 1, .001, `file thu san o ${v} doc voi playbackRate 1 (khong meo tieng)`);
 
   /* ---------- 4. ô có trần độ dài: cắt y hệt nhau ở mọi mốc ----------
@@ -118,7 +120,7 @@ async function nhetBuffer(page, ten, giay) {
     const b = s.buf.filter(x => x.t0 !== null && x.t1 !== null && x.dur > 10);
     return b.length ? { that: b[b.length - 1].t1 - b[b.length - 1].t0, len: b[b.length - 1].len, rate: b[b.length - 1].rate } : null;
   };
-  const c1 = await catCua('0.5'), c2 = await catCua('1');
+  const c1 = await catCua('1'), c2 = await catCua('2');
   ok(c1 && c2, `o "${oMax}" co tran do dai duoc phat va bi cat`);
   if (c1 && c2) {
     gan(c2.len, c1.len, .01, 'phan noi dung doc ra van y nguyen (khong cat bot loi thoai)');
@@ -136,7 +138,7 @@ async function nhetBuffer(page, ten, giay) {
     window.__BGM.el = document.createElement('audio');
     window.__BGM.el.playbackRate = 1;
   });
-  await doiToc('1');
+  await doiToc('2');
   await page.evaluate(() => window.__musicStart());
   const nhac = await page.evaluate(() => window.__BGM.el.playbackRate);
   gan(nhac, 1, .001, 'keo thanh toc do len 2x thi nhac nen VAN giu nhip goc');
