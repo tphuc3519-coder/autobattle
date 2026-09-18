@@ -41,6 +41,7 @@
 
     const versusBackground = document.getElementById('vsStageBg');
     if (versusBackground && stageUrls[activeStage]) {
+      versusBackground.dataset.stage = activeStage;
       const next = 'url("' + stageUrls[activeStage] + '")';
       if (versusBackground.style.backgroundImage !== next) {
         versusBackground.style.setProperty('background-image', next, 'important');
