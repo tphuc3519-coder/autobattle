@@ -562,6 +562,9 @@
      Playwright coi là "chưa đứng yên" và không bao giờ bấm được (mục 9). */
   body:not(.arcade) #arcRec{display:none !important}
   #arcRec.on{border-color:#FF4D6D;color:#FF9CB0;background:#2A1020}
+
+  body:not(.arcade) .arcOnly{display:none !important}
+
   /* Trang chơi: chỉ giấu ô nhịp ra chiêu (đồ chỉnh cân bằng). Mấy ô .chk còn lại ở trang
      chơi là "tự dùng chiêu", "nhạc nền" và âm lượng nhạc — người chơi cần đúng mấy cái đó,
      giấu hết là họ không tắt bật nhạc được. */
@@ -1928,6 +1931,8 @@
     <button id="langBtn" data-lang-toggle title="Vietnamese / English">🌐 English</button>
     <label class="chk"><input type="checkbox" id="musicOn"> <span data-i18n="music">🎵 Nhạc nền</span></label>
     <label class="chk"><span data-i18n="musicVol">Âm lượng nhạc</span> <input type="range" id="musicVol" min="0" max="1" step="0.05" value="0.3" style="width:92px"></label>
+    <button id="goHome" class="arcOnly" data-i18n="home">🏠 Trang chủ</button>
+    <button id="pickStage" class="arcOnly" data-i18n="pickStage">🗺 Đổi màn</button>
     <button id="pick" data-i18n="pick">⚔ Chọn nhân vật</button>
     <select id="mode">
       <option value="auto" data-i18n="mAuto">Máy vs Máy</option>
@@ -2170,7 +2175,9 @@
   </div>
 </div>
 <div class="arcOver off" id="arcOver">
+  <button id="arcGoHome" class="arcOnly" type="button" data-i18n="home">🏠 Trang chủ</button>
   <button id="arcAgain" class="primary" type="button" data-i18n="again">↻ Đánh lại</button>
+  <button id="arcPickStage" class="arcOnly" type="button" data-i18n="pickStage">🗺 Đổi màn</button>
   <button id="arcPick" type="button" data-i18n="repick">⚔ Đổi nhân vật / màn</button>
   <!-- Giữa giải thì hai nút trên nhường chỗ cho đúng một nút đi tiếp. -->
   <button id="arcComp" class="primary" type="button" style="display:none" data-i18n="arcBoard">▶ Bảng xếp hạng</button>
@@ -2381,6 +2388,7 @@ let LANG='en';
 const L={
   vi:{
     tagline:'Đấu trường đa vũ trụ · 12 đấu thủ · 12 màn',
+    home:'🏠 Trang chủ', pickStage:'🗺 Đổi màn',
     pick:'⚔ Chọn nhân vật', play:'Bắt đầu', pause:'Tạm dừng', resume:'Tiếp tục', reset:'Đánh lại',
     mAuto:'Máy vs Máy', mP1:'Điều khiển bên trái', mP2:'Điều khiển bên phải',
     spSlow:'Chậm 0.7x', spNormal:'Gốc 1x', spFast:'Nhanh 1.5x', spFaster:'Nhanh 2x',
@@ -2393,7 +2401,7 @@ const L={
     mTeam:'Đánh theo đội', mTeamSub:'2–4 đội · tối đa 8 người',
     mRelay:'Đánh tuần tự', mRelaySub:'2–4 đội · thắng thì giữ máu ở lại sân',
     sideL:'Bên trái', sideR:'Bên phải', stagePick:'Chọn màn đấu',
-    again:'↻ Đánh lại', repick:'⚔ Đổi nhân vật / màn',
+    again:'↻ Đánh lại', repick:'⚔ Đổi nhân vật',
     /* ---------- bản người chơi + phiêu lưu ---------- */
     whoH:'CHỌN <span>CÁCH CHƠI</span>',
     whoAuto:'Xem máy đánh', whoAutoSub:'Máy vs máy — bản gốc, ngồi xem',
@@ -2490,6 +2498,7 @@ const L={
   },
   en:{
     tagline:'Cross-universe arena · 12 fighters · 12 stages',
+    home:'🏠 Home', pickStage:'🗺 Change stage',
     pick:'⚔ Select fighter', play:'Start', pause:'Pause', resume:'Resume', reset:'Rematch',
     mAuto:'CPU vs CPU', mP1:'Control left side', mP2:'Control right side',
     spSlow:'Slow 0.7x', spNormal:'Normal 1x', spFast:'Fast 1.5x', spFaster:'Fast 2x',
@@ -2502,7 +2511,7 @@ const L={
     mTeam:'Team battle', mTeamSub:'2–4 teams · up to 8 fighters',
     mRelay:'Relay battle', mRelaySub:'2–4 teams · winner stays on, HP and all',
     sideL:'Left side', sideR:'Right side', stagePick:'Select stage',
-    again:'↻ Rematch', repick:'⚔ Change fighter / stage',
+    again:'↻ Rematch', repick:'⚔ Change fighter',
     /* ---------- player build + adventure ---------- */
     whoH:'CHOOSE <span>HOW TO PLAY</span>',
     whoAuto:'Watch the AI', whoAutoSub:'CPU vs CPU — the original, sit back',
@@ -21989,7 +21998,7 @@ if(document.getElementById('compQuit'))
   });
 for(const b of document.querySelectorAll('[data-lang-toggle]'))
   b.addEventListener('click',()=>setLang(LANG==='vi'?'en':'vi'));
-el('pick').addEventListener('click',openCsel);
+el('pick').addEventListener('click',() => { cselPage=cselSteps()[0]; openCsel(); });
 el('cselGo').addEventListener('click',()=>{
   if(ARCADE){
     const st=cselSteps(), i=st.indexOf(cselPage);
@@ -22131,6 +22140,23 @@ if(ARCADE){
   });
   el('arcAgain').addEventListener('click',()=>{ stagePickOpen(()=>{ newGame(); arcFight(); }); });
   el('arcPick').addEventListener('click',()=>{ cselPage=cselSteps()[0]; openCsel(); });
+
+  function goHomeAction(){
+    if(!ARCADE) return;
+    sfx('ui_back');
+    running=false; el('play').textContent=t('play');
+    compClear(); advWipe();
+    closeCsel(); compBoardClose(); advClose();
+    if (document.getElementById('arcStage')) document.getElementById('arcStage').classList.add('off');
+    el('arcVs').classList.add('off'); vsOn=false; clearTimeout(vsTimer);
+    el('arcWho').classList.remove('off');
+  }
+  el('goHome').addEventListener('click', goHomeAction);
+  el('arcGoHome').addEventListener('click', goHomeAction);
+
+  el('pickStage').addEventListener('click',()=>{ cselPage='stage'; openCsel(); });
+  el('arcPickStage').addEventListener('click',()=>{ cselPage='stage'; openCsel(); });
+
   /* Trận xong thì hiện dải nút chơi lại — kiểm mỗi khung hình cho khỏi phải cắm thêm
      móc vào finish(), vì finish() còn được gọi từ nhiều đường khác nhau. */
   el('arcComp').addEventListener('click',()=>{ compOpen(); });
@@ -22153,6 +22179,7 @@ if(ARCADE){
     /* Chỉ gán khi ĐỔI. Gán lại `style.display` mỗi 250ms là bắt trình duyệt tính lại kiểu
        liên tục, và Playwright coi phần tử là "chưa đứng yên" nên không bấm được (mục 9). */
     show(el('arcAgain'),!giai&&!adv); show(el('arcPick'),!giai&&!adv);
+    show(el('arcPickStage'),!giai&&!adv); show(el('arcGoHome'),true);
     show(el('arcComp'),giai); show(el('arcAdv'),adv);
   },250);
 }else{
