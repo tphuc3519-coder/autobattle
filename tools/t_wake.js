@@ -6,7 +6,9 @@ const { openGame } = require('./probe');
   const { browser, page, errors } = await openGame('shika', 'chichi');
   const r = await page.evaluate(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms));
-    const G = window.__G(), c = window.__ac(), RT = window.__RT, S = window.__SHIKA;
+    /* Mục này soi HẰNG SỐ đã khai (`wakeDelay` viết theo nhịp gốc CŨ rồi bọc gs()),
+       nên quy đổi bằng __LRT chứ không phải hệ số hiển thị __RT. */
+    const G = window.__G(), c = window.__ac(), RT = window.__LRT, S = window.__SHIKA;
     const k = G.fighters.find(f => f.key === 'shika');
 
     // nạp một file dài vào ô than thở để chắc chắn tiếng vẫn đang phát lúc bật dậy

@@ -49,7 +49,9 @@ def arr(name):
     if not m: sys.exit('không tìm thấy mảng ' + name)
     return [s.replace("\\'", "'") for s in re.findall(r"'((?:[^'\\]|\\.)*)'", m.group(1))]
 
-RT = 1 / num('BASE_SPEED')
+# Bộ giọng cắt theo NHỊP GỐC CŨ (`LRT`), không theo nhịp hiển thị: xem ghi chú `VRT`
+# trong index.html. Đổi `LRT` thì phải dựng lại cả bộ file.
+RT = num('LRT')
 BUB = num('SUZ_BUBBLE') * RT                    # độ dài một đoạn của hai ô đọc nối tiếp
 # Hằng khai bằng gs() thì số ghi trong code ĐÃ là giây người chơi, khỏi nhân RT nữa.
 THINK = 1.5 + .9                                # SUZ_THINK_LIFE = decThink + gs(.9)

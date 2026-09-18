@@ -12,6 +12,15 @@ const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if 
 async function dem(page) {
   return page.evaluate(() => {
     const c = window.__CV, S = window.__S, HEADER = window.__HEADER, { W, H } = window.__WH();
+    /* Chữ nổi trôi lên 30px mỗi GIÂY TRONG TRẬN, mà nhịp gốc giờ nhanh gấp đôi nhịp cũ —
+       chờ 250ms rồi đọc thẳng khung vừa vẽ là khối chữ đã trôi khỏi ô đang soi và tỉ lệ
+       nền trắng tụt mấy điểm phần trăm mà chẳng liên quan gì tới thứ tự vẽ. Vì vậy ghim
+       lại chỗ đứng rồi VẼ LẠI một khung ngay trước khi đọc: phép đo hết phụ thuộc vào
+       quãng thời gian đã trôi. */
+    const G = window.__G();
+    G.cam.x = W / 2; G.cam.y = H / 2; G.cam.z = 1;
+    for (const f of G.floats) { f.x = W / 2; f.y = H / 2; }
+    window.__draw();
     const g = c.getContext('2d');
     const x = Math.round((W / 2 - 30) * S), y = Math.round((HEADER + H / 2 - 15) * S);
     const d = g.getImageData(x, y, Math.round(60 * S), Math.round(30 * S)).data;

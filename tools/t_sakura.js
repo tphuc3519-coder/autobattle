@@ -2,6 +2,9 @@
    Phần lớn mục ở đây ĐO THẬT trong trận chứ không soi chuỗi: mấy con số của cô (70% / 30%
    kháng hiệu ứng, 80% shuriken của Konohamaru, 12% máu tối đa) là quan hệ giữa nhiều hằng
    số, soi chuỗi thì đổi một chỗ là test vẫn xanh trong khi game đã sai. */
+/* Mọi mục dưới đây soi HẰNG SỐ ĐÃ KHAI (viết theo NHỊP GỐC CŨ rồi bọc gs()), nên quy
+   đổi bằng `window.__LRT` chứ không phải hệ số hiển thị `window.__RT` (giờ bằng 1).
+   Xem mục 1 của CLAUDE.md: mốc 2x cũ đã thành tốc độ gốc. */
 const fs=require('fs');
 const assert=require('assert');
 const { openGame, openMulti } = require('./probe.js');
@@ -42,7 +45,7 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
     const {browser,page,errors}=await openGame('sakura','kono');
     await page.waitForTimeout(1200);
     const r=await page.evaluate(()=>{
-      const G=window.__G(),RT=window.__RT,SAK=window.__SAK,o={};
+      const G=window.__G(),RT=window.__LRT,SAK=window.__SAK,o={};
       const s=G.fighters.find(f=>f.key==='sakura'), e=G.fighters.find(f=>f.key==='kono');
       const cut=d=>window.__sakCut(d);
       o.burn5=+((cut(5/RT))*RT).toFixed(2);
@@ -106,7 +109,7 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
     const {browser,page,errors}=await openGame('sakura','kono');
     await page.waitForTimeout(1200);
     const r=await page.evaluate(()=>{
-      const G=window.__G(),RT=window.__RT,SAK=window.__SAK,o={};
+      const G=window.__G(),RT=window.__LRT,SAK=window.__SAK,o={};
       const s=G.fighters.find(f=>f.key==='sakura'), e=G.fighters.find(f=>f.key==='kono');
       const reset=()=>{ G.over=null;G.endT=0;G.kos.length=0;G.freeze=0;
         s.alive=e.alive=true;s.stun=e.stun=0;s.lock=e.lock=0;
@@ -225,7 +228,7 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
     const {browser,page,errors}=await openGame('sakura','kono');
     await page.waitForTimeout(1200);
     const r=await page.evaluate(()=>{
-      const G=window.__G(),RT=window.__RT,o={};
+      const G=window.__G(),RT=window.__LRT,o={};
       const s=G.fighters.find(f=>f.key==='sakura'), e=G.fighters.find(f=>f.key==='kono');
       const reset=()=>{ G.over=null;G.endT=0;G.kos.length=0;G.freeze=0;
         s.alive=e.alive=true;s.stun=0;s.lock=0;s.dots.length=0;s.sakAct=null;
@@ -323,7 +326,7 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
     const {browser,page,errors}=await openMulti('team',[['sakura','tsubasa'],['kono','chichi']]);
     await page.waitForTimeout(1500);
     const r=await page.evaluate(()=>{
-      const G=window.__G(),RT=window.__RT,o={};
+      const G=window.__G(),RT=window.__LRT,o={};
       const s=G.fighters.find(f=>f.key==='sakura'), a=G.fighters.find(f=>f.key==='tsubasa');
       G.over=null;G.endT=0;G.kos.length=0;s.alive=a.alive=true;
       s.hp=400;s.maxHp=800;a.hp=200;a.maxHp=800;s.sakHeal=null;

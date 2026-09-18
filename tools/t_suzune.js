@@ -4,6 +4,9 @@
    Kiểm luôn mấy con số dễ trôi: 15/20 dmg mỗi đòn, 15/20 điểm lớp, quyết định đúng tích
    đúng bằng sát thương, quyết định sai âm điểm thì tự ăn dmg rồi reset về 0.
    Chạy: node tools/t_suzune.js */
+/* Mọi mục dưới đây soi HẰNG SỐ ĐÃ KHAI (viết theo NHỊP GỐC CŨ rồi bọc gs()), nên quy
+   đổi bằng `window.__LRT` chứ không phải hệ số hiển thị `window.__RT` (giờ bằng 1).
+   Xem mục 1 của CLAUDE.md: mốc 2x cũ đã thành tốc độ gốc. */
 const { openGame } = require('./probe');
 
 const loi = [];
@@ -86,7 +89,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     const truoc = f.hp;
     const tra = window.__hurt(f, 500, null, false);      // đòn nặng ném thẳng vào cô
     return { tra, mat: truoc - f.hp, hits: f.ayaG ? f.ayaG.hits : -1,
-             tong: f.ayaG ? f.ayaG.taken : -1, du: f.ayaG ? f.ayaG.t * window.__RT : -1 };
+             tong: f.ayaG ? f.ayaG.taken : -1, du: f.ayaG ? f.ayaG.t * window.__LRT : -1 };
   });
   ok(chan.tra === false, 'don danh vao Horikita bi Ayanokouji chan lai (hurt tra ve false)');
   gan(chan.mat, 0, 0.001, 'Horikita khong mat mot giot mau nao trong luc duoc do');
@@ -97,7 +100,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   // nên phải chờ cả 1.6s phân cảnh lẫn 2.5s trong trận của quãng đỡ. Bắt luôn cú cước
   // chia tay: máu địch tụt đúng 150 và dính choáng 2 giây người chơi.
   const cuoc = await page.evaluate(() => new Promise((res, rej) => {
-    const G = window.__G(), S = window.__SUZ, RT = window.__RT;
+    const G = window.__G(), S = window.__SUZ, RT = window.__LRT;
     const f = G.fighters.find(x => x.key === 'suzune'), e = G.fighters.find(x => x.key === 'kono');
     e.hp = e.maxHp; e.evade = 0; e.stun = 0;
     /* Đo CÚ SỤT LỚN NHẤT trong một nhịp, đừng cộng dồn: Horikita vẫn đấm 10 dmg ở form 1
@@ -256,7 +259,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     e.invuln = 0;
     f.ayaG.born = 0.01;
     window.__ayaGuardKickHit(f);                       // hết miễn thương: tung thật
-    const tung = { ph: f.ayaG ? f.ayaG.ph : 'null', mat: truoc - e.hp, stun: e.stun * window.__RT };
+    const tung = { ph: f.ayaG ? f.ayaG.ph : 'null', mat: truoc - e.hp, stun: e.stun * window.__LRT };
     // dọn sạch để phần sau chạy tiếp như cũ
     G.timers.length = 0; G.freeze = 0; f.ayaG = null; f.form = goc; e.stun = 0; e.hp = e.maxHp;
     return { cho, tung };
@@ -335,7 +338,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
   /* ---- ô tiếng của Ayanokouji: ba câu thoại phải có ô giọng riêng, và bảng nạp tiếng
          phải chia nhóm để mấy ô cuối không chìm nghỉm ---- */
   const oTieng = await doc(() => {
-    const E = window.__SFXE, M = window.__SFXMAX, G = window.__SFXGROUPS, RT = window.__RT;
+    const E = window.__SFXE, M = window.__SFXMAX, G = window.__SFXGROUPS, RT = window.__LRT;
     const nhan = k => (E.find(x => x[0] === k) || [])[1];
     return { stand: nhan('aya_stand'), join: nhan('aya_join'), bye: nhan('aya_bye'),
              appear: nhan('aya_appear'), appear2: nhan('aya_appear2'),
@@ -510,7 +513,7 @@ const gan = (a, b, eps, msg) => ok(Math.abs(a - b) <= eps, `${msg} (do ${typeof 
     e.invuln = 0;                                    // vừa tung Sexy no Jutsu xong nên còn miễn thương
     const truoc = e.hp;
     window.__ayaStrike ? window.__ayaStrike(a, e) : (a.strikeCd = 0);
-    return { dmg: truoc - e.hp, stun: e.stun * window.__RT };
+    return { dmg: truoc - e.hp, stun: e.stun * window.__LRT };
   }).catch(() => null);
   if (dk && dk.dmg > 0) {
     gan(dk.dmg, 40, 0.001, 'don dot kich an 40 dmg');

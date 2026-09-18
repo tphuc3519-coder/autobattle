@@ -4,6 +4,9 @@
    Mấy phép đo bám theo HẰNG SỐ CÂN BẰNG thì gọi thẳng hàm chứ đừng đo theo dòng thời gian
    (mục 9 của CLAUDE.md): trận vẫn chạy nên đòn thường và chiêu của đối thủ xen vào là con
    số lệch ngay. Chỗ nào cần đo nhịp thì chạy tay từng bước bằng __step(). */
+/* Mọi mục dưới đây soi HẰNG SỐ ĐÃ KHAI (viết theo NHỊP GỐC CŨ rồi bọc gs()), nên quy
+   đổi bằng `window.__LRT` chứ không phải hệ số hiển thị `window.__RT` (giờ bằng 1).
+   Xem mục 1 của CLAUDE.md: mốc 2x cũ đã thành tốc độ gốc. */
 const { openGame } = require('./probe');
 
 let pass = 0, fail = 0;
@@ -15,7 +18,7 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
   const { browser, page, errors } = await openGame('beatrice', 'chichi', { play: false });
 
   const C = await page.evaluate(() => {
-    const B = window.__BEA, RT = window.__RT;
+    const B = window.__BEA, RT = window.__LRT;
     return { R: B.R, range: B.range, refl: B.refl, bodyW: B.bodyW, bodyH: B.bodyH,
              minyaDmg: B.minyaDmg, minyaCd: B.minyaCd * RT, stun: B.minyaStun * RT,
              stunOdds: B.minyaStunOdds,
@@ -100,7 +103,7 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
     window.__beaMinyaHit(p, e);
     const s2 = e.stun;
     Math.random = rnd0;
-    return { dmg, s1: s1 * window.__RT, s2: s2 * window.__RT, cap: B.minyaStun * window.__RT };
+    return { dmg, s1: s1 * window.__LRT, s2: s2 * window.__LRT, cap: B.minyaStun * window.__LRT };
   });
   ok(minya.dmg === 10, `mot mui Minya an dung ${minya.dmg} dmg`);
   ok(near(minya.s1, C.stun, .01), `choang ra dung ${minya.s1.toFixed(2)}s`);
@@ -129,8 +132,8 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
     out.fromNear = Math.hypot(e.x - f.x, e.y - f.y);
     out.nearBefore = nearBefore;
     out.dmg = 800 - e.hp;
-    out.stun = maxStun * window.__RT;
-    out.weak = e.beaWeak * window.__RT;
+    out.stun = maxStun * window.__LRT;
+    out.weak = e.beaWeak * window.__LRT;
     out.inArena = e.x > 0 && e.x < 620 && e.y > 0 && e.y < 620;
     // khong chong len model cua ai
     out.clear = G.fighters.every(o => o === e || !o.alive || Math.hypot(o.x - e.x, o.y - e.y) >= o.r + e.r);
@@ -153,7 +156,7 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
     out.refresh = e.beaWeak;
     out.stackFree = e.beaWeak <= B.shamacWeakT + 1e-6;
     out.cut = outWeak / outClean;
-    out.weakT1 = t1 * window.__RT;
+    out.weakT1 = t1 * window.__LRT;
     /* Đo thật: một đòn 100 raw của mục tiêu chỉ còn 80. Phải DỰNG LẠI hệ số của Beatrice
        sau khi tắt Murak — dmgTake là thứ statusTick gán mỗi nhịp, tắt cờ không thôi thì nó
        vẫn giữ con số của nhịp trước và phép đo ra 64 thay vì 80. */
@@ -195,7 +198,7 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
     out.slow = f.beaSlow; out.kb = Math.hypot(f.kbx, f.kby);
     out.dots = f.dots.length; out.dotsBefore = dotsBefore;
     out.on = f.beaMurak > 0;
-    out.cd = f.cds.s3 * window.__RT;
+    out.cd = f.cds.s3 * window.__LRT;
     // mien khong che 100%: stunFx phai tra ve false
     out.stunBlocked = window.__stunFx(f, 2, 'spark') === false && f.stun <= 0;
     /* Giảm 20% sát thương nhận vào. Kẻ tấn công phải SẠCH debuff thì mới đo được đúng ví
@@ -241,7 +244,7 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
     f.evade = 0; f.dodge = 0; f.dmgRes = 0;
     window.__beaEmtOn(f);
     out.on = f.beaEmt > 0;
-    out.cd = f.cds.s5 * window.__RT;
+    out.cd = f.cds.s5 * window.__LRT;
 
     // dung TRONG ban kinh phan don: an dung 20% cho vua chan
     e.x = f.x + B.refl * .5; e.y = f.y; e.hp = 800; e.evade = 0; e.dodge = 0;
@@ -286,7 +289,7 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
 
   console.log('\n=== 7. El Minya: ba mui tach biet, Minya Slow va Mana Erosion ===');
   const ult = await page.evaluate(() => {
-    const G = window.__G(), B = window.__BEA, RT = window.__RT, step = window.__step;
+    const G = window.__G(), B = window.__BEA, RT = window.__LRT, step = window.__step;
     const f = G.fighters.find(x => x.key === 'beatrice');
     const e = G.fighters.find(x => x.key === 'chichi');
     const out = { shots: [] };
@@ -334,7 +337,7 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
 
   console.log('\n=== 7b. El Minya bi choang trong 0.4s dau thi huy, cho nua hoi chieu ===');
   const brk = await page.evaluate(() => {
-    const G = window.__G(), B = window.__BEA, RT = window.__RT, step = window.__step;
+    const G = window.__G(), B = window.__BEA, RT = window.__LRT, step = window.__step;
     const f = G.fighters.find(x => x.key === 'beatrice');
     const e = G.fighters.find(x => x.key === 'chichi');
     const out = {};
@@ -589,6 +592,12 @@ const near = (a, b, eps) => Math.abs(a - b) <= eps;
     const out = { swapAs: body.swapAs, name: body.name, emt: body.beaEmt, murak: body.beaMurak };
     body.hp = 800; body.evade = 0; body.dodge = 0;
     window.__statusTick(body, 0);
+    /* Dọn hệ số của THẾ ĐỨNG aura trên người đánh trước khi đo: `ginyuPossess()` xoá
+       `gnState` nhưng KHÔNG dựng lại `dmgOut`, nên thế hưng phấn còn treo ở đó là cú
+       đánh ăn thêm 50% và mục này đọc ra 150 thay vì 100. Đây là phép đo lớp phòng thủ
+       của THÂN XÁC, không phải đo sát thương của Ginyu — xem ghi chú "dọn thế đứng của
+       aura trước" ở mục Captain Ginyu trong CLAUDE.md. */
+    g.dmgOut = 1;
     window.__hurt(body, 100, g, false, 'test');
     out.taken = 800 - body.hp;
     out.stunned = window.__stunFx(body, 1, 'spark');

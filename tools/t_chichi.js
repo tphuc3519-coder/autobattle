@@ -5,6 +5,9 @@
         chạy / −7% tốc ra chiêu, trúng hai đợt là −20% / −14%;
      3. Flying Kick: 45 dmg và choáng 2 giây người chơi.
    Chạy: node tools/t_chichi.js */
+/* Mọi mục dưới đây soi HẰNG SỐ ĐÃ KHAI (viết theo NHỊP GỐC CŨ rồi bọc gs()), nên quy
+   đổi bằng `window.__LRT` chứ không phải hệ số hiển thị `window.__RT` (giờ bằng 1).
+   Xem mục 1 của CLAUDE.md: mốc 2x cũ đã thành tốc độ gốc. */
 const { openGame } = require('./probe');
 
 const out = [];
@@ -66,7 +69,7 @@ function ok(name, pass, note) {
     G.proj.length = 0;
     const goku = window.__mk ? null : null;
     return { nen, ngayLuc, trongChoang, sauChoang, hetHan, mot, hai, tran, roi,
-             K, M, RT: window.__RT };
+             K, M, RT: window.__LRT };
   });
 
   ok('Kamehameha choáng đúng 2 giây người chơi',
@@ -116,7 +119,7 @@ function ok(name, pass, note) {
     const hp0 = e.hp;
     window.__chichiCharge(c, e);
     for (let i = 0; i < 600 && c.dash; i++) window.__step(dt);
-    return { mat: Math.round(hp0 - e.hp), choang: +e.stun.toFixed(3), want: KI, RT: window.__RT };
+    return { mat: Math.round(hp0 - e.hp), choang: +e.stun.toFixed(3), want: KI, RT: window.__LRT };
   });
   ok('Flying Kick gây đúng 45 dmg', kick.mat === kick.want.dmg, `${kick.mat} dmg`);
   ok('và choáng 2 giây người chơi',
@@ -159,7 +162,9 @@ function ok(name, pass, note) {
     await g2.page.selectOption('#speed', '1');
     await g2.page.waitForTimeout(500);
     const r2 = await g2.page.evaluate(() => {
-      const G = window.__G(), o = { lan: 0 };
+      /* `mat` khởi tạo -1 (khác `dmg`) để vòng thử ở dưới chạy được lượt đầu: guard của
+         nó là "chưa ăn ĐỦ dmg thì thử tiếp", mà undefined !== undefined là false. */
+      const G = window.__G(), o = { lan: 0, mat: -1, dmg: 0 };
       const d = G.fighters.find(f => f.key === 'dora'), c = G.fighters.find(f => f.key === 'chichi');
       d.drHide = false; d.drEntry = null; d.lock = 0; c.lock = 0;
       o.nhom = window.__canReflect({ type: 'aircan' });
@@ -171,10 +176,15 @@ function ok(name, pass, note) {
       /* Cú hất ngược lệch ±0.25 rad nên KHÔNG phải lần nào cũng trúng — đó là cơ chế thật,
          không phải lỗi. Vì vậy thử tới 10 lượt và đòi có ít nhất một lượt trúng đủ dmg,
          thay vì đo đúng một lượt rồi đổ oan. Đứng gần nhau cho tỉ lệ trúng cao. */
-      for (let lan = 1; lan <= 10 && !o.mat; lan++) {
+      /* Dừng khi ăn ĐỦ dmg, không phải khi ăn được tí nào: cú hất ngược lệch ±0.25 rad
+         nên có lượt viên đạn chỉ sượt qua. Bản trước thoát vòng ngay khi `o.mat` khác 0
+         nên một lượt sượt là chốt luôn con số hụt rồi báo hỏng — trái hẳn ý đồ ghi ngay
+         phía trên ("đòi có ít nhất một lượt trúng đủ dmg"). */
+      for (let lan = 1; lan <= 10 && o.mat !== o.dmg; lan++) {
         o.lan = lan;
         d.x = 200; d.y = 300; c.x = 380; c.y = 300;
         d.hp = d.maxHp; c.hp = c.maxHp; d.stun = 0; d.dash = null; c.dash = null;
+        o.mat = 0; o.choang = false;   // đo lại từ đầu mỗi lượt
         G.proj.length = 0; G.waves.length = 0; G.timers.length = 0;
         window.__doraAirCannon(d, c);
         for (let i = 0; i < 400 && !G.proj.some(p => p.type === 'aircan'); i++) window.__step(1 / 120);
@@ -220,17 +230,24 @@ function ok(name, pass, note) {
     await g3.page.selectOption('#speed', '1');
     await g3.page.waitForTimeout(500);
     const r3 = await g3.page.evaluate(() => {
-      const G = window.__G(), o = { lan: 0 };
+      /* `mat` khởi tạo -1 (khác `dmg`) để vòng thử ở dưới chạy được lượt đầu: guard của
+         nó là "chưa ăn ĐỦ dmg thì thử tiếp", mà undefined !== undefined là false. */
+      const G = window.__G(), o = { lan: 0, mat: -1, dmg: 0 };
       const g = G.fighters.find(f => f.key === 'ginyu'), c = G.fighters.find(f => f.key === 'chichi');
       g.gnEntry = null; g.lock = 0; c.lock = 0;
       g.gnState = null; g.gnStateT = 0; g.gnAura = Infinity;   // thế đứng trung tính cho dễ đo
       o.nhom = window.__canReflect({ type: 'gbeam' });
       const cungGoc = (x, y) => { let t = Math.abs(x - y) % (Math.PI * 2);
                                   if (t > Math.PI) t = Math.PI * 2 - t; return t < .01; };
-      for (let lan = 1; lan <= 10 && !o.mat; lan++) {
+      /* Dừng khi ăn ĐỦ dmg, không phải khi ăn được tí nào: cú hất ngược lệch ±0.25 rad
+         nên có lượt viên đạn chỉ sượt qua. Bản trước thoát vòng ngay khi `o.mat` khác 0
+         nên một lượt sượt là chốt luôn con số hụt rồi báo hỏng — trái hẳn ý đồ ghi ngay
+         phía trên ("đòi có ít nhất một lượt trúng đủ dmg"). */
+      for (let lan = 1; lan <= 10 && o.mat !== o.dmg; lan++) {
         o.lan = lan;
         g.x = 200; g.y = 300; c.x = 380; c.y = 300;
         g.hp = g.maxHp; c.hp = c.maxHp; g.stun = 0; g.dash = null; c.dash = null;
+        o.mat = 0; o.choang = false;   // đo lại từ đầu mỗi lượt
         G.proj.length = 0; G.waves.length = 0; G.timers.length = 0;
         window.__ginyuBeam(g, c);
         for (let i = 0; i < 400 && !G.proj.some(p => p.type === 'gbeam'); i++) window.__step(1 / 120);

@@ -1,5 +1,8 @@
 /* Tanjiro Kamado — contract test for timings, damage, awakening and status rules.
    Run: node tools/t_tanjiro.js */
+/* Mọi mục dưới đây soi HẰNG SỐ ĐÃ KHAI (viết theo NHỊP GỐC CŨ rồi bọc gs()), nên quy
+   đổi bằng `window.__LRT` chứ không phải hệ số hiển thị `window.__RT` (giờ bằng 1).
+   Xem mục 1 của CLAUDE.md: mốc 2x cũ đã thành tốc độ gốc. */
 const { openGame } = require('./probe');
 
 let pass = 0, fail = 0;
@@ -14,7 +17,7 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
 
   console.log('\n=== 1. Constants, shared HP and English profile ===');
   const cfg = await page.evaluate(() => {
-    const T = window.__TAN, RT = window.__RT, D = window.__DEX.tanjiro;
+    const T = window.__TAN, RT = window.__LRT, D = window.__DEX.tanjiro;
     const text = [window.__CHARS.tanjiro.name, ...window.__CHARS.tanjiro.skills,
       D.name, D.role.vi, D.role.en, D.bio.vi, D.bio.en,
       ...D.skills.flatMap(s => [s.name, s.vi, s.en])].join(' ');
@@ -63,7 +66,7 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
       step(1/120); poses.add(f.pose);
       if(ticks===28||ticks===58||ticks===88)samples.push(f.pose);
     }
-    return { playerSeconds:G.t*window.__RT, ticks, poses:[...poses], samples,
+    return { playerSeconds:G.t*window.__LRT, ticks, poses:[...poses], samples,
       moved:Math.hypot(e.x-x,e.y-y), damage:h-e.hp, done:!f.tanEntry };
   });
   ok(ent.done && near(ent.playerSeconds,1.5,.04), 'entrance completes at 1.5s', ent.playerSeconds.toFixed(3));
@@ -100,7 +103,7 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
       e.hp=1000;e.maxHp=1000;e.alive=true;e.evade=0;e.dodge=0;e.dmgRes=0;e.dmgTake=1;e.invuln=0;e.beaEmt=0;e.dots=[];e.stun=0;e.kbx=0;e.kby=0;
       f.x=300;f.y=350;e.x=355;e.y=350; };
     prep(); f.tanCombo=0; const b=e.hp; window.__tanBasic(f,e);window.__tanBasic(f,e);window.__tanBasic(f,e);
-    const basic=b-e.hp, basicStun=e.stun*window.__RT;
+    const basic=b-e.hp, basicStun=e.stun*window.__LRT;
     const run=(start,limit=600)=>{ let n=0; while(f.tanAct&&n++<limit)window.__tanjiroTick(f,1/120); return {dmg:start-e.hp,n}; };
     prep(); let h=e.hp; window.__tanWaterWheel(f,e); const wheel=run(h);
     prep(); h=e.hp; window.__tanConstantFlux(f,e); const flux=run(h);
@@ -126,10 +129,10 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
     f.tanRed=0;f.tanCombo=0;f.tanMarkHits=0;f.x=300;f.y=350;e.x=355;e.y=350;
     f.cds.s1=T.wheelCd;f.cds.s2=T.fluxCd;f.cds.s3=T.sunCd;
     const h0=e.hp;window.__tanBasic(f,e);window.__tanBasic(f,e);window.__tanBasic(f,e);
-    const rhythmDamage=h0-e.hp,rhythmCds=[f.cds.s1*window.__RT,f.cds.s2*window.__RT,f.cds.s3*window.__RT];
+    const rhythmDamage=h0-e.hp,rhythmCds=[f.cds.s1*window.__LRT,f.cds.s2*window.__LRT,f.cds.s3*window.__LRT];
     return {exact,started,active:f.tanMarked,hpBefore:before,hpAfter:f.hp,maxHp:f.maxHp,
       move:f.moveMul,cast:f.castMul,cc,stun:f.stun,ultReady:f.cds.s4===0,
-      rhythm:[T.markRhythmHits,T.markRhythmDmg,T.markRhythmCdCut*window.__RT],rhythmDamage,rhythmCds,rhythmStacks:f.tanMarkHits};
+      rhythm:[T.markRhythmHits,T.markRhythmDmg,T.markRhythmCdCut*window.__LRT],rhythmDamage,rhythmCds,rhythmStacks:f.tanMarkHits};
   });
   ok(!mark.exact && mark.started && mark.active && mark.maxHp===1333,
     'Mark triggers strictly below 40% of a runtime maxHp value', mark.maxHp);
@@ -150,8 +153,8 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
     window.__tanUltimate(f,e); const own0=f.hp; window.__hurt(f,100,e,false,'big'); const taken=own0-f.hp;
     f.stun=0; const cc=window.__stunFx(f,1,'spark'), ultStun=f.stun;
     f.stun=0; const target0=e.hp; let n=0; while(f.tanAct&&n++<800)window.__tanjiroTick(f,1/120);
-    const dealt=target0-e.hp, red=f.tanRed*window.__RT, dots=e.dots.length;
-    const h=e.hp; window.__hurt(e,40,f,false,'big'); const redDamage=h-e.hp, supp=e.regenSupp*window.__RT, factor=window.__regenFactor(e);
+    const dealt=target0-e.hp, red=f.tanRed*window.__LRT, dots=e.dots.length;
+    const h=e.hp; window.__hurt(e,40,f,false,'big'); const redDamage=h-e.hp, supp=e.regenSupp*window.__LRT, factor=window.__regenFactor(e);
     const old=e.regenSupp; window.__hurt(e,40,f,false,'big');
     return {taken,cc,ultStun,dealt,n,red,dots,redDamage,supp,factor,stacked:e.regenSupp>old+.001};
   });
@@ -193,8 +196,8 @@ const near = (a, b, eps = .02) => Math.abs(a - b) <= eps;
     Math.random=oldRandom;
     return {tanMove,chiMove,basic1,basic2,basic3,basicAct,comboReset,occasionalForm,
       held,far,nextWheel,wheelCd:window.__TAN.wheelCd,gated,
-      cooldowns:[window.__TAN.wheelCd,window.__TAN.fluxCd,window.__TAN.sunCd,window.__TAN.ultCd].map(x=>x*window.__RT),
-      wheelWait:[window.__TAN.wheelAiMin*window.__RT,window.__TAN.wheelAiMax*window.__RT],
+      cooldowns:[window.__TAN.wheelCd,window.__TAN.fluxCd,window.__TAN.sunCd,window.__TAN.ultCd].map(x=>x*window.__LRT),
+      wheelWait:[window.__TAN.wheelAiMin*window.__LRT,window.__TAN.wheelAiMax*window.__LRT],
       chart:window.__DEX.tanjiro.pw,asRank:window.__pwGrade(window.__DEX.tanjiro.pw.as),
       summary:window.__DEX.tanjiro.bio.en};
   });

@@ -29,7 +29,9 @@ const mang = n => {
   return [...m[1].matchAll(/'((?:[^'\\]|\\.)*)'/g)].map(x => x[1]);
 };
 const so = n => parseFloat(src.match(new RegExp('\\b' + n + '\\s*=\\s*([0-9.]+)'))[1]);
-const RT = 1 / so('BASE_SPEED'), SEG = so('SUZ_BUBBLE') * RT;
+/* Bộ giọng cắt theo NHỊP GỐC CŨ (`LRT`) chứ không theo hệ số hiển thị `RT` — xem ghi
+   chú `VRT` trong index.html. */
+const RT = so('LRT'), SEG = so('SUZ_BUBBLE') * RT;
 
 /* ---------- phần tĩnh: file sinh ra có khớp lời thoại không ---------- */
 const VOICE = path.join(ROOT, 'assets', 'voice');

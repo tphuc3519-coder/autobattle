@@ -10,6 +10,9 @@
         thẳng lên màn hình), trần hồi máu 20%, cắt 40% hồi chiêu;
      5. chữ hiển thị đều bằng tiếng Anh.
    Chạy: node tools/t_dora.js */
+/* Mọi mục dưới đây soi HẰNG SỐ ĐÃ KHAI (viết theo NHỊP GỐC CŨ rồi bọc gs()), nên quy
+   đổi bằng `window.__LRT` chứ không phải hệ số hiển thị `window.__RT` (giờ bằng 1).
+   Xem mục 1 của CLAUDE.md: mốc 2x cũ đã thành tốc độ gốc. */
 const { openGame } = require('./probe');
 
 const out = [];
@@ -64,7 +67,7 @@ async function waitGame(page, body, limit) {
           clearInterval(id);
           res({ outAt: +outAt.toFixed(2), endAt: +endAt.toFixed(2), foeFree, doorMax: +doorMax.toFixed(2),
                 doorEnd: +doorEnd.toFixed(2), foeMoved: +foeMoved.toFixed(1),
-                ph: D.doorPh, tot: D.doorT, RT: window.__RT });
+                ph: D.doorPh, tot: D.doorT, RT: window.__LRT });
         }
       }, 10);
       setTimeout(() => { clearInterval(id); res({ timeout: 1 }); }, 40000);
@@ -81,7 +84,12 @@ async function waitGame(page, body, limit) {
       ent.foeFree === 0, `${ent.foeFree} nhịp không bị khoá, xê dịch ${ent.foeMoved}px`);
 
     // combo ba đòn: 15 / 15 / 20, cách nhau 0.6 giây người chơi, đòn ba đẩy lùi + choáng
-    const combo = await page.evaluate(() => new Promise(res => {
+    /* Chạy TAY từng bước 1/120 trong MỘT lượt evaluate đồng bộ: vòng lặp đồng bộ chặn
+       hẳn requestAnimationFrame nên không có nhịp nào của trận chen vào giữa. Đo bằng
+       setInterval thì mỗi lượt lấy mẫu trôi cả một chặng thời gian trong trận (máy test
+       không có GPU), nên đồng hồ choáng của đòn ba đã tụt mất một quãng trước khi đọc
+       được — đo ra 0.44s trên mốc 0.60s. */
+    const combo = await page.evaluate(() => {
       const G = window.__G(), D = window.__DORA;
       const f = G.fighters.find(x => x.key === 'dora'), e = G.fighters.find(x => x !== f);
       f.drAim = null; f.drCombo = null; f.copter = 0;
@@ -96,7 +104,8 @@ async function waitGame(page, body, limit) {
       window.__doraCombo(f, e);
       const blows = []; let last = e.hp, kb = 0, stun = 0;
       const t0 = G.t;
-      const id = setInterval(() => {
+      for (let i = 0; i < 900 && blows.length < 3; i++) {
+        window.__step(1 / 120);
         /* Đọc lực đẩy và choáng TRƯỚC khi ghim lại vị trí: put() xoá kbx/stun, ghim trước
            thì đúng cú đánh thứ ba vừa gây ra đã bị xoá mất trước khi kịp đo. */
         const kbNow = Math.hypot(e.kbx, e.kby), stunNow = e.stun;
@@ -107,14 +116,10 @@ async function waitGame(page, body, limit) {
         }
         f.cds.s2 = 99; f.cds.s3 = 99; f.edCd = 99; f.stun = 0;
         if (blows.length < 3) put();
-        if (blows.length >= 3 || G.t - t0 > 6) {
-          clearInterval(id);
-          res({ blows, kb: Math.round(kb), stun: +stun.toFixed(2),
-                want: D.hit, gap: D.hitGap, slamStun: D.slamStun, RT: window.__RT });
-        }
-      }, 10);
-      setTimeout(() => { clearInterval(id); res({ blows, timeout: 1 }); }, 40000);
-    }));
+      }
+      return { blows, kb: Math.round(kb), stun: +stun.toFixed(2),
+               want: D.hit, gap: D.hitGap, slamStun: D.slamStun, RT: window.__LRT };
+    });
     ok('combo đúng ba đòn 15 / 15 / 20',
       combo.blows.length === 3 && combo.blows[0].dmg === 15 && combo.blows[1].dmg === 15 && combo.blows[2].dmg === 20,
       JSON.stringify(combo.blows));
@@ -158,7 +163,7 @@ async function waitGame(page, body, limit) {
         if (Math.hypot(e.kbx, e.kby) < 1) {
           clearInterval(id);
           res({ dmg: Math.round(dmg), stun: +stun.toFixed(2), far: Math.round(far),
-                want: Math.round(WH.W * D.acKbDist), acStun: D.acStun, RT: window.__RT });
+                want: Math.round(WH.W * D.acKbDist), acStun: D.acStun, RT: window.__LRT });
         }
       }, 10);
       setTimeout(() => { clearInterval(id); res({ dmg: Math.round(dmg), far: Math.round(far), timeout: 1 }); }, 30000);
@@ -241,7 +246,7 @@ async function waitGame(page, body, limit) {
       window.__drShrink(e);
       const b = { t: +e.shrunk.toFixed(2), r: e.r, hit: +e.hitMul.toFixed(2) };
       return { a, b, D: { t: D.shrunkT, size: D.shrunkSize, hit: D.shrunkHit,
-                          reach: D.shrunkReach, kb: D.shrunkKb }, RT: window.__RT };
+                          reach: D.shrunkReach, kb: D.shrunkKb }, RT: window.__LRT };
     });
     ok('Shrunk kéo dài 7 giây người chơi và gắn đủ bốn hệ số',
       Math.abs(sl.a.t - sl.D.t) < .01 && sl.a.hit === sl.D.hit &&
@@ -272,7 +277,7 @@ async function waitGame(page, body, limit) {
         core: shot(150, 0), edge: shot(150, .35), off: shot(150, .8), far: shot(400, 0),
         D: { dmg: D.slDmg, edmg: D.slEdgeDmg, t: D.shrunkT, et: D.slEdgeT,
              cone: D.slCone, range: D.slRange, max: D.slMax },
-        S: { cone: SUP.fbCone, range: SUP.fbRange }, RT: window.__RT
+        S: { cone: SUP.fbCone, range: SUP.fbRange }, RT: window.__LRT
       };
     });
     ok('trúng giữa nón: đủ 35 dmg và Shrunk 7 giây người chơi',
@@ -299,7 +304,7 @@ async function waitGame(page, body, limit) {
       const t0 = G.t;
       const id = setInterval(() => {
         if (e.szMul >= .999) { clearInterval(id); res({ t: +(G.t - t0).toFixed(2), sz: +e.szMul.toFixed(3),
-          r: e.r, hit: e.hitMul, want: window.__DORA.growT, RT: window.__RT }); }
+          r: e.r, hit: e.hitMul, want: window.__DORA.growT, RT: window.__LRT }); }
         if (G.t - t0 > 3) { clearInterval(id); res({ t: -1, sz: +e.szMul.toFixed(3) }); }
       }, 8);
       setTimeout(() => { clearInterval(id); res({ timeout: 1 }); }, 30000);
@@ -391,7 +396,7 @@ async function waitGame(page, body, limit) {
         choNgan: thu(.45, window.__gs(1.5)),   // mới chờ 1.5 giây người chơi: dưới mốc 2 giây
         sat: thu(.38, D.copIdle + .01),        // 38% sàn: ngay dưới mốc, không được bay
         gan: thu(.20, D.copIdle + .01),        // đứng sát quá thì vẫn không bay
-        far: D.copFar, idle: +(D.copIdle * window.__RT).toFixed(2), RT: window.__RT
+        far: D.copFar, idle: +(D.copIdle * window.__LRT).toFixed(2), RT: window.__LRT
       };
     });
     ok('điều kiện cất cánh: xa 45% sàn và 2 giây không đánh trúng là bay được',
@@ -405,7 +410,7 @@ async function waitGame(page, body, limit) {
        còn 70% và độ chính xác trừ thẳng 20 điểm. Chạy tay từng bước cho khỏi phụ thuộc
        tải máy: hẹn giờ + statusTick + doraTick. */
     const bayNa = await page.evaluate(() => {
-      const G = window.__G(), D = window.__DORA, RT = window.__RT, dt = 1 / 120;
+      const G = window.__G(), D = window.__DORA, RT = window.__LRT, dt = 1 / 120;
       const f = G.fighters.find(x => x.key === 'dora'), e = G.fighters.find(x => x !== f);
       f.drAim = null; f.drCombo = null; f.tm = null; f.edT = 0; f.lock = 0; f.stun = 0;
       f.copter = 0; f.copCd = 0; f.cds = { s1: 99, s2: 99, s3: 99 };
@@ -496,7 +501,7 @@ async function waitGame(page, body, limit) {
                 cdCut: { s2: +(f.cds.s2 / cd0.s2).toFixed(2), s3: +(f.cds.s3 / cd0.s3).toFixed(2) },
                 want: +(1 - D.tmCdCut).toFixed(2), done: f.tmDone,
                 foeSame: Math.round(e.hp) === Math.round(eHp0) && Math.abs(e.x - ex0) < 1 && Math.abs(e.y - ey0) < 1,
-                theme: window.__MUSIC.theme, RT: window.__RT });
+                theme: window.__MUSIC.theme, RT: window.__LRT });
         }
         if (G.t - t0 > 8) { clearInterval(id); res({ timeout: 1, inCine }); }
       }, 10);
@@ -553,9 +558,13 @@ async function waitGame(page, body, limit) {
       const backs = lan.map(x => x.back);
       return {
         lo: +Math.min(...backs).toFixed(2), hi: +Math.max(...backs).toFixed(2),
-        wantLo: D.tmBackLo, wantHi: D.tmBackHi, histT: +(D.tmHistT * window.__RT).toFixed(1),
+        wantLo: D.tmBackLo, wantHi: D.tmBackHi, histT: +(D.tmHistT * window.__LRT).toFixed(1),
         // băng-rôn phải in đúng con số vừa bốc
-        khop: lan.every(x => x.banner && x.banner.includes(x.back.toFixed(1) + 's')),
+        /* Băng-rôn in theo GIÂY NGƯỜI CHƠI qua rts(gs(back)), mà tmBackLo/Hi khai theo
+           nhịp gốc CŨ — nên con số hiện ra là back / LRT, làm tròn đúng kiểu rts()
+           (hai chữ số thập phân rồi bỏ số 0 thừa), không phải chính back. */
+        khop: lan.every(x => x.banner &&
+          x.banner.includes(String(+(x.back / window.__LRT).toFixed(2)) + 's')),
         mau: lan[0].banner, soKhac: new Set(backs.map(b => b.toFixed(1))).size
       };
     });

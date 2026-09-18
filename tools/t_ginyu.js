@@ -6,6 +6,9 @@
      4. CHANGE!!!: đứng nguyên chỗ ngã, tia phóng từ miệng, trúng thì đổi hồn giữ nguyên
         thân xác — thân xác A mà tên B — trượt thì còn 1 máu và hoảng loạn.
    Chạy: node tools/t_ginyu.js */
+/* Mọi mục dưới đây soi HẰNG SỐ ĐÃ KHAI (viết theo NHỊP GỐC CŨ rồi bọc gs()), nên quy
+   đổi bằng `window.__LRT` chứ không phải hệ số hiển thị `window.__RT` (giờ bằng 1).
+   Xem mục 1 của CLAUDE.md: mốc 2x cũ đã thành tốc độ gốc. */
 const { openGame } = require('./probe');
 
 const out = [];
@@ -66,7 +69,7 @@ async function waitGame(page, fnBody, limit) {
         if (danceEnd >= 0 || G.t - t0 > 12) {
           clearInterval(id);
           res({ landed, danceEnd, foeFree, foeMoved: +foeMoved.toFixed(1), gx: g.x, gy: g.y,
-                flyT: window.__GN.flyT, RT: window.__RT, aura: g.gnAura, state: g.gnState });
+                flyT: window.__GN.flyT, RT: window.__LRT, aura: g.gnAura, state: g.gnState });
         }
       }, 12);
       setTimeout(() => { clearInterval(id); res({ landed, danceEnd, foeFree, timeout: 1 }); }, 60000);
@@ -206,7 +209,7 @@ async function waitGame(page, fnBody, limit) {
         try { window.__gnBeamHit(p, e); } finally { Math.random = R; }
         return +e.stun.toFixed(3);
       };
-      return { an: thu(.05), truot: thu(.9), odds: GN.beamStunOdds, dur: GN.beamStun, RT: window.__RT };
+      return { an: thu(.05), truot: thu(.9), odds: GN.beamStunOdds, dur: GN.beamStun, RT: window.__LRT };
     });
     ok('luồng khí chỉ 15% gây choáng, và choáng dài 1.5 giây người chơi',
       Math.abs(bstun.odds - .15) < 1e-9 && Math.abs(bstun.dur * bstun.RT - 1.5) < .01 &&
@@ -352,7 +355,7 @@ async function waitGame(page, fnBody, limit) {
         if (stanceEnd >= 0 || G.t - t0 > GN.atk.t + 3) {
           clearInterval(id);
           res({ duringMin: +duringMin.toFixed(3), atEnd: +atEnd.toFixed(3),
-                stanceEnd: +stanceEnd.toFixed(2), cd: GN.auraCd, stance: GN.atk.t, RT: window.__RT });
+                stanceEnd: +stanceEnd.toFixed(2), cd: GN.auraCd, stance: GN.atk.t, RT: window.__LRT });
         }
       }, 12);
       setTimeout(() => { clearInterval(id); res({ timeout: 1 }); }, 40000);
@@ -821,7 +824,7 @@ async function waitGame(page, fnBody, limit) {
     /* Dáng ra chiêu phải SỐNG HẾT chiêu rồi mới thôi. Chạy tay từng bước (hẹn giờ +
        ginyuTick + đồng hồ dáng) để đo chính xác mốc dáng tắt so với mốc luồng cuối. */
     const pose = await page.evaluate(() => {
-      const G = window.__G(), GN = window.__GN, RT = window.__RT, dt = 1 / 120;
+      const G = window.__G(), GN = window.__GN, RT = window.__LRT, dt = 1 / 120;
       const g = G.fighters.find(f => f.key === 'ginyu'), e = G.fighters.find(f => f !== g);
       const run = (ten, ban) => {
         g.gnState = null; g.gnStateT = 0; g.gnFlash = null; g.gnEntry = null;
