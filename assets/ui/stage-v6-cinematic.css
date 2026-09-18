@@ -16,7 +16,7 @@
   object-fit:cover!important;
   object-position:50% 50%!important;
   transform:scale(1.002);
-  filter:saturate(.94) contrast(1.04);
+  filter:saturate(.68) contrast(.9) brightness(.88);
   transition:transform .42s cubic-bezier(.2,.8,.2,1),filter .32s ease!important;
 }
 .sTile::before{
@@ -29,7 +29,7 @@
 }
 .sTile:hover>img,.sTile.on>img{
   transform:scale(1.025);
-  filter:saturate(1) contrast(1.06);
+  filter:saturate(.76) contrast(.94) brightness(.94);
 }
 .sTile .sCap{z-index:2!important}
 
@@ -37,7 +37,7 @@
 #vsStageBg{
   background-size:cover!important;
   background-position:50% 50%!important;
-  filter:saturate(.9) contrast(1.04) brightness(.76)!important;
+  filter:blur(3px) saturate(.5) contrast(.84) brightness(.58)!important;
 }
 
 /* Player chips used above Select Stage. The old 30px square made every
