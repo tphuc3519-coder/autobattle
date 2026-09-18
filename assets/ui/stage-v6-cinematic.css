@@ -16,7 +16,7 @@
   object-fit:cover!important;
   object-position:50% 50%!important;
   transform:scale(1.002);
-  filter:saturate(.68) contrast(.9) brightness(.88);
+  filter:saturate(.85) contrast(.94) brightness(.94);
   transition:transform .42s cubic-bezier(.2,.8,.2,1),filter .32s ease!important;
 }
 .sTile::before{
@@ -29,7 +29,7 @@
 }
 .sTile:hover>img,.sTile.on>img{
   transform:scale(1.025);
-  filter:saturate(.76) contrast(.94) brightness(.94);
+  filter:saturate(.9) contrast(.97) brightness(1);
 }
 .sTile .sCap{z-index:2!important}
 
@@ -37,7 +37,21 @@
 #vsStageBg{
   background-size:cover!important;
   background-position:50% 50%!important;
-  filter:blur(3px) saturate(.5) contrast(.84) brightness(.58)!important;
+  filter:saturate(.85) contrast(.94) brightness(.76)!important;
+}
+
+/* Preserve each stage's identity instead of applying one muted palette. */
+.sTile[data-stage="snow"]>img{
+  filter:saturate(.35) contrast(.92) brightness(1.4);
+}
+.sTile[data-stage="sakura"]>img{
+  filter:saturate(1.25) contrast(.96) brightness(1.16);
+}
+#vsStageBg[data-stage="snow"]{
+  filter:saturate(.35) contrast(.92) brightness(1.12)!important;
+}
+#vsStageBg[data-stage="sakura"]{
+  filter:saturate(1.2) contrast(.96) brightness(.94)!important;
 }
 
 /* Player chips used above Select Stage. The old 30px square made every

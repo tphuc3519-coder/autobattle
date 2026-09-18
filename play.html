@@ -15502,7 +15502,7 @@ function stageArt(st){
     ctx.globalAlpha=1;
   }
 }
-/* Cache only the active backdrop: soften scenery once, never the fighters/skill FX.
+/* Cache only the active backdrop: grade scenery once, never the fighters/skill FX.
    Image identity + readiness also invalidate this when an upload/pack replaces art. */
 let ARENA_BACKDROP=null;
 function arenaFloor(){
@@ -15522,11 +15522,19 @@ function arenaFloor(){
     }finally{ ctx=keep; }
     const soft=document.createElement('canvas'); soft.width=W; soft.height=H;
     const bg=soft.getContext('2d');
-    // Slight overscan prevents transparent blur edges. Filters run only on rebuild.
-    bg.filter='blur(1.8px) saturate(0.55) contrast(0.82) brightness(0.78)';
-    bg.drawImage(raw,-6,-6,W+12,H+12);
+    // No blur: preserve scenery detail, with separate snow and blossom palettes.
+    const snow=st.key==='snow', sakura=st.key==='sakura';
+    bg.filter=snow?'saturate(0.35) contrast(0.92) brightness(1.38)':
+      sakura?'saturate(1.18) contrast(0.96) brightness(1.14)':
+      'saturate(0.85) contrast(0.94) brightness(0.94)';
+    bg.drawImage(raw,0,0,W,H);
     bg.filter='none';
-    bg.fillStyle='rgba(8,12,20,0.16)'; bg.fillRect(0,0,W,H);
+    // Screen lifts icy whites / pink blossom light without painting over detail.
+    bg.globalCompositeOperation=snow||sakura?'screen':'source-over';
+    bg.fillStyle=snow?'rgba(245,249,255,0.12)':
+      sakura?'rgba(255,145,190,0.10)':'rgba(8,12,20,0.05)';
+    bg.fillRect(0,0,W,H);
+    bg.globalCompositeOperation='source-over';
     ARENA_BACKDROP={key:st.key,img,src,width:W,height:H,canvas:soft};
   }
   ctx.save();
