@@ -15502,13 +15502,38 @@ function stageArt(st){
     ctx.globalAlpha=1;
   }
 }
-/* Sàn đấu: có ảnh nền dán vào ô của màn thì ảnh THẮNG, chưa có thì vẽ vector. */
+/* Cache only the active backdrop: soften scenery once, never the fighters/skill FX.
+   Image identity + readiness also invalidate this when an upload/pack replaces art. */
+let ARENA_BACKDROP=null;
 function arenaFloor(){
   const st=stageOf();
+  const arr=SPR.stages&&SPR.stages[st.key], candidate=arr&&arr[0];
+  const img=candidate&&candidate.complete&&candidate.naturalWidth?candidate:null;
+  const src=img&&(img.currentSrc||img.src);
+  if(!ARENA_BACKDROP||ARENA_BACKDROP.key!==st.key||ARENA_BACKDROP.img!==img||
+     ARENA_BACKDROP.src!==src||ARENA_BACKDROP.width!==W||ARENA_BACKDROP.height!==H){
+    const raw=document.createElement('canvas'); raw.width=W; raw.height=H;
+    const keep=ctx;
+    try{
+      ctx=raw.getContext('2d');
+      ctx.fillStyle=st.sky; ctx.fillRect(0,0,W,H);
+      if(img){ try{ ctx.drawImage(img,0,0,W,H); }catch(e){ stageArt(st); } }
+      else stageArt(st);
+    }finally{ ctx=keep; }
+    const soft=document.createElement('canvas'); soft.width=W; soft.height=H;
+    const bg=soft.getContext('2d');
+    // Slight overscan prevents transparent blur edges. Filters run only on rebuild.
+    bg.filter='blur(1.8px) saturate(0.55) contrast(0.82) brightness(0.78)';
+    bg.drawImage(raw,-6,-6,W+12,H+12);
+    bg.filter='none';
+    bg.fillStyle='rgba(8,12,20,0.16)'; bg.fillRect(0,0,W,H);
+    ARENA_BACKDROP={key:st.key,img,src,width:W,height:H,canvas:soft};
+  }
+  ctx.save();
   ctx.fillStyle=st.sky; ctx.fillRect(-W,-H,W*3,H*3);
-  const arr=SPR.stages&&SPR.stages[st.key], img=arr&&arr[0];
-  if(img){ try{ ctx.drawImage(img,0,0,W,H); }catch(e){ stageArt(st); } }
-  else stageArt(st);
+  ctx.fillStyle='rgba(8,12,20,0.4)'; ctx.fillRect(-W,-H,W*3,H*3);
+  ctx.drawImage(ARENA_BACKDROP.canvas,0,0,W,H);
+  ctx.restore();
 }
 /* Khung sàn đấu kiểu thùng máy arcade: viền graphite gọn, một nét sáng theo TÔNG MÀU CỦA MÀN
    đang đấu, bốn ngoặc góc, và một lớp tối dồn ra rìa cho nhân vật nổi lên giữa sàn.
