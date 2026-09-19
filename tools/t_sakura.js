@@ -114,8 +114,9 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
       const reset=()=>{ G.over=null;G.endT=0;G.kos.length=0;G.freeze=0;
         s.alive=e.alive=true;s.stun=e.stun=0;s.lock=e.lock=0;
         s.dots.length=0;e.dots.length=0;s.sakAct=null;s.sakCrack=null;s.dash=null;
+        s.sakHeal=null;s.sakGap=0;
         e.evade=0;e.invuln=0;e.sakDisrupt=0;e.sakDisruptAfter=0;e.sakHamper=0;
-        e.moveMul=1;e.castMul=1; s.cds={s1:0,s2:0,s3:0,basic:0}; };
+        e.moveMul=1;e.castMul=1; s.cds={s1:0,s2:0,s3:0,basic:0}; s.sakGap=0; s.sakHeal=null; };
 
       o.cdBurst=+(SAK.cbCd*RT).toFixed(0); o.cdPunch=+(SAK.cpCd*RT).toFixed(0); o.cdHeal=+(SAK.mnCd*RT).toFixed(0);
       reset(); s.x=160;s.y=300;e.x=420;e.y=300;e.hp=800;
@@ -174,9 +175,70 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
       e.moveMul=1;e.castMul=1; window.__sakStatus(e,1/120);
       o.hampMove=+e.moveMul.toFixed(2); o.hampCast=+e.castMul.toFixed(2);
 
+      /* ---- nhịp nghỉ giữa Cherry Blossom Burst và Chakra-Enhanced Punch ---- */
+      o.gapWant=+(SAK.skillGap*RT).toFixed(2);
+      /* đồng hồ ĐỨNG YÊN khi còn đang gồng, và chỉ trôi khi cô đã rảnh tay */
+      reset(); s.sakGap=SAK.skillGap; s.sakAct={kind:'burst',t:9,e};
+      for(let i=0;i<60;i++) window.__sakuraTick(s,1/120);
+      o.gapFrozen=+(s.sakGap-SAK.skillGap).toFixed(4);
+      s.sakAct=null; s.lock=0;
+      for(let i=0;i<60;i++) window.__sakuraTick(s,1/120);
+      o.gapRuns=+(SAK.skillGap-s.sakGap).toFixed(3);   // giây TRONG TRẬN, không nhân LRT
+      /* đo THẬT trong trận: hai chiêu lớn không bao giờ dính vào nhau */
+      reset(); s.x=200;s.y=300;e.x=330;e.y=300;e.lock=999;
+      e.maxHp=99999;e.hp=99999; s.hp=s.maxHp;
+      s.cds={s1:0,s2:0,s3:999,basic:0};
+      {
+        let t=0,minGap=99,pB=false,pD=false,endAt=-99,starts=0;
+        for(let i=0;i<3000;i++){
+          window.__step(1/120); t+=1/120; s.hp=s.maxHp; s.cds.s3=999;
+          const B=!!s.sakAct, D=!!(s.dash&&s.dash.kind==='sakcharge');
+          if((B&&!pB)||(D&&!pD)){ starts++; if(endAt>-90) minGap=Math.min(minGap,t-endAt); }
+          if((!B&&pB)||(!D&&pD)) endAt=t;
+          pB=B; pD=D;
+        }
+        o.gapStarts=starts; o.gapMin=minGap>90?null:+(minGap*RT).toFixed(2);
+      }
+
+      /* ---- Medical Ninjutsu ghim chân suốt cả chiêu ---- */
+      reset(); s.x=200;s.y=300;e.x=460;e.y=300;e.lock=999;
+      s.hp=300;s.maxHp=800; s.cds={s1:999,s2:999,s3:999,basic:0};
+      window.__sakMedicalGo(s);
+      {
+        /* Dọn sạch đạn CŨ trước đã: một mũi shuriken ném ra TRƯỚC lúc kết ấn vẫn còn nằm
+           trong `G.proj` với `owner===s`, đếm nó là đổ oan. Dot trên người địch cũng vậy. */
+        G.proj.length=0; e.dots.length=0;
+        /* Đo làm HAI CHẶNG. Chặng đầu cô còn trượt đà — `lock` chỉ tắt vector ĐIỀU KHIỂN,
+           còn `dvx/dvy` ease về 0 theo `dt*5.5`, nên cô giảm tốc chứ không đâm vào tường;
+           mọi chiêu ghim chân trong game đều vậy (Ginyu Beam, Doraemon ngắm, El Minya),
+           ĐỪNG đi tắt vận tốc riêng cho mình cô. Chặng sau mới là thứ cần đo: hết đà thì
+           phải ĐỨNG IM HẲN. Đo kiểu này không phụ thuộc lúc trước cô đang chạy nhanh cỡ
+           nào — gỡ `lock` ra là cô đi tiếp suốt và mục này đổ ngay. */
+        let px=s.x,py=s.y,shot=false,n=0; const fh=e.hp, buoc=[];
+        while(s.sakHeal&&n++<3000){
+          window.__step(1/120);
+          buoc.push(Math.hypot(s.x-px,s.y-py)); px=s.x; py=s.y;
+          if(G.proj.some(p=>p.owner===s)) shot=true;
+        }
+        /* Cắt ở NỬA SAU của chuỗi nhịp, không cắt theo số tick: đà tắt trong chừng 0.4
+           giây (`dvx` bị snap về 0 khi dưới 1.5px/s), mà mốc theo tick thì rơi vào đúng
+           giữa quãng trượt và đo lẫn cả phần đang giảm tốc. */
+        const cut=Math.floor(buoc.length/2);
+        o.healCoast=+buoc.slice(0,cut).reduce((a,b)=>a+b,0).toFixed(2);
+        o.healStill=+buoc.slice(cut).reduce((a,b)=>a+b,0).toFixed(2);
+        o.healShot=shot; o.healFrames=n;
+        o.healFoeLost=Math.round(fh-e.hp); o.healLockGone=+s.lock.toFixed(3);
+        o.healDone=!s.sakHeal;
+      }
+
       reset(); s.hp=400;s.maxHp=800; s.sakHeal=null;
       window.__sakMedicalGo(s);
       o.mnTick=Math.round(s.sakHeal.self); o.mnN=s.sakHeal.left;
+      o.mnSolo=SAK.mnSolo; o.mnShare=SAK.mnShare; o.mnTicks=SAK.mnTicks;
+      /* lượng hồi KHÔNG được ăn theo máu đang thiếu nữa */
+      s.hp=600; s.sakHeal=null; window.__sakMedicalGo(s); o.mnFlatLow=Math.round(s.sakHeal.self);
+      s.hp=100; s.sakHeal=null; window.__sakMedicalGo(s); o.mnFlatHigh=Math.round(s.sakHeal.self);
+      s.hp=400; s.sakHeal=null; window.__sakMedicalGo(s);
       const h0=s.hp; let g2=0; while(s.sakHeal&&g2++<6000) window.__sakHealTick(s,1/120);
       o.mnTotal=Math.round(s.hp-h0);
       /* không overheal */
@@ -216,8 +278,33 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
     ok(r.ibCount===1,'Internal Bleeding không cộng dồn — chỉ một lớp');
     near(r.hampMove,.75,.01,'Hampered −25% tốc chạy');
     near(r.hampCast,1,.01,'Hampered KHÔNG đụng tốc thi triển');
-    ok(r.mnTick===25&&r.mnN===5,`Medical Ninjutsu 5 nhịp × 6.2% máu đã mất (đo ${r.mnTick}/nhịp trên 400 thiếu)`);
-    ok(r.mnTotal===124,`Medical Ninjutsu hồi tổng 31% máu đã mất (đo ${r.mnTotal}/400)`);
+    ok(r.gapFrozen===0,'nhịp nghỉ ĐỨNG YÊN trong lúc còn đang gồng chiêu');
+    near(r.gapRuns,.5,.02,'nhịp nghỉ chỉ trôi khi cô đã rảnh tay (0.5s trong trận)');
+    ok(r.gapStarts>=2,`hai chiêu lớn có tung ra thật trong lúc đo (${r.gapStarts} lượt)`);
+    ok(r.gapMin!==null&&r.gapMin>=r.gapWant-.05,
+       `Cherry Blossom Burst và Chakra-Enhanced Punch không bao giờ dính nhau — cách nhau ít nhất ${r.gapWant}s (đo ${r.gapMin}s)`);
+    /* Vài pixel trượt đà là chuyện bình thường của mọi chiêu ghim chân trong game: `lock`
+       chỉ tắt vector ĐIỀU KHIỂN, còn `dvx/dvy` thì ease về 0 theo `dt*5.5` — cô dừng lại
+       chứ không đâm vào tường. Mọi chiêu ghim chân trong game đều trượt đà y như vậy
+       (Ginyu Beam, Doraemon ngắm, El Minya), nên ĐỪNG đi tắt riêng vận tốc cho mình cô:
+       làm thế là cô khựng lại kiểu khác hẳn cả bảng. Cái cần đo là cô KHÔNG BƯỚC ĐI, nên
+       so với chính cô lúc rảnh chân trong cùng bấy nhiêu nhịp — gỡ `lock` ra là hai con số
+       bằng nhau và mục này đổ. */
+    ok(r.healStill<.5,     // dưới nửa pixel: đó là nhiễu số thực, không phải bước chân
+       `hết đà là ĐỨNG IM HẲN tới cuối chiêu (trượt đà ${r.healCoast}px rồi đi thêm đúng ${r.healStill}px trong ${r.healFrames} nhịp)`);
+    ok(r.healShot===false&&r.healFoeLost===0,'đang hồi máu thì không ném, không đánh, không tung chiêu');
+    ok(r.healDone&&r.healLockGone===0,'nhịp cuối rơi xuống là cởi khoá ngay, không ghim chân thừa');
+    const pc=v=>+(v*100).toFixed(1);
+    ok(r.mnTick===Math.round(800*r.mnSolo)&&r.mnN===r.mnTicks,
+       `Medical Ninjutsu ${r.mnTicks} nhịp × ${pc(r.mnSolo)}% MÁU TỐI ĐA (đo ${r.mnTick}/nhịp trên thanh 800)`);
+    ok(r.mnTotal===Math.round(800*r.mnSolo*r.mnTicks),
+       `Medical Ninjutsu hồi tổng ${pc(r.mnSolo*r.mnTicks)}% máu tối đa (đo ${r.mnTotal}/800)`);
+    /* Lối cũ đo theo máu ĐANG THIẾU nên càng sắp gục càng hồi mạnh — đúng chỗ đã cắt.
+       Giờ con số phải PHẲNG: thiếu 400 hay thiếu 700 cũng bấy nhiêu. */
+    ok(r.mnFlatLow===r.mnFlatHigh,
+       `lượng hồi PHẲNG, không ăn theo máu đang thiếu (thiếu 200 ⇒ ${r.mnFlatLow}/nhịp · thiếu 700 ⇒ ${r.mnFlatHigh}/nhịp)`);
+    ok(+(r.mnShare*2).toFixed(4)===+r.mnSolo.toFixed(4),
+       `phần chia cho đồng đội đúng bằng NỬA phần hồi một mình (${pc(r.mnShare)}% × 2 = ${pc(r.mnSolo)}%)`);
     ok(r.noOverheal,'Medical Ninjutsu không bao giờ overheal');
     assert(!errors.length,'lỗi trang: '+errors.join(' | '));
     await browser.close();
@@ -228,7 +315,7 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
     const {browser,page,errors}=await openGame('sakura','kono');
     await page.waitForTimeout(1200);
     const r=await page.evaluate(()=>{
-      const G=window.__G(),RT=window.__LRT,o={};
+      const G=window.__G(),RT=window.__LRT,SAK=window.__SAK,o={};
       const s=G.fighters.find(f=>f.key==='sakura'), e=G.fighters.find(f=>f.key==='kono');
       const reset=()=>{ G.over=null;G.endT=0;G.kos.length=0;G.freeze=0;
         s.alive=e.alive=true;s.stun=0;s.lock=0;s.dots.length=0;s.sakAct=null;
@@ -252,6 +339,9 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
       o.clean=(s.exhaust===0&&s.sakHamper===0&&s.dots.length===0);
       s.hp=400;s.maxHp=800;s.katsuyu=10;s.katsuyuOwner=s;
       const b=s.hp; window.__sakRegenTick(s,1/RT); o.regen=+(s.hp-b).toFixed(2);
+      /* Mốc đọc THẲNG từ hằng số, đừng ghim con số: Katsuyu theo máu TỐI ĐA cộng Byakugo
+         theo máu ĐANG THIẾU, cả hai đo bằng giây NGƯỜI CHƠI nên phải nhân RT. */
+      o.regenWant=+((800*SAK.katsuyu+400*SAK.byakugo)/RT).toFixed(2);
       /* combo NHIỀU HIT vẫn giết được — không có lớp chặn thứ hai */
       reset(); s.hp=50;s.sakSealDone=false;s.sakSeal=0;
       window.__hurt(s,400,e); o.first=Math.round(s.hp);
@@ -275,10 +365,10 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
       /* chỉ còn đòn thường + Chakra-Enhanced Punch */
       const C=window.__CHARS.sakura;
       e.x=s.x+200; e.y=s.y; e.alive=true;
-      s.cds={s1:0,s2:0,s3:0,basic:0}; s.hp=200; s.sakAct=null; s.sakCrack=null; s.dash=null; s.sakHeal=null;
+      s.cds={s1:0,s2:0,s3:0,basic:0}; s.sakGap=0; s.sakHeal=null; s.hp=200; s.sakAct=null; s.sakCrack=null; s.dash=null; s.sakHeal=null;
       C.think(s,e,200,true);
       o.exhBurstOff=(s.sakCrack===null&&s.sakAct===null&&s.cds.s1===0);
-      s.cds={s1:0,s2:0,s3:0,basic:0}; s.sakAct=null; s.dash=null;
+      s.cds={s1:0,s2:0,s3:0,basic:0}; s.sakGap=0; s.sakHeal=null; s.sakAct=null; s.dash=null;
       C.think(s,e,200,true);
       o.exhHealOff=!s.sakHeal;
       o.exhPunchOn=!!s.dash||s.cds.s2>0;
@@ -286,7 +376,7 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
       s.sakExh=.001; window.__sakuraTick(s,.002);
       s.moveMul=1;s.castMul=1; window.__sakStatus2(s,1/120);
       o.backMove=+s.moveMul.toFixed(2); o.backCast=+s.castMul.toFixed(2);
-      s.cds={s1:0,s2:0,s3:0,basic:0}; s.sakAct=null; s.sakCrack=null; s.hp=200;
+      s.cds={s1:0,s2:0,s3:0,basic:0}; s.sakGap=0; s.sakHeal=null; s.sakAct=null; s.sakCrack=null; s.hp=200;
       C.think(s,e,200,true);
       o.backBurst=(s.cds.s1>0||!!s.sakAct);
       return o;
@@ -302,7 +392,10 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
     near(r.cast,2.75,.01,'Byakugo tốc thi triển 275%');
     near(r.cdUntouched,1,.01,'tốc thi triển KHÔNG ăn vào hồi chiêu');
     ok(r.clean,'Byakugo gạt sạch mọi debuff mới');
-    near(r.regen,23.68,.3,'Katsuyu 2% máu tối đa + Byakugo 2% máu đang thiếu mỗi giây');
+    /* Nới một nhịp: Byakugo tính theo máu ĐANG THIẾU mà Katsuyu vừa hồi một phần trong
+       cùng lượt gọi, nên số đo hụt mốc lý thuyết chừng 0.2 máu. */
+    near(r.regen,r.regenWant,.5,
+         `Katsuyu ${+(r.regenWant).toFixed(2)} máu mỗi giây = % máu tối đa + % máu đang thiếu`);
     ok(r.first===96&&r.dead,'combo NHIỀU HIT vẫn giết được ngay sau khi dấu ấn mở');
     ok(r.again===false,'Strength of a Hundred Seal chỉ dùng được một lần mỗi trận');
     near(r.exhStart,10,.05,'hết Byakugo là rơi THẲNG vào Chakra Exhaustion 10s');
@@ -326,13 +419,14 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
     const {browser,page,errors}=await openMulti('team',[['sakura','tsubasa'],['kono','chichi']]);
     await page.waitForTimeout(1500);
     const r=await page.evaluate(()=>{
-      const G=window.__G(),RT=window.__LRT,o={};
+      const G=window.__G(),RT=window.__LRT,SAK=window.__SAK,o={};
       const s=G.fighters.find(f=>f.key==='sakura'), a=G.fighters.find(f=>f.key==='tsubasa');
       G.over=null;G.endT=0;G.kos.length=0;s.alive=a.alive=true;
       s.hp=400;s.maxHp=800;a.hp=200;a.maxHp=800;s.sakHeal=null;
       o.low=(window.__sakLowAlly(s)||{}).key;
       window.__sakMedicalGo(s);
       o.selfTick=Math.round(s.sakHeal.self); o.allyTick=Math.round(s.sakHeal.allyAmt);
+      o.share=SAK.mnShare; o.ticks=SAK.mnTicks;
       const h0=s.hp,a0=a.hp; let g=0;
       while(s.sakHeal&&g++<6000) window.__sakHealTick(s,1/120);
       o.selfTotal=Math.round(s.hp-h0); o.allyTotal=Math.round(a.hp-a0);
@@ -344,17 +438,22 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
       window.__sakSealOn(s);
       o.kSelf=+(s.katsuyu*RT).toFixed(1); o.kAlly=+(a.katsuyu*RT).toFixed(1);
       const ab=a.hp; window.__sakRegenTick(a,1/RT); o.allyRegen=+(a.hp-ab).toFixed(2);
+      /* Mốc đọc THẲNG từ hằng số: đồng đội CHỈ nhận Katsuyu (theo máu tối đa), tuyệt đối
+         không nhận Byakugo (theo máu đang thiếu) — nên mốc không có vế máu thiếu nào. */
+      o.allyWant=+(a.maxHp*SAK.katsuyu/RT).toFixed(2);
       s.sakSeal=0; const ab2=a.hp; window.__sakRegenTick(a,1/RT);
       o.afterEnd=+(a.hp-ab2).toFixed(2); o.gone=a.katsuyu;
       return o;
     });
     ok(r.low==='tsubasa','Medical Ninjutsu chọn đồng đội có tỉ lệ máu thấp nhất');
-    ok(r.selfTick===12&&r.allyTick===19,
-       `hệ số 6.2% chia đôi, tính RIÊNG máu đã mất của từng người (${r.selfTick} / ${r.allyTick})`);
-    ok(r.selfTotal===62&&r.allyTotal===93,'mỗi người nhận đủ 15.5% máu đã mất của chính mình');
+    ok(r.selfTick===Math.round(800*r.share)&&r.allyTick===Math.round(800*r.share),
+       `hệ số ${+(r.share*100).toFixed(1)}% chia đôi, tính theo máu TỐI ĐA của từng người (${r.selfTick} / ${r.allyTick})`);
+    ok(r.selfTotal===Math.round(800*r.share*r.ticks)&&r.allyTotal===Math.round(800*r.share*r.ticks),
+       `mỗi người nhận đủ ${+(r.share*r.ticks*100).toFixed(1)}% máu tối đa của chính mình (${r.selfTotal} / ${r.allyTotal})`);
     ok(r.deadGains===0,'đồng đội chết giữa chừng thì phần hồi của họ mất hẳn, không dồn sang ai');
     ok(r.kSelf===10&&r.kAlly===10,'Katsuyu bên Sakura và Katsuyu Fragment bên đồng đội');
-    near(r.allyRegen,16,.2,'đồng đội chỉ nhận Katsuyu (2% máu tối đa), không nhận Byakugo');
+    near(r.allyRegen,r.allyWant,.2,
+         `đồng đội CHỈ nhận Katsuyu (${r.allyWant} máu/giây theo máu tối đa), không nhận Byakugo`);
     ok(r.afterEnd===0&&r.gone===0,'Byakugo hết là Katsuyu biến mất, hồi máu đồng đội dừng ngay');
     assert(!errors.length,'lỗi trang: '+errors.join(' | '));
     await browser.close();
@@ -369,12 +468,32 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
       return {t:+G.t.toFixed(1),dealt:Math.round(s.dmgDealt||0),moved:s.x!==undefined};
     });
     ok(r.t>0&&r.dealt>0,`đánh thật một trận: ${r.t}s trong trận, gây ${r.dealt} dmg, không lỗi trang`);
+
+    /* Ô dán ảnh: Byakugo có hai ô RIÊNG (đứng tạo dáng và ra đòn), tách hẳn khỏi ô
+       `seal` vốn chỉ là khoảnh khắc mở dấu ấn, và khỏi ô `heal` là dáng kết ấn. */
+    const sl=await page.evaluate(()=>{
+      const S=window.__SETS.find(x=>x.key==='sakura');
+      const G=window.__G(), s=G.fighters.find(f=>f.key==='sakura'), o={};
+      o.poses=S?S.poses.map(p=>p[0]):null;
+      /* dấu ấn mở ⇒ đứng không thì đổi sang dáng riêng của form; hết dấu ấn thì trả lại */
+      s.sakSeal=0;s.sakSealDone=false;s.sakAct=null;s.dash=null;s.sakSealAnim=0;
+      s.pose='idle';s.poseT=0; s.sakSeal=5;
+      window.__sakuraTick(s,1/120); o.inSeal=s.pose;
+      s.pose='punch'; window.__sakuraTick(s,1/120); o.keepsAtk=s.pose;
+      s.pose='byakugo'; s.sakSeal=1/240; window.__sakuraTick(s,1/120); o.afterSeal=s.pose;
+      return o;
+    });
+    ok(sl.poses&&['heal','seal','byakugo','sealatk'].every(k=>sl.poses.includes(k)),
+       `có ô dán ảnh riêng cho kết ấn, lúc mở dấu ấn, và cả hai dáng của form Byakugo (${sl.poses?sl.poses.join(','):'không có'})`);
+    ok(sl.inSeal==='byakugo',`đứng không trong Byakugo thì dùng dáng riêng của form (đo ${sl.inSeal})`);
+    ok(sl.keepsAtk==='punch','đang ra đòn thì KHÔNG bị dáng form đè lên — animation đánh nhau còn nguyên');
+    ok(sl.afterSeal==='idle',`hết dấu ấn là trả lại thế thủ thường (đo ${sl.afterSeal})`);
     assert(!errors.length,'lỗi trang: '+errors.join(' | '));
     await browser.close();
   }
   const play=fs.readFileSync('play.html','utf8');
-  ok(src.includes('pw:{dmg:40,dur:92,mob:44,as:46,rng:70,cc:76,uti:92,con:82,cmb:94}'),
-     'power chart đúng bản chốt: dur 92 · cc 76 · con 82 · cmb 94, còn lại giữ nguyên');
+  ok(src.includes('pw:{dmg:40,dur:82,mob:40,as:42,rng:70,cc:72,uti:84,con:76,cmb:84}'),
+     'power chart đã kéo xuống theo đợt nerf: dur 82 · mob 40 · as 42 · cc 72 · uti 84 · con 76 · cmb 84');
   ok(play.includes("name:'Haruno Sakura'"),'bản dựng play.html có Sakura');
   ok(play.includes('function sakResTick'),'bản dựng play.html có cửa kháng hiệu ứng');
 
