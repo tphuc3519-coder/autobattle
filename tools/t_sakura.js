@@ -132,6 +132,25 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
       reset(); s.cds.s3=SAK.mnCd; window.__sakMedical(s);
       s.stun=1; window.__sakuraTick(s,1/120);
       o.mnBroken=(s.sakAct===null); o.mnBreakCd=+(s.cds.s3*RT).toFixed(2);
+      o.mnQueued=!!s.sakHealRetry;
+      /* Hết choáng là kết ấn lại NGAY trong nhịp đầu tiên, và lần bù đó miễn khống chế. */
+      s.stun=0; window.__sakuraTick(s,1/120);
+      o.mnRetried=!!(s.sakAct&&s.sakAct.kind==='heal');
+      o.mnRetryGuard=!!(s.sakAct&&s.sakAct.guard);
+      o.mnRetryOnce=!!s.sakHealRetry;              // cờ phải TIÊU đi, không được lặp vô hạn
+      /* Lần bù không gì cắt được: stunFx trả false nên `stun` không bao giờ lên. */
+      o.mnRetryStun=window.__stunFx(s,3,'spin');
+      window.__sakuraTick(s,1/120);
+      o.mnRetryAlive=!!s.sakAct;
+      /* Cờ miễn khống chế BẮC CẦU sang quãng rải nhịp hồi — địch chờ hết cast rồi choáng
+         thì cũng không cắt được, vì cô bị ghim chân suốt cả chiêu. */
+      s.sakAct.t=0; window.__sakuraTick(s,1/120);
+      o.mnTickGuard=!!(s.sakHeal&&s.sakHeal.guard);
+      o.mnTickStun=window.__stunFx(s,3,'spin');
+      /* Cherry Blossom Burst thì KHÔNG có lượt bù — chỉ Medical Ninjutsu mới được. */
+      reset(); s.cds.s1=SAK.cbCd; window.__sakBurst(s,e);
+      s.stun=1; window.__sakuraTick(s,1/120);
+      o.cbNoRetry=!s.sakHealRetry;
 
       reset(); e.hp=800; s.x=200;s.y=300;e.x=260;e.y=300;
       window.__sakChargeHit(s,e);
@@ -256,7 +275,14 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
     ok(r.cbBroken,'bị choáng lúc gồng thì Cherry Blossom Burst đứt');
     near(r.cbBreakCd,4,.02,'Cherry Blossom Burst đứt thì chỉ chờ 4s chứ không phải cả 11s');
     ok(r.mnBroken,'bị choáng lúc kết ấn thì Medical Ninjutsu đứt');
-    near(r.mnBreakCd,4,.02,'Medical Ninjutsu đứt thì chỉ chờ 4s chứ không phải cả 18s');
+    ok(r.mnQueued,'Medical Ninjutsu đứt thì xếp hàng một lượt kết ấn BÙ');
+    near(r.mnBreakCd,18,.02,
+         `đứt mà KHÔNG hạ hồi chiêu nữa — lượt bù mới là phần đền, hạ nữa là ăn hai lần (đo ${r.mnBreakCd}s)`);
+    ok(r.mnRetried,'hết choáng là kết ấn lại NGAY trong nhịp đầu tiên');
+    ok(r.mnRetryGuard&&r.mnRetryOnce===false,'lượt bù mang cờ miễn khống chế, và cờ xếp hàng bị tiêu đi (không lặp vô hạn)');
+    ok(r.mnRetryStun===false&&r.mnRetryAlive,'lượt bù miễn khống chế 100% — choáng không vào, chiêu không đứt');
+    ok(r.mnTickGuard&&r.mnTickStun===false,'miễn khống chế bắc cầu sang cả quãng rải nhịp hồi');
+    ok(r.cbNoRetry,'Cherry Blossom Burst KHÔNG có lượt bù — chỉ Medical Ninjutsu mới được');
     ok(r.cpDmg===30,`Chakra-Enhanced Punch gây đúng 30 dmg (đo ${r.cpDmg})`);
     near(r.cpStun,3.5,.02,'Chakra-Enhanced Punch choáng 3.5s');
     near(r.cpIbDps,5,.01,'Internal Bleeding của chiêu 2 là 5 dmg/s');
@@ -492,8 +518,8 @@ const near=(a,b,eps,m)=>ok(Math.abs(a-b)<=eps, `${m} (đo ${a}, mốc ${b})`);
     await browser.close();
   }
   const play=fs.readFileSync('play.html','utf8');
-  ok(src.includes('pw:{dmg:40,dur:82,mob:40,as:42,rng:70,cc:72,uti:84,con:76,cmb:84}'),
-     'power chart đã kéo xuống theo đợt nerf: dur 82 · mob 40 · as 42 · cc 72 · uti 84 · con 76 · cmb 84');
+  ok(src.includes('pw:{dmg:40,dur:92,mob:40,as:52,rng:80,cc:72,uti:92,con:82,cmb:94}'),
+     'power chart bản chốt: lật kèo/hỗ trợ/chống chịu 9x · ổn định 8x · tầm đánh 8x · tốc đánh 5x');
   ok(play.includes("name:'Haruno Sakura'"),'bản dựng play.html có Sakura');
   ok(play.includes('function sakResTick'),'bản dựng play.html có cửa kháng hiệu ứng');
 

@@ -2997,7 +2997,7 @@ const GN={
   flashDmg:100, flashStun:gs(3.5), flashSlowT:gs(5), flashMove:.20, flashCast:.75,
   /* Chiêu 4 — CHANGE!!! Tia sáng phóng ra từ MIỆNG, càng gần càng dễ trúng nhưng
      gần nhất cũng không bao giờ chắc ăn, xa nhất chỉ còn 18%. */
-  changeSpd:520, changeNear:70, changeFar:520, changeHi:.85, changeLo:.18,
+  changeSpd:520, changeNear:70, changeFar:520, changeHi:.75, changeLo:.13,
   /* Hoán đổi xong thì CẢ HAI thân xác cùng về 20% máu tối đa của chính nó — ngang
      nhau, không bên nào lợi hơn. Bản đầu để lệch (15% cho thân xác Ginyu, còn thân xác
      cướp được thì CỘNG THÊM 20% vào máu đang có) nên ai đang nhiều máu là ăn đứt. */
@@ -3367,7 +3367,7 @@ const SAK={
      bao nhiêu máu cũng bấy nhiêu. Khoẻ thì nhỉnh hơn một chút, mà sắp gục thì yếu hẳn —
      đúng chỗ cần cắt.
      `mnShare` luôn giữ đúng NỬA `mnSolo`, và mỗi người tính theo máu tối đa CỦA CHÍNH HỌ. */
-  mnSolo:.030, mnShare:.015,              // 3% máu TỐI ĐA mỗi tick, chia đôi khi có đồng đội
+  mnSolo:.035, mnShare:.0175,             // 3.5% máu TỐI ĐA mỗi tick, chia đôi khi có đồng đội
   mnSelfHp:.55, mnAllyHp:.45, mnIdleHp:.85,
 
   /* Ultimate — Strength of a Hundred Seal */
@@ -3400,7 +3400,7 @@ const CHARS={
       `<b>Basic · Chakra Strike</b> Inside ${Math.round(SAK.meleeIn)}px she punches and kicks instead: ${SAK.hitDmg} damage every ${rts(SAK.hitCd)}s. <b>${Math.round(SAK.ibOdds*100)}%</b> chance of <b>Internal Bleeding</b> (${SAK.ibDps/RT} dmg/s for ${rts(SAK.ibT)}s) — and only then does it knock the target back ${Math.round(SAK.hitKb*100)}% of the arena.`,
       `<b>1 · Cherry Blossom Burst</b> ${rts(SAK.cbCd)}s cooldown · ${rts(SAK.cbCast)}s wind-up, then she slams the ground and a locked-direction fissure races out: ${SAK.cbDmg} damage and <b>${rts(SAK.cbStun)}s Stun</b> to everyone along it, once each per cast. Stunned or knocked down during the wind-up cancels it for only ${rts(SAK.cbBreakCd)}s. Her two heavy casts never overlap: at least <b>${rts(SAK.skillGap)}s</b> passes between this and Chakra-Enhanced Punch.`,
       `<b>2 · Chakra-Enhanced Punch</b> ${rts(SAK.cpCd)}s cooldown · a real charge at 120% of ChiChi's dash speed that runs until it reaches the target, steerable for ${rts(SAK.cpSteer)}s then locked, first target only, <b>no CC immunity</b> — a stun cuts it short and the next attempt only waits ${rts(SAK.cpCd*SAK.cpBreakCut)}s. On hit: ${SAK.cpDmg} damage, <b>${rts(SAK.cpStun)}s Stun</b>, <b>Internal Bleeding</b> ${SAK.cpIbDps/RT} dmg/s for ${rts(SAK.cpIbT)}s, and once the stun ends <b>Chakra Disruption</b> −${Math.round(SAK.cdMove*100)}% movement / −${Math.round(SAK.cdCast*100)}% cast speed for ${rts(SAK.cdT)}s. Same beat rule as the Burst — at least <b>${rts(SAK.skillGap)}s</b> separates the two.`,
-      `<b>3 · Medical Ninjutsu</b> ${rts(SAK.mnCd)}s cooldown · rooted ${rts(SAK.mnCast)}s, interruptible. Then ${SAK.mnTicks} ticks over ${rts(SAK.mnT)}s heal <b>${sakPct(SAK.mnSolo)}% of Maximum HP</b> each (${sakPct(SAK.mnSolo*SAK.mnTicks)}% total) — a flat amount, so it does not scale up as she drops. With an ally alive it splits ${sakPct(SAK.mnShare)}% / ${sakPct(SAK.mnShare)}% between herself and the lowest-HP ally. <b>She is rooted for the whole thing</b> — wind-up and every tick — and cannot move, attack or cast until the last tick lands.`,
+      `<b>3 · Medical Ninjutsu</b> ${rts(SAK.mnCd)}s cooldown · rooted ${rts(SAK.mnCast)}s. A stun during the wind-up breaks it, but the use is <b>not lost</b>: the moment the stun ends she re-forms the seal at once and <b>that second attempt is fully crowd-control immune</b> — nothing can break it. Then ${SAK.mnTicks} ticks over ${rts(SAK.mnT)}s heal <b>${sakPct(SAK.mnSolo)}% of Maximum HP</b> each (${sakPct(SAK.mnSolo*SAK.mnTicks)}% total) — a flat amount, so it does not scale up as she drops. With an ally alive it splits ${sakPct(SAK.mnShare)}% / ${sakPct(SAK.mnShare)}% between herself and the lowest-HP ally. <b>She is rooted for the whole thing</b> — wind-up and every tick — and cannot move, attack or cast until the last tick lands.`,
       `<b>Ultimate · Strength of a Hundred Seal</b> Automatic, once per battle, the first time lethal damage lands: HP is set to <b>${Math.round(SAK.sealHp*100)}% Maximum HP</b> and <b>Byakugo</b> runs ${rts(SAK.sealT)}s — −${Math.round(SAK.sealRes*100)}% damage taken, total crowd-control and debuff immunity, ${Math.round(SAK.sealMove*100)}% movement, ${Math.round(SAK.sealCast*100)}% cast speed, <b>Katsuyu</b> healing ${sakPct(SAK.katsuyu/RT)}% Maximum HP/s to her and every living ally, plus <b>Byakugo Regeneration</b> ${sakPct(SAK.byakugo/RT)}% of her missing HP/s. <b>There is no invulnerability afterwards</b> — the very next hit of a multi-hit combo can still finish her. When the seal fades her chakra is spent: <b>Chakra Exhaustion</b> for ${rts(SAK.exhT)}s — −${Math.round((1-SAK.exhMove)*100)}% movement, −${Math.round((1-SAK.exhCast)*100)}% cast speed, and <b>only her basic attack and Chakra-Enhanced Punch remain usable</b>. Then she returns to normal.`
     ],
     init(f){
@@ -3412,6 +3412,7 @@ const CHARS={
       f.sakGap=0;                       // nhịp nghỉ giữa Cherry Blossom Burst và Chakra-Enhanced Punch
       f.sakSeal=0; f.sakSealDone=false; f.sakSealAnim=0; f.sakExh=0;
       f.sakHeal=null; f.katsuyu=0; f.katsuyuOwner=null;
+      f.sakHealRetry=false; f.sakActGuard=false;   // lượt kết ấn BÙ sau khi bị choáng cắt ngang
     },
     think(f,e,d,auto){
       /* Đang gồng chiêu, đang lao, hay đang trong animation mở dấu ấn thì không quyết định
@@ -4081,7 +4082,7 @@ const DEX={
   sakura:{ role:{vi:'Combat Medic · Crowd-Control Bruiser',en:'Combat Medic · Crowd-Control Bruiser'}, st:{pow:2,spd:2,rng:4,def:4},
     /* Chấm tay, không đo tự động (mục 2g). Sát thương thô THẤP — cô thắng bằng kháng hiệu
        ứng, khống chế nặng và hồi máu, nên dmg 40 mà cc 88 / uti 92 / dur 86. */
-    pw:{dmg:40,dur:82,mob:40,as:42,rng:70,cc:72,uti:84,con:76,cmb:84},
+    pw:{dmg:40,dur:92,mob:40,as:52,rng:80,cc:72,uti:92,con:82,cmb:94},
     bio:{vi:'Ninja y thuật: kháng gần hết mọi hiệu ứng bất lợi, khống chế nặng tay, tự hồi máu và sống sót qua đòn chí tử đầu tiên.',
          en:'A medical ninja who shrugs off almost every debuff, lands heavy control, heals through a fight and survives the first lethal blow.'},
     skills:[
@@ -4098,8 +4099,8 @@ const DEX={
        vi:`Lao tới ${SAK.cpDmg} dmg, choáng ${rts(SAK.cpStun)}s, Internal Bleeding, rồi Chakra Disruption −50% chạy / −40% cast.`,
        en:`A charge for ${SAK.cpDmg} damage, a ${rts(SAK.cpStun)}s stun, Internal Bleeding, then Chakra Disruption −50% move / −40% cast.`},
       {tag:'3',name:'Medical Ninjutsu',
-       vi:`Kết ấn ${rts(SAK.mnCast)}s rồi hồi ${sakPct(SAK.mnSolo*SAK.mnTicks)}% máu TỐI ĐA qua ${SAK.mnTicks} nhịp — con số phẳng, thấp máu cũng không hồi mạnh thêm; có đồng đội thì chia đôi cho cả hai. Đứng yên suốt cả chiêu, không đánh cũng không đi được.`,
-       en:`A ${rts(SAK.mnCast)}s cast, then a flat ${sakPct(SAK.mnSolo*SAK.mnTicks)}% of Maximum HP over ${SAK.mnTicks} ticks — it never scales up as she drops, and splits with the lowest-HP ally when one is alive. She stays rooted for all of it and cannot move or attack.`},
+       vi:`Kết ấn ${rts(SAK.mnCast)}s (bị choáng thì hết choáng kết ấn lại ngay, lần bù miễn khống chế 100%) rồi hồi ${sakPct(SAK.mnSolo*SAK.mnTicks)}% máu TỐI ĐA qua ${SAK.mnTicks} nhịp — con số phẳng, thấp máu cũng không hồi mạnh thêm; có đồng đội thì chia đôi cho cả hai. Đứng yên suốt cả chiêu, không đánh cũng không đi được.`,
+       en:`A ${rts(SAK.mnCast)}s cast — a stun only delays it, the retry right after is CC-immune — then a flat ${sakPct(SAK.mnSolo*SAK.mnTicks)}% of Maximum HP over ${SAK.mnTicks} ticks — it never scales up as she drops, and splits with the lowest-HP ally when one is alive. She stays rooted for all of it and cannot move or attack.`},
       {tag:'U',name:'Strength of a Hundred Seal',
        vi:`Đòn chí tử đầu tiên không giết được cô: máu về ${Math.round(SAK.sealHp*100)}%, ${rts(SAK.sealT)} giây miễn khống chế, −${Math.round(SAK.sealRes*100)}% dmg nhận, Katsuyu hồi cho cả đội. Sau đó KHÔNG có bất tử, và phải chịu ${rts(SAK.exhT)} giây cạn chakra.`,
        en:`The first lethal hit is refused: HP resets to ${Math.round(SAK.sealHp*100)}% and Byakugo runs ${rts(SAK.sealT)}s — CC immune, −${Math.round(SAK.sealRes*100)}% damage taken, Katsuyu healing the team. No invulnerability follows, and ${rts(SAK.exhT)}s of Chakra Exhaustion does.`}
@@ -6756,6 +6757,14 @@ function stunFx(f,dur,kind){
   }
   if(f.beaMurak>0){                              // Murak Protection: miễn khống chế 100%
     G.floats.push({x:f.x,y:f.y-104,txt:'CC IMMUNE',color:'#C77DFF',
+      life:.9,ml:.9,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
+    return false;
+  }
+  /* Lượt kết ấn BÙ của Medical Ninjutsu: không gì cắt được nữa. Bị choáng lần đầu thì cô
+     đứt chiêu, nhưng hết choáng là tự kết ấn lại ngay và lần đó được bảo đảm — cùng lối
+     `bind.guard` của Shadow-Neck Bind. Đặt TRƯỚC nhánh Byakugo cho có dòng nhật ký riêng. */
+  if((f.sakAct&&f.sakAct.guard)||(f.sakHeal&&f.sakHeal.guard)){
+    G.floats.push({x:f.x,y:f.y-104,txt:'CC IMMUNE',color:'#7DEBAB',
       life:.9,ml:.9,banner:true,gold:true,sc:.6,tilt:rnd(-.05,.05)});
     return false;
   }
@@ -14264,23 +14273,29 @@ function sakLowAlly(f){
   }
   return best;
 }
-function sakMedical(f){
+function sakMedical(f,guard){
   setPose(f,'heal',SAK.mnCast*sakCastMul(f));
-  f.sakAct={kind:'heal',t:SAK.mnCast*sakCastMul(f)};
+  f.sakAct={kind:'heal',t:SAK.mnCast*sakCastMul(f),guard:!!guard};
   f.lock=Math.max(f.lock,f.sakAct.t);
   sfx('sak_heal');
-  G.floats.push({x:f.x,y:f.y-104,txt:'MEDICAL NINJUTSU',color:'#7DEBAB',life:1.2,ml:1.2,
-    banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
+  G.floats.push({x:f.x,y:f.y-104,txt:guard?'MEDICAL NINJUTSU · UNBREAKABLE':'MEDICAL NINJUTSU',
+    color:'#7DEBAB',life:1.2,ml:1.2,banner:true,bubble:true,gold:true,big:true,tilt:rnd(-.05,.05)});
+  if(guard) say(`${f.name} kết ấn lại ngay — lần này không gì cắt ngang được nữa.`,'g');
 }
 function sakMedicalGo(f){
+  /* Cờ miễn khống chế phải BẮC CẦU sang quãng rải nhịp hồi: cô bị ghim chân suốt cả chiêu
+     nên nếu chỉ bảo vệ quãng kết ấn thì địch cứ chờ hết cast rồi choáng, cô đứng chịu trận
+     mà mấy nhịp hồi vẫn chạy — nửa vời. Đọc cờ TRƯỚC khi xoá `sakAct`. */
+  f.sakActGuard=!!(f.sakAct&&f.sakAct.guard);
   f.sakAct=null; f.lock=0;
   /* Lượng hồi mỗi nhịp tính theo MÁU TỐI ĐA và chụp lại ĐÚNG LÚC cast xong. Máu tối đa
      thì không đổi giữa trận nên con số này phẳng từ nhịp đầu tới nhịp cuối — khác hẳn
      lối cũ đo theo máu ĐANG THIẾU, vốn càng thấp máu càng hồi mạnh. */
   const ally=sakLowAlly(f);
   const pct=ally?SAK.mnShare:SAK.mnSolo;
-  f.sakHeal={left:SAK.mnTicks,t:0,gap:SAK.mnGap,
+  f.sakHeal={left:SAK.mnTicks,t:0,gap:SAK.mnGap,guard:!!(f.sakActGuard),
     self:f.maxHp*pct, ally, allyAmt:ally?ally.maxHp*pct:0};
+  f.sakActGuard=false;
   ring(f.x,f.y,92,'#7DEBAB',.4);
   say(ally
     ? `Medical Ninjutsu — chia đôi, hồi ${sakPct(SAK.mnShare*SAK.mnTicks)}% máu tối đa cho Sakura và ${ally.name}.`
@@ -14427,17 +14442,38 @@ function sakuraTick(f,dt){
   /* Quãng gồng chiêu. Choáng / đóng băng / ngủ / mất trí trong lúc này là ĐỨT, và chỉ
      phải chờ một phần hồi chiêu chứ không mất trắng. */
   if(f.sakAct){
-    if(f.stun>0||f.frozen>0||f.infoOverload>0||f.conanSleep>0){
+    /* Lượt kết ấn BÙ thì không gì cắt được — `stunFx()` đã trả false nên `stun` không bao
+       giờ lên, nhưng vẫn gác ở đây cho chắc: đóng băng hay ngủ đi đường khác thì cũng
+       không được phép cắt lượt đã bảo đảm. */
+    if((f.stun>0||f.frozen>0||f.infoOverload>0||f.conanSleep>0)&&!f.sakAct.guard){
       const burst=f.sakAct.kind==='burst';
       f.sakAct=null; f.lock=0; setPose(f,'hurt',gs(.3));
-      if(burst) f.cds.s1=Math.min(f.cds.s1,SAK.cbBreakCd); else f.cds.s3=Math.min(f.cds.s3,SAK.mnBreakCd);
-      G.floats.push({x:f.x,y:f.y-104,txt:'INTERRUPTED',color:'#FF9090',life:1.1,ml:1.1,banner:true,sc:.56});
-      say(burst?'Cherry Blossom Burst bị cắt ngang.':'Medical Ninjutsu bị cắt ngang.','m');
+      if(burst){
+        f.cds.s1=Math.min(f.cds.s1,SAK.cbBreakCd);
+        G.floats.push({x:f.x,y:f.y-104,txt:'INTERRUPTED',color:'#FF9090',life:1.1,ml:1.1,banner:true,sc:.56});
+        say('Cherry Blossom Burst bị cắt ngang.','m');
+      }else{
+        /* Medical Ninjutsu bị cắt thì KHÔNG mất lượt: xếp hàng một lượt kết ấn BÙ, hết
+           choáng là tự kết ấn lại ngay và lần đó miễn khống chế 100%. Vì cô vẫn nhận đủ
+           phần hồi nên đừng hạ hồi chiêu nữa — hạ nữa là ăn hai lần đền. */
+        f.sakHealRetry=true;
+        G.floats.push({x:f.x,y:f.y-104,txt:'INTERRUPTED · RETRY QUEUED',color:'#FFD48A',life:1.3,ml:1.3,banner:true,sc:.56});
+        say('Medical Ninjutsu bị cắt ngang — hết choáng là Sakura kết ấn lại ngay, lần đó không ai cắt được.','m');
+      }
     }else{
       f.sakAct.t-=dt;
       f.lock=Math.max(f.lock,Math.max(0,f.sakAct.t));
       if(f.sakAct.t<=0){ if(f.sakAct.kind==='burst') sakBurstGo(f); else sakMedicalGo(f); }
     }
+  }
+  /* Lượt kết ấn BÙ: nổ ngay nhịp đầu tiên cô thoát khỏi mọi thứ khống chế. Đặt ở ĐÂY chứ
+     không đặt trong `think()` — `think()` không được gọi khi `f.lock>0`, mà quãng choáng
+     vừa rồi thường kéo theo lock, nên để ở đó thì lượt bù trôi mất một nhịp hoặc không bao
+     giờ nổ. Đúng cái bẫy của Murak và cú thoát góc của Tsubasa. */
+  if(f.sakHealRetry&&!f.sakAct&&!f.sakHeal&&!introOn()&&
+     f.stun<=0&&!(f.frozen>0)&&!(f.infoOverload>0)&&!(f.conanSleep>0)){
+    f.sakHealRetry=false;
+    sakMedical(f,true);
   }
   sakCrackTick(f,dt);
   sakHealTick(f,dt);
