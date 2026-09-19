@@ -3554,6 +3554,20 @@ chỉ làm hai việc: cắt mấy khối `<!--STUDIO-->…<!--/STUDIO-->` và c
 
 - Xưởng: nút **📦 Xuất gói lên web chơi** (`packBuild()`) gói cả `SPR` lẫn `SFXSRC` thành
   một JSON; chép vào `assets/pack/pack.json` rồi commit.
+- **Gói chỉ là ẢNH CHỤP `SPR` của chính trình duyệt đang mở xưởng.** Ô nào máy đó chưa có
+  thì `packBuild()` lặng lẽ bỏ qua — nên một gói thiếu hẳn sáu nhân vật vẫn xuất ra êm ru,
+  commit êm ru, deploy êm ru, **lên web mới thấy họ còn là model vector**. Đúng chuyện đã
+  xảy ra: gói bản `2026-09-19` có 17 nhóm ảnh nhưng thiếu Isagi · Superman · Beatrice ·
+  Tanjiro · Gojo · Conan, người dùng tưởng là lỗi cập nhật. Hai cửa chặn, **đừng gỡ**:
+  - `packMissing(pack)` liệt kê **đấu thủ chơi được** (`CKEYS`, không phải `SETS` — viện
+    binh / con nai / vườn trống là chuyện thường) mà gói không có lấy một ảnh nào. Tên hiện
+    ở khối `#packWarn` và ở dòng trạng thái của **cả hai** nút: *Xuất gói* lẫn *Nạp thử gói*.
+  - Cờ `PACK_IN` bật lên trong `packLoad()` khi đọc được gói của repo. Còn tắt mà bấm xuất
+    thì **hỏi lại một câu**: lúc đó gói mới chỉ gom được phần nằm trong máy này, đẩy lên là
+    ghi đè mất ảnh đã dán ở nơi khác. Mở xưởng bằng `file://` rơi thẳng vào đó.
+- **Đừng để gói ở hai nơi.** Từng có một bản sao 28 MB nằm ở `assets/voice/pack.json` —
+  không ai đọc nó (`PACK_URL` trỏ `assets/pack/pack.json`, còn `voicePack()` đọc
+  `assets/voice/manifest.json`), chỉ tổ làm mỗi lượt deploy nặng gấp đôi. Đã xoá.
 - Trang chơi: `packLoad()` `fetch` gói đó lúc mở. **Ô nào đã có nội dung thì gói không đè.**
 - **Thứ tự nạp**: trang chơi lấy **gói TRƯỚC** rồi mới tới kho của máy (kho đằng nào cũng
   trống mà đọc hơn 80 khoá IndexedDB thì chậm); xưởng thì ngược lại — file bạn tự nạp thắng.
@@ -4942,6 +4956,7 @@ node tools/t_drive.js   # Drive Shot: thường thì vọt lên trời, trong Ea
 node tools/t_rec.js     # ghi hình: MP4 đúng CFR (stts một dòng), tiếng giải mã ra thật, đường lui,
                         # và TRANG CHƠI bấm #arcRec cũng ra đúng khung dọc 1080×1920
 node tools/t_slots.js   # nút ✕ xoá riêng một ô ảnh / một ô tiếng, và nút Hoàn tác
+                        # (nhân vật của hai ô đầu bảng đọc từ SETS[0].key — ĐỪNG ghim tên ai)
 node tools/t_ui.js      # đổi tên game, hai ngôn ngữ (MẶC ĐỊNH TIẾNG ANH, nút đổi ở cả ba chỗ,
                         # chữ và mô tả chiêu đổi theo, nhớ lại lựa chọn), hồ sơ chín nhân vật
                         # đủ song ngữ + thẻ chiêu vẽ ra thật, nhạc nền mặc định tắt và chạy
@@ -5168,6 +5183,8 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Tiếng méo hẳn ở mốc 2x | file thu sẵn đọc bằng `playbackRate = speedMul/BASE_SPEED` — gấp đôi tốc độ là tua băng, cao giọng lên hẳn; tiếng tự tạo thì rút ngắn `dur` nên cụt và chói | bỏ hẳn lối cho tiếng chạy theo thanh tốc độ: `playbackRate` luôn là 1, `dur`/`delay` đúng con số khai, gỡ luôn hàm `sfxRate()` |
 | Chế độ league / tournament bắt chọn background HAI LẦN liền | `cselSteps()` vẫn cho hai chế độ này bước `stage`, mà từ khi có màn hỏi sàn TỪNG TRẬN thì trận đầu lại hỏi thêm lần nữa — lần chọn ở màn chọn nhân vật bị ghi đè ngay, chọn xong chẳng để làm gì | bỏ bước `stage` khỏi `league`/`cup`: khai mạc giải xong vào thẳng bảng xếp hạng, sàn hỏi riêng cho mỗi trận |
 | iPhone: thoát app một lúc rồi vào lại là MẤT TIẾNG | ba thứ cùng lúc — `ac()` chỉ resume khi `state==='suspended'` nên bỏ sót `'interrupted'` của WebKit; context có khi chết hẳn mà `state` vẫn báo `'running'`; và `startMusic()` gác ở `if(MUSIC.gain) return` với node của context đã chết nên nhạc không bao giờ dựng lại | `audioWake()` gọi từ `visibilitychange` / `pageshow` / `focus` / **mọi cú chạm**, resume cả `'interrupted'`, dò `currentTime` đứng yên thì `audioRebuild()`, và `audioRebuild()` dọn sạch `MUSIC.gain/oscs/lfo/filter` trước khi dựng lại |
+| Xuất gói thiếu hẳn 6 nhân vật mà chẳng ai biết, lên web mới thấy họ là model vector | `packBuild()` chỉ chụp lại `SPR` của **chính trình duyệt đang mở xưởng**, ô trống thì bỏ qua không nói gì | `packMissing()` đếm đấu thủ chơi được mà gói không có ảnh, nói thẳng ở `#packWarn` và ở dòng trạng thái của cả nút *Xuất gói* lẫn *Nạp thử gói*; cờ `PACK_IN` chặn thêm cú xuất từ trang chưa nạp được gói của repo |
+| `t_slots.js` đổ ở `waitForFunction` chờ `SPR.kono` | test ghim tên `kono` cho **ô đầu bảng ảnh**, mà thêm Sakura là `SETS[0]` thành cô ấy nên hai ô đầu đổi chủ — hỏng từ commit thêm Sakura, không ai chạy lại nên không ai biết | đọc `SETS[0].key` ra biến rồi tra `SPR[ck]` / `SLOT[ck]` / `spr_<ck>`; đừng ghim tên nhân vật vào chỗ đánh theo VỊ TRÍ |
 | Chữ trong thanh phụ thò ra ngoài thanh | `bar()` vẽ nhãn ở cỡ 15px cố định, không ai đo | `bar()` tự thu cỡ chữ cho vừa lòng thanh (sàn 9px) và truyền thêm `maxWidth` làm chặn cuối. Đây là lỗi chung của mọi nhân vật chứ không riêng Horikita: `Chakra: 1025` cũng tràn |
 
 ---
@@ -5185,12 +5202,11 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 
 ## 11. Còn treo
 
-- **`assets/voice/ginyu_force.wav` và `ginyu_change.wav` chưa được commit** dù
-  `manifest.json` đã liệt kê cả hai, nên `node tools/t_voice.js` chết ngay với `ENOENT`.
-  Lỗi này CÓ SẴN từ trước (đo trên cây sạch cũng hỏng y hệt), không phải do đợt sửa nào
-  gần đây. Chữa bằng cách chạy lại `python3 tools/mk_voice.py` trên máy có `espeak-ng` +
-  `mbrola` rồi commit đủ chín file.
-
+> **Đã xong: hai file giọng Ginyu thiếu.** `ginyu_force.wav` / `ginyu_change.wav` từng
+> nằm trong `manifest.json` mà không có trong repo, nên `t_voice.js` chết với `ENOENT`.
+> Dựng lại bằng `python3 tools/mk_voice.py` (cần `espeak-ng` + `mbrola` + ba giọng
+> `mbrola-us1/us2/en1`) rồi commit đủ chín file. Script chạy **tất định**: bảy file cũ ra
+> byte y hệt, chỉ thêm đúng hai file thiếu — nên chạy lại nó không làm phình diff.
 
 - Người dùng có lần nói tiếng bật dậy là ở **75% máu**, nhưng bản mô tả gốc và code đang để
   **80%** (`SHIKA.wakeHp = .80`). Đã hỏi hai lần chưa có câu trả lời — hiện giữ 80%.

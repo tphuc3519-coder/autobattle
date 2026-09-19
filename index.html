@@ -2121,6 +2121,7 @@
         <button id="sprClear">🗑 Xoá ảnh đã lưu</button>
         <button id="sprUndo" style="display:none;background:#3A2E00;border-color:var(--gold);color:var(--gold)">↩ Hoàn tác xoá</button>
       </div>
+      <div class="note" id="packWarn" style="display:none;border-color:var(--gold);color:var(--gold)"></div>
       <div class="drop" id="sprDrop">⚡ <b>Kéo cả thư mục ảnh thả vào đây</b> — game tự chia ảnh về đúng ô theo tên file
         (<kbd>kono_idle.png</kbd>, <kbd>suzune/punch3.png</kbd>, nhiều khung thì <kbd>kono_idle_1.png</kbd>).</div>
       <div class="note" id="sprBulkNote"></div>
@@ -5495,6 +5496,11 @@ async function fetchAsset(rel,opt){
   return null;
 }
 const PACK_URL='assets/pack/pack.json';
+/* Gói trong repo đã đọc được chưa. Xuất gói lúc cờ này còn TẮT là nguy: `packBuild()`
+   chỉ chụp lại `SPR` của CHÍNH trình duyệt đang mở xưởng, nên gói mới sẽ thiếu đúng
+   phần ảnh mà máy này chưa có — đẩy lên repo là ghi đè mất. Mở xưởng bằng file://
+   (fetch bị chặn) rơi thẳng vào đó. */
+let PACK_IN=false;
 function packBuild(){
   const out={v:1, at:new Date().toISOString().slice(0,10), spr:{}, sfx:{}, bgm:{}};
   for(const set of SETS){
@@ -5508,6 +5514,25 @@ function packBuild(){
   for(const nm in SFXSRC) out.sfx[nm]=SFXSRC[nm];
   for(const k in BGM.src) out.bgm[k]=BGM.src[k];    // nhạc nền đi cùng gói luôn
   return out;
+}
+/* Đấu thủ CHƠI ĐƯỢC mà trong gói không có lấy một ảnh nào.
+   Vì sao cần: `packBuild()` chỉ xuất những ô đang nằm trong `SPR` của chính trình duyệt
+   này, ô trống thì nó lặng lẽ bỏ qua — nên một gói thiếu hẳn sáu nhân vật vẫn xuất ra
+   êm ru, commit êm ru, lên web mới thấy họ còn là model vector. Đếm ra rồi nói thẳng,
+   ở CẢ hai cửa: lúc xuất gói và lúc bấm "Nạp thử gói".
+   Đọc `CKEYS` chứ đừng đọc `SETS`: `SETS` có cả viện binh (goku/gohan), con nai, vườn —
+   mấy ô đó trống là chuyện thường, kêu lên chỉ tổ nhiễu. */
+function packMissing(pack){
+  const spr=(pack||{}).spr||{};
+  return CKEYS.filter(k=>!spr[k]||!Object.keys(spr[k]).length);
+}
+function packNames(keys){ return keys.map(k=>(CHARS[k]&&CHARS[k].name)||k).join(' · '); }
+function packWarnPaint(thieu){
+  const el=document.getElementById('packWarn'); if(!el) return;
+  if(!thieu||!thieu.length){ el.textContent=''; el.style.display='none'; return; }
+  el.style.display='';
+  el.innerHTML='⚠ <b>Gói đang thiếu ảnh của '+thieu.length+' nhân vật:</b> '+packNames(thieu)+
+    ' — mấy người này lên trang chơi vẫn là model vector. Dán ảnh cho họ rồi xuất gói lại.';
 }
 /* Gói ảnh nặng vài chục MB nên trên đường mạng chậm nó tới sau khi trang đã mở. Không
    nói gì thì người chơi tưởng game hỏng — nên màn tiêu đề có một dòng trạng thái riêng. */
@@ -5655,6 +5680,7 @@ async function packLoad(noi){
     if(noi) status('Chưa có '+PACK_URL+' — mở trang bằng http, hoặc bấm "Xuất gói" rồi đẩy file đó lên repo.');
     return {img:0,sfx:0,ok:!coFile};   // ok=false CHỈ khi gói có thật mà tải đứt
   }
+  PACK_IN=true;                       // đọc được gói trong repo ⇒ xuất gói lại là an toàn
   let img=0, snd=0;
   /* Đếm TRƯỚC tổng số việc phải làm rồi mới chạy: thanh tiến độ mà cộng dồn theo kiểu
      "xong bao nhiêu thì biết bấy nhiêu" là nó nhảy cóc, nhìn như bị treo. */
@@ -5694,8 +5720,11 @@ async function packLoad(noi){
   if(nhac&&MUSIC.on) musicStart();
   packNote(img||snd?tf('packDone',{n:img,s:snd}):'',true);
   if(img){ avaRefresh(); if(typeof cselRefresh==='function') paintDex(); }
+  const thieu=packMissing(data);
+  packWarnPaint(thieu);
   if(img||snd||noi){
-    status(`Đã nạp gói phát hành: ${img} ảnh · ${snd} tiếng (bản ${data.at||'?'}).`);
+    status(`Đã nạp gói phát hành: ${img} ảnh · ${snd} tiếng (bản ${data.at||'?'}).`+
+           (thieu.length?` — gói KHÔNG có ảnh của: ${packNames(thieu)}.`:''));
     sfxStatus(`Đã nạp ${snd} tiếng từ gói phát hành.`);
   }
   return {img,sfx:snd,ok:true};
@@ -6150,11 +6179,23 @@ function bulkZone(el,fn){
     const n=Object.keys(pack.spr).length, m=Object.keys(pack.sfx).length,
           b=Object.keys(pack.bgm).length;
     if(!n&&!m&&!b){ status('Chưa có ảnh, tiếng hay nhạc nào để xuất.'); return; }
+    /* Gói trong repo chưa đọc được ⇒ gói sắp xuất CHỈ gồm phần nằm trong máy này. Đẩy
+       nó đè lên repo là xoá mất ảnh đã dán ở nơi khác, mà lỗi đó chỉ lòi ra sau khi đã
+       commit và deploy xong. Hỏi lại đúng một câu trước khi tải về. */
+    if(!PACK_IN&&!confirm('Chưa nạp được '+PACK_URL+' nên gói này CHỈ gồm ảnh và tiếng đang nằm trong máy này.\n\n'+
+       'Đẩy nó đè lên gói trong repo là mất phần đã dán ở nơi khác.\n'+
+       'Mở xưởng bằng http (hoặc /studio/ trên web) để gói cũ nạp vào trước rồi xuất lại thì an toàn.\n\nVẫn xuất?')){
+      status('Đã huỷ xuất gói. Mở trang xưởng bằng http để gói cũ nạp vào trước, rồi xuất lại.');
+      return;
+    }
+    const thieu=packMissing(pack);
+    packWarnPaint(thieu);
     const blob=new Blob([JSON.stringify(pack)],{type:'application/json'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob); a.download='pack.json'; a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href),8000);
     status(`Đã xuất gói: ${n} nhân vật có ảnh · ${m} ô tiếng · ${b} bài nhạc (${(blob.size/1048576).toFixed(1)} MB). `+
+           (thieu.length?`THIẾU ảnh của ${thieu.length} nhân vật: ${packNames(thieu)} — họ sẽ ra model vector. `:'')+
            `Chép file này vào assets/pack/pack.json của repo rồi đẩy lên là trang chơi có ngay.`);
   });
   const pl=document.getElementById('packLoadBtn');
