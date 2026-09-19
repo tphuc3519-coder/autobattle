@@ -203,6 +203,29 @@ async function daHet(page, tran) {
   ok(hai.trung, 'khong cap nao bi lap y nguyen ca hai luot');
   ok(hai.leg === 2, `tran cuoi mang co luot ve (${hai.leg})`);
 
+  /* SỐ VÒNG ĐẾM TRONG TỪNG LƯỢT, không đếm dồn cả hai — người dùng bác bản cũ:
+     *"bảng 8 ng thì hiện 1/14 round"*. Tám người đá vòng tròn là 7 vòng, nên lượt về phải
+     ghi "Vòng 1/7 · Lượt về" chứ không phải "Vòng 8/14". `COMP.nr` vẫn giữ TỔNG (14) vì
+     dòng tiến trình và mấy chỗ khác đọc nó. */
+  const nhan = await doc(() => {
+    const ks = ['ginyu', 'chichi', 'dora', 'sakura', 'suzune', 'kono', 'tsubasa', 'shika'];
+    const out = {};
+    for (const legs of [1, 2]) {
+      const C = window.__leagueNew(ks, legs);
+      window.__setComp(C);
+      out['L' + legs] = { nr: C.nr, dau: window.__lgLabel(C.fix[0]),
+                          cuoi: window.__lgLabel(C.fix[C.fix.length - 1]) };
+    }
+    return out;
+  });
+  ok(/1\/7/.test(nhan.L1.dau) && /7\/7/.test(nhan.L1.cuoi) && nhan.L1.nr === 7,
+     `8 nguoi mot luot: vong 1/7 -> 7/7 (${nhan.L1.dau} -> ${nhan.L1.cuoi})`);
+  ok(/1\/7/.test(nhan.L2.dau) && /7\/7/.test(nhan.L2.cuoi) && nhan.L2.nr === 14,
+     `8 nguoi luot ve: dem TRONG tung luot chu khong ra 1/14 (${nhan.L2.dau} -> ${nhan.L2.cuoi})`);
+  ok(/leg|luot/i.test(nhan.L2.dau) && nhan.L2.dau !== nhan.L2.cuoi,
+     `luot di / luot ve phan biet duoc (${nhan.L2.cuoi})`);
+  await doc(() => window.__setComp(null));
+
   /* GIẢI ĐẤU không còn bước chọn màn ở màn chọn nhân vật — một cú bấm là khai mạc.
      Sàn hỏi riêng cho TỪNG trận, ngay trước khi vào (xem `quaChonSan`). */
   await page.click('#cselGo'); await page.waitForTimeout(500);

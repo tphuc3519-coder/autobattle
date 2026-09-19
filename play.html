@@ -582,21 +582,19 @@
      cả trăm pixel nền trống quanh một cái canvas 600px — đúng cái lỗi "thừa nền" đã sửa
      một lần ở mục trên, chỉ là lần này nằm bên trong khung. */
 
+  /* LƯỚI HAI CỘT ĐÃ BỎ — dải HUD bên phải không còn gì để đựng.
+     Bố cục cũ là `minmax(0,1fr) 290px`: sàn đấu cột trái, nhật ký và bảng phím dồn sang
+     dải bên phải. Bỏ nhật ký khỏi trang chơi (xem chỗ khai thẻ đó) thì dải bên chỉ còn
+     đúng một dòng nhắc phím — giữ nguyên 290px cho một dòng chữ là chặn mất gần một phần
+     ba bề ngang của sàn đấu, đúng cái người dùng vừa kêu.
+     Giờ trang chơi là MỘT CỘT: header → thanh công cụ → sàn đấu ăn trọn bề ngang → bảng
+     phím thành một dải mỏng phía dưới. Không cần khai `grid` nào cả, `.wrap` vốn là khối
+     thường nên dòng chảy mặc định xếp đúng thứ tự đó.
+     Muốn dựng lại dải bên thì phải có thứ gì ĐÁNG một cột 290px, đừng nhồi lại mỗi dòng
+     nhắc phím vào đó. */
   @media(min-width:1040px){
-    body.arcade .wrap{max-width:1040px;display:grid;grid-template-columns:minmax(0,1fr) 290px;
-      column-gap:16px;align-items:start}
-    body.arcade .wrap>header,body.arcade .wrap>.bar{grid-column:1/-1}
-    body.arcade .wrap>.stage{grid-column:1;grid-row:3/span 2}
-    /* `:has()` để nhận ra đúng thẻ nhật ký mà không phải đánh số thứ tự — đếm bằng
-       `nth-of-type` là hỏng ngay khi thêm bớt một khối. */
-    /* Hàng 3 là hàng CO GIÃN: nhật ký kéo cao bằng đúng sàn đấu, bảng phím hụt xuống sát
-       đáy. Để cả hai hàng `auto` thì phần dư của khối sàn (nó bắc qua hai hàng) bị chia
-       đều ra và hở một khoảng trống lơ lửng giữa hai thẻ — đo được hụt ~80px. */
-    body.arcade .wrap{grid-template-rows:auto auto 1fr auto}
-    body.arcade .wrap>.card:has(#log){grid-column:2;grid-row:3;margin-top:0;
-      align-self:stretch;display:flex;flex-direction:column;min-height:0}
-    body.arcade .wrap>.card.help{grid-column:2;grid-row:4}
-    body.arcade #log{flex:1;height:auto;min-height:0}
+    /* Bảng phím thành một dải mỏng: nó chỉ có một dòng chữ nên đừng để nó cao bằng thẻ. */
+    body.arcade .wrap>.card.help{padding:10px 15px}
   }
   /* Đầu trang thành một TẤM BIỂN: logo bên trái, dòng cặp đấu thành một tấm thẻ bên
      phải. Trước đây hai dòng chữ xếp chồng ở góc trái, đọc ra đúng phần đầu của một bài
@@ -1240,10 +1238,7 @@
   body.arcade .card.help{color:#8794A8;background:rgba(9,15,25,.86)}
   body.arcade kbd{background:#121D2D;border-color:#293750;color:#DCE5F2;border-radius:6px}
 
-  @media(min-width:1040px){
-    body.arcade .wrap{grid-template-columns:minmax(0,1fr) 310px;column-gap:18px}
-    body.arcade .wrap>.card:has(#log){border-radius:18px}
-  }
+  /* (Lưới hai cột đã bỏ — xem ghi chú ở khối `@media(min-width:1040px)` phía trên.) */
 
   /* Full-screen flow: calmer backdrop, stronger hierarchy and generous spacing. */
   body.arcade .cselBox{
@@ -1867,6 +1862,44 @@
   }
   @media(prefers-reduced-motion:reduce){ .padBtn,.padK{transition:none} }
 
+  /* ---------- khung sàn RỘNG RA ở BẢN AUTO nữa ----------
+     Người dùng: *"thiết kế bỏ cái battle logg đi, làm arena nhìn cho nó rộng hơn tí nữa"*.
+     Bỏ nhật ký xong thì trang chơi còn đúng MỘT cột (header → thanh công cụ → sàn → dải
+     phím), nhưng nhật ký nằm ở cột PHỤ nên bỏ nó KHÔNG tự nới sàn ra một pixel nào: bề
+     ngang vẫn bị luật `canvas{…;max-width:600px}` ở đầu file kẹp lại. Phải nới bằng tay.
+
+     Ba chỗ phải sửa cùng lúc, thiếu một chỗ là không thấy khác:
+       1. **`.stage` bó sát canvas** (`width:fit-content`) — để nguyên `100%` thì khung trải
+          hết cột 1160px trong khi canvas vẫn 600px, thừa hơn 250px nền trống mỗi bên.
+       2. **`max-width:none`** để gỡ cái kẹp 600px.
+       3. **Thanh công cụ bó gọn** đúng lối `body.human .bar`: chiều cao thật đo được là
+          102px, bó lại còn ~76px, tức trả 26px cho sàn. KHÔNG giấu nút nào — mấy bộ test
+          bấm thẳng vào chúng.
+
+     **QUAY 9:16 KHÔNG BỊ ẢNH HƯỞNG.** `recFrame()` blit `CV` theo KHO ẢNH THẬT của canvas
+     (`CV.width`/`CV.height`, tức 620×694 nhân tỉ lệ màn) chứ không đọc bề ngang CSS, nên
+     nới CSS bao nhiêu thì khung video vẫn đúng 1080×1920. Đừng đổi sang đọc
+     `getBoundingClientRect()` ở đó.
+
+     Phần trừ theo chiều cao **ĐO THẬT** trên màn 1280×900, không đoán: đỉnh khung sàn ở
+     206px với thanh công cụ cũ, bó gọn còn **182px**; canvas cao gấp `1388/1240 = 1.119`
+     lần bề ngang (nó KHÔNG vuông — có hai dải HUD kẹp trên dưới), nên `100vh − 275px` cho
+     ra 625px bề ngang và đáy khung sàn rơi đúng 900px: **cả sàn nằm trong màn**. Thử 262px
+     thì đáy thò ra 14px. Trần 980px để màn rộng mà thấp không kéo sàn dài quá tầm mắt.
+     Dải phím vẫn nằm dưới mép màn như trước (trang này vốn đã cuộn ở bề ngang 600px), đó
+     không phải chỗ đợt này chữa.
+     Đổi bố cục thanh công cụ hay tỉ lệ canvas thì **ĐO LẠI**, đừng vặn con số theo cảm
+     tính — quá tay là đáy sàn rơi ra ngoài màn hình. */
+  body.arcade .stage{width:fit-content;margin-inline:auto}
+  body.arcade canvas#arena{width:min(96vw,calc(100vh - 275px),980px);max-width:none;height:auto}
+  @media(max-width:820px){
+    /* Màn hẹp thì bề NGANG mới là chỗ chặn, phần trừ theo chiều cao gần như không ăn vào đâu. */
+    body.arcade canvas#arena{width:min(99vw,calc(100vh - 210px));max-width:none}
+  }
+  body.arcade .bar{--ctl:30px;gap:6px;padding:8px 12px;margin:10px 0}
+  body.arcade .bar>button,body.arcade .bar>select,body.arcade .bar>label.chk{height:30px;font-size:11.5px}
+  body.arcade .bar>label.chk{padding-inline:8px}
+
   /* ---------- khung sàn RỘNG RA ở bản người chơi ----------
      Người dùng: *"chế độ người chơi làm màn hình vs khung rộng rộng ra để dễ nhìn hơn"*.
      Chỉ nới phần NHÌN — `W`/`H` vẫn là 620 vì mọi hằng cân bằng (lực đẩy tính theo % chiều
@@ -1900,9 +1933,6 @@
   body.human .bar{--ctl:28px;gap:5px;padding:7px 9px}
   body.human .bar>button,body.human .bar>select,body.human .bar>label.chk{font-size:11px}
   body.human .bar>label.chk{padding-inline:7px}
-  @media(min-width:1040px){
-    body.human.arcade .wrap{grid-template-columns:minmax(0,1fr) 300px}
-  }
 
   /* ---------- thẻ nâng cấp ---------- */
   .upRow{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 4px}
@@ -2074,10 +2104,14 @@
 
   
 
-  <div class="card">
-    <h3 data-i18n="log">Diễn biến</h3>
-    <div id="log"></div>
-  </div>
+  <!-- Nhật ký trận đấu CHỈ CÒN Ở XƯỞNG. Người dùng: *"thiết kế bỏ cái battle logg đi, làm
+       arena nhìn cho nó rộng hơn tí nữa"* — bỏ nó đi là dải HUD bên phải trống hẳn, nên
+       trang chơi thu về một cột và sàn đấu ăn trọn bề ngang.
+       Ở xưởng thì giữ: 216 chỗ gọi `say()` viết vào đây và đó là cửa duy nhất để soi xem
+       cơ chế nào vừa nổ. `paintLog()` vốn đã gác `if(!lg)return` và `say()` chỉ đẩy vào
+       `G.logs`, nên trang chơi không có ô này cũng không ném lỗi.
+       Cặp mốc này là một cặp RIÊNG, không lồng vào cặp phía trên (mục 2f). -->
+  
 
   <div class="card help" data-i18n="keys">
     <kbd>W A S D</kbd> di chuyển · <kbd>J</kbd> chiêu 1 · <kbd>K</kbd> chiêu 2 · <kbd>L</kbd> chiêu 3 · <kbd>U</kbd> tuyệt chiêu · <kbd>Space</kbd> dừng · <kbd>R</kbd> đánh lại
@@ -8951,9 +8985,18 @@ function cupRoundName(r,R){
 /* Trận kế tiếp phải đánh, hoặc null khi giải đã xong. */
 /* Nhãn một vòng của giải vòng tròn. Đá lượt về thì ghi thêm "Lượt đi / Lượt về" — chỉ nhìn
    số vòng thì không đoán ra vòng 9/14 là lượt nào. */
+/* SỐ VÒNG ĐẾM TRONG TỪNG LƯỢT, KHÔNG ĐẾM DỒN CẢ HAI LƯỢT — người dùng bác bản cũ:
+   *"bảng 8 ng thì hiện 1/14 round"*. Tám người đá vòng tròn là **7 vòng**; `COMP.nr` giữ
+   TỔNG số vòng của cả giải (7×2 = 14 khi có lượt về) nên bản cũ in ra "Vòng 1/14", đọc
+   ra như thể một lượt có 14 vòng. Giờ chia lại theo lượt: "Vòng 1/7 · Lượt đi" rồi
+   "Vòng 1/7 · Lượt về" — đúng lối mọi giải bóng đá.
+   Rút `nr/legs` chứ đừng khai thêm một trường mới: giải đang đá dở lưu trong `cfg_comp`
+   không có trường đó, mà đổi hình dạng dữ liệu là phải nống `COMP_SC` thêm một nấc. */
 function lgLabel(m){
-  const v=tf('lgRound',{n:m.r+1,t:COMP.nr});
-  return (COMP.legs===2&&m.leg)?v+' · '+t(m.leg===2?'leg2':'leg1'):v;
+  const per=Math.max(1,Math.round(COMP.nr/(COMP.legs||1)));
+  const v=tf('lgRound',{n:(m.r%per)+1,t:per});
+  const leg=m.leg||Math.floor(m.r/per)+1;
+  return (COMP.legs===2)?v+' · '+t(leg===2?'leg2':'leg1'):v;
 }
 function compNextMatch(){
   if(!COMP) return null;
