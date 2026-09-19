@@ -2309,8 +2309,8 @@ vốn đã ngắn hơn sàn.
   > **Hai bản Internal Bleeding KHÔNG cộng dồn**: `sakIbOn()` xoá lớp cũ rồi mới đẩy lớp
   > mới, và bản **yếu không ghi đè bản mạnh** (giữ `dps` cao hơn, chỉ làm mới thời gian).
 - **3 · Medical Ninjutsu** — hồi chiêu `gs(18)`, kết ấn `gs(1)` đứng yên, **vẫn ăn đòn và vẫn bị khống chế**;
-  bị cắt ngang ⇒ chỉ chờ `gs(4)`. Xong cast thì **5 nhịp** cách nhau `gs(.5)` hồi **3.2% MÁU
-  TỐI ĐA** mỗi nhịp (tổng **16%**).
+  bị cắt ngang ⇒ chỉ chờ `gs(4)`. Xong cast thì **5 nhịp** cách nhau `gs(.5)` hồi **3% MÁU
+  TỐI ĐA** mỗi nhịp (tổng **15%**).
   - **ĐỨNG YÊN SUỐT CẢ CHIÊU — kết ấn lẫn năm nhịp hồi.** Người dùng chốt: *"trong lúc
     sakura hồi máu thì k đc làm gì khác, chỉ đứng yên"*. `sakHealTick()` ghim `f.lock` mỗi
     nhịp bằng quãng CÒN LẠI (`M.t + (M.left-1)*M.gap`, tính lại mỗi khung hình) là đủ cho cả
@@ -2326,11 +2326,12 @@ vốn đã ngắn hơn sàn.
     hồi máu bthg là chỉ hồi 3% máu tối đa bản thân chứ k phải 5,8% máu hiện tại nữa"*. Đây
     là một đợt **cắt sức thật**, không phải đổi đơn vị: lối cũ càng thấp máu càng hồi mạnh
     nên đúng lúc cô sắp gục thì nó kéo về nhiều nhất (5.8% × 5 của 700 máu đang thiếu =
-    **203**). Lối mới phẳng: 3.2% × 5 = **16% máu tối đa = 128 máu** trên thanh 800, bao
-    nhiêu máu cũng bấy nhiêu. *(Đường đi của con số: 6.2% máu đang thiếu → 5.8% máu đang
-    thiếu → 3% máu tối đa → 3.5% → **3.2%**, người dùng nới lên rồi hạ lại nửa nấc.)*
+    **203**). Lối mới phẳng: 3% × 5 = **15% máu tối đa = 120 máu** trên thanh 800, bao nhiêu
+    máu cũng bấy nhiêu. *(Đường đi của con số: 6.2% máu đang thiếu → 5.8% máu đang thiếu →
+    3% máu tối đa → 3.5% → 3.2% → **quay về 3%**. Người dùng nới lên hai nấc, đo ra cả hai
+    nấc đều 67%, rồi chốt về lại 3% — xem bảng đường cong ở mục nerf.)*
   - **Lượng hồi CHỤP LẠI đúng lúc cast xong**, không tính lại sau mỗi nhịp.
-  - Có đồng đội thì hệ số chia đôi: **1.6% cho cô, 1.6% cho đồng đội máu thấp nhất**, mỗi
+  - Có đồng đội thì hệ số chia đôi: **1.5% cho cô, 1.5% cho đồng đội máu thấp nhất**, mỗi
     người tính theo **máu tối đa CỦA CHÍNH HỌ**. `mnShare` **luôn giữ đúng NỬA `mnSolo`** —
     đổi một con số thì đổi cả hai.
   - **Đồng đội chết giữa chừng thì phần của họ MẤT HẲN**, không dồn sang ai.
@@ -2420,7 +2421,8 @@ lượng hồi máu — mấy con số đó người dùng đã chốt cứng t�
 > | 3% máu tối đa | **58%** (15/26) | 26% |
 > | 3.5% máu tối đa (người dùng nới lại) | **67%** (26/39) | 27% |
 > | 3.5% + lượt kết ấn BÙ miễn khống chế | **67%** (26/39) | 26% |
-> | **CHỐT — 3.2% máu tối đa** | **67%** (26/39) | 20% |
+> | 3.2% máu tối đa | **67%** (26/39) | 20% |
+> | **CHỐT — quay về 3% máu tối đa** | **58% · 51%** (hai lượt đo ở trên) | 26% |
 >
 > **ĐƯỜNG CONG PHẲNG HẲN TỪ 3.2% TRỞ LÊN.** Hạ 3.5% → 3.2% (140 → 128 máu mỗi lượt) **không
 > đổi một điểm nào**: vẫn đúng 67%. Gộp cả bốn lượt đo thì mốc chuyển nằm giữa **3.0% và
@@ -2436,6 +2438,9 @@ lượng hồi máu — mấy con số đó người dùng đã chốt cứng t�
 > 3.2~3.5% chỉ đổi con số trên bảng kỹ năng chứ không đổi kết quả trận. Chỗ dốc nằm gọn
 > trong quãng 3.0~3.2%, hẹp đúng kiểu đã ghi ở mục Beatrice; muốn dò tiếp thì thử `.031`.
 > Máu còn lại lúc thắng thì có tụt (27% → 20%), tức trận sát nút hơn dù vẫn thắng.
+>
+> **Người dùng chốt quay về `.030`** (*"thôi cứ giữ 3% đi, cho cơ chế kia là đc r"*) — tức
+> lấy mốc tỉ lệ thắng thấp hơn và giữ lượt kết ấn BÙ làm phần bù, chứ không nới lượng hồi.
 >
 > Lượt kết ấn bù **không đo được tác dụng lên tỉ lệ thắng** (67% → 67%): cô ít bị choáng
 > đúng trong 0.5 giây kết ấn, nên nó là một lớp bảo hiểm chống chịu chứ không phải một nấc
