@@ -828,6 +828,27 @@ không thì **còn cửa và địch sôi máu → thăm dò**, còn lại đề
 `ginyuState()` — đặt trong `ginyuState()` thì nhịp đầu ra hưng phấn sẽ không đóng cửa và
 lỗi cũ quay lại.
 
+> **ĐỢT HẠ MỘT BẬC TỈ LỆ TRÚNG CỦA CHANGE — và nó gần như KHÔNG đổi tỉ lệ thắng.**
+> Người dùng: *"Giảm tỉ lệ chính xác skill change của Ginyu đi 1 bậc"*.
+> `changeHi .85 → .75` · `changeLo .18 → .13`, tức sát mặt còn 75%, 200px còn 57%, hết sàn
+> còn 13%.
+>
+> | | Tỉ lệ thắng | CHANGE trúng |
+> |---|---|---|
+> | trước (3 lượt × 39 trận) | 74% · 85% · 79% ⇒ **79%** | 31% số trận |
+> | sau khi hạ một bậc | **82%** (32/39) | 31% số trận |
+>
+> 82% nằm HẲN trong dải 74~85% của ba lượt đo trước, nên **đợt hạ này không đo được tác
+> dụng gì lên tỉ lệ thắng**. Lý do: CHANGE chỉ nổ lúc anh sắp chết và chỉ trúng ở chừng 31%
+> số trận, trong khi sức mạnh của anh nằm ở aura ngơ ngác (−90% tốc chạy, −50% tốc cast cho
+> địch suốt 8 giây), 6 luồng beam đẩy lùi 340, và đòn tay ở nhịp `cm(.22)` — nhanh nhất
+> bảng. **Muốn hạ tỉ lệ thắng của anh thì phải đụng vào aura hoặc beam**, đừng vặn tiếp
+> CHANGE. Đo bằng `node tools/t_gin_balance.js 3`.
+>
+> `changeLo = .13` **thấp hơn mốc 15~20% người dùng nêu lúc dựng nhân vật** — chính họ hạ
+> xuống dưới mốc đó, không phải ai bốc tay đổi số. `t_ginyu.js` đã nới band xuống 12~16% và
+> thêm một mục soi `changeHi` để nó đừng lặng lẽ bò lại lên 85%.
+
 > **Hồi chiêu của aura KHÔNG cộng dồn với quãng đang vận thế đứng.** `ginyuTick()` `return`
 > sớm suốt lúc `f.gnState` còn — đồng hồ `f.gnAura` đứng yên hẳn — rồi nạp lại đủ `auraCd`
 > đúng lúc thế đứng hết. Nghĩa là nhịp thật giữa hai lần aura là **hết thế đứng rồi mới đếm
@@ -890,8 +911,9 @@ thân xác Ginyu do địch điều khiển (`swapAs==='foe'`) thì chết là c
 - Tia sáng **phóng ra từ MIỆNG** (`f.y+20-f.spriteH*.86`), không phải từ tay. Dáng `change`
   vẽ miệng há to đúng chỗ đó.
 - **Tỉ lệ trúng theo khoảng cách**, tách hẳn ra hàm `gnChangeOdds(d)` cho test đo được:
-  gần nhất `GN.changeHi = .85` (**không bao giờ 100%**), xa nhất `GN.changeLo = .18` (nằm
-  trong khoảng 15~20% người dùng yêu cầu), nội suy tuyến tính giữa `changeNear`/`changeFar`.
+  gần nhất `GN.changeHi = .75` (**không bao giờ 100%**), xa nhất `GN.changeLo = .13`, nội suy
+  tuyến tính giữa `changeNear`/`changeFar`. *(Đường đi: `.85` / `.18` → **`.75` / `.13`**,
+  người dùng hạ một bậc; mốc `.18` cũ là con số họ nêu lúc dựng nhân vật.)*
   Bốc trúng thì tia bám theo địch (`homing`), bốc trượt thì lệch hẳn `0.4~1.0 rad`.
 - **Ba người trở lên**: `gnChangeTarget()` chọn người **máu cao nhất**; nhưng va chạm đọc
   trong vòng duyệt đạn nên **chạm ai trước thì nhập luôn vào người đó**.
@@ -2305,20 +2327,48 @@ vốn đã ngắn hơn sàn.
     là một đợt **cắt sức thật**, không phải đổi đơn vị: lối cũ càng thấp máu càng hồi mạnh
     nên đúng lúc cô sắp gục thì nó kéo về nhiều nhất (5.8% × 5 của 700 máu đang thiếu =
     **203**). Lối mới phẳng: 3% × 5 = **15% máu tối đa = 120 máu** trên thanh 800, bao nhiêu
-    máu cũng bấy nhiêu.
+    máu cũng bấy nhiêu. *(Đường đi của con số: 6.2% máu đang thiếu → 5.8% máu đang thiếu →
+    3% máu tối đa → 3.5% → 3.2% → **quay về 3%**. Người dùng nới lên hai nấc, đo ra cả hai
+    nấc đều 67%, rồi chốt về lại 3% — xem bảng đường cong ở mục nerf.)*
   - **Lượng hồi CHỤP LẠI đúng lúc cast xong**, không tính lại sau mỗi nhịp.
   - Có đồng đội thì hệ số chia đôi: **1.5% cho cô, 1.5% cho đồng đội máu thấp nhất**, mỗi
-    người tính theo **máu tối đa CỦA CHÍNH HỌ**. Đo được: cả hai cùng 800 máu tối đa ⇒
-    12/nhịp, tổng 60 mỗi người.
+    người tính theo **máu tối đa CỦA CHÍNH HỌ**. `mnShare` **luôn giữ đúng NỬA `mnSolo`** —
+    đổi một con số thì đổi cả hai.
   - **Đồng đội chết giữa chừng thì phần của họ MẤT HẲN**, không dồn sang ai.
   - Không overheal, không hồi sinh, không tự giải khống chế.
+  - **BỊ CHOÁNG CẮT NGANG THÌ KHÔNG MẤT LƯỢT — có một lượt kết ấn BÙ, và lượt đó miễn
+    khống chế 100%.** Người dùng chốt: *"nếu bị choáng lần 1 lúc Sakura đang thi triển skill
+    hồi máu thì là sau khi hết choáng sakura hồi lại máu lập tức cho lần 2 (lần này miễn
+    khống 100%)"*. Cùng lối `bind.guard` của Shadow-Neck Bind.
+    - Nhánh cắt ngang đặt `f.sakHealRetry = true` thay vì hạ hồi chiêu. **KHÔNG hạ `cds.s3`
+      xuống `mnBreakCd` nữa** — lượt bù đã là phần đền, hạ thêm là ăn hai lần.
+    - Lượt bù nổ trong **`sakuraTick()`**, không nổ trong `think()`: `think()` không được gọi
+      khi `f.lock>0`, mà quãng choáng vừa rồi thường kéo theo lock — để ở đó thì lượt bù
+      trôi mất một nhịp hoặc không bao giờ nổ. Đúng cái bẫy của Murak và cú thoát góc của
+      Tsubasa. Nó nổ ở **nhịp đầu tiên** cô thoát khỏi choáng / đóng băng / ngủ / mất trí.
+    - Cờ `guard` phải **BẮC CẦU sang quãng rải nhịp hồi** (`sakMedicalGo()` chụp nó vào
+      `f.sakActGuard` rồi gán sang `f.sakHeal.guard`): cô bị ghim chân suốt cả chiêu, nên
+      chỉ bảo vệ quãng kết ấn thì địch cứ chờ hết cast rồi choáng — cô đứng chịu trận mà mấy
+      nhịp hồi vẫn chạy, nửa vời.
+    - `stunFx()` trả về **false** khi `sakAct.guard` hoặc `sakHeal.guard`, đặt TRƯỚC nhánh
+      Byakugo cho có băng-rôn riêng.
+    - **Cờ xếp hàng tiêu đi ngay khi lượt bù khởi** nên không có vòng lặp vô hạn: bị choáng
+      lần hai (không thể, vì miễn khống chế) cũng không sinh thêm lượt bù.
+    - **Cherry Blossom Burst KHÔNG có lượt bù** — nó vẫn đứt và chỉ chờ `cbBreakCd`.
+    - *Chỗ tự quyết:* lượt bù **không gác ở Chakra Exhaustion**. Cô đã trả hồi chiêu cho
+      lượt đó rồi, chặn lại vì cạn chakra nửa đường là lặng lẽ ăn mất phần đền. Muốn khắt
+      khe hơn thì thêm `!(f.sakExh>0)` vào cửa trong `sakuraTick()`.
 
-> **Biểu đồ sức mạnh đã kéo xuống theo đợt nerf**, đúng luật ở mục 2g:
-> `dmg 40 (giữ) · dur 92→82 · mob 44→40 · as 46→42 · rng 70 (giữ) · cc 76→72 · uti 92→84 ·
-> con 82→76 · cmb 94→84`. `dmg` và `rng` giữ nguyên vì **không con số sát thương nào đổi**;
-> `cmb` tụt nhiều nhất vì đợt này cắt đúng vào phần lật ngược thế trận (hồi máu phẳng + nhịp
-> hồi Byakugo), còn `mob` / `as` / `con` tụt vì quãng ghim chân lúc hồi máu và nhịp nghỉ giữa
-> hai chiêu lớn.
+> **Biểu đồ sức mạnh — bản CHỐT, người dùng tự chấm từng trục.** Lượt nerf tôi kéo xuống
+> `dur 82 · mob 40 · as 42 · rng 70 · cc 72 · uti 84 · con 76 · cmb 84`; người dùng xem rồi
+> nâng lại: *"lật kèo hỗ trợ chống chịu ở mức 9x, ổn định lên 8x, tầm đánh 8x, tốc đánh 5x"*.
+>
+> Chốt: `dmg 40 · **dur 92** · mob 40 · **as 52** · **rng 80** · cc 72 · **uti 92** ·
+> **con 82** · **cmb 94**`.
+>
+> Ba trục họ **không nêu thì giữ nguyên**: `dmg 40` (không con số sát thương nào đổi),
+> `mob 40` (quãng ghim chân lúc hồi máu vẫn còn), `cc 72`. Đừng tự chấm lại mấy trục này —
+> người dùng liệt kê đúng sáu trục cần đổi, chấm thêm là đi quá yêu cầu.
 
 #### Nhịp nghỉ giữa hai chiêu lớn — `SAK.skillGap`
 
@@ -2368,7 +2418,42 @@ lượng hồi máu — mấy con số đó người dùng đã chốt cứng t�
 > | | Tỉ lệ thắng | Máu còn lại khi thắng |
 > |---|---|---|
 > | 5.8% máu đang thiếu, ĐÃ có ghim chân + nhịp nghỉ | **62%** (16/26) | 22% |
-> | **chốt — 3% MÁU TỐI ĐA** | **58%** (15/26) | 26% |
+> | 3% máu tối đa | **58%** (15/26) | 26% |
+> | 3.5% máu tối đa (người dùng nới lại) | **67%** (26/39) | 27% |
+> | 3.5% + lượt kết ấn BÙ miễn khống chế | **67%** (26/39) | 26% |
+> | 3.2% máu tối đa | **67%** (26/39) | 20% |
+> | **CHỐT — quay về 3% máu tối đa** | **58% · 51%** (hai lượt đo ở trên) | 26% |
+>
+> **ĐƯỜNG CONG PHẲNG HẲN TỪ 3.2% TRỞ LÊN.** Hạ 3.5% → 3.2% (140 → 128 máu mỗi lượt) **không
+> đổi một điểm nào**: vẫn đúng 67%. Gộp cả bốn lượt đo thì mốc chuyển nằm giữa **3.0% và
+> 3.2%**:
+>
+> | `mnSolo` | Máu mỗi lượt (thanh 800) | Tỉ lệ thắng |
+> |---|---|---|
+> | `.030` | 120 | 58% · 51% (hai lượt) |
+> | `.032` | 128 | **67%** |
+> | `.035` | 140 | **67%** |
+>
+> Nghĩa là **muốn kéo cô xuống dưới 60% thì phải về `.030` hoặc thấp hơn** — mấy nấc ở giữa
+> 3.2~3.5% chỉ đổi con số trên bảng kỹ năng chứ không đổi kết quả trận. Chỗ dốc nằm gọn
+> trong quãng 3.0~3.2%, hẹp đúng kiểu đã ghi ở mục Beatrice; muốn dò tiếp thì thử `.031`.
+> Máu còn lại lúc thắng thì có tụt (27% → 20%), tức trận sát nút hơn dù vẫn thắng.
+>
+> **Người dùng chốt quay về `.030`** (*"thôi cứ giữ 3% đi, cho cơ chế kia là đc r"*) — tức
+> lấy mốc tỉ lệ thắng thấp hơn và giữ lượt kết ấn BÙ làm phần bù, chứ không nới lượng hồi.
+>
+> Lượt kết ấn bù **không đo được tác dụng lên tỉ lệ thắng** (67% → 67%): cô ít bị choáng
+> đúng trong 0.5 giây kết ấn, nên nó là một lớp bảo hiểm chống chịu chứ không phải một nấc
+> sức mạnh. Nó vẫn đáng có — mất trắng lượt hồi vì một cú choáng may mắn là chỗ khó chịu
+> nhất khi chơi.
+>
+> **67% vẫn cao hơn hẳn mốc 50~53% đã chốt ở lượt trước.** Đây là người dùng tự nới lên sau
+> khi xem, không phải cân bằng trôi — muốn về lại mốc cũ thì hạ `mnSolo` về `.030`
+> (đo được 51%) hoặc lấy `.032~.033` cho khoảng giữa.
+>
+> **NỬA PHẦN TRĂM ĂN 16 ĐIỂM TỈ LỆ THẮNG.** Từ 3% lên 3.5% máu tối đa (120 → 140 máu mỗi
+> lượt) kéo cô từ 51% lên **67%** — dốc y như mọi lần trước, và dốc hơn cả đoạn
+> `mnSolo` hồi còn đo theo máu đang thiếu. Ghi lại để lần sau đừng coi 0.5% là một nấc nhỏ.
 >
 > Con số chỉ nhích 4 điểm, và đó là **đúng như cơ chế nói**: ở nửa máu thì hai lối cho ra
 > gần bằng nhau (5.8% × 5 của 400 thiếu = 116, so với 120 phẳng). Chỗ cắt thật nằm ở lúc
@@ -4030,6 +4115,11 @@ node tools/t_sakura.js # Haruno Sakura (93 mục): nội tại giảm 70% thời
 node tools/t_sak_balance.js  # cân bằng Sakura: đánh với cả 13 đối thủ, in tỉ lệ thắng kèm MÁU
                         # CÒN LẠI lúc thắng — con số thứ hai mới nói trận đó sát nút hay một
                         # chiều. Bản sao của t_bea_balance.js, chỉ đổi người được đo.
+node tools/t_gin_balance.js  # cân bằng Captain Ginyu. Chỗ phải viết riêng: THẮNG THUA TÍNH
+                        # THEO HỒN (`f.gnSoul||f.key`) — sau cú CHANGE thì object mang
+                        # key:'ginyu' có thể đang do hồn đối thủ điều khiển, đọc f.key là đo
+                        # NGƯỢC hẳn kết quả ở đúng mấy trận anh dùng chiêu tủ. In thêm số
+                        # trận kết thúc trong thân xác đi mượn, tức số lần CHANGE trúng.
 ```css
 .bar>button,.bar>select,.bar>label.chk,.cselBar>button,.arcOver>button{height:var(--ctl)}
 ```

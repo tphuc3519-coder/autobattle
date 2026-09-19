@@ -386,8 +386,14 @@ async function waitGame(page, fnBody, limit) {
       Math.abs(odds.near - odds.hi) < 1e-9 && Math.abs(odds.far - odds.lo) < 1e-9 && odds.near < 1 &&
       odds.mid < odds.near && odds.mid > odds.far,
       `gần ${odds.near} · giữa ${odds.mid.toFixed(2)} · xa ${odds.far}`);
-    ok('đứng xa nhất thì tỉ lệ trúng nằm trong khoảng 15~20%',
-      odds.far >= .15 && odds.far <= .20, `${Math.round(odds.far * 100)}%`);
+    /* Mốc CŨ là 15~20% (con số người dùng nêu lúc dựng nhân vật). Đợt hạ một bậc đưa
+       `changeLo` xuống 13% nên band phải nới xuống theo — đây là người dùng tự hạ dưới
+       mốc họ từng chốt, không phải ai đó bốc tay đổi số. Vẫn giữ một sàn để không lặng lẽ
+       tụt về 0 và một trần để nó đừng bò lại lên mốc cũ. */
+    ok('đứng xa nhất thì tỉ lệ trúng nằm trong khoảng 12~16%',
+      odds.far >= .12 && odds.far <= .16, `${Math.round(odds.far * 100)}%`);
+    ok('sát mặt cũng chỉ 75%, không bao giờ chắc ăn',
+      odds.near >= .72 && odds.near <= .78, `${Math.round(odds.near * 100)}%`);
 
     // máu về 0 nhưng chưa chết: đứng nguyên chỗ ngã, tia phóng ra từ MIỆNG
     const shot = await page.evaluate(() => new Promise(res => {
