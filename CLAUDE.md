@@ -2231,7 +2231,31 @@ vốn đã ngắn hơn sàn.
 #### Ba chiêu
 
 - **1 · Cherry Blossom Burst** — hồi chiêu `gs(11)`, gồng `gs(.75)` rồi đập đất, đường nứt chạy thẳng: **25 dmg
-  + choáng 3s**, mỗi kẻ địch trên đường đi ăn **đúng một lần** mỗi lượt dùng. Hướng **KHOÁ
+  + choáng 3s**, mỗi kẻ địch trên đường đi ăn **đúng một lần** mỗi lượt dùng.
+
+  > **ĐẤT NỨT THẬT — `sakDrawCrack()`, đã vẽ lại.** Người dùng: *"chỉnh hiệu ứng skill
+  > cherry blossom cho nó như đất nứt thật, nhìn hiệu ứng kia nhạt quá"*. Bản cũ là một
+  > vệt nâu mờ viền **sóng SIN** cộng một nét trắng lượn đều — đọc ra "một vệt sơn dán lên
+  > sàn" chứ không ra đá vỡ. Bảy lớp, vẽ từ dưới lên: **bệ bụi** → **khe nứt** mép GÃY KHÚC
+  > với đáy gần như đen → **ánh chakra hồng** hắt lên từ đáy khe → **môi đá** (nét tối hắt
+  > ra ngoài rồi nét sáng trên mép) → **nhánh nứt toẽ ra** hai bên, mỗi nhánh gãy một khúc
+  > rồi đẻ nhánh con → **đá vụn góc cạnh** có mặt trên ăn sáng → **đầu lan** sáng kèm mảnh
+  > văng. Kèm theo: cú đập nặng hơn ở khung hình đầu (hai vòng chấn, `shake` 7 → 11, một
+  > nắm bụi tại chỗ nắm đấm chạm đất).
+  >
+  > Ba luật khi đụng vào, cả ba đều là bài học đã ghi ở chỗ khác trong tài liệu này:
+  > 1. **Mọi chỗ "ngẫu nhiên" bốc bằng `sr(i)`** — nhiễu CỐ ĐỊNH theo chỉ số. Bốc bằng
+  >    `Math.random()` mỗi khung hình thì cả đường nứt rung bần bật như nhiễu TV; đó chính
+  >    là lỗi của bản cũ ở cụm đá vụn đầu lan.
+  > 2. **Riêng cụm ở ĐẦU LAN bốc lại theo NHỊP** (`Math.floor(C.d/16)`) chứ không trôi
+  >    mượt — chỗ đó đang vỡ thật nên phải động, chỉ là động có nhịp. Cùng mẹo tia điện
+  >    của Ginyu.
+  > 3. **Không `ctx.filter`, không `shadowBlur`** — cả hai là một mặt vẽ phụ cho TỪNG lệnh,
+  >    mà ở đây có hơn trăm lệnh (mục 7). Ánh chakra vẽ bằng `globalCompositeOperation =
+  >    'lighter'`.
+  >
+  > Mép khe **hẹp dần về phía đầu lan** (`tp(x)`) nên nó kết thúc bằng mũi nhọn chứ không bị
+  > cắt cụt ngang thân; gốc — chỗ cô đấm — luôn mở hết cỡ. Hướng **KHOÁ
   ngay lúc tay chạm đất** nên mục tiêu đổi hướng sau đó là trượt; đường nứt không bẻ cong
   đuổi theo ai và dừng ở rìa sàn. Bị cắt ngang lúc gồng ⇒ chỉ chờ `gs(4)`.
   Người trúng bị **hất nhẹ lên** (`sakLift`) rồi rơi xuống gần chỗ trúng — **không gọi
@@ -2263,15 +2287,59 @@ vốn đã ngắn hơn sàn.
   > **Hai bản Internal Bleeding KHÔNG cộng dồn**: `sakIbOn()` xoá lớp cũ rồi mới đẩy lớp
   > mới, và bản **yếu không ghi đè bản mạnh** (giữ `dps` cao hơn, chỉ làm mới thời gian).
 - **3 · Medical Ninjutsu** — hồi chiêu `gs(18)`, kết ấn `gs(1)` đứng yên, **vẫn ăn đòn và vẫn bị khống chế**;
-  bị cắt ngang ⇒ chỉ chờ `gs(4)`. Xong cast thì **5 nhịp** cách nhau `gs(.5)` hồi **6.2% lượng
-  máu ĐÃ MẤT** mỗi nhịp (tổng **31%**), và cô **đi lại / đánh nhau bình thường** trong lúc
-  nó chạy.
-  - **Lượng máu đã mất CHỤP LẠI đúng lúc cast xong**, không tính lại sau mỗi nhịp.
-  - Có đồng đội thì hệ số chia đôi: **3.1% cho cô, 3.1% cho đồng đội máu thấp nhất**, và
-    **tính RIÊNG lượng máu đã mất của từng người**. Đo được: cô thiếu 400 ⇒ 12.4/nhịp, đồng
-    đội thiếu 600 ⇒ 18.6/nhịp.
+  bị cắt ngang ⇒ chỉ chờ `gs(4)`. Xong cast thì **5 nhịp** cách nhau `gs(.5)` hồi **3% MÁU
+  TỐI ĐA** mỗi nhịp (tổng **15%**).
+  - **ĐỨNG YÊN SUỐT CẢ CHIÊU — kết ấn lẫn năm nhịp hồi.** Người dùng chốt: *"trong lúc
+    sakura hồi máu thì k đc làm gì khác, chỉ đứng yên"*. `sakHealTick()` ghim `f.lock` mỗi
+    nhịp bằng quãng CÒN LẠI (`M.t + (M.left-1)*M.gap`, tính lại mỗi khung hình) là đủ cho cả
+    hai việc: vòng đi lại và vòng `think()` trong `step()` đều gác ở `f.lock>0`. `think()`
+    gác thêm ở `f.sakHeal` cho rõ ý. Nhịp cuối rơi xuống là cởi khoá ngay, không ghim thừa.
+    *(Trước đó cô **đi lại và đánh nhau bình thường** trong lúc nó chạy — đừng dựng lại.)*
+  - **Vài pixel trượt đà là BÌNH THƯỜNG, đừng đi tắt vận tốc riêng cho cô.** `lock` chỉ tắt
+    vector ĐIỀU KHIỂN, còn `dvx/dvy` ease về 0 theo `dt*5.5` rồi snap về 0 khi dưới 1.5px/s
+    — mọi chiêu ghim chân trong game đều trượt đà y như vậy (Ginyu Beam, Doraemon ngắm,
+    El Minya). `t_sakura.js` vì vậy cắt chuỗi nhịp làm **nửa đầu / nửa sau** và chỉ đòi nửa
+    sau đứng im hẳn; đo được **4.7px trượt đà rồi 0.0px**.
+  - **Hồi theo MÁU TỐI ĐA, KHÔNG theo máu đang thiếu** — người dùng chốt: *"thay đổi cơ chế
+    hồi máu bthg là chỉ hồi 3% máu tối đa bản thân chứ k phải 5,8% máu hiện tại nữa"*. Đây
+    là một đợt **cắt sức thật**, không phải đổi đơn vị: lối cũ càng thấp máu càng hồi mạnh
+    nên đúng lúc cô sắp gục thì nó kéo về nhiều nhất (5.8% × 5 của 700 máu đang thiếu =
+    **203**). Lối mới phẳng: 3% × 5 = **15% máu tối đa = 120 máu** trên thanh 800, bao nhiêu
+    máu cũng bấy nhiêu.
+  - **Lượng hồi CHỤP LẠI đúng lúc cast xong**, không tính lại sau mỗi nhịp.
+  - Có đồng đội thì hệ số chia đôi: **1.5% cho cô, 1.5% cho đồng đội máu thấp nhất**, mỗi
+    người tính theo **máu tối đa CỦA CHÍNH HỌ**. Đo được: cả hai cùng 800 máu tối đa ⇒
+    12/nhịp, tổng 60 mỗi người.
   - **Đồng đội chết giữa chừng thì phần của họ MẤT HẲN**, không dồn sang ai.
   - Không overheal, không hồi sinh, không tự giải khống chế.
+
+> **Biểu đồ sức mạnh đã kéo xuống theo đợt nerf**, đúng luật ở mục 2g:
+> `dmg 40 (giữ) · dur 92→82 · mob 44→40 · as 46→42 · rng 70 (giữ) · cc 76→72 · uti 92→84 ·
+> con 82→76 · cmb 94→84`. `dmg` và `rng` giữ nguyên vì **không con số sát thương nào đổi**;
+> `cmb` tụt nhiều nhất vì đợt này cắt đúng vào phần lật ngược thế trận (hồi máu phẳng + nhịp
+> hồi Byakugo), còn `mob` / `as` / `con` tụt vì quãng ghim chân lúc hồi máu và nhịp nghỉ giữa
+> hai chiêu lớn.
+
+#### Nhịp nghỉ giữa hai chiêu lớn — `SAK.skillGap`
+
+Người dùng: *"chỉnh sao cho time cast 2 skill atk là punch và cherry blossom của sakura tách
+nhau 1 tí, cast 2 skill gần như cùng lúc nhìn nó bị rối"*. Hai hồi chiêu 11s / 13s trôi độc
+lập nên có lúc chúng chín cùng một nhịp và cô bung liền hai chiêu lớn dính nhau.
+
+`SAK.skillGap = gs(3)` nạp vào `f.sakGap` mỗi lần tung Cherry Blossom Burst **hoặc**
+Chakra-Enhanced Punch, và cả hai nhánh trong `think()` gác thêm ở `f.sakGap<=0`.
+
+- **Đồng hồ CHỈ trôi khi cô đã dứt hẳn chiêu trước** — còn gồng (`sakAct`), còn lao
+  (`dash.kind==='sakcharge'`), hay còn rải nhịp hồi máu (`sakHeal`) thì nó đứng. Trôi luôn
+  trong lúc đang lao thì cú lao dài 1.2 giây nuốt gần hết quãng nghỉ và hai chiêu lại dính
+  vào nhau như cũ.
+- Trong quãng đó `think()` rơi xuống nhánh **đòn thường**, nên cô vẫn đánh chứ không đứng
+  không.
+- **KHÔNG gác Medical Ninjutsu** — người dùng chỉ nêu hai chiêu tấn công.
+- Đo thật trong trận (`t_sakura.js`): quãng ngắn nhất giữa lúc một chiêu lớn dứt và lúc
+  chiêu kia khởi là **3.02s** trên mốc 3s.
+- Mọi chỗ trong test ép `think()` chạy tay đều phải dọn `s.sakGap=0` và `s.sakHeal=null`,
+  không thì đo ra "không tung được".
 
 #### Đợt NERF — đọc trước khi nới lại bất kỳ hồi chiêu nào
 
@@ -2288,6 +2356,71 @@ lượng hồi máu — mấy con số đó người dùng đã chốt cứng t�
 | lượng hồi mỗi nhịp (`mnSolo`) | 5% | 5% | 5.4% | **6.2%** (tổng 25% → **31%**) |
 | chia đôi khi có đồng đội (`mnShare`) | 2.5% | 2.5% | 2.7% | **3.1%** |
 
+> **ĐỢT NERF THỨ HAI đã ĐỔI HẲN CƠ CHẾ HỒI MÁU — bảng ngay trên chỉ còn là lịch sử.**
+> Người dùng: *"giảm thêm sức mạnh sakura đi, đang hơi mạnh quá"*, rồi chốt cách làm:
+> *"thay đổi cơ chế hồi máu bthg là chỉ hồi 3% máu tối đa bản thân chứ k phải 5,8% máu
+> hiện tại nữa"*. Đường đi của con số: **6.2% máu đang thiếu → 5.8% máu đang thiếu →
+> 3% MÁU TỐI ĐA** (`mnSolo:.030` · `mnShare:.015`).
+>
+> Đo bằng `node tools/t_sak_balance.js` (bản sao của `t_bea_balance.js`, đổi người được đo,
+> 13 đối thủ × 2 lượt):
+>
+> | | Tỉ lệ thắng | Máu còn lại khi thắng |
+> |---|---|---|
+> | 5.8% máu đang thiếu, ĐÃ có ghim chân + nhịp nghỉ | **62%** (16/26) | 22% |
+> | **chốt — 3% MÁU TỐI ĐA** | **58%** (15/26) | 26% |
+>
+> Con số chỉ nhích 4 điểm, và đó là **đúng như cơ chế nói**: ở nửa máu thì hai lối cho ra
+> gần bằng nhau (5.8% × 5 của 400 thiếu = 116, so với 120 phẳng). Chỗ cắt thật nằm ở lúc
+> cô sắp gục — 12% máu thì lối cũ hồi **204**, lối mới vẫn đúng **120**, tức **−41%** đúng
+> vào pha quyết định. Thêm một dấu hiệu nữa: **trận gương Sakura vs Sakura giờ NGÃ NGŨ**
+> thay vì hoà vĩnh viễn (xem cuối mục này).
+>
+> **Chưa đo mốc TRƯỚC cả ba thay đổi**, nên 62% ở dòng trên đã là bản đã bị cắt hai nấc.
+
+#### Lượt dò tới mốc 50~53% — ĐỌC BẢNG NÀY TRƯỚC KHI CHỈNH SỨC CÔ
+
+Người dùng: *"xem thử giảm gì còn 45-50% đc?"*, rồi nới mốc: *"50-53% is good enough"*.
+Bốn lượt đo, mỗi lượt 3 lượt/cặp × 13 đối thủ = **39 trận**:
+
+| Đã đổi gì | Tỉ lệ thắng | Máu còn lại khi thắng |
+|---|---|---|
+| chưa cắt gì thêm | **56%** (22/39) | 24% |
+| `cbCd` gs(11)→gs(13) · `cpCd` gs(13)→gs(15) | **56%** (22/39) | 24% |
+| `sealT` gs(8) · `sealRes` .25 · hồi Byakugo .013 | **36%** (14/39) | 17% |
+| hồi Byakugo **.016**, còn lại trả về nguyên | **46%** (18/39) | 21% |
+| hồi Byakugo **.018** | **54%** (21/39) | 24% |
+| **CHỐT — hồi Byakugo `.017*LRT`** | **51%** (20/39) | 19% |
+
+Ba bài học, đắt cả ba:
+
+1. **HỒI CHIÊU CỦA HAI CHIÊU TẤN CÔNG KHÔNG PHẢI CHỖ CẮT SỨC CÔ.** Nới cả hai lên chừng
+   15~18% mà tỉ lệ thắng **không nhích một điểm nào** (56% → 56%). Sức của cô không nằm ở
+   nhịp cast — nó nằm ở **sống dai** (`dur`) và **lật ngược thế trận** (`cmb`). Đã trả hai
+   con số đó về đúng `gs(11)` / `gs(13)` vì **chính người dùng chốt chúng** (*"punch vs
+   burst hồi chiêu 13s và 11s th"*), đừng đụng lại.
+2. **CHỖ CẮT THẬT LÀ GÓI PHẦN THƯỞNG CỦA BYAKUGO**, và nó DỐC KHỦNG KHIẾP. Cắt cả ba vế một
+   lượt (thời lượng + giảm sát thương + nhịp hồi) rơi thẳng từ 56% xuống **36%** — quá tay
+   gần 20 điểm trong MỘT lượt. Đúng bài học đường cong dốc của Beatrice, chỉ là ở đây còn
+   dốc hơn.
+3. **Cuối cùng chỉ cần MỘT vế: nhịp hồi trong Byakugo.** `katsuyu` và `byakugo` luôn bằng
+   nhau, và mỗi 0.001 ăn chừng **4 điểm** tỉ lệ thắng (.016 → 46%, .018 → 54%). Muốn chỉnh
+   sức cô thì **đụng đúng hai con số đó**, mỗi lần một nấc `.001`, rồi
+   `node tools/t_sak_balance.js 3`. `sealT` / `sealRes` thì để yên — hai cái đó vừa cắt vừa
+   làm mất luôn cái khoảnh khắc lật ngược thế trận.
+
+> **`sakPct()` cho cả hai con số hồi trong Byakugo.** `Math.round(3.4)` ra 3, tức bảng kỹ
+> năng ghi 3% trong khi thật là 3.4% — đúng cái bẫy đã ghi cho `mnSolo`. Hai chỗ trong
+> `skills[]` giờ đọc `sakPct(SAK.katsuyu/RT)` và `sakPct(SAK.byakugo/RT)`.
+
+> **`t_sakura.js` đọc mốc hồi THẲNG TỪ HẰNG SỐ**, không ghim con số nữa (`o.regenWant` /
+> `o.allyWant`): trước đây ghim `23.68` và `16` nên vừa hạ nhịp hồi một nấc là hai mục đó
+> đổ oan. Mục của đồng đội cố ý **không có vế máu đang thiếu** — họ chỉ nhận Katsuyu.
+>
+> Ba thứ cắt cùng một lượt — ghim chân lúc hồi máu, nhịp nghỉ giữa hai chiêu lớn, và đổi cơ
+> chế hồi — nên **đừng nới lại cả ba một lúc** nếu thấy yếu quá: đúng bài học đường cong dốc
+> của Beatrice, chỉnh một nấc rồi ĐO LẠI.
+
 > **Lượt cắt 1 quá tay một nấc, người dùng nới lại rồi hạ xuống một nấc — ba lượt cả thảy.**
 > Lần đầu: *"Cooldown hồi máu 20→18s, lượng máu hồi tăng lên đôi chút (tăng cỡ 5-10% so vs
 > hiện tại) — punch vs burst hồi chiêu 13s và 11s th"* ⇒ hồi lấy +8% thành 5.4%. Lần hai họ
@@ -2295,7 +2428,8 @@ lượng hồi máu — mấy con số đó người dùng đã chốt cứng t�
 > **6.2%**. `mnShare` luôn giữ đúng bằng nửa `mnSolo`.
 
 > **Lượng hồi và lượng sát thương KHÔNG phải chỗ để cân bằng theo cảm tính** — mấy con số đó
-> người dùng chốt cứng từ bản mô tả gốc và chỉ chính họ nới. Cắt sức thì cắt bằng **hồi chiêu**.
+> người dùng chốt cứng từ bản mô tả gốc và chỉ chính họ nới. Cắt sức thì cắt bằng **hồi chiêu**,
+> hoặc bằng **cơ chế** (ghim chân, nhịp nghỉ, đổi mốc đo lượng hồi) như đợt nerf thứ hai.
 
 > **Chữ hiển thị phải in một chữ số thập phân** (`sakPct()`): `Math.round(5.4)` ra 5, tức
 > bảng kỹ năng ghi 5% trong khi thật là 5.4%. Khai `sakPct` **cạnh `sakShurDmg`**, trước bảng
@@ -2408,17 +2542,47 @@ Hết `sealT` là **rơi THẲNG** vào `f.sakExh = SAK.exhT` (`gs(10)`), không
   bắt được. Thêm nhân vật thì nhớ chạy `t_reg` chứ đừng tin mỗi test riêng.)*
 
 **Ô dán ảnh riêng**: `atk1` · `punch` · `kick` · `burst` · `charge` · `heal` · `seal` ·
-`win` · `down`, cộng `idle/hurt/injured`. Thiếu ảnh thì lùi về ô gần nghĩa nhất.
+`byakugo` · `sealatk` · `win` · `down`, cộng `idle/hurt/injured`. Thiếu ảnh thì lùi về ô gần
+nghĩa nhất.
+
+> **Bốn ô dễ lẫn nhau, nhớ đúng mốc thời gian của từng ô:**
+>
+> | Ô | Lúc nào |
+> |---|---|
+> | `heal` | dáng **kết ấn** Medical Ninjutsu — giờ sống suốt cả chiêu (cast + 5 nhịp) vì cô đứng yên hẳn |
+> | `seal` | **khoảnh khắc MỞ** dấu ấn (`sakSealAnim`, 0.6 giây) |
+> | `byakugo` | **đứng tạo dáng** trong suốt 10 giây Byakugo |
+> | `sealatk` | **ra đòn** trong lúc Byakugo đang mở |
+>
+> Hai ô sau thêm theo yêu cầu *"add thêm model: sakura form streng hundred seal posing và 1
+> form kết ấn"*. Chúng **chỉ ăn khi `f.sakSeal>0`**, nên bộ ảnh cũ chưa có hai ô này vẫn
+> chạy đủ — `sprite()` lùi `sealatk → ô đòn tương ứng → byakugo → punch`, và
+> `byakugo → seal → idle`.
+>
+> `sakuraTick()` đè `f.pose='byakugo'` **chỉ khi pose đang là `'idle'`** và cô không gồng,
+> không lao, không trong phân cảnh mở dấu ấn — đè cả lúc đang đấm là mất sạch animation
+> đánh nhau. Hết dấu ấn thì trả `pose` về `'idle'` ngay, không thì cô kẹt ở dáng form mãi
+> (`poseT` của nó bằng 0 nên không tự hết hạn).
+>
+> Dáng vector lùi của `byakugo`: hai nắm đấm siết sát sườn kèm quầng tím ở nắm tay — khác
+> hẳn thế thủ thường, đọc ra ngay ở cỡ trong trận kể cả khi chưa dán ảnh.
 **Ô dán tiếng**: nhóm riêng `Haruno Sakura`, mười một ô, mỗi ô một `case` trong `synth()`.
 **Đấm đá mượn thẳng `sfx('punch')` của ChiChi**, đúng lối đã chốt cho Horikita / Ginyu /
 Doraemon / Superman / Beatrice — đừng dựng ô mới.
 
 Kiểm bằng `node tools/t_sakura.js` (97 mục, phần lớn ĐO THẬT trong trận).
 
-> **Trận gương Sakura vs Sakura HOÀ, và đó là hệ quả ĐÃ ĐO của lượt nới lại — không phải lỗi
-> mới.** Hai cô cùng mang Medical Expertise nên sát thương duy trì của nhau bị cắt 70%, mà
-> Medical Ninjutsu thì hồi theo **phần trăm máu ĐÃ MẤT** — càng thấp máu càng hồi mạnh. Nhịp
-> hồi và nhịp bào chỉ cần ngang nhau là máu dao động quanh một mốc chứ không tụt.
+> **Trận gương Sakura vs Sakura ĐÃ NGÃ NGŨ — đợt đổi cơ chế hồi máu chữa luôn chỗ này.**
+> Đo lại sau khi hồi máu chuyển sang **3% MÁU TỐI ĐA**: trận kết thúc ở giây **346** trong
+> trận (`45s 395/380` · `105s 227/145` · `165s 212/105` · `225s 86/288` · `285s 353/213` ·
+> `345s 203/18`). Máu vẫn dao động mạnh vì cả hai cùng hồi, nhưng nó **tụt dần** chứ không
+> còn kẹt quanh một mốc.
+>
+> Lý do cũ vẫn đáng đọc vì nó giải thích vì sao lối đo theo máu ĐÃ MẤT là chỗ hỏng: hai cô
+> cùng mang Medical Expertise nên sát thương duy trì của nhau bị cắt 70%, mà lối cũ hồi theo
+> **phần trăm máu ĐÃ MẤT** — càng thấp máu càng hồi mạnh, nên nhịp hồi tự dâng lên đúng bằng
+> nhịp bào và máu đứng yên quanh một mốc. Lối mới PHẲNG nên nhịp bào thắng dần. **Đừng quay
+> lại lối đo theo máu đã mất**, bảng dưới là lịch sử của lối cũ chứ không còn là mốc để nhắm.
 >
 > | `mnCd` / `mnSolo` | Đo được |
 > |---|---|
@@ -2428,10 +2592,11 @@ Kiểm bằng `node tools/t_sakura.js` (97 mục, phần lớn ĐO THẬT trong 
 > | `gs(18)` · 7% | **vẫn hoà**, dải nhích cao hơn: giây 45 `421/397` · 120 `415/438` · 200 `426/460` · 280 `454/339` · 360 `356/533` |
 > | **`gs(18)` · 6.2% (chốt)** | **vẫn hoà**, dải tụt lại một nấc: giây 45 `384/459` · 120 `452/367` · 200 `307/439` · 280 `342/398` · 360 `292/376` |
 >
-> Ranh giới nằm đâu đó **giữa 18 và 20 giây ở mức hồi 5%**, và nó rất hẹp — đúng kiểu đường
-> cong dốc đã ghi ở mục Beatrice. Muốn nó có hồi kết lại thì **chỉ đụng `SAK.mnCd`**, đừng
-> đụng `mnSolo` (người dùng chốt cứng con số đó), và **đo lại bằng cách chạy tay một trận
-> gương tới 300+ giây** — mốc 60 giây của `t_reg` quá ngắn để phân biệt "chưa xong" với "hoà".
+> Hồi đó ranh giới nằm đâu đó **giữa 18 và 20 giây ở mức hồi 5%**, và nó rất hẹp — đúng kiểu
+> đường cong dốc đã ghi ở mục Beatrice. Giờ không còn phải đi tìm cái ranh giới đó nữa, nhưng
+> luật ĐO thì giữ nguyên: **chạy tay một trận gương tới 300+ giây** mới kết luận được, mốc
+> 60 giây của `t_reg` quá ngắn để phân biệt "chưa xong" với "hoà" — `t_reg` vẫn báo trận gương
+> là `con danh 40s`, đó KHÔNG phải dấu hiệu hoà.
 >
 > **Mười cặp còn lại của cô đều ngã ngũ** trong 14~32 giây (`t_reg`), nên chuyện này chỉ nằm
 > ở trận gương. Giải đấu thì vốn đã có trần `COMP_MAXT` 90 giây trong trận nên không kẹt.
@@ -3840,7 +4005,17 @@ node tools/t_sakura.js # Haruno Sakura (93 mục): nội tại giảm 70% thời
                         # và CHAKRA EXHAUSTION sau Byakugo: rơi thẳng vào 10s tê liệt,
                         # −50% chạy / −50% cast, khoá Cherry Blossom Burst lẫn Medical
                         # Ninjutsu mà vẫn còn đòn thường + Chakra-Enhanced Punch, chính
-                        # nội tại của cô KHÔNG cắt ngắn được nó, hết 10s là về bình thường
+                        # nội tại của cô KHÔNG cắt ngắn được nó, hết 10s là về bình thường;
+                        # NHỊP NGHỈ giữa Cherry Blossom Burst và Chakra-Enhanced Punch (đồng
+                        # hồ đứng khi còn gồng, chỉ trôi lúc rảnh tay, và đo THẬT trong trận
+                        # thì hai chiêu lớn cách nhau ít nhất 3s); Medical Ninjutsu GHIM CHÂN
+                        # cả chiêu (hết đà là đứng im hẳn, không ném không đánh, nhịp cuối rơi
+                        # xuống mới cởi khoá) và hồi 3% MÁU TỐI ĐA mỗi nhịp — con số PHẲNG,
+                        # thiếu 200 hay thiếu 700 cũng bấy nhiêu; và bốn ô dán ảnh dễ lẫn
+                        # (heal · seal · byakugo · sealatk) cùng luật đè dáng của form Byakugo
+node tools/t_sak_balance.js  # cân bằng Sakura: đánh với cả 13 đối thủ, in tỉ lệ thắng kèm MÁU
+                        # CÒN LẠI lúc thắng — con số thứ hai mới nói trận đó sát nút hay một
+                        # chiều. Bản sao của t_bea_balance.js, chỉ đổi người được đo.
 ```css
 .bar>button,.bar>select,.bar>label.chk,.cselBar>button,.arcOver>button{height:var(--ctl)}
 ```
