@@ -3013,7 +3013,20 @@ là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa 
     đứng bên A lượt đi thì lượt về đứng bên B (`keys[pair[L%2]]`). Số vòng nhân đôi theo nên
     dòng "Vòng 9/14" tự đúng, không phải sửa chỗ nào khác.
   - Nhãn vòng đi qua `lgLabel(m)` và ghi thêm **Lượt đi / Lượt về** khi `legs===2`: chỉ nhìn
-    số vòng thì không đoán ra vòng 9/14 là lượt nào.
+    số vòng thì không đoán ra đang ở lượt nào.
+  - **SỐ VÒNG ĐẾM TRONG TỪNG LƯỢT, KHÔNG ĐẾM DỒN CẢ HAI.** Người dùng bác bản cũ:
+    *"còn hay hiển thị sai, bảng 8 ng thì hiện 1/14 round"*. Tám người đá vòng tròn là
+    **7 vòng**; `COMP.nr` giữ **TỔNG** số vòng của cả giải (7×2 = 14 khi có lượt về) nên
+    bản cũ in thẳng `nr` ra thành `Vòng 1/14`, đọc ra như thể một lượt có 14 vòng. Giờ
+    `lgLabel()` chia lại: **`Vòng 1/7 · Lượt đi`** rồi `Vòng 1/7 · Lượt về`, đúng lối mọi
+    giải bóng đá.
+    - **Rút `nr/legs` chứ đừng khai thêm một trường mới**: giải đang đá dở lưu ở khoá
+      `cfg_comp` không có trường đó, mà đổi hình dạng dữ liệu là phải nống `COMP_SC` thêm
+      một nấc (xem luật `COMP_SC` ngay trên).
+    - **`COMP.nr` vẫn là tổng, đừng hạ nó xuống một lượt** — dòng tiến trình, hàng thể thức
+      (`legsHint`) và mấy phép đo trong `t_comp.js` đều đọc con số tổng đó.
+    - `m.leg` có sẵn trên mỗi trận, nhưng vẫn suy lại từ `Math.floor(m.r/per)+1` khi thiếu:
+      giải lưu từ bản rất cũ có thể không mang trường đó.
   - Hàng chọn **in sẵn số trận và số vòng** (`legsHint`): 8 người đá lượt về là **56 trận**,
     phải cho người chơi biết trước mình đang chọn cái gì.
 - **Dàn đấu thủ bấm là BẬT/TẮT, không có bản sao** (`modeGroups()` gắn cờ `toggle`): bảng xếp
@@ -4228,26 +4241,52 @@ sáng, và canh nội dung bằng `padding: … max(16px, calc((100% - 1080px)/2
 lam-vàng-hồng chạy suốt mép trên. Tiêu đề nhảy lên `clamp(24px,6vw,44px)`. Bảng thông số
 bật lên (`#dexPop`) theo đúng lối đó.
 
-**2 · Trang trong trận là HAI CỘT từ 1040px trở lên.** `body.arcade .wrap` thành `grid`:
+**2 · Trang trong trận là MỘT CỘT, và sàn đấu nới ra hết chỗ còn lại.**
 
-```
-hàng 1   header  (bắc hết hai cột — logo trái, thẻ cặp đấu phải)
-hàng 2   .bar    (bắc hết hai cột — dải HUD chạy suốt)
-hàng 3   .stage  ┊  thẻ nhật ký   ← hàng CO GIÃN (1fr)
-hàng 4   (span)  ┊  bảng phím
-```
+> **LƯỚI HAI CỘT VÀ THẺ NHẬT KÝ ĐÃ BỎ KHỎI TRANG CHƠI.** Người dùng: *"thiết kế bỏ cái
+> battle logg đi, làm arena nhìn cho nó rộng hơn tí nữa"*, kèm một điều kiện: *"nhưng vẫn
+> quay 9:6 được nhé"*. Trước đó `body.arcade .wrap` là một `grid` hai cột (sàn bên trái,
+> nhật ký + bảng phím ở dải 290~310px bên phải) từ 1040px trở lên. **Đừng dựng lại.**
+>
+> Thẻ nhật ký giờ nằm trong một cặp mốc `<!--STUDIO-->` riêng nên **chỉ còn ở XƯỞNG** — đó
+> là cửa sổ gỡ lỗi duy nhất của thợ (216 chỗ gọi `say()`). Trang chơi không phải sửa gì
+> thêm: `paintLog()` vốn đã gác `if(!lg)return` và `say()` chỉ đẩy vào mảng `G.logs`.
 
-- Nhận thẻ nhật ký bằng **`.card:has(#log)`**, đừng đếm `nth-of-type` — thêm bớt một khối
-  là lệch hết.
-- **Hàng 3 phải là `1fr`.** Để cả hai hàng `auto` thì phần dư của khối sàn (nó bắc qua hai
-  hàng) bị chia đều ra và hở một khoảng trống lơ lửng giữa hai thẻ bên phải — đo được hụt
-  ~80px. Cho hàng 3 co giãn thì nhật ký kéo cao bằng đúng sàn đấu, bảng phím tụt sát đáy,
-  dải bên không còn chỗ trống nào.
-- **`.stage` phải `width:fit-content` và canh giữa.** Canvas kẹp ở 600px mà khung trải hết
-  cột thì hai bên thừa cả trăm pixel nền trống — đúng cái lỗi "thừa nền" đã sửa ở mục trên,
-  chỉ là lần này nằm bên trong khung.
-- Nhật ký ở dải bên đổi sang lối **bảng tin trận đấu**: chữ 12px, mép trên và mép dưới đều
-  nhạt dần.
+Thứ tự trên trang chơi giờ là **header → thanh công cụ → sàn đấu → dải phím**, một cột.
+
+- **Bỏ nhật ký KHÔNG tự nới sàn ra một pixel nào** — nó nằm ở cột PHỤ, còn bề ngang canvas
+  thì bị luật `canvas{…;max-width:600px}` ở đầu file kẹp lại. Phải nới bằng tay, và phải
+  sửa **ba chỗ cùng lúc**, thiếu một chỗ là không thấy khác:
+  1. **`body.arcade .stage{width:fit-content;margin-inline:auto}`** — để nguyên `100%` thì
+     khung trải hết cột 1160px trong khi canvas vẫn 600px, thừa hơn 250px nền trống mỗi bên.
+  2. **`max-width:none`** để gỡ cái kẹp 600px.
+  3. **Thanh công cụ bó gọn** (`--ctl:30px`) đúng lối `body.human .bar`: chiều cao đo được
+     102 → **84px**, tức trả 18px cho sàn. **KHÔNG giấu nút nào** — mấy bộ test bấm thẳng.
+- **Phần trừ theo chiều cao ĐO THẬT, đừng đoán** (đúng luật của `body.human` ở mục 2c-ter).
+  Canvas **KHÔNG vuông**: kho ảnh thật là `1240×1388` (hai dải HUD kẹp trên dưới) nên nó
+  cao gấp `1.119` lần bề ngang. Trên màn 1280×900, đỉnh khung sàn nằm ở **182px**, nên
+  `calc(100vh − 275px)` cho ra 625px bề ngang và đáy khung sàn rơi đúng 900px — **cả sàn
+  nằm trong màn**. Thử 262px thì đáy thò ra 14px.
+
+  | màn | canvas trước | canvas sau |
+  |---|---|---|
+  | 1280×900 | 600 | **625** |
+  | 1440×1080 | 600 | **805** |
+  | 430×930 | 402 | **426** |
+
+  Công thức: `body.arcade canvas#arena{width:min(96vw,calc(100vh - 275px),980px)}`, màn hẹp
+  (≤820px) thì `min(99vw,calc(100vh - 210px))` vì ở đó **bề ngang mới là chỗ chặn**.
+  Trần 980px để màn rộng mà thấp không kéo sàn dài quá tầm mắt.
+- **Rule của `body.arcade` phải đặt TRƯỚC rule của `body.human`** — hai selector cùng độ
+  đặc hiệu nên chỉ có THỨ TỰ quyết định. Bản người chơi mang cả hai class nên nó vẫn thắng
+  và giữ công thức riêng (`100vh − 186px`, trần 1180px) của mục 2c-ter.
+- Dải phím vẫn nằm dưới mép màn trên màn 900px như trước (trang này **vốn đã cuộn** ở bề
+  ngang 600px — đo được `docH` 991), đó không phải chỗ đợt này chữa.
+- **QUAY 9:16 KHÔNG BỊ ẢNH HƯỞNG** — điều kiện người dùng nêu, và đã đo lại.
+  `recFrame()` blit `CV` theo **kho ảnh thật** (`CV.width` / `CV.height`) chứ không đọc
+  `getBoundingClientRect()`, nên nới CSS bao nhiêu thì khung video vẫn đúng **1080×1920,
+  nhịp khung cố định**. `t_rec.js` chấm đúng chỗ đó. **Đừng đổi `recFrame()` sang đọc bề
+  ngang CSS.**
 - Khung sàn có thêm **bốn ngoặc góc** vẽ bằng tám mảng gradient trên một `::after` duy nhất
   (`pointer-events:none` vì nó phủ lên canvas).
 

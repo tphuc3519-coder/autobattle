@@ -142,6 +142,7 @@ window.__COMP_MAXT=COMP_MAXT; window.__compLive=()=>compLive;
 window.__leagueNew=leagueNew; window.__lgAnim=()=>lgAnim; window.__cupAnim=()=>cupAnim;
 window.__loadSaved=()=>loadSaved(); window.__COMP_SC=COMP_SC;
 window.__setComp=(c,live)=>{ COMP=c; compLive=!!live; };
+window.__lgLabel=m=>lgLabel(m);
 window.__canReflect=canReflect;
 window.__floatScale=floatScale; window.__BEA_FX=()=>BEA_FX;
 /* Ép trận đang đá kết thúc ngay với người thắng chỉ định — khỏi phải ngồi xem đủ mấy chục
