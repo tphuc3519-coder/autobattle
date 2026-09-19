@@ -34,44 +34,48 @@ function fileTieng() {
   const doc = (fn, arg) => page.evaluate(fn, arg);
 
   /* ---------------- bảng ảnh ---------------- */
+  /* Nhân vật của hai ô ĐẦU BẢNG đọc thẳng từ SETS chứ đừng ghim tên ai: thứ tự trong
+     SETS đổi theo mỗi lần thêm nhân vật mới (thêm Sakura là cả bảng dịch đi một khu),
+     ghim 'kono' vào đây thì hai ô đầu thành của người khác và test đổ oan. */
   const oA = '#slotArea .slotwrap:has(input[type=file])';
-  const wrapA = page.locator(oA).first();          // ô đầu tiên của Konohamaru
+  const ck = await doc(() => window.__SETS[0].key);
+  const wrapA = page.locator(oA).first();          // ô đầu tiên của nhân vật đứng đầu bảng
   const wrapB = page.locator(oA).nth(1);
   ok(!await wrapA.locator('.slotdel').isVisible(), 'o anh trong thi chua hien nut ✕');
 
   await wrapA.locator('input[type=file]').setInputFiles(fileAnh());
   await wrapB.locator('input[type=file]').setInputFiles(fileAnh());
-  await page.waitForFunction(() => {
-    const S = window.__SPR, k = Object.keys(S.kono || {});
+  await page.waitForFunction(c => {
+    const S = window.__SPR, k = Object.keys(S[c] || {});
     return k.length >= 2;
-  }, null, { timeout: 20000 });
-  const daNap = await doc(() => Object.keys(window.__SPR.kono));
+  }, ck, { timeout: 20000 });
+  const daNap = await doc(c => Object.keys(window.__SPR[c]), ck);
   ok(daNap.length === 2, `nap duoc anh vao 2 o (${daNap.join(', ')})`);
   ok(await wrapA.locator('.slotdel').isVisible(), 'o co anh thi nut ✕ hien ra');
 
   await wrapA.locator('.slotdel').click();
-  await page.waitForFunction(t => !window.__SPR.kono[t], daNap[0], { timeout: 20000 });
-  const sauXoa = await doc(async ([a, b]) => {
-    const kho = await window.__Store.get('spr_kono');
+  await page.waitForFunction(([c, t]) => !window.__SPR[c][t], [ck, daNap[0]], { timeout: 20000 });
+  const sauXoa = await doc(async ([c, a, b]) => {
+    const kho = await window.__Store.get('spr_' + c);
     const d = kho ? JSON.parse(kho) : {};
-    return { conA: !!window.__SPR.kono[a], conB: !!window.__SPR.kono[b],
+    return { conA: !!window.__SPR[c][a], conB: !!window.__SPR[c][b],
              khoA: !!(d[a] && d[a].length), khoB: !!(d[b] && d[b].length),
-             lop: window.__SLOT.kono[a].el.className, chu: window.__SLOT.kono[a].cap.textContent,
-             nhan: window.__SLOT.kono[a].label };
-  }, daNap);
+             lop: window.__SLOT[c][a].el.className, chu: window.__SLOT[c][a].cap.textContent,
+             nhan: window.__SLOT[c][a].label };
+  }, [ck, ...daNap]);
   ok(!sauXoa.conA && sauXoa.conB, 'xoa dung mot o, o ben canh con nguyen');
   ok(!sauXoa.khoA && sauXoa.khoB, 'kho luu cung chi mat anh cua o vua xoa');
   ok(!/set/.test(sauXoa.lop) && sauXoa.chu === sauXoa.nhan, `o ve lai trang thai trong ("${sauXoa.chu}")`);
   ok(!await wrapA.locator('.slotdel').isVisible(), 'o trong roi thi nut ✕ an di');
 
   await page.click('#sprUndo');
-  await page.waitForFunction(t => !!window.__SPR.kono[t], daNap[0], { timeout: 20000 });
-  const sauHoan = await doc(async a => {
-    const kho = await window.__Store.get('spr_kono');
+  await page.waitForFunction(([c, t]) => !!window.__SPR[c][t], [ck, daNap[0]], { timeout: 20000 });
+  const sauHoan = await doc(async ([c, a]) => {
+    const kho = await window.__Store.get('spr_' + c);
     const d = kho ? JSON.parse(kho) : {};
-    return { con: !!window.__SPR.kono[a], kho: !!(d[a] && d[a].length),
+    return { con: !!window.__SPR[c][a], kho: !!(d[a] && d[a].length),
              an: document.getElementById('sprUndo').style.display === 'none' };
-  }, daNap[0]);
+  }, [ck, daNap[0]]);
   ok(sauHoan.con && sauHoan.kho, 'hoan tac lay lai duoc anh, ca trong kho luu');
   ok(sauHoan.an, 'hoan tac xong thi nut Hoan tac an di');
 
@@ -121,16 +125,16 @@ function fileTieng() {
   /* xoá cả bộ ảnh: có hỏi lại, và vẫn hoàn tác được */
   page.on('dialog', d => d.accept());
   await page.click('#sprClear');
-  await page.waitForFunction(() => Object.keys(window.__SPR.kono || {}).length === 0, null, { timeout: 20000 });
-  const sachTron = await doc(async () => ({ con: Object.keys(window.__SPR.kono).length,
-                                            kho: !!(await window.__Store.get('spr_kono')) }));
+  await page.waitForFunction(c => Object.keys(window.__SPR[c] || {}).length === 0, ck, { timeout: 20000 });
+  const sachTron = await doc(async c => ({ con: Object.keys(window.__SPR[c]).length,
+                                           kho: !!(await window.__Store.get('spr_' + c)) }), ck);
   ok(sachTron.con === 0 && !sachTron.kho, 'nut xoa ca bo van don sach nhu cu');
   await page.click('#sprUndo');
-  await page.waitForFunction(() => Object.keys(window.__SPR.kono || {}).length === 2, null, { timeout: 20000 });
-  const troLai = await doc(async () => {
-    const kho = await window.__Store.get('spr_kono');
-    return { con: Object.keys(window.__SPR.kono).length, kho: kho ? Object.keys(JSON.parse(kho)).length : 0 };
-  });
+  await page.waitForFunction(c => Object.keys(window.__SPR[c] || {}).length === 2, ck, { timeout: 20000 });
+  const troLai = await doc(async c => {
+    const kho = await window.__Store.get('spr_' + c);
+    return { con: Object.keys(window.__SPR[c]).length, kho: kho ? Object.keys(JSON.parse(kho)).length : 0 };
+  }, ck);
   ok(troLai.con === 2 && troLai.kho === 2, `hoan tac lay lai duoc ca bo (${troLai.con} o)`);
 
   ok(errors.length === 0, `khong co loi trang${errors.length ? ': ' + errors[0] : ''}`);
