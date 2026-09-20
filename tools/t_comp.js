@@ -466,6 +466,76 @@ async function daHet(page, tran) {
   ok(ht.thua === -56, `ben thua cung chi -56 chu khong phai -800 (${ht.thua})`);
   ok(ht.ga === 800 && ht.gb === 744, `dong ket qua van in mau con lai cua ca hai ben (${ht.ga}-${ht.gb})`);
 
+  /* ---------- NHẬP KẾT QUẢ TAY, và SAO LƯU GIẢI BỊ XOÁ NHẦM ----------
+     Nút 🏠 của màn hết trận nằm ngay cạnh REMATCH và gọi thẳng `compClear()`: bấm nhầm
+     một cái là mất sạch bảng xếp hạng, không đường lùi. Hai vế chữa, kiểm cả hai:
+     ghi kết quả một trận BẰNG TAY (dựng lại giải mà khỏi đánh lại từng trận), và một bản
+     sao ở `cfg_comp_bak` để hỏi khôi phục ở lần vào game kế tiếp. */
+  page.on('dialog', d => d.accept());
+  await page.evaluate(() => {
+    window.__setComp(window.__leagueNew(['sakura', 'tsubasa', 'chichi', 'suzune'], 1), false);
+    document.getElementById('compBoard').classList.remove('off');
+    window.__compPaint();
+  });
+  const capDau = await page.evaluate(() => { const m = window.__compNext(); return [m.a, m.b]; });
+  await page.evaluate(() => document.getElementById('compMark').click());
+  await page.waitForTimeout(150);
+  ok(await page.evaluate(() => {
+    const e = document.getElementById('compMarkBox');
+    return !!e && !e.classList.contains('off') && !!document.getElementById('mkGo');
+  }), 'bam "nhap ket qua" thi hien bang nhap tay');
+  /* Đúng cảnh người dùng gặp: bên B thắng và còn 41 máu, bên thua cạn máu. */
+  const tay = await page.evaluate(() => {
+    const b = window.__compNext().b;
+    document.querySelector(`#compMarkBox .mkW[data-mk="${b}"]`).click();
+    document.getElementById('mkHpB').value = '41';
+    document.getElementById('mkGo').click();
+    const C = window.__COMP(), m = C.fix[0], T = C.tab, gd = x => T[x].gf - T[x].ga;
+    return { w: m.w, ga: m.ga, gb: m.gb, hs: gd(m.b), thua: gd(m.a), pts: T[m.b].pts,
+             da: window.__compPlayed(), ke: (window.__compNext() || {}).a };
+  });
+  ok(tay.w === capDau[1], `ghi nhan dung nguoi thang (${tay.w})`);
+  ok(tay.hs === 41 && tay.thua === -41, `hieu so +41 / -41 dung nhu mot tran danh that (${tay.hs}/${tay.thua})`);
+  ok(tay.ga === 0 && tay.gb === 41, `dong ket qua in mau ca hai ben (${tay.ga}-${tay.gb})`);
+  ok(tay.pts === 3, `nguoi thang duoc 3 diem (${tay.pts})`);
+  ok(tay.da === 1 && !!tay.ke && tay.ke !== capDau[0], `lich nhich sang tran ke tiep (da da ${tay.da})`);
+  /* Dựng lại một giải bị xoá nhầm thì thứ tự mấy trận đã đá chưa chắc trùng đầu lịch, nên
+     phải nhập được cả trận KHÔNG phải trận kế tiếp. */
+  const lech = await page.evaluate(() => {
+    const sel = document.getElementById('mkPick');
+    if (!sel || sel.options.length < 2) return { co: false };
+    sel.selectedIndex = 1;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    const nut = [...document.querySelectorAll('#compMarkBox .mkW')].map(b => b.getAttribute('data-mk'));
+    document.querySelector(`#compMarkBox .mkW[data-mk="${nut[1]}"]`).click();
+    document.getElementById('mkHpB').value = '264';
+    document.getElementById('mkGo').click();
+    const C = window.__COMP(), tr = C.fix.filter(m => m.w);
+    return { co: true, so: tr.length, gb: tr.map(m => m.gb), boQua: !C.fix[1].w,
+             ke: window.__compNext().ref === C.fix[1] };
+  });
+  ok(lech.co && lech.so === 2, `ghi duoc ca tran KHONG phai tran ke tiep (${lech.so} tran da ghi)`);
+  ok(lech.gb.indexOf(264) >= 0, `so mau 264 vao dung tran vua chon (${lech.gb.join('/')})`);
+  ok(lech.boQua && lech.ke, 'tran bi bo qua van con nguyen, van la tran ke tiep');
+  const bak = await page.evaluate(async () => {
+    window.__compClear();                        // đúng việc nút 🏠 làm
+    await new Promise(r => setTimeout(r, 400));
+    const raw = await window.__storeGet('cfg_comp_bak');
+    const con = !!window.__COMP();
+    window.__setCompBak(raw);
+    window.__setPmode('ffa');                    // đã chơi chế độ khác trước khi khôi phục
+    const phuc = window.__compBakAsk();          // confirm: test tự bấm OK
+    const C = window.__COMP();
+    return { raw: !!raw, con, phuc, bak2: window.__compBak(), pmode: window.__PMODE(),
+             da: C ? window.__compPlayed() : -1, pts: C ? C.tab[C.fix[0].b].pts : -1 };
+  });
+  ok(bak.raw, 'xoa giai thi van con mot ban sao o cfg_comp_bak');
+  ok(!bak.con, 'xoa xong thi khong con giai nao dang chay');
+  ok(bak.phuc && bak.da === 2 && bak.pts === 3,
+     `khoi phuc lai thi con nguyen ket qua da da (${bak.da} tran / ${bak.pts} diem)`);
+  ok(!bak.bak2, 'khoi phuc xong thi bo ban sao, khong hoi lai lan nua');
+  ok(bak.pmode === 'league', `khoi phuc thi keo PMODE ve dung loai giai (${bak.pmode})`);
+
   ok(errors.length === 0, `khong co loi trang (${errors.slice(0, 2).join(' | ')})`);
   await browser.close();
 

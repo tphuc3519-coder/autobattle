@@ -3075,6 +3075,36 @@ là cái sổ `COMP` và màn bảng xếp hạng / sơ đồ nhánh xen giữa 
 `duelLike(m)` gộp `duel | league | cup`: `buildRoster()` và `spawnSpots()` đọc qua nó để mỗi
 trận của giải vẫn là hai người đứng hai đầu sàn y như đấu tay đôi.
 
+### Nhập kết quả tay, và bản sao của giải bị xoá nhầm
+
+Người dùng bấm nhầm nút **🏠** ở màn hết trận (nó nằm ngay cạnh REMATCH) và mất sạch một
+giải đang đá dở — `goHomeAction()` gọi thẳng `compClear()`, không hỏi lại, không đường lùi.
+Ba thứ chữa, đừng gỡ cái nào:
+
+1. **`compRecord(ref,wk,ga,gb)` là cửa DUY NHẤT cộng điểm vào sổ giải.** `compResult()` chỉ
+   còn lo phần đọc kết quả từ sàn đấu (ai là hồn, máu còn bao nhiêu) rồi gọi vào đây.
+   **Đừng chép lại phép cộng điểm ra chỗ khác** — hiệu số tính theo phần CHÊNH máu, hai bản
+   sẽ lệch nhau ngay lần chỉnh sau.
+2. **Nút `#compMark` — ✎ Nhập kết quả.** Mở một bảng nhỏ trong `#compBoard`: chọn trận, chọn
+   ai thắng, gõ máu còn lại của hai bên, bấm ghi nhận. Ghi xong lịch tự nhích, nên **dựng
+   lại cả một giải bị xoá chỉ là nhập lần lượt từng trận đã đá** — khỏi đánh lại trận nào.
+   - **Chọn được BẤT KỲ trận nào chưa đá**, không riêng trận kế tiếp (`compMkList()`): dựng
+     lại giải thì thứ tự mấy trận đã đá chưa chắc trùng đầu lịch. Loại trực tiếp thì mấy
+     vòng sau còn trống chỗ nên bị loại khỏi danh sách.
+   - **Giữ THAM CHIẾU tới ô lịch (`compMkRef`), đừng giữ chỉ số**: ghi xong một trận là danh
+     sách "chưa đá" ngắn đi và mọi chỉ số phía sau trượt một nấc.
+   - Máu bên thua **mặc định 0** (thua vì cạn máu); chỉ trận HẾT GIỜ mới có hai số cùng
+     dương, đúng cách sổ giải đọc hiệu số ở ngay trên.
+   - Bấm chọn người thắng thì **chỉ đổi class**, đừng `compPaint()` — vẽ lại là xoá trắng hai
+     ô máu vừa gõ. Đổi trận thì **phải** vẽ lại, vì nút và nhãn ăn theo cặp đấu.
+3. **`cfg_comp_bak` + hỏi lại.** `compClear()` gọi `compBakSave()` trước khi xoá, chỉ sao lưu
+   giải **đang đá dở** (đã đá ít nhất một trận, chưa xong). Lần vào game kế tiếp `whoGo()`
+   hỏi **đúng một lần** (`compBakAsk()`); trả lời không thì bỏ luôn bản sao. Kèm theo,
+   nút 🏠 và **✕ Bỏ giải** giờ `confirm()` khi còn giải đá dở.
+   - `compBakInfo()` **mượn tạm biến `COMP` một nhịp** rồi trả lại để gọi được
+     `compPlayed()`/`compTotal()` — hai hàm đó lo cho cả hai loại giải, chép lại logic đếm
+     ra chỗ khác là chắc chắn lệch nhau về sau.
+
 Kiểm bằng `node tools/t_comp.js`.
 
 ## 2c-ter. BẢN AUTO và BẢN NGƯỜI CHƠI — cộng chế độ PHIÊU LƯU
@@ -5060,7 +5090,12 @@ node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4
                         # đổi hạng, và ảnh chụp chỉ dùng một lần), mỗi trận của giải cũng mở
                         # màn VS trước và thắng xong thì DỪNG ở màn WINNER chờ người chơi bấm
                         # nút đi tiếp chứ không tự nhảy sang bảng,
-                        # và cả hai giải chạy từ trận đầu tới lúc có nhà vô địch
+                        # và cả hai giải chạy từ trận đầu tới lúc có nhà vô địch;
+                        # NHẬP KẾT QUẢ TAY (chọn được cả trận KHÔNG phải trận kế tiếp, ghi
+                        # xong thì hiệu số / điểm / dòng kết quả y hệt một trận đánh thật,
+                        # trận bị bỏ qua vẫn còn nguyên) và SAO LƯU giải bị xoá nhầm (bấm
+                        # 🏠 thì vẫn còn bản sao ở cfg_comp_bak, khôi phục lại đủ kết quả
+                        # đã đá rồi bỏ bản sao đi, không hỏi lại lần nữa)
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ nổ là AoE nhạt dần
