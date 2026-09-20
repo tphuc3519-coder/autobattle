@@ -4906,8 +4906,11 @@ làm:
      chặn khi mở game bằng `file://` (`AbortError`).
    - Đầu thu phải nối vào một `GainNode` gain 0 rồi ra `destination`, không thì đồ thị không
      được kéo.
-   - Mốc thời gian của mẫu tiếng tính theo **số mẫu đã đi qua** (`st.apos`), không theo đồng
-     hồ máy, nên tiếng không trôi.
+   - AudioWorklet gửi kèm mốc tuyệt đối `currentFrame/sampleRate` (ScriptProcessor dùng
+     `e.playbackTime`). `push()` quy mốc này về `AudioContext.currentTime` tại đúng lúc bắt
+     đầu quay, cắt phần PCM nằm trước mốc 0 và chèn im lặng cho lỗ hổng thật. **Không dùng
+     thời điểm message tới main thread**: máy bận thì message tới muộn, nhưng âm đã phát
+     từ trước; lấy thời điểm nhận sẽ làm tiếng trôi khỏi skill.
    - Cấu hình bộ mã hoá theo đúng **tần số của `AudioContext`**, đừng lấy
      `track.getSettings()`: thông số track có khi lệch với dữ liệu thật, `encode()` ném lỗi
      và mất sạch tiếng.
@@ -4916,10 +4919,17 @@ làm:
      dựng ASC nếu không có `description`.
    - **Đừng nuốt lỗi ở đường tiếng.** Mọi nhánh hỏng đều phải `say()` ra nhật ký, và dòng
      "Đã lưu video" nói rõ tiếng bằng codec gì / bao nhiêu mẫu, hay KHÔNG có tiếng.
-   - Vòng đọc PCM hay **bị bỏ đói** lúc mã hoá hình, nên lúc dừng phải **chờ tiếng đuổi kịp
-     độ dài hình** (tối đa 2.5s) rồi mới `cancel()`, không thì cụt tiếng đoạn cuối.
-   - Tiếng vào trễ vài chục ms so với hình, nên track tiếng có `edts/elst` chèn một đoạn
-     trống đúng bằng khoảng trễ đó.
+   - Vòng đọc PCM hay **bị bỏ đói** lúc mã hoá hình. Lúc dừng đặt `finishing=true` để ngừng
+     nhận thêm khung hình nhưng **chưa** đặt `stopping/audioClosed`: vẫn nhận message tiếng
+     đang xếp hàng tối đa 2.5s, thiếu bao nhiêu thì chèn im lặng tới đúng độ dài hình rồi
+     mới đóng đầu thu. Đặt `stopping=true` trước vòng chờ là vòng chờ vô dụng.
+   - Không dùng độ trễ message (`performance.now() - t0`) làm `edts/elst`: đó là độ trễ xử
+     lý của main thread, không phải độ trễ âm. Khoảng trống đầu track đã nằm trực tiếp trong
+     PCM nhờ mốc AudioContext.
+   - `cfrPump()` **không được dời `t0` khi encoder nghẽn**. Dời mốc chỉ xóa thời gian khỏi
+     hình trong khi audio thread vẫn chạy. Giữ backlog, bù dần khi chơi và chốt nốt ở
+     `cfrStop()`; riêng vòng game cho phép bắt kịp tối đa 0.5s lúc đang quay để hình không
+     chậm dần sau tiếng trên máy yếu.
    - Máy không có bộ mã hoá AAC thì lui về Opus-trong-MP4 và **báo cho người dùng biết**:
      Chrome/VLC nghe được nhưng vài phần mềm dựng phim thì không.
    - **Hộp mô tả codec (`esds`/`dOps`) phải nằm TRONG sample entry.** Từng dựng nó ra rồi quên
@@ -5293,6 +5303,7 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 | Superman chào sân và thi triển chiêu thì lag trên laptop | vệt bóng mờ vẽ bằng `ctx.filter='brightness(0) invert(1)'` bọc quanh cả một lượt `vector()` — bộ lọc dựng mặt vẽ phụ cho TỪNG lệnh, mà vector có hơn ba chục lệnh; đo được **371ms MỘT vệt**, mà anh nhả vệt mỗi 0.05~0.07 giây ở cả ba chỗ nên lúc nào cũng có 4~6 vệt (chào sân tụt còn **11 fps**, Freeze Breath còn **0.7 fps**) | nướng sẵn bóng trắng ra canvas phụ bằng `'source-in'` rồi cắt sát mép và blit lại (`ghostSil()`): **0.59ms mỗi vệt**, chào sân về **59.6 fps**, ra đúng từng điểm ảnh như cũ. Xem mục 7 |
 | Video quay ra không có tiếng | `mAudioEntry()` dựng `esds`/`dOps` rồi quên gắn vào sample entry | gắn `cfg` vào cuối `mBox(type,…)`, và test soi byte thay vì chỉ đếm track |
 | Video chỉ có track hình, không có track tiếng | thu PCM bằng `MediaStreamTrackProcessor` — Safari/Firefox không có API này | thu thẳng từ đồ thị âm thanh: `AudioWorklet`, không được thì `ScriptProcessor` |
+| Video quay ra tiếng đi trước skill và cụt 2.29s ở cuối | AudioWorklet không gửi audio-clock nên message trễ vẫn bị nối sát lên trước; `cfrPump()` dời `t0` khi nghẽn; lúc dừng lại đặt `stopping=true` trước vòng chờ nên `push()` vứt sạch mẻ tiếng đang xếp hàng | đóng dấu từng mẻ bằng `currentFrame/sampleRate`, neo chung vào mốc bắt đầu quay, giữ backlog hình; lúc dừng cho tiếng đuổi kịp rồi mới khóa và bù im lặng tới đúng độ dài video |
 | Gohan bắn vào chính ChiChi | `summonHelp` cắm cứng `team:1` | `team:c.team` + `master:c`, `foeOf` đi qua `master` |
 | Mọi đòn đều thành "né" | `hurt()` thiếu `return true` | thêm lại, và kiểm giá trị trả về ở mọi nơi gọi |
 | `GRUMBLE_LIFE is not defined` | khai sau chỗ `SFX_MAXLEN` dùng nó | dời hằng số lên trên |

@@ -20280,7 +20280,11 @@ function paintLog(){ const lg=document.getElementById('log'); if(!lg)return; lg.
 /* ---------- loop ---------- */
 let last=performance.now(),acc=0;
 function loop(now){
-  const raw=Math.min(.05,(now-last)/1000); last=now;
+  /* Bình thường chỉ bù tối đa 50ms để tab vừa quay lại không làm trận nhảy cóc. Khi đang
+     quay thì tiếng vẫn chạy trên audio thread trong lúc main thread bận mã hoá; nếu vẫn
+     vứt phần thời gian quá 50ms, hình sẽ chậm dần còn tiếng đi trước. Cho mô phỏng bắt kịp
+     tới 0.5s lúc quay (guard 600 phía dưới vẫn chặn vòng lặp mất kiểm soát). */
+  const raw=Math.min((REC||CFR) ? .5 : .05,(now-last)/1000); last=now;
   if(running){ acc+=raw*speedMul; let guard=0; while(acc>=1/120 && guard++<600){ step(1/120); acc-=1/120; } }
   draw(); recTick();                        // khung dọc + đẩy khung vào bộ mã hoá, chỉ khi đang ghi
   padTick();                                // vòng hồi chiêu trên nút bấm, chỉ ở bản người chơi
@@ -20570,11 +20574,12 @@ function aacAsc(rate,ch){
 let PCMTAP=null;
 function pcmTapSrc(){
   return `class T extends AudioWorkletProcessor{
-    constructor(){super();this.b=[[],[]];this.n=0;}
+    constructor(){super();this.b=[[],[]];this.n=0;this.t=0;}
     process(i){
       const c=i[0];
       if(c&&c.length){
         const k=Math.min(2,c.length);
+        if(!this.n)this.t=currentFrame/sampleRate;
         for(let q=0;q<k;q++) this.b[q].push(c[q].slice());
         this.n+=c[0].length;
         if(this.n>=2048){                      // gom ~46ms rồi mới gửi, khỏi vụn quá
@@ -20585,7 +20590,7 @@ function pcmTapSrc(){
             out.push(m); this.b[q]=[];
           }
           this.n=0;
-          this.port.postMessage(out,out.map(x=>x.buffer));
+          this.port.postMessage({c:out,t:this.t},out.map(x=>x.buffer));
         }
       }
       return true;
@@ -20607,6 +20612,7 @@ async function cfrAudioTap(st){
     const src=master();
     if(!src){ say('Không lấy được luồng tiếng của game — video sẽ không có tiếng.','m'); return; }
     const rate=c.sampleRate;
+    st.actx=c;
     const canEnc=typeof AudioEncoder!=='undefined'&&typeof AudioData!=='undefined';
     // Không mã hoá được tiếng (Safari cũ) thì ghép PCM thô vào MP4 — vẫn giữ được CFR.
     st.apcm=[];                       // bản gom song song, bỏ đi nếu bộ mã hoá chạy tốt
@@ -20625,35 +20631,50 @@ async function cfrAudioTap(st){
       }
       return out;
     };
-    /* atTime: mốc của đồ thị âm thanh (ScriptProcessor cho biết qua e.playbackTime). Luồng
-       chính bận mã hoá hình thì ScriptProcessor bỏ hẳn vài lượt gọi — mẫu đó mất luôn. Đo
-       theo mốc ấy để biết hụt bao nhiêu rồi chèn im lặng bù vào, nhờ vậy tiếng không ngắn
-       hơn hình và không trôi dần. (AudioWorklet chạy ở luồng âm thanh nên không hụt.) */
+    /* Chèn một quãng im lặng vào CẢ bản PCM lẫn bộ mã hoá. Dùng chung ở chỗ bắt được lỗ
+       hổng giữa hai mẻ và lúc dừng quay, để track tiếng luôn dài đúng bằng track hình. */
+    st.audioGap=(frames,k)=>{
+      if(frames<=0) return;
+      if(st.apcm) st.apcm.push(new Uint8Array(frames*k*2));
+      if(!st.apcmOnly&&st.aenc&&st.aenc.state==='configured'){
+        const ec=st.aencCh||k;
+        try{
+          const ad=new AudioData({format:'f32-planar',sampleRate:rate,numberOfFrames:frames,
+            numberOfChannels:ec,timestamp:Math.round(st.apos*1e6/rate),
+            data:new Float32Array(frames*ec)});
+          st.aenc.encode(ad); ad.close();
+        }catch(e){}
+      }
+      st.apos+=frames; st.amiss+=frames;
+    };
+    /* atTime là mốc TUYỆT ĐỐI của AudioContext: AudioWorklet gửi currentFrame/sampleRate,
+       ScriptProcessor có e.playbackTime. Quy về cùng mốc bắt đầu với performance.now của
+       hình, thay vì chỉ nối các mẻ theo số mẫu — main thread có nghẽn thì tiếng vẫn không
+       bị kéo lên trước skill. Mẻ chạm qua mốc bắt đầu được cắt đúng phần âm ở trước đó. */
     const push=(chans,atTime)=>{
-      if(CFR!==st||st.stopping) return;
-      const k=chans.length, n=chans[0].length;
+      if(CFR!==st||st.audioClosed) return;
+      let data=chans, k=data.length, n=data[0].length;
       if(st.aWall0===0) st.aWall0=performance.now();
-      if(atTime!==undefined){
-        if(st.aT0===null) st.aT0=atTime;
-        let miss=Math.round((atTime-st.aT0)*rate)-st.apos;
-        if(miss>n/2){
-          miss=Math.min(miss,rate*5);            // chặn trên: đừng bù quá 5 giây một lần
-          if(st.apcm) st.apcm.push(new Uint8Array(miss*k*2));
-          if(!st.apcmOnly&&st.aenc&&st.aenc.state==='configured'){
-            const ec=st.aencCh||k;
-            try{
-              const ad=new AudioData({format:'f32-planar',sampleRate:rate,numberOfFrames:miss,
-                numberOfChannels:ec,timestamp:Math.round(st.apos*1e6/rate),
-                data:new Float32Array(miss*ec)});
-              st.aenc.encode(ad); ad.close();
-            }catch(e){}
-          }
-          st.apos+=miss; st.amiss+=miss;
+      if(atTime!==undefined&&st.aCtx0!==null){
+        let pos=Math.round((atTime-st.aCtx0)*rate);
+        /* Mẻ đầu có thể bắt đầu trước cú bấm quay vài ms vì worklet đã gom dở một khối. */
+        if(pos<0){
+          const cut=Math.min(n,-pos);
+          data=data.map(x=>x.subarray(cut)); n-=cut; pos+=cut;
+          if(!n) return;
         }
+        /* Message tới trễ không có nghĩa âm thanh xảy ra trễ. Cắt phần đã có, chèn phần
+           thật sự thiếu theo audio clock; đây là chỗ ngăn drift tích luỹ. */
+        if(pos<st.apos){
+          const cut=Math.min(n,st.apos-pos);
+          data=data.map(x=>x.subarray(cut)); n-=cut; pos+=cut;
+          if(!n) return;
+        }
+        if(pos>st.apos) st.audioGap(pos-st.apos,k);
       }
       // Luôn gom PCM song song từ giây đầu: nếu bộ mã hoá hoá ra không nhả mẫu nào thì vẫn
       // còn đủ tiếng từ đầu trận, không bị hụt mất mấy giây đầu.
-      if(st.apcm) st.apcm.push(toPcm(chans));
+      if(st.apcm) st.apcm.push(toPcm(data));
       st.apos+=n; st.ach=k; st.arate=rate;
       if(st.apcmOnly) return;
       if(!st.aenc||st.aenc.state!=='configured') return;
@@ -20661,7 +20682,7 @@ async function cfrAudioTap(st){
       // trong game đều mono), cấu hình 2 kênh mà đưa 1 kênh là encode() ném lỗi và mất tiếng.
       const ec=st.aencCh||k;
       const buf=new Float32Array(n*ec);
-      for(let q=0;q<ec;q++) buf.set(chans[Math.min(q,k-1)],q*n);
+      for(let q=0;q<ec;q++) buf.set(data[Math.min(q,k-1)],q*n);
       try{
         const ad=new AudioData({format:'f32-planar',sampleRate:rate,numberOfFrames:n,
           numberOfChannels:ec,timestamp:Math.round((st.apos-n)*1e6/rate),data:buf});
@@ -20677,7 +20698,10 @@ async function cfrAudioTap(st){
         catch(e){ await c.audioWorklet.addModule(URL.createObjectURL(new Blob([pcmTapSrc()],{type:'text/javascript'}))); }
         node=new AudioWorkletNode(c,'pcmtap',{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2],
           channelCount:2,channelCountMode:'explicit',channelInterpretation:'speakers'});
-        node.port.onmessage=e=>push(e.data);
+        node.port.onmessage=e=>{
+          const d=e.data;
+          if(d&&d.c) push(d.c,d.t); else push(d); // nhận cả format cũ nếu worklet bị cache
+        };
         st.atapKind='AudioWorklet';
       }catch(e){ node=null; }
     }
@@ -20696,9 +20720,9 @@ async function cfrStart(src,w,h){
   const vcfg=await cfrPickVideo(w,h);
   if(!vcfg) return false;
   const st={src,w,h,fps:REC_FPS,codec:vcfg.codec,v:[],a:[],n:0,vdesc:null,adesc:null,
-            acodec:null,arate:0,ach:0,t0:0,stopping:false,aenc:null,
+            acodec:null,arate:0,ach:0,t0:0,stopping:false,finishing:false,aenc:null,
             aWall0:0,aTs0:null,aerr:0,awarn:0,apos:0,atap:null,atapKind:'',apcm:null,apcmOnly:false,
-            aencCh:0,aT0:null,amiss:0};
+            aencCh:0,aCtx0:null,actx:null,audioClosed:false,audioGap:null,amiss:0};
   st.enc=new VideoEncoder({
     output:(chunk,meta)=>{
       const d=meta&&meta.decoderConfig&&meta.decoderConfig.description;
@@ -20711,16 +20735,17 @@ async function cfrStart(src,w,h){
   st.enc.configure(vcfg);
   await cfrAudioTap(st);
   st.t0=performance.now();
+  st.aCtx0=st.actx?st.actx.currentTime:null;
   CFR=st;
   // Bảo đảm luôn có tiếng: 0.9 giây mà chưa có mẫu tiếng nào thì bỏ đường CFR, ghi lại từ
   // đầu bằng MediaRecorder — video có tiếng mà nhịp khung thay đổi vẫn hơn video câm.
   // Xét theo st.apos (số mẫu PCM đã vào bộ mã hoá) chứ đừng xét st.a: máy yếu thì đầu ra
   // của bộ mã hoá về trễ, nhưng PCM vẫn chảy — đó không phải là câm.
-  setTimeout(()=>{ if(CFR===st&&!st.stopping&&!st.apos&&!st.a.length) cfrNoAudio(st); },1200);
+  setTimeout(()=>{ if(CFR===st&&!st.finishing&&!st.apos&&!st.a.length) cfrNoAudio(st); },1200);
   // Chốt đường tiếng: 1.5 giây mà bộ mã hoá chưa nhả mẫu nào thì dùng bản PCM gom song song
   // (đủ từ giây đầu); ngược lại thì bỏ bản PCM cho nhẹ bộ nhớ.
   setTimeout(()=>{
-    if(CFR!==st||st.stopping||st.apcmOnly) return;
+    if(CFR!==st||st.finishing||st.apcmOnly) return;
     if(st.a.length){ st.apcm=null; return; }
     if(st.apos){
       st.apcmOnly=true; st.acodec='pcm';
@@ -20745,11 +20770,14 @@ function cfrNoAudio(st){
 /* Mỗi lượt vẽ bù cho đủ số khung lẽ ra đã trôi qua: máy có khựng thì khung trước được
    mã hoá lại chứ mốc thời gian không xê dịch, nhờ vậy file luôn đúng REC_FPS. */
 function cfrPump(){
-  if(!CFR||CFR.stopping) return;
+  if(!CFR||CFR.finishing) return;
   const step=1e6/CFR.fps;
   const want=Math.floor((performance.now()-CFR.t0)*1000/step);
   if(want<=CFR.n) return;
-  if(CFR.enc.encodeQueueSize>60){ CFR.t0=performance.now()-CFR.n*step/1000; return; }
+  /* Không dời t0 khi encoder nghẽn: làm vậy là xoá một đoạn thời gian khỏi track hình
+     trong khi audio thread vẫn chạy, và tiếng sẽ ngày càng vượt trước. Giữ backlog rồi
+     bù dần; lúc dừng cfrStop() chốt nốt các khung còn thiếu. */
+  if(CFR.enc.encodeQueueSize>60) return;
   if(!CFR.awarn&&CFR.n>CFR.fps*1.5&&!CFR.a.length){
     CFR.awarn=1; say('Chưa nhận được mẫu tiếng nào sau 1.5 giây — video có thể không có tiếng.','m');
   }
@@ -20759,20 +20787,39 @@ function cfrPump(){
     try{ CFR.enc.encode(f,{keyFrame:CFR.n%(CFR.fps*2)===0}); }catch(e){}
     f.close(); CFR.n++;
   }
-  if(CFR.n<want) CFR.t0=performance.now()-CFR.n*step/1000;   // bù không kịp thì bỏ, đừng dồn
 }
 async function cfrStop(){
-  if(!CFR||CFR.stopping) return;
-  CFR.stopping=true; recBusy=true;
+  if(!CFR||CFR.finishing) return;
+  CFR.finishing=true; recBusy=true;
   recLabel('⏳ Đang dựng video…','busy');
   clearInterval(recTimer); recTimer=null;
   const st=CFR;
-  // tin nhắn từ đầu thu xếp hàng ở luồng chính nên tiếng có thể về trễ: chờ nó đuổi kịp
-  // độ dài hình rồi mới ngắt, nếu không đoạn cuối video sẽ mất tiếng.
+  /* Chốt mọi khung theo đúng đồng hồ thực. cfrPump chỉ bù 8 khung/lượt để lúc chơi không
+     giật; khi người dùng đã bấm dừng thì có thể chờ encoder và bù nốt, không được dời t0
+     rồi làm video ngắn hơn audio. */
+  const want=Math.floor((performance.now()-st.t0)*st.fps/1000);
+  const freeze=document.createElement('canvas'); freeze.width=st.w; freeze.height=st.h;
+  freeze.getContext('2d').drawImage(st.src,0,0); // đừng lấy khung game chạy tiếp sau cú bấm dừng
+  while(st.n<want){
+    if(st.enc.encodeQueueSize>60){ try{ await st.enc.flush(); }catch(e){ break; } continue; }
+    let budget=16;
+    while(st.n<want&&budget--){
+      const step=1e6/st.fps;
+      const f=new VideoFrame(freeze,{timestamp:Math.round(st.n*step),duration:Math.round(step)});
+      try{ st.enc.encode(f,{keyFrame:st.n%(st.fps*2)===0}); }catch(e){}
+      f.close(); st.n++;
+    }
+    await new Promise(r=>setTimeout(r,0));
+  }
+  // Tin nhắn từ đầu thu xếp hàng ở luồng chính nên tiếng có thể về trễ: vẫn cho push()
+  // nhận trong lúc chờ. Bản cũ đặt stopping=true trước vòng này, tự tay vứt mọi mẻ đang chờ.
   if(st.aenc||st.apcm){
     const target=st.n/st.fps, wait=performance.now()+2500;
     while(performance.now()<wait&&st.apos/st.arate<target) await new Promise(r=>setTimeout(r,40));
+    const miss=Math.max(0,Math.round(target*st.arate)-st.apos);
+    if(miss&&st.audioGap) st.audioGap(miss,st.ach||2);
   }
+  st.audioClosed=true; st.stopping=true;
   try{ if(st.atap) st.atap(); }catch(e){}
   try{ await st.enc.flush(); }catch(e){}
   try{ if(st.aenc) await st.aenc.flush(); }catch(e){}
@@ -20782,7 +20829,9 @@ async function cfrStop(){
   recLabel('⏺ Ghi hình sàn đấu');
   if(!st.v.length){ say('Không ghi được khung hình nào.','m'); recTall=false; return; }
   const aac=st.acodec&&st.acodec.startsWith('mp4a');
-  const delayMs=clamp(Math.round(st.aWall0-st.t0),0,1000);
+  /* Khoảng trống đầu đã được chèn theo audio clock ngay trong push(), không cộng thêm
+     edit-list từ độ trễ giao message của main thread — độ trễ xử lý không phải độ trễ âm. */
+  const delayMs=0;
   let aud=null;
   if(st.a.length){
     aud={codec:st.acodec,rate:st.arate,ch:st.ach,
