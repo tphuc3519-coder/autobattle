@@ -127,7 +127,7 @@ window.__STAGE=()=>STAGE; window.__stageArt=stageArt; window.__arenaFloor=arenaF
 window.__stageThumb=stageThumb; window.__packBuild=packBuild; window.__packLoad=packLoad;
 window.__draw=draw; window.__ghostSil=ghostSil; window.__ARCADE=()=>ARCADE; window.__groundShadows=groundShadows; window.__running=()=>running;
 /* ba chế độ đấu */
-window.__PMODE=()=>PMODE; window.__ROSTERS=ROSTERS; window.__PICK=PICK;
+window.__PMODE=()=>PMODE; window.__ROSTERS=ROSTERS; window.__PICK=PICK; window.__setPmode=m=>{ PMODE=m; };
 window.__TMP=()=>TMP;   // đội hình đang NHÁP trong màn chọn, chưa chốt vào ROSTERS
 window.__cselSteps=()=>cselSteps();  // danh sách bước của màn chọn theo chế độ đang chọn
 window.__audioWake=()=>audioWake();  // ép chạy lượt cứu tiếng sau khi thoát app (iOS)
@@ -143,6 +143,10 @@ window.__leagueNew=leagueNew; window.__lgAnim=()=>lgAnim; window.__cupAnim=()=>c
 window.__loadSaved=()=>loadSaved(); window.__COMP_SC=COMP_SC;
 window.__setComp=(c,live)=>{ COMP=c; compLive=!!live; };
 window.__lgLabel=m=>lgLabel(m);
+window.__compBak=()=>compBak; window.__setCompBak=r=>{ compBak=r; };
+window.__compClear=()=>compClear(); window.__compBakAsk=()=>compBakAsk();
+window.__storeGet=k=>Store.get(k);
+window.__compRecord=(r,w,a,b)=>compRecord(r,w,a,b);
 window.__canReflect=canReflect;
 window.__floatScale=floatScale; window.__BEA_FX=()=>BEA_FX;
 /* Ép trận đang đá kết thúc ngay với người thắng chỉ định — khỏi phải ngồi xem đủ mấy chục
