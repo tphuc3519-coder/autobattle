@@ -165,6 +165,7 @@ async function chanApiVanCoTieng(patch) {
     'co track tieng': m.stsd.length === 2,
     'stts tieng deu nhip': !aStts || aStts.length <= 2,
     'tieng phu het hinh': aDur >= vDur - 0.15,
+    'tieng va hinh khong troi qua 150ms': Math.abs(aDur - vDur) <= 0.15,
     'stco nam trong file': m.stco.every(o => o < cfr.size),
     'phat lai duoc 720x1280': cfr.play.w === 720 && cfr.play.h === 1280,
     'nhat ky noi CFR': /CFR/.test(cfr.log || ''),
