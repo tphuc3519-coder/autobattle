@@ -4158,6 +4158,15 @@ node tools/t_sakura.js # Haruno Sakura (93 mục): nội tại giảm 70% thời
 node tools/t_sak_balance.js  # cân bằng Sakura: đánh với cả 13 đối thủ, in tỉ lệ thắng kèm MÁU
                         # CÒN LẠI lúc thắng — con số thứ hai mới nói trận đó sát nút hay một
                         # chiều. Bản sao của t_bea_balance.js, chỉ đổi người được đo.
+node tools/t_recap.js   # MATCH RECAP: thẻ tổng kết sau trận. Suốt trận thẻ TẮT (sàn vẫn thoáng),
+                        # sổ chiêu cộng lại KHỚP dmgDealt cả trên số ghim lẫn trong trận thật,
+                        # recapMove() tra đúng bốn nấc (nhãn băng-rôn > MOVE_TAG > kind > đòn
+                        # thường, và crit=true không biến thành tên chiêu), hồi máu chỉ ghi
+                        # phần THẬT SỰ vào chứ không ghi phần tràn, hàng chụp LÚC NGÃ nên hỗn
+                        # chiến 6 người vẫn đủ 6 hàng dù cái xác đã bị gỡ khỏi sàn, thẻ chỉ bật
+                        # sau mốc giữ màn WINNER, pointer-events:none và z-index dưới dải nút,
+                        # animation chạy đúng MỘT lần, trần 4 hàng cho gọn, đổi ngôn ngữ thì
+                        # nhãn đổi mà TÊN CHIÊU giữ nguyên, và trang chơi cũng có thẻ
 node tools/t_gin_balance.js  # cân bằng Captain Ginyu. Chỗ phải viết riêng: THẮNG THUA TÍNH
                         # THEO HỒN (`f.gnSoul||f.key`) — sau cú CHANGE thì object mang
                         # key:'ginyu' có thể đang do hồn đối thủ điều khiển, đọc f.key là đo
@@ -4382,6 +4391,120 @@ bóng ngoài nên quầng cũ không còn thấy gì.
 
 Kiểm bằng `node tools/t_ui.js`, `node tools/t_dex.js`, `node tools/t_play.js`,
 `node tools/t_stage.js` — bốn bộ này soi đúng mấy màn vừa sửa.
+
+## 2j. MATCH RECAP — thẻ "vì sao thắng" sau trận
+
+Người dùng: *"Thêm Match Recap để người xem hiểu vì sao thắng. Sau trận, hiện một thẻ gọn
+gồm: thời lượng, HP còn lại, sát thương gây ra, hồi máu thực tế và chiêu đóng góp nhiều
+nhất"*, kèm hai điều kiện: *"Thẻ này chỉ xuất hiện sau trận, giữ arena thoáng như bạn
+muốn"* và nó phải giúp nhận ra *"nhân vật thắng nhờ gì"* để cân bằng và làm nội dung TikTok.
+
+Vì vậy thẻ **KHÔNG BAO GIỜ hiện trong lúc đánh** — nó mang lớp `off` suốt cả trận và chỉ
+bỏ ra khi trận đã xong. Đừng biến nó thành HUD thời gian thực; đó là đúng cái dải nhật ký
+đã bị bỏ khỏi trang chơi ở mục 2i.
+
+### Sổ ghi — MỘT CỬA DUY NHẤT
+
+| Ghi ở đâu | Ghi cái gì |
+|---|---|
+| `hurt()`, **ĐÚNG dòng đang cộng `dmgDealt`** | `recapHit()` cộng vào `f.moves[tên chiêu]` |
+| mọi cửa hồi máu | `recapHeal(f, v)` cộng vào `f.healGot` |
+| `defeat()` | `recapFall()` chụp một hàng vào `G.recapDead` |
+| `finish()`, ngay cạnh `compResult()` | `recapBuild()` dựng `G.recap` |
+
+- **Sát thương ghi CÙNG một dòng, CÙNG một con số `min(amt, t.hp)` với `dmgDealt`.** Nhờ
+  vậy sổ chiêu cộng lại **luôn bằng** `dmgDealt` — `t_recap.js` đo thẳng chỗ đó, cả trên
+  số ghim lẫn trong một trận đánh thật. **Đừng mở đường ghi thứ hai**; hai sổ lệch nhau là
+  thẻ đọc ra vô nghĩa.
+- **Hồi máu ghi trên NGƯỜI ĐƯỢC HỒI (`healGot`), không phải người ra tay.** Sakura hồi cho
+  đồng đội thì con số nằm ở hàng của đồng đội — thẻ đọc theo từng đấu thủ, nên đó mới là
+  cách đọc ra "ai sống được nhờ gì". Mọi cửa hồi trong game đều đã kẹp
+  `min(maxHp - hp, …)` trước khi cộng, nên **phần hồi tràn không bao giờ lọt vào sổ**.
+- **Thêm nhân vật có cửa hồi máu mới thì nhớ gọi `recapHeal()`** — cùng cái bẫy đã ghi cho
+  `gnHeal()` ở mục Captain Ginyu. Chỗ nào có `f.hp += …` mà không có nó là chỗ đó vô hình
+  với thẻ.
+- **Chụp hàng LÚC NGÃ, đừng đọc ngược sau trận.** Đánh tuần tự gỡ hẳn cái xác khỏi
+  `G.fighters` (`relayIn()`), `finish()` thì gỡ đồng minh. Đo được: hỗn chiến 6 người, hạ
+  lần lượt 5 người ⇒ thẻ vẫn giữ **đủ 6 hàng**.
+- `newGame()` xoá `G.recap` / `G.recapDead`, và `dmgDealt` / `healGot` / `moves` về 0 theo
+  `mk()`.
+
+### Tên chiêu SUY RA, không khai tay ở hơn tám chục chỗ gọi
+
+`hurt()` được gọi từ **83 chỗ**; bắt mỗi chỗ tự khai tên chiêu là vừa phải sửa tám chục
+điểm, vừa chắc chắn lọt lưới với nhân vật thêm về sau. `recapMove()` tra theo **bốn nấc**,
+nấc nào có trước thì thắng:
+
+1. **nhãn băng-rôn `crit` khi nó là CHUỖI** (`'AIR CANNON!'`, `'METEOR STRIKE!'`) — chính
+   xác nhất, và vốn đã là tên chiêu bằng tiếng Anh nên không phải dịch. `crit === true`
+   (chí mạng đòn thường của ChiChi) **không** tính — nó không phải tên chiêu;
+2. **`MOVE_TAG`** — biến tạm đặt ngay trước cú `hurt()`, dùng cho đạn (`MOVE_PROJ` tra theo
+   `p.type`), sát thương duy trì (`d.tag`), và mấy chiêu không có băng-rôn: vùng nón Small
+   Light, Heat Vision, Freeze Breath, vùng chấn động, dải bóng, sóng âm của ChiChi;
+3. **`kind`** — mấy nhân vật mới vốn đã truyền kind riêng cho từng chiêu (`conanKick`,
+   `isagiUlt`, `gojoPurple`, `reflect`, `domain`…), tra qua `MOVE_KIND`;
+4. không có gì cả ⇒ **đòn thường**, cất dưới khoá `'\u0000basic'` rồi dịch lúc vẽ thẻ.
+
+> **`MOVE_TAG` là biến tạm của MỘT cú gọi.** `hurt()` đồng bộ nên không ai chen vào giữa,
+> nhưng **phải trả về `null` ngay sau vòng lặp đặt nó** — vòng duyệt đạn có `continue` và
+> `splice` nên đặt một lần ở ngoài là không đủ; nó đặt lại ở MỖI vòng và `MOVE_TAG=null`
+> nằm ngay sau vòng lặp, để mấy cú `hurt()` phía sau trong `step()` không ăn nhãn thừa.
+
+- **Phi tiêu dùng chung `type:'shuriken'` cho ba người** (Konohamaru · Shikamaru · Sakura),
+  tách bằng chính cờ `p.shadow` của Shikamaru.
+- `recapTidy()` gộp mấy biến thể của cùng một chiêu về một dòng: bỏ dấu than, `BOOM · EDGE`
+  → `BOOM` → `EXPLOSIVE KUNAI`, và bốn mức `ACCEPTABLE/GOOD/GREAT/BEST DECISION` của
+  Horikita → `DECISION MAKING`. Không gộp thì một chiêu nằm rải bốn dòng và không dòng nào
+  lên được "chiêu chủ lực".
+- **Thêm nhân vật mới thì thường KHÔNG phải sửa gì** — họ vốn đã truyền `kind` riêng hoặc
+  nhãn băng-rôn. Chỉ chiêu nào vừa không nhãn vừa không `kind` riêng mới cần một dòng
+  `MOVE_TAG`.
+
+### Thẻ — `#recapCard`
+
+Nằm **NGOÀI cặp mốc `STUDIO`** nên trang chơi cũng có: đây là thứ của NGƯỜI XEM, không
+phải đồ nghề của thợ. Ba ràng buộc, cả ba đều là luật đã chốt ở chỗ khác:
+
+1. **`pointer-events:none` cho CẢ khối.** Nó lơ lửng ngay trên dải nút *Đánh lại / Đổi
+   nhân vật*, mà mấy bộ test thì bấm thẳng vào đó (mục 9). `z-index:64`, tức **dưới**
+   `.arcOver` (65).
+2. **Không một `animation … infinite` nào.** Cú hiện ra là `recapIn .34s … 1` — chạy đúng
+   một lần. Luật ở mục 2h giữ nguyên giá trị, và `prefers-reduced-motion` tắt hẳn nó.
+3. **Chờ đúng mốc `G.endT >= 2`**, cùng mốc với dải nút: trước đó băng-rôn WINNER và pháo
+   giấy đang bung ra, chen thẻ vào là cướp mất khoảnh khắc đó.
+
+- `recapTick()` gọi từ `loop()` mỗi khung hình, nhưng **có lối ra rẻ nhất đặt TRƯỚC mọi cú
+  tra DOM**: suốt cả trận thì `G.over` còn null nên nó `return` ngay. Chỉ **gán class khi
+  ĐỔI** (`recapShown`) — bật tắt mỗi khung là bắt trình duyệt tính lại kiểu liên tục, đúng
+  cái bẫy "250ms gán lại `style.display`" ở mục 9.
+- Lớp phủ nào đang mở (`charSelect` · `compBoard` · `advBoard` · `arcVs` · `arcStage` ·
+  `dexPop`, hay cờ `vsOn`) thì giấu thẻ đi.
+- **MỖI ĐẤU THỦ MỘT HÀNG**: cột tên ôm luôn dòng chiêu chủ lực bên dưới. Tách dòng chiêu
+  thành một hàng full-width riêng thì thẻ **cao gấp đôi** và cái nhãn `TOP MOVE` của hàng
+  tiêu đề nằm chỏng chơ một mình — đã thử và bỏ.
+- **Trần `RECAP_MAX = 4` hàng**, còn lại gom vào một dòng `… và N đấu thủ nữa`: hỗn chiến
+  tám người mà liệt kê hết là thẻ nuốt cả sàn đấu. Đo được: 6 người ⇒ thẻ cao **246px**.
+- Nhãn của thẻ đi qua `t()` / `tf()` (song ngữ); **TÊN CHIÊU giữ nguyên ở cả hai ngôn
+  ngữ**, đúng luật TÊN RIÊNG ở mục 2f — chúng vốn đã là tiếng Anh trên băng-rôn trong
+  trận. `applyLang()` vẽ lại thẻ khi đổi ngôn ngữ.
+- **Thời lượng bọc `rts()`** (mục 1, luật 2), đừng in thẳng `G.t`: đổi nhịp gốc là dòng đó
+  tự đúng theo.
+
+### Chỗ đã tự quyết, nói rõ để sau này khỏi cãi nhau
+
+- **Hồi máu ghi trên NGƯỜI ĐƯỢC HỒI**, không phải người ra tay — xem lý do ở trên.
+- **Viện binh và đồng minh KHÔNG có hàng riêng** (`recapRow` lọc `f.summon`): Goku, Gohan,
+  phân thân, Ayanokouji đều là khách trên sàn, hết giờ là đi, mà hàng thì có trần 4. Sát
+  thương họ gây ra đã ghi cho CHỦ (`src.summon ? src.master : src`, luật cũ của `dmgDealt`).
+  > Kéo theo một chỗ dễ đọc nhầm, nhưng **con số vẫn đúng**: sát thương gây ra có thể
+  > **vượt máu tối đa của đối thủ**. Đo một trận thật, Tsubasa vs Horikita: Tsubasa gây
+  > **1035** mà đối thủ chỉ có 800 máu — phần dôi ra đi vào **Ayanokouji**, người có thanh
+  > máu riêng và đứng chắn suốt. Đó chính là câu chuyện thẻ sinh ra để kể: *gây nhiều sát
+  > thương hơn mà vẫn thua*, vì cột "máu còn" mới là thứ quyết định.
+- **Trần 4 hàng** (`RECAP_MAX`) là con số tôi chốt, người dùng chỉ nói "thẻ gọn". Muốn dài
+  hơn thì sửa đúng hằng đó.
+
+Kiểm bằng `node tools/t_recap.js` (48 mục).
 
 ## 2b. Khoảng cách khi cận chiến — đừng dán vào nhau
 
@@ -5262,6 +5385,15 @@ node tools/t_tanjiro.js # Tanjiro: HP đọc từ HP_STD, màn vào sân 1.5s, O
 > Cùng họ với chuyện này: máy test không có GPU nên chạy nhiều bộ test SONG SONG là mấy phép
 > đo theo dòng thời gian lệch hẳn, và `t_suzune.js` có thể chạy quá `timeout`. Chạy từng bộ
 > một khi cần con số chính xác.
+
+> **`t_dex.js` cũng CHẬP CHỜN sẵn từ trước, ở đúng mấy mục chạm hai lần.** Cửa nhận cú chạm
+> đôi là `DBL_TAP = 380ms`, mà một cú `page.click` trên máy test đo được **240~480ms** —
+> lượt chạy nguội (vừa mở tiến trình node, browser chưa ấm) hay rơi vào nửa trên của dải đó
+> và hai cú bấm cách nhau quá 380ms, nên game hiểu là hai lần chọn chứ không phải một cú
+> chạm đôi. Đo thật trên `origin/main` **và** trên nhánh đang sửa, mỗi bên ba lượt: base
+> 1/3 đạt, nhánh 2/3 đạt — tức nó đổ ở cả hai bên và **không phải dấu hiệu của một lỗi mới**.
+> Thấy ba mục `cham hai lan …` đỏ thì **chạy lại một lượt** trước khi đi tìm nguyên nhân
+> trong code; chỉ khi nó đỏ đều nhiều lượt liền mới đáng soi.
 
 > **`t_reg.js` giờ chạy toàn bộ cặp đấu của 11 nhân vật**, theo đợt 5 trang một lượt. Máy test yếu thì mỗi trận trôi
 > chậm hẳn và nhiều trận báo "còn đánh" thay vì "kết thúc" — đó là chuyện bình thường,
