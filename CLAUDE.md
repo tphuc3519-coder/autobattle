@@ -4166,7 +4166,12 @@ node tools/t_recap.js   # MATCH RECAP: thẻ tổng kết sau trận. Suốt tr�
                         # chiến 6 người vẫn đủ 6 hàng dù cái xác đã bị gỡ khỏi sàn, thẻ chỉ bật
                         # sau mốc giữ màn WINNER, pointer-events:none và z-index dưới dải nút,
                         # animation chạy đúng MỘT lần, trần 4 hàng cho gọn, đổi ngôn ngữ thì
-                        # nhãn đổi mà TÊN CHIÊU giữ nguyên, và trang chơi cũng có thẻ
+                        # nhãn đổi mà TÊN CHIÊU giữ nguyên, và trang chơi cũng có thẻ;
+                        # BẢNG THÔNG SỐ: sổ giữ đủ {tổng, số đòn, đòn nặng nhất} và có thêm
+                        # sổ PHẢI CHỊU soi gương sổ gây ra, bảng liệt kê ĐỦ MỌI chiêu xếp
+                        # nặng trước (lõi và rìa cùng vụ nổ thì gộp, còn sát thương duy trì
+                        # thì tách dòng riêng), nút 📊 nằm NGANG HÀNG với 🏠 trong dải nút
+                        # sau trận, bấm là mở và dải nút nhường chỗ, ✕ đóng lại
 node tools/t_gin_balance.js  # cân bằng Captain Ginyu. Chỗ phải viết riêng: THẮNG THUA TÍNH
                         # THEO HỒN (`f.gnSoul||f.key`) — sau cú CHANGE thì object mang
                         # key:'ginyu' có thể đang do hồn đối thủ điều khiển, đọc f.key là đo
@@ -4407,10 +4412,23 @@ bỏ ra khi trận đã xong. Đừng biến nó thành HUD thời gian thực; 
 
 | Ghi ở đâu | Ghi cái gì |
 |---|---|
-| `hurt()`, **ĐÚNG dòng đang cộng `dmgDealt`** | `recapHit()` cộng vào `f.moves[tên chiêu]` |
+| `hurt()`, **ĐÚNG dòng đang cộng `dmgDealt`** | `recapHit()` cộng vào HAI sổ cùng lúc |
 | mọi cửa hồi máu | `recapHeal(f, v)` cộng vào `f.healGot` |
 | `defeat()` | `recapFall()` chụp một hàng vào `G.recapDead` |
 | `finish()`, ngay cạnh `compResult()` | `recapBuild()` dựng `G.recap` |
+
+**HAI sổ, cùng một khoá chiêu**, và mỗi dòng giữ **ba** con số (`{d, n, mx}` — tổng · số
+đòn trúng · đòn nặng nhất):
+
+| Sổ | Nằm trên ai | Ghi khi nào |
+|---|---|---|
+| `f.moves` | người **GÂY RA** | bỏ qua khi nguồn là viện binh thuần hoặc không có nguồn |
+| `f.taken` + `f.dmgTaken` | người **PHẢI CHỊU** | **LUÔN** ghi, kể cả sát thương không có nguồn rõ ràng |
+
+Ở đấu tay đôi hai sổ soi gương nhau (`t_recap.js` đo đúng chỗ đó), nhưng hỗn chiến và đánh
+đội thì khác hẳn — cột "phải chịu" mới là thứ giải thích một người gục vì cái gì. Ba con
+số `{d,n,mx}` là để nói được **"chiêu này bắn dày mà nhẹ"** hay **"một phát ăn ngay"**;
+chỉ giữ tổng thì cột TB/đòn và Cao nhất không tính lại được.
 
 - **Sát thương ghi CÙNG một dòng, CÙNG một con số `min(amt, t.hp)` với `dmgDealt`.** Nhờ
   vậy sổ chiêu cộng lại **luôn bằng** `dmgDealt` — `t_recap.js` đo thẳng chỗ đó, cả trên
@@ -4452,6 +4470,12 @@ nấc nào có trước thì thắng:
 
 - **Phi tiêu dùng chung `type:'shuriken'` cho ba người** (Konohamaru · Shikamaru · Sakura),
   tách bằng chính cờ `p.shadow` của Shikamaru.
+- **Sát thương duy trì phải là DÒNG RIÊNG khi chiêu mẹ cũng gây dmg trực tiếp.** Hai chỗ
+  dính: `EXPLOSIVE KUNAI · BURN` và `DRIVE SHOT · BURN`. Gộp chung thì **số đòn phình lên**
+  vì mỗi nhịp cháy tính là một "đòn", và cột TB/đòn đọc ra vô nghĩa (đo được: Drive Shot ra
+  *5 đòn · TB 50 · cao nhất 135* — trộn quả bóng 90 với mấy nhịp cháy 3). Mấy dot còn lại
+  (`BURNING` · `BLEEDING` · `MANA EROSION` · `INTERNAL BLEEDING` · `SEXY NO JUTSU` ·
+  `SHADOW-NECK BIND`) vốn đã mang tên khác hẳn chiêu mẹ nên không phải sửa.
 - `recapTidy()` gộp mấy biến thể của cùng một chiêu về một dòng: bỏ dấu than, `BOOM · EDGE`
   → `BOOM` → `EXPLOSIVE KUNAI`, và bốn mức `ACCEPTABLE/GOOD/GREAT/BEST DECISION` của
   Horikita → `DECISION MAKING`. Không gộp thì một chiêu nằm rải bốn dòng và không dòng nào
@@ -4490,6 +4514,52 @@ phải đồ nghề của thợ. Ba ràng buộc, cả ba đều là luật đã
 - **Thời lượng bọc `rts()`** (mục 1, luật 2), đừng in thẳng `G.t`: đổi nhịp gốc là dòng đó
   tự đúng theo.
 
+### Bảng THÔNG SỐ TRẬN — `#statsBoard`, mở bằng nút 📊
+
+Người dùng: *"phân tích mọi dmg luôn, cho cái nút bấm — xem thông số trận đâu là 1 tùy chọn
+chung với tùy chọn về lại sảnh"*.
+
+Thẻ gọn ở trên chỉ nói được **chiêu chủ lực**; bảng này mở ra **mọi dòng**. Hai thứ tách
+bạch, đừng gộp lại: thẻ là cái liếc mắt ba giây và **tự hiện**, bảng là chỗ soi kỹ và **chỉ
+mở khi bấm nút**.
+
+- **Nút `#arcStats` nằm trong dải `#arcOver`, ngay cạnh 🏠** — đúng câu "1 tùy chọn chung
+  với tùy chọn về lại sảnh". `show(el('arcStats'), true)` nên nó **luôn hiện**, kể cả giữa
+  giải đấu hay giữa hành trình Phiêu lưu (trận nào cũng có sổ), khác với *Đánh lại / Đổi
+  nhân vật* vốn bị giấu ở hai chế độ đó. `t_recap.js` đo thẳng `getBoundingClientRect()` của
+  hai nút để chắc chúng **cùng dải, cùng chiều cao, đứng cạnh nhau**.
+- Vỏ dùng lại **`.csel`** như bảng xếp hạng — đừng dựng kiểu lớp phủ thứ hai. Kéo theo:
+  `.csel` là z-index 60 mà `.arcOver` là 65, nên phải có
+  `body:has(#statsBoard:not(.off)) .arcOver{display:none}`, đúng lối `#arcStage`; thiếu nó
+  là bốn cái nút nằm chình ình giữa bảng.
+- **`statsOpen()` bỏ lớp `off` TRƯỚC rồi mới `statsPaint()`** — cùng lý do với `compOpen()`
+  ở mục 2c-bis.
+- `recapCovered()` có thêm `statsBoard` nên **thẻ gọn tự giấu đi** lúc bảng mở, hai thứ
+  không chồng lên nhau.
+- Đóng bằng ✕, bấm ra nền, hoặc **Esc**. Wiring đặt cạnh chỗ đóng `#dexPop` chứ **không**
+  nhét vào nhánh `ARCADE` cuối file: bảng có mặt ở cả hai trang. Chỉ mỗi cái NÚT mở là nằm
+  trong nhánh arcade, vì `#arcOver` ở xưởng không bao giờ hiện — xưởng gọi `statsOpen()`
+  qua móc test.
+
+**Bảng đọc gì:** một dòng tổng quan (tổng sát thương cả trận · thời lượng · số đấu thủ),
+rồi **MỖI đấu thủ một khối** — không có trần hàng như thẻ gọn, `.cselBody` vốn đã cuộn được:
+
+| Khối | Có gì |
+|---|---|
+| đầu khối | tên · nhãn THẮNG/BỊ HẠ/CÒN SỐNG · thanh máu còn lại |
+| sáu ô KPI | gây ra · phải chịu · hồi máu · dmg mỗi giây · số đòn trúng · TB mỗi đòn |
+| bảng **GÂY RA** | mỗi chiêu một dòng: số đòn · tổng · tỉ lệ · TB/đòn · cao nhất |
+| bảng **PHẢI CHỊU** | y hệt, nhưng là chiêu của người khác nện vào mình |
+
+- **Mọi con số đọc thẳng từ `G.recap`, không tính lại gì cả** — tính lại sau trận là đọc
+  phải đội hình đã bị dọn (luật 3 ở trên).
+- Hai bảng xếp **NẶNG TRƯỚC**, và `recapList()` xếp sẵn ngay lúc chụp.
+- Cột tỉ lệ lấy **mẫu số của chính nó**: bảng "phải chịu" chia cho tổng phải chịu, đừng lấy
+  tổng gây ra.
+- `dmg mỗi giây` chia cho `rts(dur)` — giây NGƯỜI CHƠI, đừng chia cho `G.t` thô (mục 1).
+- Nhãn đi qua `t()`, **tên chiêu giữ nguyên** ở cả hai ngôn ngữ; `applyLang()` vẽ lại bảng
+  khi nó đang mở.
+
 ### Chỗ đã tự quyết, nói rõ để sau này khỏi cãi nhau
 
 - **Hồi máu ghi trên NGƯỜI ĐƯỢC HỒI**, không phải người ra tay — xem lý do ở trên.
@@ -4497,14 +4567,17 @@ phải đồ nghề của thợ. Ba ràng buộc, cả ba đều là luật đã
   phân thân, Ayanokouji đều là khách trên sàn, hết giờ là đi, mà hàng thì có trần 4. Sát
   thương họ gây ra đã ghi cho CHỦ (`src.summon ? src.master : src`, luật cũ của `dmgDealt`).
   > Kéo theo một chỗ dễ đọc nhầm, nhưng **con số vẫn đúng**: sát thương gây ra có thể
-  > **vượt máu tối đa của đối thủ**. Đo một trận thật, Tsubasa vs Horikita: Tsubasa gây
-  > **1035** mà đối thủ chỉ có 800 máu — phần dôi ra đi vào **Ayanokouji**, người có thanh
-  > máu riêng và đứng chắn suốt. Đó chính là câu chuyện thẻ sinh ra để kể: *gây nhiều sát
-  > thương hơn mà vẫn thua*, vì cột "máu còn" mới là thứ quyết định.
+  > **vượt máu tối đa của đối thủ**, và cột `Gây ra` của người này **không khớp** cột
+  > `Phải chịu` của người kia. Lý do đều là một: `recapHit()` gác sổ phải chịu ở
+  > `!t.summon`, nên phần rơi vào đồng minh / viện binh **không nằm ở hàng nào cả**.
+  > Đo một trận thật, Tsubasa vs Horikita (0:39): Tsubasa gây **1312**, Horikita phải chịu
+  > **908** — **404** còn lại đi vào **Ayanokouji**. Mà 908 đúng bằng `800 máu tối đa +
+  > 113 hồi − 5 còn lại`, tức sổ khớp tới từng điểm. Đó chính là câu chuyện bảng sinh ra
+  > để kể: *gây nhiều sát thương hơn mà vẫn thua*, vì một phần đấm vào tấm chắn.
 - **Trần 4 hàng** (`RECAP_MAX`) là con số tôi chốt, người dùng chỉ nói "thẻ gọn". Muốn dài
   hơn thì sửa đúng hằng đó.
 
-Kiểm bằng `node tools/t_recap.js` (48 mục).
+Kiểm bằng `node tools/t_recap.js` (83 mục).
 
 ## 2b. Khoảng cách khi cận chiến — đừng dán vào nhau
 
