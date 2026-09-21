@@ -217,6 +217,8 @@ window.__recap=()=>G&&G.recap; window.__recapRow=recapRow; window.__recapMove=re
 window.__recapBuild=w=>recapBuild(w); window.__recapPaint=()=>recapPaint();
 window.__recapTick=()=>recapTick(); window.__recapHeal=recapHeal;
 window.__MOVE_PROJ=MOVE_PROJ; window.__MOVE_KIND=MOVE_KIND; window.__recapTidy=recapTidy;
+window.__statsOpen=()=>statsOpen(); window.__statsClose=()=>statsClose();
+window.__statsOn=()=>statsOn(); window.__statsHtml=()=>statsHtml();
 window.__setMoveTag=v=>{ MOVE_TAG=v; };
 window.__dupColor=dupColor; window.__teamTint=teamTint; window.__setMode=(m,r)=>{
   PMODE=m;
