@@ -2046,6 +2046,75 @@
   @media(prefers-reduced-motion:reduce){
     *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   }
+
+  /* ---------- MATCH RECAP — thẻ "vì sao thắng", chỉ hiện SAU trận ----------
+     Ba ràng buộc, cả ba đều là luật đã chốt ở chỗ khác trong tài liệu:
+       · `pointer-events:none` cho CẢ khối — nó nằm đè lên sàn ngay phía trên dải nút
+         Đánh lại / Đổi nhân vật, mà mấy bộ test thì bấm thẳng vào đó (mục 9);
+       · không một `animation … infinite` nào — chuyển động lặp mãi ở khu giao diện làm
+         Playwright coi phần tử quanh đó là "chưa đứng yên". Cú hiện ra chạy ĐÚNG MỘT LẦN;
+       · sàn đấu vẫn thoáng: khối mang `.off` suốt cả trận, chỉ bỏ ra khi trận đã xong. */
+  .recap{
+    position:fixed;left:50%;bottom:66px;z-index:64;pointer-events:none;
+    width:min(94vw,560px);transform:translateX(-50%);
+    background:linear-gradient(180deg,rgba(16,24,39,.95),rgba(8,13,22,.96));
+    border:1px solid rgba(137,156,190,.2);border-radius:var(--r2);
+    box-shadow:var(--e2),inset 0 1px 0 rgba(255,255,255,.05);
+    padding:10px 13px 11px;font-size:12px;
+    animation:recapIn .34s ease-out 1
+  }
+  .recap.off{display:none}
+  body:not(.arcade) .recap{bottom:16px}
+  @keyframes recapIn{from{opacity:0}to{opacity:1}}
+  .recapTop{
+    display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+    padding-bottom:7px;margin-bottom:7px;border-bottom:1px solid rgba(148,163,184,.14)
+  }
+  .recapTop b{
+    font-family:var(--fd);font-style:italic;letter-spacing:.06em;font-size:13px;
+    color:var(--gold);text-transform:uppercase
+  }
+  .recapTop span{color:var(--mute);font-size:11px}
+  .recapTop span i{color:#D7E1F2;font-style:normal;font-weight:700}
+  /* Mỗi đấu thủ MỘT hàng: cột tên ôm luôn dòng chiêu chủ lực bên dưới, chứ đừng tách
+     thành một hàng full-width riêng — tách ra là thẻ cao gấp đôi và cái nhãn "TOP MOVE"
+     của hàng tiêu đề nằm chỏng chơ một mình. */
+  .recapRow{display:grid;grid-template-columns:1fr 86px 56px 50px;gap:10px;align-items:center;padding:5px 0}
+  .recapRow+.recapRow{border-top:1px solid rgba(148,163,184,.07)}
+  .recapRow.head{padding:0 0 4px}
+  .recapRow.head>*{color:var(--mute);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase}
+  .recapWho{display:flex;align-items:center;gap:7px;min-width:0}
+  .recapDot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 8px -1px currentColor}
+  .recapNm{
+    font-family:var(--fd);font-style:italic;font-weight:700;letter-spacing:.03em;font-size:12.5px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+  }
+  .recapRow.win .recapNm::after{content:'★';margin-left:5px;color:var(--gold);font-style:normal}
+  .recapRow.dead{opacity:.55}
+  .recapRow.dead .recapNm{text-decoration:line-through}
+  .recapHp{display:flex;flex-direction:column;gap:3px}
+  .recapBar{height:5px;border-radius:3px;background:rgba(148,163,184,.16);overflow:hidden}
+  .recapBar>i{display:block;height:100%;border-radius:3px;background:currentColor}
+  .recapHpN{font-size:10px;color:var(--mute);font-variant-numeric:tabular-nums}
+  .recapN{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:12.5px}
+  .recapN.dmg{color:#FFB199}
+  .recapN.heal{color:#7DEBAB}
+  .recapN.zero{color:var(--mute);font-weight:400}
+  .recapMv{
+    display:flex;gap:6px;align-items:baseline;min-width:0;
+    font-size:10.5px;color:var(--mute);padding-left:15px;margin-top:2px
+  }
+  .recapMv b{
+    color:var(--cyan);font-family:var(--fd);font-style:italic;letter-spacing:.04em;font-weight:700;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+  }
+  .recapMore{padding-top:6px;color:var(--mute);font-size:10.5px;text-align:center}
+  @media (max-width:560px){
+    .recap{font-size:11px;padding:8px 10px 9px}
+    .recapRow{grid-template-columns:1fr 58px 46px 42px;gap:6px}
+    .recapNm,.recapN{font-size:11px}
+  }
+  @media (prefers-reduced-motion:reduce){ .recap{animation:none} }
 </style>
 </head>
 <body>
@@ -2205,6 +2274,10 @@
     </div>
   </div>
 </div>
+<!-- Thẻ Match Recap sau trận. Nằm NGOÀI cặp mốc cắt của xưởng nên trang chơi cũng có
+     (đừng viết lại cái mốc đó ra đây — mk_play.py đếm số mốc và sẽ báo lệch).
+     Cả khối `pointer-events:none`: nó lơ lửng ngay trên dải nút bên dưới. -->
+<div class="recap off" id="recapCard" aria-live="polite"></div>
 <div class="arcOver off" id="arcOver">
   <button id="arcGoHome" class="arcOnly" type="button" data-i18n="home">🏠 Trang chủ</button>
   <button id="arcAgain" class="primary" type="button" data-i18n="again">↻ Đánh lại</button>
@@ -2548,7 +2621,12 @@ const L={
     packBytes:'Đang tải ảnh và tiếng… {a} / {b} MB', packDecode:'Đang mở gói…',
     packOpen:'Đang mở gói… {n} / {t}', bootHint:'Tải xong là vào chơi được ngay',
     bootRetry:'↻ Thử tải lại', bootErr:'Mạng trục trặc, chưa tải xong gói ảnh và tiếng.', bootWait:'Đang chuẩn bị…',
-    musicNone:'Chưa có file nhạc nền nào nên đang dùng nhạc tự tạo. Muốn nhạc của bạn thì nạp file vào ô nhạc ở trang xưởng rồi xuất gói.'
+    musicNone:'Chưa có file nhạc nền nào nên đang dùng nhạc tự tạo. Muốn nhạc của bạn thì nạp file vào ô nhạc ở trang xưởng rồi xuất gói.',
+    /* ---------- thẻ Match Recap ---------- */
+    rcTitle:'TỔNG KẾT TRẬN', rcDur:'Thời lượng', rcWin:'Thắng',
+    rcFighter:'Đấu thủ', rcHp:'Máu còn', rcDmg:'Sát thương', rcHeal:'Hồi máu',
+    rcTop:'Chiêu chủ lực', rcBasic:'Đòn thường', rcNone:'chưa gây sát thương',
+    rcMore:'… và {n} đấu thủ nữa'
   },
   en:{
     tagline:'Cross-universe arena · 12 fighters · 12 stages',
@@ -2662,7 +2740,12 @@ const L={
     packBytes:'Loading art and sound… {a} / {b} MB', packDecode:'Unpacking…',
     packOpen:'Unpacking… {n} / {t}', bootHint:'The fight starts as soon as this finishes',
     bootRetry:'↻ Try again', bootErr:'Network hiccup — the image and sound pack did not finish loading.', bootWait:'Getting ready…',
-    musicNone:'No music file loaded yet, so the built-in track is playing. Drop your own music into the studio slots and export the pack.'
+    musicNone:'No music file loaded yet, so the built-in track is playing. Drop your own music into the studio slots and export the pack.',
+    /* ---------- match recap card ---------- */
+    rcTitle:'MATCH RECAP', rcDur:'Duration', rcWin:'Winner',
+    rcFighter:'Fighter', rcHp:'HP left', rcDmg:'Damage', rcHeal:'Healed',
+    rcTop:'Top move', rcBasic:'Basic Attack', rcNone:'no damage dealt',
+    rcMore:'… and {n} more fighter(s)'
   }
 };
 const t=k=>{ const d=L[LANG]||L.vi; return d[k]!==undefined?d[k]:(L.vi[k]!==undefined?L.vi[k]:k); };
@@ -2681,6 +2764,7 @@ function applyLang(){
   if(typeof cselRefresh==='function'&&typeof TMP!=='undefined'){ buildStages(); cselRefresh(); }
   if(typeof compPaint==='function'&&typeof COMP!=='undefined'&&COMP) compPaint();
   if(typeof advPaint==='function'&&typeof ADV!=='undefined'&&ADV) advPaint();
+  if(typeof recapPaint==='function'&&typeof G!=='undefined'&&G&&G.recap) recapPaint();
 }
 function setLang(v){
   LANG=(v==='en')?'en':'vi';
@@ -6434,6 +6518,8 @@ function mk(o){
     gnChangeDone:false, gnProbeDone:false, gnPanic:false, gnPanicMul:1, swapAs:null, gnSoul:null,
     /* Doraemon: Disoriented và Shrunk là thứ anh dán lên NGƯỜI KHÁC, nên khai chung ở đây */
     dis:0, shrunk:0, szMul:1, hitMul:1, reachMul:1, kbTake:1, drCcRes:0, dmgDealt:0,
+    /* Match Recap: máu hồi THẬT SỰ nhận vào, và sổ sát thương chia theo từng chiêu. */
+    healGot:0, moves:null,
     copter:0, copCd:0, copAcDone:false, drNoHit:0, edCd:0, edT:0, edMoved:false, edSpeed:0, edFrom:null, edTo:null,
     fk:0,
     drEntry:null, drAim:null, drCombo:null, drCone:null, drHide:false, tm:null, tmDone:false,
@@ -6790,6 +6876,7 @@ function relayIn(team,e){
 function newGame(){
   G={t:0,proj:[],waves:[],fx:[],floats:[],conf:[],timers:[],logs:[],over:null,winner:null,winTeam:null,endT:0,announced:false,cam:{x:W/2,y:H/2,z:1,shake:0},freeze:0,freezeAt:null,callBanner:null,kos:[],fighters:[],mates:[],flashback:null,flashScreen:0,relay:null,relayHome:null,kTeam:0,cTeam:1};
   G.timeWarp=null;
+  G.recap=null; G.recapDead=[];
   G.mode=PMODE;
   const roster=buildRoster(), spots=spawnSpots(roster), seen={};
   G.fighters=roster.map((r,i)=>{
@@ -6958,6 +7045,175 @@ function tanOpeningConsume(t,src){
   return true;
 }
 const regenFactor=f=>(f&&f.regenSupp>0)?(1-TAN.suppressHeal):1;
+/* ---------- MATCH RECAP — sổ ghi "vì sao thắng" ----------
+   Sau trận hiện một thẻ gọn: thời lượng · máu còn lại · sát thương gây ra · máu hồi thật
+   sự · và chiêu đóng góp nhiều nhất. Thẻ CHỈ hiện sau trận, nên sàn đấu vẫn thoáng đúng
+   như đã chốt ở mục 2i ("bỏ battle log đi, làm arena rộng hơn").
+
+   Ba luật của khu này:
+
+   1. **MỘT CỬA DUY NHẤT.** Sát thương ghi ngay chỗ `hurt()` đã cộng `dmgDealt` — cùng một
+      dòng, cùng một con số `min(amt, t.hp)`, nên sổ chiêu cộng lại LUÔN bằng `dmgDealt`.
+      Đừng mở đường ghi thứ hai; hai sổ lệch nhau là thẻ đọc ra vô nghĩa.
+   2. **TÊN CHIÊU SUY RA, KHÔNG KHAI TAY Ở HƠN TÁM CHỤC CHỖ GỌI.** `recapMove()` tra theo
+      bốn nấc, nấc nào có trước thì thắng:
+         · nhãn băng-rôn `crit` khi nó là CHUỖI (`'AIR CANNON!'`) — chính xác nhất, và
+           vốn đã là tên chiêu bằng tiếng Anh nên không phải dịch;
+         · `MOVE_TAG` — biến tạm đặt ngay trước cú `hurt()` cho mấy chiêu không có băng-rôn
+           (vùng nón, tia mắt, dải bóng) và cho đạn / sát thương duy trì;
+         · `kind` — mấy nhân vật mới vốn đã truyền kind riêng cho từng chiêu (`conanKick`,
+           `isagiUlt`, `gojoPurple`…), dùng luôn;
+         · không có gì cả ⇒ **đòn thường**.
+      `MOVE_TAG` là biến tạm của MỘT cú gọi: `hurt()` đồng bộ nên không có ai chen vào
+      giữa, nhưng nhớ trả nó về `null` ngay sau vòng lặp đặt nó.
+   3. **CHỤP LẠI LÚC NGÃ, ĐỪNG ĐỌC LẠI SAU.** Đánh tuần tự gỡ hẳn cái xác khỏi
+      `G.fighters` (`relayIn()`), hỗn chiến thì `finish()` gỡ đồng minh — đọc ngược sau
+      trận là mất sạch mấy hàng đó. `defeat()` chụp một hàng vào `G.recapDead`, `finish()`
+      gộp nốt người còn đứng.
+   Tên chiêu giữ nguyên ở cả hai ngôn ngữ (luật TÊN RIÊNG, mục 2f); chỉ mấy cái nhãn của
+   thẻ mới đi qua `t()`. */
+let MOVE_TAG=null;
+/* Đạn: tra theo `p.type`, đặt một lần ở đầu vòng duyệt đạn. Phi tiêu dùng chung một type
+   cho ba người nên tách bằng cờ `shadow` của Shikamaru ngay tại chỗ tra. */
+const MOVE_PROJ={
+  shuriken:'SHURIKEN', kunai:'EXPLOSIVE KUNAI', clone:'KAGE BUNSHIN',
+  ball:'BASIC SHOT', drive:'DRIVE SHOT', twin:'VICTORY TWIN SHOT',
+  kame:'KAMEHAMEHA', masenko:'MASENKO', decision:'DECISION MAKING',
+  gbeam:"GINYU'S BEAM", change:'CHANGE!!!', aircan:'AIR CANNON',
+  minya:'MINYA', elminya:'EL MINYA', mobshot:'MONSTER SHOT'
+};
+/* Mấy nhân vật mới truyền `kind` riêng cho từng chiêu, nên kind CHÍNH LÀ tên chiêu. */
+const MOVE_KIND={
+  domain:'NARA CLAN FOREST', reflect:'E.M.T REFLECTION', minya:'MINYA',
+  gojoBlue:'LAPSE: BLUE', gojoRed:'REVERSAL: RED', gojoPurple:'HOLLOW PURPLE',
+  conanDeduction:'DEDUCTION', conanNeedle:'TRANQUILIZER WATCH', conanKick:'SOCCER BALL SHOT',
+  conanSkate:'TURBO SKATEBOARD', conanEvidence:'DECISIVE EVIDENCE',
+  conanNeedleReflected:'TRANQUILIZER WATCH',
+  isagiBasic:'CONTROLLED SHOT', isagiFirst:'FIRST-TOUCH SHOT',
+  isagiDirect:'DIRECT SHOT', isagiUlt:'TWO-GUN VOLLEY'
+};
+/* Nhãn băng-rôn gọn lại: bỏ dấu than, gộp `BOOM · EDGE` về `BOOM` (rìa vụ nổ vẫn là một
+   chiêu), và gộp `ACCEPTABLE/GOOD/GREAT/BEST DECISION` của Horikita về một dòng. */
+function recapTidy(s){
+  let v=String(s).trim().replace(/!+$/,'').replace(/\s*·\s*EDGE$/i,'');
+  if(/\bDECISION\b/.test(v)) v='DECISION MAKING';
+  if(v==='BOOM') v='EXPLOSIVE KUNAI';
+  return v||'';
+}
+function recapMove(crit,kind){
+  if(typeof crit==='string'&&crit.trim()) return recapTidy(crit);
+  if(MOVE_TAG) return MOVE_TAG;
+  if(kind&&MOVE_KIND[kind]) return MOVE_KIND[kind];
+  return null;                              // null ⇒ đòn thường, dịch lúc vẽ thẻ
+}
+/* Cộng vào sổ chiêu. Gọi ĐÚNG chỗ `dmgDealt` được cộng, với ĐÚNG con số đó. */
+function recapHit(cred,amt,crit,kind){
+  if(!cred||!(amt>0))return;
+  const k=recapMove(crit,kind)||'\u0000basic';      // khoá riêng cho đòn thường
+  if(!cred.moves) cred.moves={};
+  cred.moves[k]=(cred.moves[k]||0)+amt;
+}
+/* Máu hồi THẬT SỰ nhận vào — ghi trên người ĐƯỢC hồi, vì thẻ đọc theo từng hàng đấu thủ.
+   Mọi cửa hồi máu trong game đều đã kẹp `min(maxHp-hp, …)` trước khi cộng, nên con số
+   truyền vào đây không bao giờ là phần hồi tràn. */
+function recapHeal(f,v){ if(f&&v>0) f.healGot=(f.healGot||0)+v; }
+/* Một hàng của thẻ. Chụp lúc người đó còn trong G.fighters — xem luật 3 ở trên. */
+function recapRow(f){
+  if(!f||f.summon)return null;
+  let top=null,tv=0;
+  for(const k in (f.moves||{})) if(f.moves[k]>tv){ tv=f.moves[k]; top=k; }
+  return {f, name:f.name, color:f.color||'#FFE100', team:f.team,
+    hp:Math.max(0,Math.round(f.hp)), maxHp:Math.round(f.maxHp||1),
+    dmg:Math.round(f.dmgDealt||0), heal:Math.round(f.healGot||0),
+    top, topDmg:Math.round(tv)};
+}
+function recapFall(f){
+  if(!G||f.summon)return;
+  if(!G.recapDead) G.recapDead=[];
+  if(G.recapDead.some(r=>r.f===f))return;
+  G.recapDead.push(recapRow(f));
+}
+/* Gọi trong finish(), ngay cạnh compResult() — chỗ duy nhất còn đọc được đội hình vừa đánh. */
+function recapBuild(win){
+  const rows=[];
+  for(const f of G.fighters){ const r=recapRow(f); if(r&&!rows.some(x=>x.f===f)) rows.push(r); }
+  for(const r of (G.recapDead||[])) if(r&&!rows.some(x=>x.f===r.f)) rows.push(r);
+  /* Người thắng lên đầu, còn lại xếp theo sát thương gây ra. */
+  rows.sort((a,b)=>(a.f===win?-1:b.f===win?1:0)||(b.dmg-a.dmg));
+  G.recap={dur:G.t, mode:G.mode, win:win?win.name:'', rows};
+}
+/* Vẽ thẻ. Gọi từ `recapTick()` khi trận vừa xong, và lại một lần nữa khi đổi ngôn ngữ.
+   Nhãn của thẻ đi qua t() / tf(); TÊN CHIÊU thì giữ nguyên ở cả hai ngôn ngữ, đúng luật
+   TÊN RIÊNG ở mục 2f — chúng vốn đã là tiếng Anh trên băng-rôn trong trận. */
+const RECAP_MAX=4;                        // hỗn chiến tám người thì thẻ vẫn phải GỌN
+const recapEsc=s=>String(s==null?'':s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+/* Thời lượng: hằng số trong sổ là giây TRONG TRẬN, bọc rts() mới ra giây người chơi đọc
+   được (mục 1, luật 2). Đừng in thẳng `G.t`. */
+function recapDur(sec){
+  const v=Math.max(0,Math.round(+rts(sec)));
+  return Math.floor(v/60)+':'+String(v%60).padStart(2,'0');
+}
+function recapPaint(){
+  const box=document.getElementById('recapCard');
+  if(!box) return;                        // trang nào không có ô này thì thôi, đừng ném lỗi
+  const R=G&&G.recap;
+  if(!R||!R.rows.length){ box.innerHTML=''; return; }
+  const rows=R.rows.slice(0,RECAP_MAX), du=R.rows.length-rows.length;
+  const html=rows.map((r,i)=>{
+    const pct=Math.max(0,Math.min(100,Math.round(r.hp/Math.max(1,r.maxHp)*100)));
+    const cls='recapRow'+(i===0&&R.win&&r.name===R.win?' win':'')+(r.hp<=0?' dead':'');
+    /* Chiêu chủ lực: khoá '\u0000basic' là đòn thường (nó không có tên riêng nên phải
+       dịch), còn lại in nguyên tên băng-rôn. Chưa gây điểm nào thì nói thẳng như vậy
+       chứ đừng để trống một dòng. */
+    const mv=r.top===null?t('rcNone')
+      :`<b>${recapEsc(r.top==='\u0000basic'?t('rcBasic'):r.top)}</b> <span>${r.topDmg}</span>`;
+    return `<div class="${cls}" style="color:${recapEsc(r.color)}">`+
+      `<div><div class="recapWho"><i class="recapDot" style="background:${recapEsc(r.color)}"></i>`+
+      `<span class="recapNm">${recapEsc(r.name)}</span></div>`+
+      `<div class="recapMv">${mv}</div></div>`+
+      `<div class="recapHp"><div class="recapBar"><i style="width:${pct}%"></i></div>`+
+      `<span class="recapHpN">${r.hp} / ${r.maxHp}</span></div>`+
+      `<div class="recapN dmg${r.dmg?'':' zero'}">${r.dmg}</div>`+
+      `<div class="recapN heal${r.heal?'':' zero'}">${r.heal}</div></div>`;
+  }).join('');
+  box.innerHTML=
+    `<div class="recapTop"><b>${t('rcTitle')}</b>`+
+    `<span>${t('rcDur')} <i>${recapDur(R.dur)}</i></span>`+
+    (R.win?`<span>${t('rcWin')} <i>${recapEsc(R.win)}</i></span>`:'')+
+    `</div>`+
+    `<div class="recapRow head"><div>${t('rcFighter')} · ${t('rcTop')}</div><div>${t('rcHp')}</div>`+
+    `<div class="recapN">${t('rcDmg')}</div><div class="recapN">${t('rcHeal')}</div></div>`+
+    html+
+    (du>0?`<div class="recapMore">${tf('rcMore',{n:du})}</div>`:'');
+}
+/* Bật / tắt thẻ. Chạy ở CẢ HAI trang (xưởng lẫn trang chơi) vì đây là thứ của người xem,
+   không phải đồ nghề của thợ. Ba luật:
+     · chờ đúng mốc `G.endT >= 2` như dải nút — trước đó băng-rôn WINNER và pháo giấy
+       đang bung ra, chen thẻ vào là cướp mất khoảnh khắc đó;
+     · lớp phủ nào đang mở (chọn nhân vật, bảng xếp hạng, màn VS, bảng hành trình) thì
+       giấu thẻ đi;
+     · CHỈ gán khi ĐỔI — bật tắt class mỗi 250ms là bắt trình duyệt tính lại kiểu liên
+       tục, và Playwright coi phần tử quanh đó là "chưa đứng yên" (mục 9). */
+let recapShown=null;
+function recapCovered(){
+  const off=id=>{ const e=document.getElementById(id); return !e||e.classList.contains('off'); };
+  return !off('charSelect')||!off('compBoard')||!off('advBoard')||!off('arcVs')
+    ||!off('arcStage')||!off('dexPop')||(typeof vsOn!=='undefined'&&vsOn);
+}
+function recapTick(){
+  /* Lối ra rẻ nhất, đặt TRƯỚC mọi cú tra DOM: suốt cả trận thì không có gì để làm, mà
+     hàm này chạy mỗi khung hình. */
+  const ready=!!(G&&G.over&&G.endT>=2&&G.recap&&G.recap.rows.length);
+  if(!ready&&recapShown!==true) return;
+  const box=document.getElementById('recapCard');
+  if(!box) return;
+  const on=ready&&!recapCovered();
+  if(on===recapShown) return;
+  recapShown=on;
+  if(on) recapPaint();
+  box.classList.toggle('off',!on);
+}
 function hurt(t,amt,src,crit,kind,tint,raw,accuracyMul){
   if(!t.alive||G.over)return false;
   if(t.leaving>0)return false;              // Ayanokouji đang rời sàn: không ăn đòn nữa
@@ -7043,7 +7299,13 @@ function hurt(t,amt,src,crit,kind,tint,raw,accuracyMul){
      vẫn sửa được lượng sát thương). Ngoài chế độ phiêu lưu thì nó trả nguyên `amt` về. */
   amt=advOnHit(t,amt,src,kind,raw);
   const cred=src&&(src.summon?src.master:src);
-  if(cred&&!cred.summon) cred.dmgDealt=(cred.dmgDealt||0)+Math.min(amt,t.hp);
+  if(cred&&!cred.summon){
+    const got=Math.min(amt,t.hp);
+    cred.dmgDealt=(cred.dmgDealt||0)+got;
+    /* Sổ chiêu của thẻ Match Recap — cùng một con số, cùng một cửa, nên tổng sổ chiêu
+       luôn khớp `dmgDealt`. Đừng ghi ở chỗ nào khác. */
+    recapHit(cred,got,crit,kind);
+  }
   t.hp=Math.max(0,t.hp-amt);
   if(src&&src.team!==t.team){ t.lastHitBy=src.summon&&src.master?src.master:src; t.lastHitAt=G.t; t.lastHitKind=kind||'normal'; }
   if(t.key==='isagi'&&!t.swapAs&&kind!=='dot'&&kind!=='domain') t.isagiHitAt=G.t;
@@ -7172,6 +7434,9 @@ function koFx(loser){
 function defeat(t,src){
   if(!t||!t.alive)return;
   t.alive=false; t.hp=0;
+  /* Chụp hàng của Match Recap NGAY lúc ngã: đánh tuần tự gỡ hẳn cái xác khỏi G.fighters
+     và finish() gỡ đồng minh, đọc ngược sau trận là mất hàng. */
+  recapFall(t);
   /* Phiêu lưu: ăn điểm NGAY lúc con đó gục, không đợi hết màn — thua giữa màn vẫn giữ được
      phần đã farm, nên đánh lại không mất trắng. */
   advOnKill(t,src);
@@ -7255,6 +7520,9 @@ function finish(w){
     `còn ${relayLeft(win.team)} người chưa phải ra sân.`,'g');
   /* Đang đánh một trận của giải thì ghi kết quả NGAY tại đây — G còn nguyên đội hình
      vừa đánh, ra khỏi hàm này là mấy con số sát thương không đọc lại được nữa. */
+  /* Thẻ Match Recap dựng ĐÚNG chỗ này, cùng lý do với compResult(): ra khỏi hàm này là
+     đội hình vừa đánh không đọc lại được nữa. */
+  recapBuild(win);
   if(compLive) compResult(win);
   advResult(win);
 }
@@ -8038,7 +8306,7 @@ const ADV_UP=[
     desc:{vi:'Hạ được một kẻ địch ⇒ hồi <b>6% máu tối đa</b> mỗi bậc.',
           en:'Defeating a foe heals <b>6% max HP</b> per stack.'},
     kill(o,n){ const f=o.src; if(!f||!f.alive)return;
-      const h=Math.round(f.maxHp*.06*n); f.hp=Math.min(f.maxHp,f.hp+h);
+      const h=Math.round(f.maxHp*.06*n); recapHeal(f,Math.min(h,f.maxHp-f.hp)); f.hp=Math.min(f.maxHp,f.hp+h);
       pop(f.x,f.y,'+'+h,'#6BE39A',false); } },
   { id:'lifesteal', rar:'rare', tags:['HEAL'], max:2,
     name:{vi:'Uống Máu',en:'Bloodthirst'},
@@ -8046,7 +8314,7 @@ const ADV_UP=[
           en:'Heal for <b>6%</b> of damage dealt per stack.'},
     hit(o,n){ const f=o.src; if(!f||!f.alive||o.kind==='dot')return;
       const h=Math.max(1,Math.round(o.amt*.06*n));
-      later(0,()=>{ if(f.alive) f.hp=Math.min(f.maxHp,f.hp+h); },false); } },
+      later(0,()=>{ if(f.alive){ recapHeal(f,Math.min(h,f.maxHp-f.hp)); f.hp=Math.min(f.maxHp,f.hp+h); } },false); } },
 
   /* ---------- chỉ số: có, nhưng chỉ là thẻ THƯỜNG ---------- */
   { id:'st_vit', rar:'common', tags:['STAT'], max:5,
@@ -8142,7 +8410,7 @@ const ADV_RELIC=[
           en:'Kills heal <b>12% max HP</b>… but you <b>bleed</b> while nothing dies.'},
     kill(o){ const f=o.src; if(!f||!f.alive)return;
       f.advBloodT=0;
-      const h=Math.round(f.maxHp*.12); f.hp=Math.min(f.maxHp,f.hp+h); pop(f.x,f.y,'+'+h,'#6BE39A',false); },
+      const h=Math.round(f.maxHp*.12); recapHeal(f,Math.min(h,f.maxHp-f.hp)); f.hp=Math.min(f.maxHp,f.hp+h); pop(f.x,f.y,'+'+h,'#6BE39A',false); },
     tick(f,dt){
       f.advBloodT=(f.advBloodT||0)+dt;
       if(f.advBloodT<gs(4)) return;
@@ -8268,7 +8536,7 @@ const ADV_FIGHTER=[
      'Mỗi đòn trúng hồi <b>2% máu tối đa</b>.',
      'Every hit heals <b>2% max HP</b>.',
      {hit(o){ const f=o.src; if(!advMine(f,'suzune')||o.kind==='dot')return;
-        later(0,()=>{ if(f.alive) f.hp=Math.min(f.maxHp,f.hp+Math.round(f.maxHp*.02)); },false); }}),
+        later(0,()=>{ if(!f.alive)return; const h=Math.min(Math.round(f.maxHp*.02),f.maxHp-f.hp); recapHeal(f,h); f.hp+=h; },false); }}),
   FX('suzune','evo','legend',['MARK'],'TIẾN HOÁ · Luôn Đúng','EVOLUTION · Always Right',
      'Quyết định <b>đánh dấu</b> mục tiêu, và <b>điểm lớp lên gấp đôi</b>.',
      'Decisions <b>Mark</b> the target, and <b>Class Points come twice as fast</b>.',
@@ -9233,7 +9501,7 @@ function kunaiShare(d){
 function kunaiBurn(t,src){
   if(!t||t.summon)return;
   for(let i=t.dots.length-1;i>=0;i--) if(t.dots[i]&&t.dots[i].kunai) t.dots.splice(i,1);
-  t.dots.push({dps:KUNAI_BURN_DPS,left:KUNAI_BURN_T,acc:0,src,tint:'red',kunai:true});
+  t.dots.push({dps:KUNAI_BURN_DPS,left:KUNAI_BURN_T,acc:0,src,tint:'red',kunai:true,tag:'EXPLOSIVE KUNAI'});
   G.floats.push({x:t.x,y:t.y-118,txt:`BURNING ${KUNAI_BURN_DPS/RT} DMG/s ${rts(KUNAI_BURN_T)}s`,
     color:'#FF8A4A',life:1.5,ml:1.5,banner:true,gold:true,sc:.8,tilt:rnd(-.05,.05)});
 }
@@ -9302,7 +9570,7 @@ function sexy(k,e){
     if(f.summon){ say(`${f.name} đang dồn khí, không hề nao núng.`,'m'); continue; }
     // Khói hồng phủ kín sàn nên không có chỗ mà lách: đây là ngoại lệ duy nhất
     // mà nội tại né đòn của Shikamaru không ăn.
-    f.dots.push({dps:SEXY_DPS,left:2,acc:0,src:k,tint:'pink'});
+    f.dots.push({dps:SEXY_DPS,left:2,acc:0,src:k,tint:'pink',tag:'SEXY NO JUTSU'});
     if(f.male){
       if(stunFx(f,gnCc(k,SEXY_STUN),'heart')){ sfx('charm'); say(`${f.name} đứng hình ${rts(SEXY_STUN)} giây.`,'g'); }
       else say(`${f.name} miễn nhiễm khống chế — không hề đứng hình.`,'g');
@@ -9416,7 +9684,7 @@ function shikaStabHit(k,e){
        :`Đâm sau lưng — ${Math.round(SHIKA.stabDmg*(k.weak?SHIKA.weakMul:1))} dmg, nhưng đối thủ miễn khống chế.`,'s');
 }
 function bleedOn(t,src){
-  t.dots.push({dps:SHIKA.bleedDps,left:SHIKA.bleedT,acc:0,src,tint:'bleed'});
+  t.dots.push({dps:SHIKA.bleedDps,left:SHIKA.bleedT,acc:0,src,tint:'bleed',tag:'BLEEDING'});
 }
 
 /* Chiêu 2 — Trói bóng khoá cổ. Shikamaru đứng yên kết ấn, dải bóng bò từ chân cậu
@@ -9472,7 +9740,7 @@ function bindTick(k,dt){
     e.moving=false;
     setPose(e,'hurt',.3);                            // bị trói thì giữ dáng chịu đòn
     B.acc+=dt;
-    if(B.acc>=.5){ B.acc-=.5; hurt(e,SHIKA.bindDps*.5,k,false,'dot','shadow'); }
+    if(B.acc>=.5){ B.acc-=.5; MOVE_TAG='SHADOW-NECK BIND'; hurt(e,SHIKA.bindDps*.5,k,false,'dot','shadow'); MOVE_TAG=null; }
     B.t-=dt;
     if(B.t<=0){ B.ph='back'; B.len=d; }
   }else{
@@ -9859,7 +10127,7 @@ function eagleAwaken(t){
        EAGLE_BURN giây, nên hồi sau là quãng cháy vẫn tính theo máu cũ và anh chết non. */
     const hoi=Math.min(t.maxHp-t.hp, t.maxHp*EAGLE_HEAL*regenFactor(t));
     if(hoi>0){
-      t.hp+=hoi;
+      t.hp+=hoi; recapHeal(t,hoi);
       G.floats.push({x:t.x-34,y:t.y-52,txt:'+'+Math.round(hoi),color:'#7DEBAB',life:1.1,ml:1.1,sc:.62});
       say(`Đôi cánh nâng anh dậy: hồi ${Math.round(hoi)} máu (${Math.round(EAGLE_HEAL*1000)/10}% máu tối đa).`,'g');
     }
@@ -9943,7 +10211,7 @@ function ballHit(p,f){
     ring(f.x,f.y,120,'#FF8A2B',.5);
     const driveHit=hurt(f,p.dmg,o,'DRIVE SHOT!','big','red');   // cú nổ lửa: đỏ
     if(driveHit&&f.alive){
-      f.dots.push({dps:DRIVE_BURN_DPS,left:DRIVE_BURN_T,acc:0,src:o,tint:'red'});
+      f.dots.push({dps:DRIVE_BURN_DPS,left:DRIVE_BURN_T,acc:0,src:o,tint:'red',tag:'DRIVE SHOT'});
       /* Hất lùi đúng DRIVE_KB_DIST chiều dài sàn. Lực đẩy tắt dần theo exp(-6t) nên quãng
          đi được bằng power/6 — cùng công thức với Air Cannon của Doraemon, đừng truyền
          thẳng một con số lực vào đây. */
@@ -10210,7 +10478,7 @@ function suzHeal(f,pct,ofMax,mul){
   if(k<=0)return;
   const amt=Math.min(f.maxHp-f.hp, (ofMax?f.maxHp:f.hp)*pct*k*regenFactor(f));
   if(amt<=0)return;
-  f.hp+=amt;
+  f.hp+=amt; recapHeal(f,amt);
   G.floats.push({x:f.x-34,y:f.y-52,txt:'+'+Math.round(amt),color:'#7DEBAB',life:.95,ml:.95,sc:.62});
   ring(f.x,f.y,58,'#7DEBAB',.3);
   sfx('suz_heal');
@@ -10884,7 +11152,8 @@ function ginyuBeam(f,e){
 function gnBeamHit(p,t){
   const o=p.owner;
   ring(t.x,t.y,88,'#C9A0FF',.4);
-  const landed=hurt(t,p.dmg,o,false,'big',undefined,true);
+  MOVE_TAG="GINYU'S BEAM";
+  const landed=hurt(t,p.dmg,o,false,'big',undefined,true); MOVE_TAG=null;
   sfx('hit');
   if(!landed)return;
   knock(t,p.vx,p.vy,GN.beamKb);
@@ -11803,7 +12072,8 @@ function drSlFire(f,e,A){
   if(!list.length){ say('Vùng sáng vàng nhạt quét qua khoảng không — không ai đứng trong nón.','m'); return; }
   list.forEach((it,i)=>{
     const core=(i===0&&it.da<=DORA.slCore), o=it.o;
-    const landed=hurt(o,core?DORA.slDmg:DORA.slEdgeDmg,f,false,'big');
+    MOVE_TAG='SMALL LIGHT';
+    const landed=hurt(o,core?DORA.slDmg:DORA.slEdgeDmg,f,false,'big'); MOVE_TAG=null;
     if(!landed)return;
     drShrink(o,gnCc(f,core?DORA.shrunkT:DORA.slEdgeT));
   });
@@ -11905,7 +12175,7 @@ function drTimeBack(f){
   f.x=clamp(px,PAD,W-PAD); f.y=clamp(py,PAD+50,H-PAD-10);
   // hồi lại đúng lượng máu của lúc đó, nhưng không quá 20% máu tối đa
   const rewindHp=Math.max(1,Math.min(ph,f.maxHp*DORA.tmHealCap));
-  f.hp=Math.max(1,f.hp+Math.max(0,rewindHp-f.hp)*regenFactor(f));
+  {const back=Math.max(0,rewindHp-f.hp)*regenFactor(f); f.hp=Math.max(1,f.hp+back); recapHeal(f,back);}
   // xoá sạch debuff đang mang trên người anh — chỉ trên anh thôi
   f.stun=0; f.dis=0; f.shrunk=0; f.dots.length=0;
   f.gnDaze=0; f.gnRage=0; f.gnTired=0; f.gnSlow=0; f.gnSlowAfter=0;
@@ -12390,7 +12660,8 @@ function supHvHit(f,A){
     if(dd<bestD){ bestD=dd; best=o; }
   }
   if(!best){ A.land=0; A.who=null; return; }
-  const landed=hurt(best,SUP.hvDmg,f,false,'big');
+  MOVE_TAG='HEAT VISION';
+  const landed=hurt(best,SUP.hvDmg,f,false,'big'); MOVE_TAG=null;
   if(!landed){ A.land=0; A.who=null; return; }
   sfx('hit');
   G.fx.push({type:'dust',x:best.x+rnd(-10,10),y:bodyCY(best),r:4,life:.3,ml:.3});
@@ -12404,7 +12675,7 @@ function supHvHit(f,A){
 function supBurn(t,src){
   if(!t||t.summon&&!t.ally)return;
   for(let i=t.dots.length-1;i>=0;i--) if(t.dots[i]&&t.dots[i].sup) t.dots.splice(i,1);
-  t.dots.push({dps:SUP.hvBurnDps,left:SUP.hvBurnT,acc:0,src,tint:'red',sup:true});
+  t.dots.push({dps:SUP.hvBurnDps,left:SUP.hvBurnT,acc:0,src,tint:'red',sup:true,tag:'BURNING'});
   sfx('burn');
   G.floats.push({x:t.x,y:t.y-118,
     txt:`BURNING ${SUP.hvBurnDps/RT} DMG/s ${rts(SUP.hvBurnT)}s`,
@@ -12465,7 +12736,8 @@ function supFbFire(f,B){
     const o=it.o;
     const dmg=core?SUP.fbDmg:SUP.fbEdgeDmg;
     const froz=o.frozen>0;
-    const landed=hurt(o,dmg,f,false,'big');
+    MOVE_TAG='FREEZE BREATH';
+    const landed=hurt(o,dmg,f,false,'big'); MOVE_TAG=null;
     if(!landed)return;
     ring(o.x,o.y,86,'#D6F2FF',.35);
     if(froz){
@@ -12617,7 +12889,7 @@ function supMsLand(f){
            102, mà địch có lớp giảm sát thương nào là tụt xuống dưới mốc ngay. Bản mô
            tả nói thẳng "cú đấm làm lớp băng vỡ", nên đập vỡ hẳn ở đây. */
         if(prime.frozen>0) supIceBreak(prime);
-        hurt(prime,SUP.msShatter,f,false,'big');
+        MOVE_TAG='METEOR STRIKE'; hurt(prime,SUP.msShatter,f,false,'big'); MOVE_TAG=null;
         G.floats.push({x:prime.x,y:prime.y-118,txt:`SHATTER DAMAGE +${SUP.msShatter}`,
           color:'#EAF7FF',life:1.6,ml:1.6,banner:true,gold:true,tilt:rnd(-.05,.05)});
       }
@@ -12648,7 +12920,9 @@ function supMsLand(f){
     if(share<=0)continue;
     const dmg=Math.round(SUP.msQuakeDmg*share), slowT=gnCc(f,SUP.msQuakeT*share);
     if(dmg<=0)continue;
-    if(hurt(o,dmg,f,false,'big')){
+    MOVE_TAG='SHOCKWAVE';
+    const quaked=hurt(o,dmg,f,false,'big'); MOVE_TAG=null;
+    if(quaked){
       o.supQuake=Math.max(o.supQuake||0,slowT);
       G.floats.push({x:o.x,y:o.y-112,
         txt:(share>=1?'SHOCKWAVE':'SHOCKWAVE · EDGE')+
@@ -13063,7 +13337,7 @@ function beaErode(t,src){
     for(const d of cur) if(d.left<old.left) old=d;
     old.left=BEA.eroT;
   }else{
-    t.dots.push({dps:BEA.eroDps, left:BEA.eroT, acc:0, src, tint:'#C9A0FF', bea:true});
+    t.dots.push({dps:BEA.eroDps, left:BEA.eroT, acc:0, src, tint:'#C9A0FF', bea:true, tag:'MANA EROSION'});
   }
   G.floats.push({x:t.x,y:t.y-96,txt:`MANA EROSION ×${beaEroStacks(t).length}`,color:'#C9A0FF',
     life:1.2,ml:1.2,banner:true,sc:.6,beaFx:true});
@@ -14269,7 +14543,7 @@ function sakIbOn(t,src,dps,dur){
   let cur=null;
   for(let i=t.dots.length-1;i>=0;i--) if(t.dots[i]&&t.dots[i].sakIb){ cur=t.dots[i]; t.dots.splice(i,1); }
   const keep=cur&&cur.dps>dps;
-  t.dots.push({dps:keep?cur.dps:dps,left:keep?Math.max(cur.left,dur):dur,acc:0,src,tint:'#8E1023',sakIb:true});
+  t.dots.push({dps:keep?cur.dps:dps,left:keep?Math.max(cur.left,dur):dur,acc:0,src,tint:'#8E1023',sakIb:true,tag:'INTERNAL BLEEDING'});
   G.floats.push({x:t.x,y:t.y-118,txt:`INTERNAL BLEEDING ${Math.round((keep?cur.dps:dps)/RT)} DMG/s ${rts(dur)}s`,
     color:'#C7304A',life:1.4,ml:1.4,banner:true,gold:true,sc:.56,tilt:rnd(-.05,.05)});
   t.flash=Math.max(t.flash,.22);
@@ -14505,7 +14779,7 @@ function sakHealOne(f,t,amt){
   if(!t||!t.alive||amt<=0)return;
   const v=Math.min(t.maxHp-t.hp,amt*regenFactor(t)*gnHeal(f,false));   // không bao giờ overheal
   if(v<=0)return;
-  t.hp+=v;
+  t.hp+=v; recapHeal(t,v);
   G.floats.push({x:t.x-30,y:t.y-54,txt:'+'+Math.round(v),color:'#7DEBAB',life:.9,ml:.9,sc:.58});
   for(let i=0;i<3;i++) G.fx.push({type:'heal',x:t.x+rnd(-16,16),y:t.y+rnd(-10,10),life:.5,ml:.5,color:'#7DEBAB'});
   sfx('sak_tick');
@@ -14559,13 +14833,13 @@ function sakRegenTick(f,dt){
     if(!ow||!ow.alive||ow.hp<=0||!(ow.sakSeal>0)){ f.katsuyu=0; f.katsuyuOwner=null; }
     else if(f.alive&&f.hp>0&&f.hp<f.maxHp){
       const v=Math.min(f.maxHp-f.hp,f.maxHp*SAK.katsuyu*dt*regenFactor(f)*gnHeal(ow,false));
-      if(v>0){ f.hp+=v; f.sakHealAcc=(f.sakHealAcc||0)+v;
+      if(v>0){ f.hp+=v; recapHeal(f,v); f.sakHealAcc=(f.sakHealAcc||0)+v;
         if(f.sakHealAcc>=8){ G.floats.push({x:f.x-28,y:f.y-58,txt:'+'+Math.round(f.sakHealAcc),color:'#8BE8D8',life:.85,ml:.85,sc:.5}); f.sakHealAcc=0; } }
     }
   }
   if(sakOn(f)&&f.sakSeal>0&&f.hp<f.maxHp){
     const v=Math.min(f.maxHp-f.hp,(f.maxHp-f.hp)*SAK.byakugo*dt*regenFactor(f)*gnHeal(f,false));
-    if(v>0) f.hp+=v;
+    if(v>0){ f.hp+=v; recapHeal(f,v); }
   }
 }
 
@@ -15247,7 +15521,8 @@ function step(dt){
     for(let i=f.dots.length-1;i>=0;i--){
       const d=f.dots[i];
       if(!d) continue; d.left-=dt; d.acc+=dt;
-      if(d.acc>=.5){ d.acc-=.5; hurt(f,d.dps*.5,d.src,false,'dot',d.tint); if(d.tint==='red') sfx('burn'); }
+      if(d.acc>=.5){ d.acc-=.5; MOVE_TAG=d.tag||null; hurt(f,d.dps*.5,d.src,false,'dot',d.tint); MOVE_TAG=null;
+        if(d.tint==='red') sfx('burn'); }
       if(d.left<=0)f.dots.splice(i,1);
     }
   }
@@ -15525,8 +15800,10 @@ function step(dt){
       if(f.team===w.team||!f.alive||w.hit.includes(f))continue;
       if(dist(f,w)<w.r+f.r){
         w.hit.push(f);
-        if(f.invuln>0){ hurt(f,w.dmg,w.owner,w.crit); continue; }
-        if(hurt(f,w.dmg,w.owner,w.crit)){ stunFx(f,gnCc(w.owner,.5),'spark'); sfx('stun'); }
+        MOVE_TAG='SCOLD';
+        if(f.invuln>0){ hurt(f,w.dmg,w.owner,w.crit); MOVE_TAG=null; continue; }
+        const scolded=hurt(f,w.dmg,w.owner,w.crit); MOVE_TAG=null;
+        if(scolded){ stunFx(f,gnCc(w.owner,.5),'spark'); sfx('stun'); }
       }
     }
     for(const p of G.proj){
@@ -15557,6 +15834,11 @@ function step(dt){
   for(let i=G.proj.length-1;i>=0;i--){
     const p=G.proj[i];
     if(!p) continue;
+    /* Match Recap: viên đạn nào thì tên chiêu đó. Đặt lại ở MỖI vòng (mấy nhánh dưới có
+       `continue` và `splice` nên đừng trông vào một lần đặt), và trả về null ngay sau
+       vòng lặp — mấy cú hurt() phía sau trong step() không được ăn nhãn thừa.
+       Phi tiêu dùng chung một type cho ba người, tách bằng chính cờ `shadow`. */
+    MOVE_TAG=(p.type==='shuriken'&&p.shadow)?'SHADOW SHURIKEN':(MOVE_PROJ[p.type]||null);
     /* Ginyu vào thân xác người khác thì tay chân không quen: đạn vừa rời tay đã vẹo
        hẳn sang một bên và mất luôn khả năng dò tìm. Chiêu của chính anh không dính. */
     /* CỬA `proj` — một lần cho mỗi viên, đi chung lối `p.gnSkew` ngay dưới. */
@@ -15746,6 +16028,7 @@ function step(dt){
       advBoom(p.x,p.y,74,18+12*p.advBoom,p.owner,'#FF9A3C');
     if(dead)G.proj.splice(i,1);
   }
+  MOVE_TAG=null;                            // hết vòng đạn: mấy cú hurt() sau không ăn nhãn thừa
   for(let i=G.fx.length-1;i>=0;i--){ const e=G.fx[i]; if(!e) continue; e.life-=dt; if(e.type==='ring')e.r+=(e.max-e.r)*dt*7; if(e.life<=0)G.fx.splice(i,1); }
   for(let i=G.floats.length-1;i>=0;i--){ const f=G.floats[i]; if(!f) continue; f.y-=30*dt; f.life-=dt; if(f.life<=0)G.floats.splice(i,1); }
   if(G.callBanner){ G.callBanner.life-=dt; if(G.callBanner.life<=0)G.callBanner=null; }
@@ -20180,6 +20463,7 @@ function loop(now){
   draw(); recTick();                        // khung dọc + đẩy khung vào bộ mã hoá, chỉ khi đang ghi
   padTick();                                // vòng hồi chiêu trên nút bấm, chỉ ở bản người chơi
   advLevelCheck();                          // lên cấp thì dừng trận, mở màn chọn thẻ
+  recapTick();                              // thẻ tổng kết, chỉ đụng tới DOM lúc bật/tắt
   requestAnimationFrame(loop);
 }
 /* ---------- ghi hình sàn đấu ---------- */

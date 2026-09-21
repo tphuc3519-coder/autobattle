@@ -212,6 +212,12 @@ window.__sakuraTick=sakuraTick; window.__sakIbOn=sakIbOn; window.__sakHamperOn=s
 window.__sakLowAlly=sakLowAlly; window.__sakCastMul=sakCastMul; window.__sakShurDmg=sakShurDmg;
 window.__sakShurCd=sakShurCd; window.__SHURIKEN_DMG=()=>SHURIKEN_DMG; window.__cm=cm;
 window.__sakuraVector=sakuraVector; window.__sakStatus2=sakStatus; window.__drawSakuraFx=drawSakuraFx;
+/* ---- Match Recap ---- */
+window.__recap=()=>G&&G.recap; window.__recapRow=recapRow; window.__recapMove=recapMove;
+window.__recapBuild=w=>recapBuild(w); window.__recapPaint=()=>recapPaint();
+window.__recapTick=()=>recapTick(); window.__recapHeal=recapHeal;
+window.__MOVE_PROJ=MOVE_PROJ; window.__MOVE_KIND=MOVE_KIND; window.__recapTidy=recapTidy;
+window.__setMoveTag=v=>{ MOVE_TAG=v; };
 window.__dupColor=dupColor; window.__teamTint=teamTint; window.__setMode=(m,r)=>{
   PMODE=m;
   if(r){ if(r.ffa)ROSTERS.ffa=r.ffa.slice(); if(r.teams)ROSTERS.teams=r.teams.map(a=>a.slice()); }
