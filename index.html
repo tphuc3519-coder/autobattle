@@ -975,6 +975,8 @@
     align-items:center;justify-content:center}
   .compMark .mkCap{font-size:12px;color:#9A93C4}
   .compMark select{height:var(--ctl);max-width:100%}
+  .compMark button.mkDel{color:#FF8FA3;box-shadow:inset 0 0 0 1px rgba(255,143,163,.4)}
+  .compMark button.mkDel:hover{background:rgba(255,143,163,.14)}
   .compHead{font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.16em;
     text-transform:uppercase;color:var(--mute);margin:14px 0 7px}
   .lgTab{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -1031,6 +1033,12 @@
     box-shadow:inset 2px 0 0 #4A3F8C}
   .rsRow b{font-weight:800}
   .rsRow s{margin-left:auto;font-family:"Space Mono",monospace;font-size:10.5px;color:var(--mute);text-decoration:none}
+  /* Đánh lại trận cũ để quay video. Nằm trong dòng nên phải bé hơn ô điều khiển thường
+     (`--ctl` chỉ áp cho thanh công cụ, xem mục 2i) — để nguyên là mỗi dòng cao gấp đôi. */
+  .rsRow .rsGo{flex:0 0 auto;height:22px;min-width:26px;padding:0 7px;font-size:11px;line-height:1;
+    border-radius:7px;background:var(--s3);color:#C8C2E8;cursor:pointer;
+    box-shadow:inset 0 0 0 1px var(--line)}
+  .rsRow .rsGo:hover{color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
   /* Chip đội hình đang chờ tráo chỗ khi tự xếp nhánh */
   .cChip.sw{box-shadow:0 0 0 2px var(--gold) inset}
   .cChip .brNo{font-family:"Space Mono",monospace;font-size:9px;color:var(--mute);
@@ -2723,7 +2731,7 @@
     <div class="compMark off" id="compMarkBox"></div>
     <div class="cselBar">
       <button id="compGo" class="primary" type="button">▶</button>
-      <button id="compMark" type="button" data-i18n="compMark">✎ Nhập kết quả</button>
+      <button id="compMark" type="button" data-i18n="compMark">✎ Nhập / sửa kết quả</button>
       <button id="compPick" type="button" data-i18n="compPick">⚔ Đổi đội hình</button>
       <button id="compQuit" type="button" data-i18n="compQuit">✕ Bỏ giải</button>
       <button type="button" data-lang-toggle title="Vietnamese / English">🌐 English</button>
@@ -3016,8 +3024,14 @@ const L={
     vsTap:'Chạm để vào trận', arcBoard:'▶ Bảng xếp hạng',
     compBracket:'Sơ đồ nhánh', compResults:'Kết quả đã đá', compPick:'⚔ Đổi đội hình',
     compQuit:'✕ Bỏ giải', compChamp:'Vô địch', compOver:'Giải đã xong',
-    compMark:'✎ Nhập kết quả', compMarkLab:'Ghi kết quả trận này bằng tay',
+    compMark:'✎ Nhập / sửa kết quả', compMarkLab:'Ghi kết quả trận này bằng tay',
     compMarkGo:'Ghi nhận', compMarkWho:'Ai thắng', compMarkHp:'Máu còn lại',
+    compMkDone:'Trận này đá rồi — sửa, xoá hay đánh lại',
+    compMkEdit:'Sửa kết quả', compMkDel:'✕ Xoá kết quả',
+    compMkPlay:'▶ Đánh lại (ghi đè)', compMkNow:'▶ Đánh trận này',
+    compMkAgain:'▶ Đánh lại để quay video — kết quả trong bảng giữ nguyên',
+    compMkDelAsk:'Xoá kết quả trận {a} vs {b}? Giải loại trực tiếp thì mấy trận ở nhánh sau cũng bị xoá theo.',
+    compMkOverAsk:'Đánh lại {a} vs {b} và GHI ĐÈ kết quả cũ bằng kết quả trận mới?\n\nChỉ muốn quay lại video thì bấm nút ▶ trên dòng của trận đó ở khối "Kết quả đã đá".',
     compLeaveAsk:'Giải đang đá dở. Thoát ra là mất bảng xếp hạng. Vẫn thoát?',
     compBakAsk:'Có một giải bỏ dở ({n}/{t} trận đã đá). Khôi phục lại?',
     compLeagueT:'GIẢI <span>VÒNG TRÒN</span>', compCupT:'GIẢI <span>LOẠI TRỰC TIẾP</span>',
@@ -3157,8 +3171,14 @@ const L={
     vsTap:'Tap to start', arcBoard:'▶ Standings',
     compBracket:'Bracket', compResults:'Played', compPick:'⚔ Change line-up',
     compQuit:'✕ Quit competition', compChamp:'Champion', compOver:'Competition over',
-    compMark:'✎ Enter result', compMarkLab:'Record this match by hand',
+    compMark:'✎ Enter / edit result', compMarkLab:'Record this match by hand',
     compMarkGo:'Save result', compMarkWho:'Winner', compMarkHp:'HP left',
+    compMkDone:'Already played — edit, clear or replay',
+    compMkEdit:'Update result', compMkDel:'✕ Clear result',
+    compMkPlay:'▶ Replay (overwrite)', compMkNow:'▶ Play this match',
+    compMkAgain:'▶ Replay for a fresh recording — the standings stay as they are',
+    compMkDelAsk:'Clear the result of {a} vs {b}? In a knockout bracket the matches further down the tree go with it.',
+    compMkOverAsk:'Replay {a} vs {b} and OVERWRITE the old result with the new one?\n\nTo just re-record the video, use the ▶ button on that match in the "Played" list.',
     compLeaveAsk:'A competition is still running. Leaving wipes the standings. Leave anyway?',
     compBakAsk:'A competition was left unfinished ({n}/{t} matches played). Restore it?',
     compLeagueT:'<span>LEAGUE</span> TABLE', compCupT:'<span>KNOCKOUT</span> BRACKET',
@@ -10377,20 +10397,70 @@ function compBakAsk(){
 }
 function compClear(){ compBakSave(); COMP=null; compLive=false; Store.del('cfg_comp').catch(()=>{}); }
 function compSave(){ try{ Store.set('cfg_comp',JSON.stringify(COMP)).catch(()=>{}); }catch(e){} }
-/* Vào trận kế tiếp. Trả về false khi giải đã xong. */
-function compPlayNext(){
-  const m=compNextMatch();
-  if(!m) return false;
-  COMP.cur=m;
-  PICK.a=m.a; PICK.b=m.b;
+/* Vào MỘT ô lịch bất kỳ — trận kế tiếp, hay một trận CŨ ĐÃ ĐÁ muốn quay lại.
+   `keep` = chỉ đánh lại cho vui / để quay video, kết quả cũ giữ nguyên: `compResult()`
+   thấy cờ này thì không ghi gì vào sổ. Không có nó thì mỗi lần quay lại một trận cũ là
+   bảng xếp hạng đổi theo trận vừa đánh — mà người ta chỉ muốn quay lại cái video. */
+function compPlayRef(ref,label,keep){
+  if(!COMP||!ref||!ref.a||!ref.b) return false;
+  COMP.cur={a:ref.a,b:ref.b,ref,label:label||'',keep:!!keep};
+  PICK.a=ref.a; PICK.b=ref.b;
   if(COMP.stage) STAGE=COMP.stage;
   compLive=true;
   newGame();
   return true;
 }
+/* Vào trận kế tiếp. Trả về false khi giải đã xong. */
+function compPlayNext(){
+  const m=compNextMatch();
+  if(!m) return false;
+  return compPlayRef(m.ref,m.label,false);
+}
 /* Ai là ai trong sổ giải đấu: HỒN, không phải thân xác. `gnSoul` chỉ khác `key` sau khi
    Ginyu tung CHANGE. */
 const compSoul=f=>f?(f.gnSoul||f.key):null;
+/* GỠ một kết quả ra khỏi sổ — đối xứng TỪNG PHÉP với phần cộng của `compRecord`, và đọc
+   `ga`/`gb` ĐÃ LƯU trên chính ô lịch chứ đừng tính lại từ đâu khác: chỉ cần hai con số
+   lệch nhau một nhịp là bảng điểm trôi dần sau mỗi lần sửa.
+   Hàm này KHÔNG dọn nhánh sau của giải loại trực tiếp — chỗ gọi tự quyết (xem `cupCascade`). */
+function compStrip(ref){
+  if(!COMP||!ref||!ref.w) return false;
+  if(COMP.kind==='league'){
+    const a=ref.a, b=ref.b, wk=ref.w, lk=(wk===a)?b:a, T=COMP.tab;
+    const con=Math.max(0,(wk===a?ref.ga-ref.gb:ref.gb-ref.ga));
+    if(T[wk]&&T[lk]){
+      T[wk].gf-=con; T[lk].ga-=con;
+      T[wk].p--; T[lk].p--; T[wk].w--; T[lk].l--; T[wk].pts-=LG_WIN;
+    }
+  }
+  ref.w=null; ref.ga=0; ref.gb=0;
+  return true;
+}
+/* DỌN NHÁNH SAU của giải loại trực tiếp sau khi một kết quả bị xoá hay bị đổi người thắng.
+   `cupFill()` chỉ biết ĐẨY người thắng lên chứ không bao giờ xoá, nên phải tự tay quét sạch
+   mọi ô của vòng sau rồi cho nó điền lại từ đầu; trận nào còn giữ một người thắng không
+   còn nằm trong chính trận đó thì kết quả đó cũng vô nghĩa, gỡ luôn. Lặp cho tới khi đứng
+   yên vì một cú xoá ở tứ kết kéo theo cả bán kết lẫn chung kết. */
+function cupCascade(){
+  if(!COMP||COMP.kind!=='cup') return;
+  for(let lan=0;lan<8;lan++){
+    for(let r=1;r<COMP.rounds.length;r++) for(const m of COMP.rounds[r]){ m.a=null; m.b=null; }
+    COMP.third.a=null; COMP.third.b=null;
+    cupFill(COMP);
+    let doi=false;
+    for(const x of compMatches())
+      if(x.m.w&&x.m.w!==x.m.a&&x.m.w!==x.m.b){ compStrip(x.m); doi=true; }
+    if(!doi) return;
+  }
+}
+/* XOÁ HẲN kết quả một trận (nút ✕). Trận trở lại thành "chưa đá" nên nó lại nằm trong lịch. */
+function compErase(ref){
+  if(!compStrip(ref)) return false;
+  cupCascade();
+  COMP.cur=null;
+  compSave();
+  return true;
+}
 /* Ghi kết quả một trận. Gọi từ cuối finish(), nên G vẫn còn nguyên đội hình vừa đánh. */
 /* GHI MỘT KẾT QUẢ VÀO SỔ GIẢI — cửa DUY NHẤT cộng điểm, cho cả trận vừa đánh xong lẫn
    trận nhập tay. `ref` là ô trong lịch thi đấu, `wk` là khoá người thắng, `ga`/`gb` là
@@ -10401,19 +10471,27 @@ function compRecord(ref,wk,ga,gb){
   const a=ref.a, b=ref.b;
   if(wk!==a&&wk!==b) return false;
   ga=Math.max(0,Math.round(ga||0)); gb=Math.max(0,Math.round(gb||0));
-  /* Chụp bảng TRƯỚC khi cộng điểm — hiệu ứng cần cả thứ hạng cũ lẫn con số cũ. */
+  /* Chụp bảng TRƯỚC khi cộng điểm — hiệu ứng cần cả thứ hạng cũ lẫn con số cũ. Chụp
+     trước cả cú gỡ bên dưới nữa, để hàng trượt từ thứ hạng THẬT SỰ cũ về chỗ mới chứ
+     không trượt từ một trạng thái trung gian chẳng ai từng nhìn thấy. */
   if(COMP.kind==='league'){
     const cu={};
     for(const k of COMP.keys) cu[k]=Object.assign({},COMP.tab[k]);
     lgAnim={ord:lgOrder(),tab:cu,pair:[a,b]};
   }else cupAnim=ref;
+  /* GHI ĐÈ một kết quả cũ thì phải GỠ cái cũ ra trước — đây là cửa duy nhất cộng điểm nên
+     sửa kết quả và đánh lại một trận cũ đều đi qua đây. Đặt `ref.w` MỚI rồi mới dọn nhánh:
+     người thắng không đổi thì `cupCascade()` thành vô hại, chứ dọn lúc `w` còn null là
+     quét sạch cả mấy vòng sau dù chẳng có gì đổi. */
+  const de=!!ref.w;
+  if(de) compStrip(ref);
   ref.w=wk; ref.ga=ga; ref.gb=gb;
   if(COMP.kind==='league'){
     const T=COMP.tab, lk=wk===a?b:a;
     const con=Math.max(0,(wk===a?ga-gb:gb-ga));
     T[wk].gf+=con; T[lk].ga+=con;           // thắng +chênh lệch máu, thua −đúng bấy nhiêu
     T[wk].p++; T[lk].p++; T[wk].w++; T[lk].l++; T[wk].pts+=LG_WIN;
-  }
+  }else if(de) cupCascade();
   COMP.cur=null;
   compSave();
   return true;
@@ -10422,6 +10500,15 @@ function compResult(win){
   compLive=false;
   const m=COMP&&COMP.cur;
   if(!m) return;
+  /* ĐÁNH LẠI MỘT TRẬN CŨ CHỈ ĐỂ QUAY VIDEO: kết quả cũ giữ nguyên, sổ giải không đụng tới.
+     Thiếu nhánh này thì quay lại một trận cũ là bảng xếp hạng đổi theo lượt vừa đánh —
+     mà máy đánh với máy thì lượt sau hiếm khi ra đúng kết quả lượt trước. */
+  if(m.keep){
+    COMP.cur=null; compSave();
+    say('Đã đánh lại trận cũ — kết quả trong bảng giữ nguyên.','g');
+    if(!window.ARCADE) setTimeout(()=>{ if(COMP&&!compLive) compOpen(); },2600);
+    return;
+  }
   /* Đọc theo HỒN chứ đừng đọc theo THÂN XÁC. Sau cú CHANGE của Ginyu, object mang
      `key:'ginyu'` có thể đang do hồn Superman điều khiển — người dùng bác đúng chỗ này:
      "Superman trong xác Ginyu win, nhưng vẫn tính Ginyu win là sai". Thanh máu và băng-rôn
@@ -23517,7 +23604,10 @@ function bracketHtml(){
     `<div class="brThird"><div class="brHead">${t('cupThird')}</div>${brMatchHtml(COMP.third)}</div>`;
 }
 function compResultsHtml(){
-  const xong=compMatches().filter(x=>x.m.w).reverse();
+  /* Giữ lại CHỈ SỐ trong lịch đầy đủ chứ đừng giữ chỉ số trong danh sách đã lọc: nút ▶ trên
+     mỗi dòng phải tra ngược ra đúng ô lịch, mà danh sách lọc thì đổi độ dài sau mỗi trận. */
+  const cl=compMatches();
+  const xong=cl.map((x,i)=>({x,i})).filter(o=>o.x.m.w).reverse();
   if(!xong.length) return `<div class="rsRow">${t('compNone')}</div>`;
   const nm=(k,win)=>`<b style="color:${win?CHARS[k].color:'#6E659C'}">${CHARS[k].short||CHARS[k].name}</b>`;
   /* Giải đông người thì danh sách này phình rất nhanh — vòng tròn lượt đi lượt về của một
@@ -23526,45 +23616,67 @@ function compResultsHtml(){
      chỗ tra kết quả chung cuộc, khối này chỉ để liếc xem vừa xảy ra chuyện gì. */
   const du=Math.max(0,xong.length-RS_MAX), cat=du?xong.slice(0,RS_MAX):xong;
   const them=du?`<div class="rsRow" style="opacity:.6">${tf('compMore',{n:du})}</div>`:'';
-  return `<div class="rsList">`+cat.map(x=>{
-    const m=x.m, wa=m.w===m.a;
+  /* NÚT ▶ ĐÁNH LẠI TRẬN CŨ — người dùng: "video bị lỗi nên cần record lại matchup cũ".
+     Nó GIỮ NGUYÊN kết quả trong bảng (`keep`): chỉ quay lại cái video thì không có lý do
+     gì để bảng xếp hạng đổi theo. Muốn ghi đè bằng kết quả mới thì vào bảng ✎ Sửa kết quả. */
+  return `<div class="rsList">`+cat.map(o=>{
+    const x=o.x, m=x.m, wa=m.w===m.a;
     return `<div class="rsRow">${nm(m.a,wa)}<span style="color:#5A5A66">vs</span>${nm(m.b,!wa)}`+
-      `<s>${x.lab} · ${m.ga}–${m.gb}</s></div>`;
+      `<s>${x.lab} \u00b7 ${m.ga}\u2013${m.gb}</s>`+
+      `<button type="button" class="rsGo" data-rs="${o.i}" title="${t('compMkAgain')}">▶</button></div>`;
   }).join('')+them+`</div>`;
 }
 /* BẢNG NHẬP KẾT QUẢ TAY. Dựng lại một giải bị xoá nhầm chỉ là nhập lần lượt từng trận
    đã đá — khỏi phải đánh lại trận nào. Máu bên thua mặc định 0 (thua vì cạn máu); chỉ
    trận HẾT GIỜ mới có hai số cùng dương, đúng cách sổ giải đọc hiệu số ở mục 2c-bis. */
-/* Mọi trận CHƯA ĐÁ mà đã biết đủ hai bên. Loại trực tiếp thì mấy vòng sau còn trống chỗ
-   (`a`/`b` chưa có ai) nên không nhập trước được. */
-function compMkList(){ return compMatches().filter(x=>x.m.a&&x.m.b&&!x.m.w); }
+/* Mọi trận đã biết đủ hai bên — CẢ ĐÃ ĐÁ LẪN CHƯA. Loại trực tiếp thì mấy vòng sau còn
+   trống chỗ (`a`/`b` chưa có ai) nên không nhập trước được.
+   *(Trước đây danh sách chỉ có trận CHƯA đá. Giờ có cả trận đã đá để còn SỬA và XOÁ kết
+   quả — người dùng: "thêm nút sửa kết quả (xoá, thay đổi kết quả)".)* */
+function compMkList(){ return compMatches().filter(x=>x.m.a&&x.m.b); }
 function compMkCur(){
   const ds=compMkList();
   if(!ds.length) return null;
   let x=ds.find(v=>v.m===compMkRef);
-  if(!x){ x=ds[0]; compMkRef=x.m; }
+  /* Chưa chọn gì thì nhảy vào trận CHƯA ĐÁ đầu tiên, đúng như hồi danh sách chỉ có trận
+     chưa đá: mở bảng ra là nhập được ngay, khỏi phải đi tìm giữa cả lịch. */
+  if(!x){ x=ds.find(v=>!v.m.w)||ds[0]; compMkRef=x.m; }
   return x;
 }
 function compMarkHtml(){
   const cur=compMkCur();
   if(!cur) return '';
   const m=cur.m, ds=compMkList(), nm=k=>CHARS[k].short||CHARS[k].name;
-  if(compMkW!==m.a&&compMkW!==m.b) compMkW=m.a;
-  /* Chọn được BẤT KỲ trận nào chưa đá, không riêng trận kế tiếp: dựng lại một giải bị xoá
-     nhầm thì thứ tự các trận đã đá chưa chắc trùng với đầu lịch. */
+  const da=!!m.w;                                   // trận này đã có kết quả chưa
+  if(compMkW!==m.a&&compMkW!==m.b) compMkW=m.w||m.a;
+  /* Chọn được BẤT KỲ trận nào, không riêng trận kế tiếp: dựng lại một giải bị xoá nhầm
+     thì thứ tự các trận đã đá chưa chắc trùng với đầu lịch, mà sửa một kết quả cũ thì lại càng
+     không. Trận đã đá mang dấu ✓ kèm tỉ số cho khỏi lẫn với trận chưa đá. */
   const chon=ds.length>1
     ? `<div class="mkRow"><select id="mkPick">`+
-      ds.map((x,i)=>`<option value="${i}"${x.m===m?' selected':''}>${x.lab} \u00b7 ${nm(x.m.a)} vs ${nm(x.m.b)}</option>`).join('')+
+      ds.map((x,i)=>{
+        const y=x.m, xong=y.w?` \u2713 ${y.ga}\u2013${y.gb}`:'';
+        return `<option value="${i}"${y===m?' selected':''}>${x.lab} \u00b7 ${nm(y.a)} vs ${nm(y.b)}${xong}</option>`;
+      }).join('')+
       `</select></div>`
     : '';
   const nut=k=>`<button type="button" class="mkW${compMkW===k?' on':''}" data-mk="${k}">${nm(k)}</button>`;
-  const o=(k,id)=>`<label>${nm(k)} <input type="number" id="${id}" min="0" max="9999" step="1" value="0"></label>`;
+  const o=(k,id,v)=>`<label>${nm(k)} <input type="number" id="${id}" min="0" max="9999" step="1" value="${v}"></label>`;
   /* Mỗi vế một HÀNG RIÊNG: để chung một dải cuốn dòng thì trên màn hẹp nhãn "máu còn
      lại" trôi lên nằm cạnh nút người thắng, đọc ra như thể nó thuộc về cái nút đó. */
-  return `<div class="mkLab">${t('compMarkLab')}</div>`+chon+
-    `<div class="mkRow"><span class="mkCap">${t('compMarkWho')}</span>${nut(m.a)}${nut(m.b)}</div>`+
-    `<div class="mkRow"><span class="mkCap">${t('compMarkHp')}</span>${o(m.a,'mkHpA')}${o(m.b,'mkHpB')}</div>`+
-    `<div class="mkRow"><button type="button" class="primary" id="mkGo">${t('compMarkGo')}</button></div>`;
+  const hang=`<div class="mkRow"><span class="mkCap">${t('compMarkWho')}</span>${nut(m.a)}${nut(m.b)}</div>`+
+    `<div class="mkRow"><span class="mkCap">${t('compMarkHp')}</span>`+
+    `${o(m.a,'mkHpA',da?m.ga:0)}${o(m.b,'mkHpB',da?m.gb:0)}</div>`;
+  /* Trận ĐÃ ĐÁ mở thêm hai cửa: xoá hẳn kết quả, hoặc đánh lại rồi ghi đè bằng kết quả
+     mới. Còn "đánh lại CHỈ để quay video, giữ nguyên kết quả" thì nằm ngay trên từng dòng
+     của khối KẾT QUẢ ĐÃ ĐÁ — đó mới là chỗ người ta đi tìm một trận cũ. */
+  const cuoi=da
+    ? `<div class="mkRow"><button type="button" class="primary" id="mkGo">${t('compMkEdit')}</button>`+
+      `<button type="button" id="mkPlay">${t('compMkPlay')}</button>`+
+      `<button type="button" class="mkDel" id="mkDel">${t('compMkDel')}</button></div>`
+    : `<div class="mkRow"><button type="button" class="primary" id="mkGo">${t('compMarkGo')}</button>`+
+      `<button type="button" id="mkPlay">${t('compMkNow')}</button></div>`;
+  return `<div class="mkLab">${t(da?'compMkDone':'compMarkLab')}</div>`+chon+hang+cuoi;
 }
 function compMarkGo(){
   const cur=compMkCur();
@@ -23575,6 +23687,19 @@ function compMarkGo(){
   compMkRef=null;                    // ghi xong thì nhảy về trận chưa đá đầu tiên
   sfx('ui_next');
   compPaint();                       // vẽ lại kèm hiệu ứng trượt hàng như một trận thật
+}
+/* XOÁ kết quả trận đang chọn. Hỏi lại một câu vì ở giải loại trực tiếp nó còn kéo theo cả
+   nhánh sau (`cupCascade`), tức mất nhiều hơn đúng một dòng. */
+function compMarkDel(){
+  const cur=compMkCur();
+  if(!cur||!cur.m.w) return;
+  const m=cur.m, nm=k=>CHARS[k].short||CHARS[k].name;
+  if(!confirm(tf('compMkDelAsk',{a:nm(m.a),b:nm(m.b)}))) return;
+  compErase(m);
+  compMkRef=m;                       // giữ nguyên trận đang chọn, giờ nó thành "chưa đá"
+  compMkW=null;
+  sfx('ui_back');
+  compPaint();
 }
 function compPaint(){
   if(!COMP) return;
@@ -23590,11 +23715,15 @@ function compPaint(){
     `<div class="compHead">${t('compResults')}</div>`+compResultsHtml();
   const go=document.getElementById('compGo');
   if(go){ go.textContent=t('compGo'); go.style.display=compDone()?'none':''; }
+  /* BẢNG SỬA KẾT QUẢ ĐỨNG Ở ĐÂY KỂ CẢ KHI GIẢI ĐÃ XONG — trước đây nó tự ẩn đi lúc
+     `compDone()`, mà đúng lúc ấy mới hay phát hiện ra một dòng ghi sai. Giờ chỉ giấu khi
+     không có ô lịch nào để chọn. Riêng nút ▶ (đánh trận kế tiếp) thì vẫn ẩn như cũ. */
+  const co=!!compMkList().length;
   const mkb=document.getElementById('compMark');
-  if(mkb) mkb.style.display=compDone()?'none':'';
+  if(mkb){ mkb.textContent=t('compMark'); mkb.style.display=co?'':'none'; }
   const mk=document.getElementById('compMarkBox');
   if(mk){
-    if(compDone()) compMkOn=false;
+    if(!co) compMkOn=false;
     mk.innerHTML=compMkOn?compMarkHtml():'';
     mk.classList.toggle('off',!compMkOn);
   }
@@ -23897,13 +24026,32 @@ if(document.getElementById('compGo'))
       if(compPlayNext()) arcFight(); else compOpen();
     });
   });
+/* VÀO MỘT Ô LỊCH BẤT KỲ — cả trận chưa đá lẫn trận CŨ muốn quay lại. Đi đúng đường
+   của nút ▶ ở trên: đóng bảng → hỏi sàn → màn VS → vào trận. Đừng gọi `newGame()` thẳng ở
+   chỗ khác: thiếu màn hỏi sàn thì quay lại trận cũ là dính nguyên sàn của trận trước. */
+function compGoRef(ref,label,keep){
+  if(!ref||!ref.a||!ref.b) return;
+  compBoardClose();
+  stagePickOpen(()=>{ if(compPlayRef(ref,label,keep)) arcFight(); else compOpen(); });
+}
+/* Nút ▶ trên từng dòng của khối "kết quả đã đá": đánh lại để QUAY LẠI VIDEO, kết quả
+   trong bảng giữ nguyên. Uỷ quyền ở `#compBody` vì `compPaint()` dựng lại cả khối sau mỗi trận. */
+if(document.getElementById('compBody'))
+  document.getElementById('compBody').addEventListener('click',e=>{
+    const b=e.target.closest('.rsGo');
+    if(!b||!COMP) return;
+    const x=compMatches()[+b.getAttribute('data-rs')];
+    if(!x||!x.m.w) return;
+    sfx('ui_go');
+    compGoRef(x.m,x.lab,true);
+  });
 if(document.getElementById('compPick'))
   document.getElementById('compPick').addEventListener('click',()=>{
     compBoardClose(); cselPage=cselSteps()[0]; openCsel();
   });
 if(document.getElementById('compMark'))
   document.getElementById('compMark').addEventListener('click',()=>{
-    if(compDone()) return;
+    if(!compMkList().length) return;
     sfx('ui_tap'); compMkOn=!compMkOn; compPaint();
   });
 /* Uỷ quyền một chỗ: `compPaint()` dựng lại cả khối sau mỗi lần ghi nhận. Bấm chọn người
@@ -23917,7 +24065,20 @@ if(document.getElementById('compMarkBox'))
       for(const b of box.querySelectorAll('.mkW')) b.classList.toggle('on',b.getAttribute('data-mk')===compMkW);
       return;
     }
-    if(e.target.closest('#mkGo')) compMarkGo();
+    if(e.target.closest('#mkGo')){ compMarkGo(); return; }
+    if(e.target.closest('#mkDel')){ compMarkDel(); return; }
+    /* ĐÁNH LẠI RỒI GHI ĐÈ: khác hẳn nút ▶ ở khối kết quả — ở đây kết quả trận vừa đánh
+       THAY cho kết quả cũ trong bảng. Trận chưa đá thì chỉ là đánh nó sớm hơn lịch một nhịp. */
+    const pl=e.target.closest('#mkPlay');
+    if(pl){
+      const cur=compMkCur();
+      if(!cur) return;
+      const nm=k=>CHARS[k].short||CHARS[k].name, m=cur.m;
+      if(m.w&&!confirm(tf('compMkOverAsk',{a:nm(m.a),b:nm(m.b)}))) return;
+      compMkOn=false;
+      sfx('ui_go');
+      compGoRef(m,cur.lab,false);
+    }
   });
 /* Đổi trận đang nhập thì PHẢI vẽ lại: hai nút người thắng và nhãn hai ô máu đều theo cặp
    đấu của trận đó. */
