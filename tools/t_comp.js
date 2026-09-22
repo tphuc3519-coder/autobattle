@@ -500,11 +500,13 @@ async function daHet(page, tran) {
   ok(tay.pts === 3, `nguoi thang duoc 3 diem (${tay.pts})`);
   ok(tay.da === 1 && !!tay.ke && tay.ke !== capDau[0], `lich nhich sang tran ke tiep (da da ${tay.da})`);
   /* Dựng lại một giải bị xoá nhầm thì thứ tự mấy trận đã đá chưa chắc trùng đầu lịch, nên
-     phải nhập được cả trận KHÔNG phải trận kế tiếp. */
+     phải nhập được cả trận KHÔNG phải trận kế tiếp.
+     Danh sách giờ liệt kê CẢ trận đã đá (để còn sửa / xoá), và với giải vòng tròn thì thứ
+     tự tùy chọn trùng đúng thứ tự `COMP.fix` — nên chỉ số 2 là fix[2], bỏ qua fix[1]. */
   const lech = await page.evaluate(() => {
     const sel = document.getElementById('mkPick');
-    if (!sel || sel.options.length < 2) return { co: false };
-    sel.selectedIndex = 1;
+    if (!sel || sel.options.length < 3) return { co: false };
+    sel.selectedIndex = 2;
     sel.dispatchEvent(new Event('change', { bubbles: true }));
     const nut = [...document.querySelectorAll('#compMarkBox .mkW')].map(b => b.getAttribute('data-mk'));
     document.querySelector(`#compMarkBox .mkW[data-mk="${nut[1]}"]`).click();
@@ -517,6 +519,114 @@ async function daHet(page, tran) {
   ok(lech.co && lech.so === 2, `ghi duoc ca tran KHONG phai tran ke tiep (${lech.so} tran da ghi)`);
   ok(lech.gb.indexOf(264) >= 0, `so mau 264 vao dung tran vua chon (${lech.gb.join('/')})`);
   ok(lech.boQua && lech.ke, 'tran bi bo qua van con nguyen, van la tran ke tiep');
+  /* ---------- SỬA / XOÁ KẾT QUẢ, và ĐÁNH LẠI TRẬN CŨ ----------
+     Người dùng: "thêm nút sửa kết quả (xoá, thay đổi kết quả) cũng như thêm nút quay
+     lại đánh các matchup trước đó — video bị lỗi nên cần record lại matchup cũ". */
+  const sua = await page.evaluate(() => {
+    const C = window.__COMP(), m = C.fix[0], T = C.tab;
+    const cu = { w: m.w, ptsA: T[m.a].pts, ptsB: T[m.b].pts,
+                 gdA: T[m.a].gf - T[m.a].ga, gdB: T[m.b].gf - T[m.b].ga, da: window.__compPlayed() };
+    window.__setCompMkRef(m); window.__compPaint();
+    const co = { del: !!document.getElementById('mkDel'), play: !!document.getElementById('mkPlay'),
+                 hpB: document.getElementById('mkHpB').value,
+                 wOn: (document.querySelector('#compMarkBox .mkW.on') || {}).getAttribute
+                      ? document.querySelector('#compMarkBox .mkW.on').getAttribute('data-mk') : null };
+    /* ĐỔI người thắng sang bên A, máu còn 100. */
+    document.querySelector(`#compMarkBox .mkW[data-mk="${m.a}"]`).click();
+    document.getElementById('mkHpA').value = '100';
+    document.getElementById('mkHpB').value = '0';
+    document.getElementById('mkGo').click();
+    const C2 = window.__COMP(), T2 = C2.tab;
+    return { cu, co, w: C2.fix[0].w, ga: C2.fix[0].ga, gb: C2.fix[0].gb, da: window.__compPlayed(),
+             ptsA: T2[m.a].pts, ptsB: T2[m.b].pts,
+             gdA: T2[m.a].gf - T2[m.a].ga, gdB: T2[m.b].gf - T2[m.b].ga, a: m.a, b: m.b };
+  });
+  ok(sua.co.del && sua.co.play, 'chon mot tran DA DA thi hien them nut xoa va nut danh lai');
+  ok(sua.co.hpB === '41' && sua.co.wOn === sua.b,
+     `bang sua dien san mau va nguoi thang cu (${sua.co.hpB} / ${sua.co.wOn})`);
+  ok(sua.w === sua.a && sua.ga === 100 && sua.gb === 0,
+     `doi nguoi thang ghi de len ket qua cu (${sua.w} ${sua.ga}-${sua.gb})`);
+  ok(sua.da === sua.cu.da, `so tran da da KHONG doi khi chi sua (${sua.da})`);
+  ok(sua.ptsB === sua.cu.ptsB - 3 && sua.ptsA === sua.cu.ptsA + 3,
+     `diem chuyen tu nguoi thang cu sang nguoi thang moi (${sua.cu.ptsB}->${sua.ptsB} / ${sua.cu.ptsA}->${sua.ptsA})`);
+  ok(sua.gdA === sua.cu.gdA + 41 + 100 && sua.gdB === sua.cu.gdB - 41 - 100,
+     `hieu so go het phan cu roi moi cong phan moi (${sua.gdA}/${sua.gdB})`);
+
+  const xoa = await page.evaluate(() => {
+    const C = window.__COMP(), m = C.fix[0], T = C.tab;
+    const cu = { ptsA: T[m.a].pts, gdA: T[m.a].gf - T[m.a].ga, gdB: T[m.b].gf - T[m.b].ga,
+                 da: window.__compPlayed() };
+    window.__compErase(m);
+    const C2 = window.__COMP(), T2 = C2.tab, ke = window.__compNext();
+    return { cu, w: C2.fix[0].w, ga: C2.fix[0].ga, da: window.__compPlayed(),
+             ptsA: T2[m.a].pts, pA: T2[m.a].p, lB: T2[m.b].l,
+             gdA: T2[m.a].gf - T2[m.a].ga, gdB: T2[m.b].gf - T2[m.b].ga,
+             ke: !!ke && ke.ref === C2.fix[0] };
+  });
+  ok(!xoa.w && xoa.ga === 0, 'xoa ket qua thi o lich tro lai trang tron');
+  ok(xoa.da === xoa.cu.da - 1, `so tran da da giam dung mot (${xoa.cu.da}->${xoa.da})`);
+  ok(xoa.ptsA === xoa.cu.ptsA - 3, `nguoi thang bi tru lai 3 diem (${xoa.ptsA})`);
+  ok(xoa.gdA === xoa.cu.gdA - 100 && xoa.gdB === xoa.cu.gdB + 100,
+     `hieu so tra lai dung bang phan da cong (${xoa.gdA}/${xoa.gdB})`);
+  ok(xoa.ke, 'tran vua xoa quay lai lam tran ke tiep');
+  ok(await page.evaluate(() => !!document.querySelector('#compBody .rsGo')),
+     'moi dong ket qua da da co mot nut danh lai');
+
+  /* ĐÁNH LẠI CHỈ ĐỂ QUAY VIDEO: kết quả trong bảng phải GIỮ NGUYÊN dù lượt đánh lại ra
+     người thắng khác — máy đánh với máy thì lượt sau hiếm khi trùng lượt trước. */
+  const quay = await page.evaluate(() => {
+    const C = window.__COMP(), m = C.fix[2];      // trận đã đá từ khối trước
+    if (!m.w) return { co: false };
+    const cu = { w: m.w, ga: m.ga, gb: m.gb, tab: JSON.stringify(C.tab), da: window.__compPlayed() };
+    window.__compPlayRef(m, 'x', true);
+    const cur = window.__COMP().cur;
+    const G = window.__G(), mains = G.fighters.filter(f => !f.summon);
+    window.__compResult(mains[0]);                // ai thắng cũng mặc kệ
+    const C2 = window.__COMP();
+    return { co: true, keep: !!(cur && cur.keep), pick: [cur.a, cur.b],
+             w: C2.fix[2].w, ga: C2.fix[2].ga, gb: C2.fix[2].gb,
+             tab: JSON.stringify(C2.tab) === cu.tab, da: window.__compPlayed(), cur: !C2.cur, cu };
+  });
+  ok(quay.co && quay.keep && (quay.pick[0] === quay.cu.w || quay.pick[1] === quay.cu.w),
+     'danh lai mot tran cu thi dung dung cap dau cu, va mang co giu ket qua');
+  ok(quay.w === quay.cu.w && quay.ga === quay.cu.ga && quay.gb === quay.cu.gb,
+     `danh lai de quay video KHONG doi ket qua (${quay.w} ${quay.ga}-${quay.gb})`);
+  ok(quay.tab && quay.da === quay.cu.da, `bang xep hang cung giu nguyen (${quay.da} tran)`);
+  ok(quay.cur, 'danh lai xong thi tra COMP.cur ve null');
+
+  /* GIẢI LOẠI TRỰC TIẾP: xoá một kết quả ở vòng trước thì cả NHÁNH SAU phải dọn theo —
+     `cupFill()` chỉ biết đẩy người thắng lên chứ không bao giờ xoá. */
+  const cupX = await page.evaluate(() => {
+    window.__setComp(window.__cupNew(['kono', 'chichi', 'tsubasa', 'shika']), false);
+    const C = window.__COMP(), sf = C.rounds[0], ck = C.rounds[1][0];
+    window.__compRecord(sf[0], sf[0].a, 300, 0);
+    window.__compRecord(sf[1], sf[1].a, 250, 0);
+    window.__compNext();                          // cupFill() đẩy hai người thắng lên chung kết
+    window.__compRecord(C.third, C.third.a, 120, 0);
+    window.__compRecord(ck, ck.a, 200, 0);
+    const truoc = { ck: ck.a, vd: window.__compChampion(), da: window.__compPlayed() };
+    window.__compErase(sf[0]);                    // xoá kết quả bán kết thứ nhất
+    return { truoc, sfW: sf[0].w, ckA: ck.a, ckW: ck.w, thirdA: C.third.a, thirdW: C.third.w,
+             da: window.__compPlayed(), vd: window.__compChampion(),
+             ke: (window.__compNext() || {}).ref === sf[0] };
+  });
+  ok(cupX.truoc.vd === cupX.truoc.ck && cupX.truoc.da === 4,
+     `dung san mot giai loai truc tiep da xong (vo dich ${cupX.truoc.vd})`);
+  ok(!cupX.sfW, 'xoa ket qua ban ket thi o do trang tron');
+  ok(!cupX.ckA && !cupX.ckW, 'chung ket mat luon nguoi choi lan ket qua an theo');
+  ok(!cupX.thirdA && !cupX.thirdW, 'tran tranh hang ba cung don theo');
+  ok(cupX.da === 1 && !cupX.vd, `chi con dung mot tran da da, chua co vo dich (${cupX.da})`);
+  ok(cupX.ke, 'tran vua xoa tro lai lam tran ke tiep cua giai');
+
+  /* DỰNG LẠI giải vòng tròn cho khối sao lưu bên dưới đọc đúng những gì nó trông đợi. */
+  await page.evaluate(() => {
+    window.__setComp(window.__leagueNew(['sakura', 'tsubasa', 'chichi', 'suzune'], 1), false);
+    const C = window.__COMP();
+    window.__compRecord(C.fix[0], C.fix[0].b, 0, 41);
+    window.__compRecord(C.fix[2], C.fix[2].b, 0, 264);
+    window.__compPaint();
+  });
+
   const bak = await page.evaluate(async () => {
     window.__compClear();                        // đúng việc nút 🏠 làm
     await new Promise(r => setTimeout(r, 400));

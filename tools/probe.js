@@ -139,7 +139,7 @@ window.__compPlayNext=()=>compPlayNext(); window.__compChampion=()=>compChampion
 window.__lgOrder=()=>lgOrder(); window.__roundRobin=roundRobin; window.__compPaint=()=>compPaint();
 window.__compTotal=()=>compTotal(); window.__compPlayed=()=>compPlayed();
 window.__COMP_MAXT=COMP_MAXT; window.__compLive=()=>compLive;
-window.__leagueNew=leagueNew; window.__lgAnim=()=>lgAnim; window.__cupAnim=()=>cupAnim;
+window.__leagueNew=leagueNew; window.__cupNew=cupNew; window.__lgAnim=()=>lgAnim; window.__cupAnim=()=>cupAnim;
 window.__loadSaved=()=>loadSaved(); window.__COMP_SC=COMP_SC;
 window.__setComp=(c,live)=>{ COMP=c; compLive=!!live; };
 window.__lgLabel=m=>lgLabel(m);
@@ -147,6 +147,9 @@ window.__compBak=()=>compBak; window.__setCompBak=r=>{ compBak=r; };
 window.__compClear=()=>compClear(); window.__compBakAsk=()=>compBakAsk();
 window.__storeGet=k=>Store.get(k);
 window.__compRecord=(r,w,a,b)=>compRecord(r,w,a,b);
+window.__compErase=r=>compErase(r); window.__compStrip=r=>compStrip(r);
+window.__compMkList=()=>compMkList(); window.__setCompMkRef=r=>{ compMkRef=r; };
+window.__compPlayRef=(r,l,k)=>compPlayRef(r,l,k);
 window.__canReflect=canReflect;
 window.__floatScale=floatScale; window.__BEA_FX=()=>BEA_FX;
 /* Ép trận đang đá kết thúc ngay với người thắng chỉ định — khỏi phải ngồi xem đủ mấy chục

@@ -3105,6 +3105,71 @@ Ba thứ chữa, đừng gỡ cái nào:
      `compPlayed()`/`compTotal()` — hai hàm đó lo cho cả hai loại giải, chép lại logic đếm
      ra chỗ khác là chắc chắn lệch nhau về sau.
 
+### Sửa kết quả, xoá kết quả, và đánh lại một trận CŨ
+
+Người dùng: *"Thêm nút sửa kết quả (xoá, thay đổi kết quả) cũng như thêm nút quay lại
+đánh các matchup trước đó trong giải league đi, nhớ thêm cho tourament luôn, video bị lỗi
+nên cần record lại matchup cũ"*. Cả ba việc dùng chung một bộ hàm cho **cả hai loại giải**.
+
+**`compRecord()` vẫn là cửa DUY NHẤT cộng điểm**, giờ biết **ghi đè**: thấy ô lịch đã có `w`
+thì gọi `compStrip()` gỡ kết quả cũ ra trước rồi mới cộng kết quả mới. Nhớ vậy sửa bằng tay
+và đánh lại một trận cũ đi chung một đường — **đừng chép phép cộng điểm ra chỗ khác**.
+
+| Hàm | Làm gì |
+|---|---|
+| `compStrip(ref)` | gỡ điểm / thắng / thua / hiệu số của một kết quả, rồi xoá `w`/`ga`/`gb`. **Đối xứng từng phép** với phần cộng của `compRecord` |
+| `cupCascade()` | dọn nhánh sau của giải loại trực tiếp |
+| `compErase(ref)` | `compStrip` + `cupCascade` + lưu — đây là nút ✕ |
+| `compPlayRef(ref,label,keep)` | vào MỘT Ô LỊCH BẤT KỲ, kể cả trận đã đá |
+
+> **`compStrip()` đọc `ga`/`gb` ĐÃ LƯU TRÊN Ô LỊCH, đừng tính lại từ đâu khác.** Hiệu số là
+> phần CHÊNH máu (mục 2c-bis), nên chỉ cần hai con số lệch nhau một nhịp là bảng điểm trôi
+> dần sau mỗi lần sửa.
+
+> **`cupFill()` CHỈ BIẾT ĐẨY NGƯỜI THẮNG LÊN, không bao giờ xoá.** Xoá một kết quả tứ kết
+> mà để nguyên là trận bán kết vẫn giữ một người chẳng còn từ đâu tới. `cupCascade()` vì vậy
+> **quét sạch `a`/`b` của mọi vòng sau rồi cho `cupFill()` điền lại từ đầu**, xong gỡ luôn kết
+> quả của trận nào còn giữ một người thắng không còn nằm trong chính trận đó, rồi **lặp cho
+> tới khi đứng yên** — một cú xoá ở tứ kết kéo theo cả bán kết lẫn chung kết lẫn tranh hạng ba.
+> Đo được: giải 4 người đã xong, xoá một kết quả bán kết ⇒ chung kết mất cả người chơi lẫn
+> kết quả, trận tranh hạng ba cũng trống, số trận đã đá 4 → 1, không còn nhà vô địch.
+
+> **ĐẶT `ref.w` MỚI RỒI MỚI DỌN NHÁNH.** `compRecord` gọi `cupCascade()` **sau** khi đã gán
+> người thắng mới, nên sửa mỗi con số máu mà giữ nguyên người thắng thì cú dọn thành vô hại.
+> Dọn lúc `w` còn `null` là quét sạch mấy vòng sau dù chẳng có gì đổi.
+
+#### Hai kiểu "đánh lại", đừng ghép làm một
+
+| Ở đâu | Nhãn | Kết quả trong bảng |
+|---|---|---|
+| nút **▶** trên từng dòng của khối *Kết quả đã đá* | đánh lại để **quay video** | **GIỮ NGUYÊN** |
+| nút **▶ Đánh lại (ghi đè)** trong bảng ✎ | đánh lại để **lấy kết quả mới** | **thay bằng lượt vừa đánh** |
+
+Cửa phân biệt là cờ **`keep`** trên `COMP.cur`: `compResult()` thấy cờ này thì `return` sớm,
+không ghi một dòng nào vào sổ. **Thiếu cờ đó thì quay lại một trận cũ là bảng xếp hạng đổi
+theo lượt vừa đánh** — mà máy đánh với máy thì lượt sau hiếm khi ra đúng kết quả lượt trước,
+tức chỉ muốn quay lại cái video mà mất luôn thứ hạng.
+
+Cả hai đi qua `compGoRef()` — **đóng bảng → hỏi sàn → màn VS → vào trận**, đúng đường của nút
+▶ trận kế tiếp (mục 2e). **Đừng gọi `newGame()` thẳng**: thiếu màn hỏi sàn thì đánh lại trận
+cũ là dính nguyên sàn của trận trước.
+
+#### Bảng ✎ giờ liệt kê CẢ trận ĐÃ ĐÁ
+
+- `compMkList()` bỏ bộ lọc `!x.m.w` — trận đã đá mang dấu `✓` kèm tỉ số trong ô chọn. Chọn
+  một trận như vậy thì hai ô máu **điền sẵn con số cũ**, người thắng cũ được chọn sẵn, và có
+  thêm hai nút **▶ Đánh lại (ghi đè)** và **✕ Xoá kết quả**.
+- `compMkCur()` vẫn **nhảy vào trận CHƯA ĐÁ đầu tiên** khi chưa chọn gì, đúng như hồi danh
+  sách chỉ có trận chưa đá: mở bảng ra là nhập được ngay.
+- Nút `#compMark` **không còn tự ẩn khi giải đã xong** — đúng lúc đó mới hay phát hiện ra một
+  dòng ghi sai. Giờ nó chỉ ẩn khi không có ô lịch nào để chọn. Riêng `#compGo` (đánh trận kế
+  tiếp) thì vẫn ẩn khi `compDone()` như cũ.
+- Nút ▶ trên dòng kết quả mang `data-rs` = **chỉ số trong `compMatches()` đầy đủ**, đừng giữ
+  chỉ số trong danh sách đã lọc: danh sách đó đổi độ dài sau mỗi trận. Ủy quyền ở `#compBody`
+  vì `compPaint()` dựng lại cả khối.
+- Nút ✕ **hỏi lại một câu** vì ở giải loại trực tiếp nó kéo theo cả nhánh sau, mất nhiều hơn
+  đúng một dòng.
+
 Kiểm bằng `node tools/t_comp.js`.
 
 ## 2c-ter. BẢN AUTO và BẢN NGƯỜI CHƠI — cộng chế độ PHIÊU LƯU
@@ -5301,7 +5366,14 @@ node tools/t_comp.js    # hai chế độ giải đấu: lịch vòng tròn (3/4
                         # xong thì hiệu số / điểm / dòng kết quả y hệt một trận đánh thật,
                         # trận bị bỏ qua vẫn còn nguyên) và SAO LƯU giải bị xoá nhầm (bấm
                         # 🏠 thì vẫn còn bản sao ở cfg_comp_bak, khôi phục lại đủ kết quả
-                        # đã đá rồi bỏ bản sao đi, không hỏi lại lần nữa)
+                        # đã đá rồi bỏ bản sao đi, không hỏi lại lần nữa);
+                        # SỬA / XOÁ KẾT QUẢ và ĐÁNH LẠI TRẬN CŨ (chọn một trận đã đá thì bảng
+                        # điền sẵn máu và người thắng cũ kèm hai nút xoá / đánh lại, đổi người
+                        # thắng thì điểm chuyển hẳn sang bên kia mà số trận đã đá không đổi,
+                        # xoá thì bảng điểm trả lại đúng bằng phần đã cộng và trận đó quay lại
+                        # làm trận kế tiếp, giải loại trực tiếp thì xoá một kết quả bán kết là
+                        # chung kết mất cả người chơi lẫn kết quả, và đánh lại để QUAY VIDEO thì
+                        # kết quả lẫn bảng xếp hạng giữ nguyên)
 node tools/t_wake.js    # Shikamaru bật dậy: câm tiếng, xoá bong bóng, chờ đủ giây, và trần chakra (lazyCap)
 node tools/t_dodge.js   # sáu luật né đòn của Shikamaru (choáng, choáng ăn theo, Sexy, lần bù)
 node tools/t_kono.js    # Konohamaru: phi tiêu 25 dmg, 30% ra kunai nổ, vụ nổ là AoE nhạt dần
