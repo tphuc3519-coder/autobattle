@@ -82,3 +82,27 @@
     start();
   }
 })();
+
+/* UI V7.1.1 — durable mode-icon mount.
+   Icons are real elements so theme pseudo-elements cannot erase them. */
+(()=>{
+  const FALLBACK={
+    duel:"⚔",ffa:"🔥",team:"🛡",relay:"🔁",league:"🏆",cup:"🥇",adv:"🗺"
+  };
+
+  function mountModeIcons(){
+    document.querySelectorAll("#charSelect .mTab").forEach((tab)=>{
+      let icon=tab.querySelector(".mModeIcon");
+      if(!icon){
+        icon=document.createElement("span");
+        icon.className="mModeIcon";
+        icon.setAttribute("aria-hidden","true");
+        tab.prepend(icon);
+      }
+      icon.textContent=tab.dataset.ico||FALLBACK[tab.dataset.mode]||"✦";
+    });
+  }
+
+  mountModeIcons();
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",mountModeIcons,{once:true});
+})();
