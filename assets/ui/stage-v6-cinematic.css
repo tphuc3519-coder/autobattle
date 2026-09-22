@@ -723,3 +723,239 @@ body.arcade .help{
 @media(max-width:760px){
   body.human .csel[data-page="mode"] .mAdv{grid-column:auto}
 }
+
+/* UI V7.1 — SHOWSTOPPER PASS
+   Restores mode emblems and makes the redesign visually unmistakable. */
+
+/* Setup background: arena lighting instead of empty black. */
+body.arcade #charSelect{
+  background:
+    radial-gradient(62% 72% at 8% 42%,rgba(39,116,176,.13),transparent 70%),
+    radial-gradient(58% 68% at 94% 58%,rgba(157,62,116,.1),transparent 72%),
+    linear-gradient(145deg,#07101c 0%,#040811 58%,#090711 100%)!important;
+}
+body.arcade #charSelect::before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.34;
+  background:
+    linear-gradient(118deg,transparent 0 26%,rgba(117,189,240,.055) 26.2% 26.5%,transparent 26.7% 72%,rgba(255,190,89,.045) 72.2% 72.5%,transparent 72.7%),
+    repeating-linear-gradient(90deg,rgba(137,174,220,.026) 0 1px,transparent 1px 88px);
+  -webkit-mask-image:linear-gradient(to bottom,#000,transparent 88%);
+  mask-image:linear-gradient(to bottom,#000,transparent 88%);
+}
+body.arcade #charSelect .cselBox{position:relative;z-index:1}
+
+/* MODE SELECT — large emblem, visual identity and real selected feedback. */
+body.arcade #charSelect[data-step="mode"] .cselModes{
+  width:100%!important;max-width:1400px!important;min-height:0!important;max-height:none!important;
+  margin:clamp(38px,6vh,74px) auto clamp(18px,3vh,32px)!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-auto-rows:minmax(214px,1fr)!important;
+  gap:18px!important;align-content:center!important;counter-reset:mtab!important;
+  overflow:visible!important;perspective:1200px;
+}
+body.arcade #charSelect[data-step="mode"] .mTab{
+  --cardLift:0px;
+  position:relative!important;isolation:isolate;display:flex!important;flex-direction:column!important;
+  align-items:flex-start!important;justify-content:flex-end!important;gap:5px!important;
+  min-height:214px!important;padding:22px 24px 24px!important;overflow:hidden!important;
+  clip-path:none!important;border:1px solid rgba(141,174,216,.16)!important;
+  border-bottom-color:color-mix(in srgb,var(--mc,#55c9ff) 48%,rgba(141,174,216,.16))!important;
+  border-radius:22px!important;color:#dce5f4!important;text-align:left!important;
+  background:
+    linear-gradient(132deg,transparent 0 46%,color-mix(in srgb,var(--mc,#55c9ff) 7%,transparent) 46.3% 46.8%,transparent 47.1%),
+    repeating-linear-gradient(135deg,rgba(255,255,255,.018) 0 1px,transparent 1px 12px),
+    radial-gradient(72% 88% at 84% 8%,color-mix(in srgb,var(--mc,#55c9ff) 17%,transparent),transparent 68%),
+    linear-gradient(150deg,rgba(24,37,58,.96),rgba(7,13,23,.99) 72%)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.05),
+    inset 0 -60px 70px -78px color-mix(in srgb,var(--mc,#55c9ff) 42%,transparent),
+    0 18px 46px rgba(0,0,0,.25)!important;
+  transform:translateY(var(--cardLift)) rotateX(0deg)!important;transform-origin:50% 100%;
+  transition:transform .32s cubic-bezier(.2,.8,.2,1),border-color .28s ease,
+    box-shadow .28s ease,background .28s ease!important;
+}
+body.arcade #charSelect[data-step="mode"] .mTab::before{
+  content:counter(mtab,decimal-leading-zero)!important;counter-increment:mtab!important;
+  position:absolute!important;z-index:3!important;top:16px!important;left:18px!important;
+  width:auto!important;height:auto!important;
+  color:color-mix(in srgb,var(--mc,#55c9ff) 55%,#7d899d)!important;
+  font:700 11px/1 "Space Mono",monospace!important;letter-spacing:.15em!important;
+  opacity:.8!important;background:none!important;border:0!important;box-shadow:none!important;
+}
+/* V7 accidentally overwrote this pseudo-element. It is now the card hero. */
+body.arcade #charSelect[data-step="mode"] .mTab::after{
+  content:attr(data-ico)!important;position:absolute!important;z-index:2!important;
+  top:30px!important;left:50%!important;display:grid!important;place-items:center!important;
+  width:92px!important;height:92px!important;margin:0!important;
+  border:1px solid color-mix(in srgb,var(--mc,#55c9ff) 42%,rgba(255,255,255,.08))!important;
+  border-radius:29px!important;color:#fff!important;font-size:48px!important;
+  font-style:normal!important;line-height:1!important;
+  background:
+    radial-gradient(circle at 35% 25%,rgba(255,255,255,.16),transparent 34%),
+    conic-gradient(from 215deg,
+      color-mix(in srgb,var(--mc,#55c9ff) 9%,#0d1727),
+      color-mix(in srgb,var(--mc,#55c9ff) 34%,#101b2b),
+      color-mix(in srgb,var(--mc,#55c9ff) 8%,#0b1422),
+      color-mix(in srgb,var(--mc,#55c9ff) 9%,#0d1727))!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    0 0 0 7px color-mix(in srgb,var(--mc,#55c9ff) 5%,transparent),
+    0 15px 32px rgba(0,0,0,.36),
+    0 0 30px color-mix(in srgb,var(--mc,#55c9ff) 16%,transparent)!important;
+  filter:saturate(.92) drop-shadow(0 8px 16px rgba(0,0,0,.32))!important;
+  transform:translateX(-50%) rotate(-2deg) scale(.96)!important;
+  transition:transform .32s cubic-bezier(.2,.8,.2,1),filter .28s ease,box-shadow .28s ease!important;
+}
+body.arcade #charSelect[data-step="mode"] .mTab b{
+  position:relative;z-index:4;width:100%;color:#f3f6fc!important;
+  font-size:clamp(20px,1.72vw,28px)!important;font-style:italic!important;
+  line-height:1.08!important;letter-spacing:-.018em!important;text-align:left!important;
+  text-shadow:0 8px 20px rgba(0,0,0,.72)!important;
+}
+body.arcade #charSelect[data-step="mode"] .mTab b::before{
+  content:"BATTLE MODE";display:block;margin-bottom:7px;
+  color:color-mix(in srgb,var(--mc,#55c9ff) 76%,#c8d2e1);
+  font:700 8px/1 "Space Mono",monospace;font-style:normal;letter-spacing:.18em;opacity:.92;
+}
+body.arcade #charSelect[data-step="mode"] .mTab b::after{
+  content:"";display:block;width:40px;height:2px;margin-top:10px;border-radius:999px;
+  background:linear-gradient(90deg,var(--mc,#55c9ff),transparent);
+  box-shadow:0 0 14px color-mix(in srgb,var(--mc,#55c9ff) 45%,transparent);
+}
+body.arcade #charSelect[data-step="mode"] .mTab i{
+  position:relative;z-index:4;max-width:36ch;color:#8e9caf!important;
+  font-size:9.5px!important;line-height:1.45!important;letter-spacing:.09em!important;text-align:left!important;
+}
+body.arcade #charSelect[data-step="mode"] .mTab:hover{
+  --cardLift:-6px;
+  border-color:color-mix(in srgb,var(--mc,#55c9ff) 58%,rgba(255,255,255,.12))!important;
+  background:
+    linear-gradient(132deg,transparent 0 46%,color-mix(in srgb,var(--mc,#55c9ff) 13%,transparent) 46.3% 46.8%,transparent 47.1%),
+    repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 1px,transparent 1px 12px),
+    radial-gradient(78% 92% at 84% 8%,color-mix(in srgb,var(--mc,#55c9ff) 27%,transparent),transparent 68%),
+    linear-gradient(150deg,rgba(29,45,69,.98),rgba(8,15,26,.99) 72%)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.075),
+    inset 0 -68px 82px -78px color-mix(in srgb,var(--mc,#55c9ff) 52%,transparent),
+    0 28px 62px rgba(0,0,0,.4)!important;
+}
+body.arcade #charSelect[data-step="mode"] .mTab:hover::after{
+  transform:translateX(-50%) rotate(2deg) scale(1.06)!important;
+  filter:saturate(1.06) brightness(1.08) drop-shadow(0 10px 18px rgba(0,0,0,.36))!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    0 0 0 8px color-mix(in srgb,var(--mc,#55c9ff) 8%,transparent),
+    0 18px 38px rgba(0,0,0,.4),
+    0 0 44px color-mix(in srgb,var(--mc,#55c9ff) 28%,transparent)!important;
+}
+body.arcade #charSelect[data-step="mode"] .mTab.on{
+  --cardLift:-3px;color:#fff!important;
+  border-color:color-mix(in srgb,var(--mc,#55c9ff) 82%,#fff 8%)!important;
+  background:
+    linear-gradient(132deg,transparent 0 46%,color-mix(in srgb,var(--mc,#55c9ff) 18%,transparent) 46.3% 46.8%,transparent 47.1%),
+    repeating-linear-gradient(135deg,rgba(255,255,255,.03) 0 1px,transparent 1px 12px),
+    radial-gradient(82% 98% at 82% 5%,color-mix(in srgb,var(--mc,#55c9ff) 34%,transparent),transparent 68%),
+    linear-gradient(150deg,rgba(31,49,76,.99),rgba(8,15,27,.995) 74%)!important;
+  box-shadow:
+    inset 4px 0 0 var(--mc,#55c9ff),
+    inset 0 1px 0 rgba(255,255,255,.09),
+    inset 0 -74px 90px -80px color-mix(in srgb,var(--mc,#55c9ff) 62%,transparent),
+    0 0 0 1px color-mix(in srgb,var(--mc,#55c9ff) 18%,transparent),
+    0 30px 68px rgba(0,0,0,.42)!important;
+}
+body.arcade #charSelect[data-step="mode"] .mTab.on::before{color:#dcecff!important;opacity:1!important}
+body.arcade #charSelect[data-step="mode"] .mTab.on::after{
+  filter:saturate(1.08) brightness(1.08) drop-shadow(0 12px 18px rgba(0,0,0,.32))!important;
+  transform:translateX(-50%) rotate(0) scale(1.08)!important;
+  animation:v71EmblemPulse 2.8s ease-in-out infinite!important;
+}
+body.arcade #charSelect[data-step="mode"] .mTab.on i{color:#b3c0d2!important}
+@keyframes v71EmblemPulse{
+  0%,100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.17),0 0 0 7px color-mix(in srgb,var(--mc) 7%,transparent),0 16px 36px rgba(0,0,0,.38),0 0 34px color-mix(in srgb,var(--mc) 24%,transparent)}
+  50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 0 0 10px color-mix(in srgb,var(--mc) 3%,transparent),0 19px 42px rgba(0,0,0,.42),0 0 54px color-mix(in srgb,var(--mc) 34%,transparent)}
+}
+
+/* Authored action deck instead of loose footer buttons. */
+body.arcade #charSelect[data-step="mode"] .cselBar{
+  position:relative;justify-content:flex-end!important;min-height:58px;
+  padding:14px 0 0!important;background:linear-gradient(180deg,transparent,rgba(4,8,15,.94) 54%)!important;
+}
+body.arcade #charSelect[data-step="mode"] .cselBar::before{
+  content:"SELECT A FORMAT · BUILD THE MATCH · ENTER THE ARENA";
+  margin-right:auto;color:#5e6d82;font:700 8px/1.4 "Space Mono",monospace;letter-spacing:.14em;
+}
+
+/* Fighter selection: selected fighter reads like a premium dossier. */
+body.arcade #charSelect[data-step^="pick"] .cselBody{gap:18px!important}
+body.arcade #charSelect[data-step^="pick"] .cRoster{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 22px 54px rgba(0,0,0,.2)!important;
+}
+body.arcade #charSelect[data-step^="pick"] .cTile.on{
+  transform:translateY(-2px)!important;
+  box-shadow:inset 3px 0 0 var(--c,#6dbfff),
+    0 0 0 1px color-mix(in srgb,var(--c,#6dbfff) 24%,transparent),
+    0 18px 36px rgba(0,0,0,.34),0 0 32px color-mix(in srgb,var(--c,#6dbfff) 9%,transparent)!important;
+}
+body.arcade #charSelect[data-step^="pick"] .pickSplash{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 28px 70px rgba(0,0,0,.4),
+    0 0 52px color-mix(in srgb,var(--psColor,#6dbfff) 7%,transparent)!important;
+}
+
+/* Stage selection gets broadcast-style selected treatment. */
+body.arcade #charSelect[data-page="stage"] .sTile.on,#arcStage .sTile.on{
+  transform:translateY(-4px)!important;border-color:rgba(255,207,100,.9)!important;
+  box-shadow:0 0 0 1px rgba(255,207,100,.18),0 22px 52px rgba(0,0,0,.42),
+    0 0 34px rgba(255,190,68,.11)!important;
+}
+body.arcade #charSelect[data-page="stage"] .sTile.on .sCap::after,#arcStage .sTile.on .sCap::after{
+  content:"SELECTED";display:inline-flex;margin-left:8px;padding:3px 6px;
+  border:1px solid rgba(255,220,137,.48);border-radius:999px;color:#ffe095;
+  background:rgba(15,12,6,.56);font:700 7px/1 "Space Mono",monospace;letter-spacing:.12em;
+}
+
+/* Combat chrome: stronger broadcast identity while the arena stays dominant. */
+body.arcade .wrap>header h1{
+  background:linear-gradient(90deg,#f8fbff 0 56%,#ffd269 70%,#ffb53e 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent!important;
+}
+body.arcade .stage{
+  border-top-color:rgba(105,202,255,.36)!important;
+  box-shadow:0 28px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.03) inset,
+    -32px 0 80px -72px rgba(72,178,255,.46),32px 0 80px -72px rgba(255,86,139,.4)!important;
+}
+
+@media(max-width:1050px){
+  body.arcade #charSelect[data-step="mode"] .cselModes{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-auto-rows:minmax(190px,1fr)!important;margin-top:26px!important;overflow:auto!important;
+  }
+  body.arcade #charSelect[data-step="mode"] .mTab{min-height:190px!important}
+  body.arcade #charSelect[data-step="mode"] .mTab::after{
+    width:76px!important;height:76px!important;font-size:40px!important;top:24px!important;
+  }
+}
+@media(max-width:560px){
+  body.arcade #charSelect[data-step="mode"] .cselModes{
+    grid-template-columns:1fr!important;grid-auto-rows:132px!important;
+    gap:10px!important;margin:16px auto 76px!important;
+  }
+  body.arcade #charSelect[data-step="mode"] .mTab{
+    min-height:132px!important;padding:18px 18px 18px 126px!important;justify-content:center!important;
+  }
+  body.arcade #charSelect[data-step="mode"] .mTab::before{top:12px!important;left:13px!important}
+  body.arcade #charSelect[data-step="mode"] .mTab::after{
+    top:50%!important;left:60px!important;width:74px!important;height:74px!important;
+    font-size:38px!important;transform:translate(-50%,-50%) rotate(-2deg) scale(.94)!important;
+  }
+  body.arcade #charSelect[data-step="mode"] .mTab:hover::after,
+  body.arcade #charSelect[data-step="mode"] .mTab.on::after{
+    transform:translate(-50%,-50%) rotate(0) scale(1.02)!important;
+  }
+  body.arcade #charSelect[data-step="mode"] .mTab b{font-size:20px!important}
+  body.arcade #charSelect[data-step="mode"] .mTab b::before{margin-bottom:5px}
+  body.arcade #charSelect[data-step="mode"] .mTab b::after{margin-top:7px}
+  body.arcade #charSelect[data-step="mode"] .cselBar::before{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  body.arcade #charSelect[data-step="mode"] .mTab.on::after{animation:none!important}
+}
