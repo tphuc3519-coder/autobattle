@@ -711,3 +711,15 @@ body.arcade .help{
   .sTile,
   .sTile>img{animation:none!important}
 }
+
+
+/* V7 follow-up: keep the home sweep behind content and stop hidden gallery
+   backgrounds from animating after their artwork has loaded. */
+.arcOver>*{position:relative;z-index:1}
+.sTile{animation:none!important}
+@media(min-width:761px){
+  body.human .csel[data-page="mode"] .mAdv{grid-column:2}
+}
+@media(max-width:760px){
+  body.human .csel[data-page="mode"] .mAdv{grid-column:auto}
+}
