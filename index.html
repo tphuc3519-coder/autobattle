@@ -1173,7 +1173,19 @@
     --s1:#0B111D;--s2:#101827;--s3:#151F31;--line2:#3A4964;--ink2:#070B13;
     --cyan:#55D9FF;--mag:#FF638C;--r1:10px;--r2:14px;--r3:20px;
     --e1:0 1px 2px rgba(0,0,0,.42);--e2:0 18px 50px rgba(0,0,0,.46);
-    --e3:0 34px 90px rgba(0,0,0,.66);--glow:0 0 28px -10px var(--gold)
+    --e3:0 34px 90px rgba(0,0,0,.66);--glow:0 0 28px -10px var(--gold);
+    /* ---- màu NGHĨA của bảng thông số và biểu đồ ----
+       Bốn cái này là màu theo NGHĨA (gây ra / phải chịu / hồi máu / dẫn dắt), khác hẳn
+       màu phân loại: chúng không bao giờ được mượn làm "chuỗi thứ tư" của một biểu đồ,
+       và màu riêng của đấu thủ cũng không bao giờ được mượn làm màu nghĩa.
+       Đã chấm bằng bộ kiểm màu trên nền #0B111D: đủ chroma, đủ tương phản, cặp gần nhau
+       nhất ở mắt thường ΔE 15.4 (đạt). Cặp vàng↔lục ở mắt mù màu đỏ chỉ ΔE 6.9 — nằm
+       trong dải chỉ hợp lệ KHI có kênh phụ, nên **mọi chỗ dùng bốn màu này đều phải có
+       chữ nhãn đi kèm** (ô KPI có nhãn, thanh hai chiều có nhãn hai cực). Đừng bao giờ
+       vẽ một khối chỉ tô màu mà không có chữ. */
+    --cDealt:#5BD8FF; --cTaken:#FF6B8B; --cHeal:#54E39B;
+    --chLine:rgba(137,156,190,.13);   /* lưới: hairline LIỀN NÉT, đúng một nấc trên nền */
+    --chSurf:#0B111D                  /* nền khung — cũng là màu của khe hở 2px */
   }
   body{
     background:
@@ -2055,19 +2067,29 @@
        · sàn đấu vẫn thoáng: khối mang `.off` suốt cả trận, chỉ bỏ ra khi trận đã xong. */
   .recap{
     position:fixed;left:50%;bottom:66px;z-index:64;pointer-events:none;
-    width:min(94vw,560px);transform:translateX(-50%);
-    background:linear-gradient(180deg,rgba(16,24,39,.95),rgba(8,13,22,.96));
-    border:1px solid rgba(137,156,190,.2);border-radius:var(--r2);
-    box-shadow:var(--e2),inset 0 1px 0 rgba(255,255,255,.05);
-    padding:10px 13px 11px;font-size:12px;
+    width:min(94vw,600px);transform:translateX(-50%);
+    /* Gần như ĐỤC HẲN, đừng hạ xuống dưới .98: thẻ nằm đè đúng chỗ băng-rôn WINNER và
+       pháo giấy đang sáng rực, để trong suốt một chút là chữ vàng phía sau xuyên lên và
+       cả dải diễn biến lẫn mấy con số đọc không ra (đã chụp lại đúng cảnh đó). */
+    background:linear-gradient(180deg,rgba(18,27,43,.985),rgba(7,12,20,.99));
+    border:1px solid rgba(137,156,190,.22);border-radius:var(--r2);
+    box-shadow:var(--e2),inset 0 1px 0 rgba(255,255,255,.06);
+    padding:0 0 10px;font-size:12px;overflow:hidden;
     animation:recapIn .34s ease-out 1
   }
   .recap.off{display:none}
   body:not(.arcade) .recap{bottom:16px}
   @keyframes recapIn{from{opacity:0}to{opacity:1}}
+  /* Vạch sáng mép trên: cùng ngôn ngữ với mấy khung lớn khác của trang. */
   .recapTop{
-    display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
-    padding-bottom:7px;margin-bottom:7px;border-bottom:1px solid rgba(148,163,184,.14)
+    position:relative;display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;
+    padding:9px 13px 8px;margin-bottom:6px;
+    background:linear-gradient(180deg,rgba(137,156,190,.09),transparent);
+    border-bottom:1px solid rgba(148,163,184,.14)
+  }
+  .recapTop::before{
+    content:'';position:absolute;inset:0 0 auto;height:2px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent)
   }
   .recapTop b{
     font-family:var(--fd);font-style:italic;letter-spacing:.06em;font-size:13px;
@@ -2078,9 +2100,12 @@
   /* Mỗi đấu thủ MỘT hàng: cột tên ôm luôn dòng chiêu chủ lực bên dưới, chứ đừng tách
      thành một hàng full-width riêng — tách ra là thẻ cao gấp đôi và cái nhãn "TOP MOVE"
      của hàng tiêu đề nằm chỏng chơ một mình. */
-  .recapRow{display:grid;grid-template-columns:1fr 86px 56px 50px;gap:10px;align-items:center;padding:5px 0}
+  .recapRow{
+    display:grid;grid-template-columns:1fr 94px 56px 50px;gap:10px;align-items:center;
+    padding:5px 13px
+  }
   .recapRow+.recapRow{border-top:1px solid rgba(148,163,184,.07)}
-  .recapRow.head{padding:0 0 4px}
+  .recapRow.head{padding:0 13px 4px}
   .recapRow.head>*{color:var(--mute);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase}
   .recapWho{display:flex;align-items:center;gap:7px;min-width:0}
   .recapDot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 8px -1px currentColor}
@@ -2092,12 +2117,18 @@
   .recapRow.dead{opacity:.55}
   .recapRow.dead .recapNm{text-decoration:line-through}
   .recapHp{display:flex;flex-direction:column;gap:3px}
-  .recapBar{height:5px;border-radius:3px;background:rgba(148,163,184,.16);overflow:hidden}
+  .recapBar{position:relative;height:6px;border-radius:3px;background:rgba(148,163,184,.16)}
   .recapBar>i{display:block;height:100%;border-radius:3px;background:currentColor}
+  /* Vạch máu THẤP NHẤT đã chạm tới. Không tốn một pixel chiều cao nào mà kể thêm được
+     nửa câu chuyện: "thắng, nhưng có lúc chỉ còn 6%". */
+  .recapBar>u{
+    position:absolute;top:-2px;width:2px;height:10px;border-radius:1px;
+    background:var(--cTaken);box-shadow:0 0 0 1px rgba(6,11,20,.85)
+  }
   .recapHpN{font-size:10px;color:var(--mute);font-variant-numeric:tabular-nums}
   .recapN{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:12.5px}
-  .recapN.dmg{color:#FFB199}
-  .recapN.heal{color:#7DEBAB}
+  .recapN.dmg{color:var(--cDealt)}
+  .recapN.heal{color:var(--cHeal)}
   .recapN.zero{color:var(--mute);font-weight:400}
   .recapMv{
     display:flex;gap:6px;align-items:baseline;min-width:0;
@@ -2107,75 +2138,220 @@
     color:var(--cyan);font-family:var(--fd);font-style:italic;letter-spacing:.04em;font-weight:700;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis
   }
-  .recapMore{padding-top:6px;color:var(--mute);font-size:10.5px;text-align:center}
+  /* ---- dải diễn biến: MỘT biểu đồ nhỏ cho cả thẻ, không phải mỗi hàng một cái ----
+     Đặt một đường tí hon vào từng hàng thì thẻ cao thêm chừng 12px mỗi hàng; gom lại
+     thành một dải chung thì chỉ tốn một lần, mà lại so được các đường với nhau — đó
+     mới là chỗ đọc ra ai dẫn trước ai lật ngược. */
+  .recapFlow{position:relative;margin:7px 13px 0;padding-top:7px;border-top:1px solid rgba(148,163,184,.1)}
+  .recapFlow .chSvg{display:block;width:100%;height:54px}
+  /* Nhãn nằm GÓC DƯỚI TRÁI, không phải góc trên. Mọi đường đều BẮT ĐẦU ở 100% máu, tức
+     đúng góc trên trái — để nhãn ở đó là nó nằm ngay dưới gạch chân của cả đám đường.
+     Góc dưới trái thì trống, vì đầu trận chưa ai ở 0 máu. */
+  .recapFlowL{
+    position:absolute;bottom:1px;left:0;font-size:8.5px;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--mute);pointer-events:none
+  }
+  .recapMore{padding:6px 13px 0;color:var(--mute);font-size:10.5px;text-align:center}
   @media (max-width:560px){
-    .recap{font-size:11px;padding:8px 10px 9px}
-    .recapRow{grid-template-columns:1fr 58px 46px 42px;gap:6px}
+    .recap{font-size:11px;padding-bottom:9px}
+    .recapRow{grid-template-columns:1fr 62px 46px 42px;gap:6px;padding:4px 10px}
+    .recapRow.head{padding:0 10px 4px}
     .recapNm,.recapN{font-size:11px}
+    .recapTop{padding:8px 10px 7px}
+    .recapFlow{margin:6px 10px 0}
+    .recapFlow .chSvg{height:44px}
   }
   @media (prefers-reduced-motion:reduce){ .recap{animation:none} }
 
-  /* ---------- BẢNG THÔNG SỐ TRẬN ----------
-     Dùng lại vỏ `.csel` nên chỉ phải tả phần RUỘT. Không một `animation … infinite` nào:
-     nút ✕ nằm ngay trong khối này và mấy bộ test bấm thẳng vào nó (mục 2h). */
+  /* ---------- BẢNG THÔNG SỐ TRẬN + BIỂU ĐỒ ----------
+     Dùng lại vỏ `.csel` nên chỉ phải tả phần RUỘT. Hai luật giữ nguyên từ trước:
+     không một `animation … infinite` nào (nút ✕ nằm ngay trong khối này và mấy bộ test
+     bấm thẳng vào nó — mục 2h), và mọi lớp trang trí đều `pointer-events:none`. */
   #statsBoard .cselBody{text-align:left}
+  #statsBoard .cselBox{max-width:1180px}
   .stNone{padding:26px 4px;text-align:center;color:var(--mute)}
-  .stTop{
-    display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px
-  }
+
+  /* ---- dòng ô số dẫn dắt ---- */
+  .stTop{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
   .stKpi{
-    flex:1 1 150px;padding:10px 13px;border-radius:var(--r1);
-    background:linear-gradient(180deg,rgba(21,31,49,.92),rgba(11,17,29,.92));
-    box-shadow:inset 0 0 0 1px rgba(137,156,190,.16)
+    position:relative;overflow:hidden;padding:12px 14px 11px;border-radius:var(--r2);
+    background:linear-gradient(180deg,rgba(23,33,51,.95),rgba(10,16,27,.95));
+    box-shadow:inset 0 0 0 1px rgba(137,156,190,.15),var(--e1)
   }
+  /* Vạch sáng mảnh ở mép trên — dấu hiệu "đây là một ô số", không phải một mảng màu to. */
+  .stKpi::before{
+    content:'';position:absolute;inset:0 0 auto;height:2px;pointer-events:none;
+    background:linear-gradient(90deg,transparent,rgba(137,156,190,.34),transparent)
+  }
+  .stKpi.lead::before{background:linear-gradient(90deg,transparent,var(--gold),transparent)}
   .stKpi b{
-    display:block;font-family:var(--fd);font-style:italic;font-size:21px;
-    color:var(--gold);font-variant-numeric:tabular-nums;line-height:1.15
+    display:block;font-family:var(--fd);font-style:italic;font-size:26px;line-height:1.1;
+    color:#EEF3FA;letter-spacing:.01em
+    /* KHÔNG tabular-nums ở cỡ này: chữ số đều bề ngang làm con số to nhìn rời rạc.
+       Bảng bên dưới thì có, vì ở đó các con số phải thẳng cột với nhau. */
   }
-  .stKpi span{font-size:10.5px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase}
+  .stKpi.lead b{color:var(--gold)}
+  .stKpi span{
+    display:block;margin-top:3px;font-size:10.5px;color:var(--mute);
+    letter-spacing:.07em;text-transform:uppercase
+  }
+  .stKpi em{display:block;margin-top:2px;font-style:normal;font-size:11px;color:#9FB0C8}
+
+  /* ---- khối biểu đồ ---- */
+  .stSec{margin-bottom:18px}
+  .stSecH{
+    display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin:0 0 9px;
+    font-family:var(--fd);font-style:italic;font-size:14px;letter-spacing:.06em;
+    text-transform:uppercase;color:#D7E1F2
+  }
+  .stSecH em{font-style:normal;font-family:var(--bf,inherit);font-size:11px;letter-spacing:0;
+    text-transform:none;color:var(--mute);font-weight:400}
+  /* Chú giải MỘT hàng, đặt trên cả hai biểu đồ — hai biểu đồ dùng chung một bộ chuỗi. */
+  .chLeg{display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:10px}
+  .chChip{
+    display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#C6D2E4;
+    font-family:var(--fd);font-style:italic;letter-spacing:.03em
+  }
+  .chChip i{width:9px;height:9px;border-radius:2px;flex:0 0 auto}
+  .chChip.ko{color:var(--mute)}
+  .chChip.ko::after{content:'✕';font-style:normal;font-size:9px;opacity:.8}
+  .stCharts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .chFig{
+    margin:0;padding:10px 10px 6px;border-radius:var(--r2);background:var(--chSurf);
+    box-shadow:inset 0 0 0 1px rgba(137,156,190,.13)
+  }
+  .chFig figcaption{
+    margin-bottom:4px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--mute);font-weight:700
+  }
+  .chWrap{position:relative}
+  .chSvg{display:block;width:100%;height:auto;overflow:visible}
+  /* Lưới và trục: hairline LIỀN NÉT (nét đứt đọc ra "ngưỡng" trong khi nó chỉ là lưới),
+     chữ trục mang màu chữ chìm chứ KHÔNG mang màu của chuỗi. */
+  .chGrid{stroke:var(--chLine);stroke-width:1;vector-effect:non-scaling-stroke}
+  .chAx{fill:var(--mute);font-size:9.5px;font-variant-numeric:tabular-nums}
+  .chAxY{text-anchor:end}
+  .chLn{
+    fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;
+    vector-effect:non-scaling-stroke
+  }
+  /* Vòng nền 2px quanh đầu mút: chỗ hai đường chồng nhau vẫn tách ra được, mà không
+     phải kẻ viền quanh nét (kẻ viền làm nét dày lên và đọc ra như một nét khác). */
+  .chEnd{stroke:var(--chSurf);stroke-width:2}
+  .chKo{stroke-width:2;stroke-linecap:round;vector-effect:non-scaling-stroke}
+  .chCross{stroke:rgba(137,156,190,.42);stroke-width:1;vector-effect:non-scaling-stroke;pointer-events:none}
+  .chHit{fill:transparent}
+  .chTip2{font-size:10px;font-family:var(--fd);font-style:italic;font-weight:700;letter-spacing:.03em}
+  .chTip{
+    position:absolute;top:4px;z-index:2;pointer-events:none;min-width:96px;
+    padding:6px 8px;border-radius:var(--r1);font-size:11px;
+    background:rgba(6,11,20,.96);box-shadow:inset 0 0 0 1px rgba(137,156,190,.24),var(--e2)
+  }
+  .chTip b{display:block;margin-bottom:3px;color:var(--gold);font-variant-numeric:tabular-nums}
+  .chTip span{display:flex;align-items:center;gap:6px;color:#C6D2E4;line-height:1.55;white-space:nowrap}
+  .chTip span i{width:7px;height:7px;border-radius:2px;flex:0 0 auto}
+  .chTip span em{margin-left:auto;font-style:normal;font-weight:700;font-variant-numeric:tabular-nums;color:#EEF3FA}
+
+  /* ---- thanh hai chiều quanh trục 0 ---- */
+  .dvWrap{
+    padding:11px 13px 8px;border-radius:var(--r2);background:var(--chSurf);
+    box-shadow:inset 0 0 0 1px rgba(137,156,190,.13)
+  }
+  .dvHead,.dvRow{display:grid;grid-template-columns:minmax(74px,132px) 1fr 74px;gap:10px;align-items:center}
+  .dvHead{padding-bottom:6px;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+  .dvScale{display:flex;justify-content:space-between;font-weight:700}
+  .dvKt{color:var(--cTaken)} .dvKd{color:var(--cDealt)} .dvKz{color:var(--mute)}
+  .dvNetH{text-align:right}
+  .dvRow{padding:4px 0}
+  .dvNm{
+    font-family:var(--fd);font-style:italic;font-weight:700;font-size:12.5px;letter-spacing:.03em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+  }
+  .dvTrack{position:relative;display:block;height:15px}
+  /* Đầu mút bo 4px, neo vào vạch 0 — thanh mọc RA từ trục chứ không trôi lơ lửng. */
+  .dvTrack>i{position:absolute;top:3px;height:9px;display:block}
+  .dvL{background:var(--cTaken);border-radius:4px 0 0 4px;margin-right:2px}
+  .dvR{background:var(--cDealt);border-radius:0 4px 4px 0;margin-left:2px}
+  .dvZero{position:absolute;left:50%;top:-1px;width:1px;height:17px;background:rgba(137,156,190,.34)}
+  .dvNet{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:12px}
+  .dvNet.up{color:var(--cDealt)} .dvNet.dn{color:var(--cTaken)}
+
+  /* ---- thẻ từng đấu thủ ---- */
+  .stGrid{display:grid;grid-template-columns:1fr;gap:12px}
   .stCard{
-    margin-bottom:13px;padding:12px 13px 10px;border-radius:var(--r2);
-    background:linear-gradient(180deg,rgba(17,25,40,.94),rgba(9,14,24,.94));
-    box-shadow:inset 0 0 0 1px rgba(137,156,190,.15),var(--e1);
-    border-left:3px solid var(--c)
+    position:relative;overflow:hidden;padding:13px 14px 11px;border-radius:var(--r2);
+    background:linear-gradient(180deg,rgba(18,27,43,.95),rgba(9,14,24,.95));
+    box-shadow:inset 0 0 0 1px rgba(137,156,190,.14),var(--e1)
   }
-  .stHead{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:9px}
-  .stDot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:0 0 auto}
+  /* Vạch nhận diện mang màu đấu thủ ở mép trái — màu đi theo NGƯỜI, không theo thứ hạng. */
+  .stCard::before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:var(--c);pointer-events:none}
+  .stHead{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px}
+  .stDot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:0 0 auto;box-shadow:0 0 10px -2px var(--c)}
   .stName{
-    font-family:var(--fd);font-style:italic;font-weight:700;font-size:16px;
+    font-family:var(--fd);font-style:italic;font-weight:700;font-size:17px;
     letter-spacing:.03em;color:var(--c)
   }
   .stTag{
-    font-style:normal;font-size:9.5px;letter-spacing:.1em;padding:2px 7px;border-radius:var(--rp);
+    font-style:normal;font-size:9.5px;letter-spacing:.1em;padding:2px 8px;border-radius:var(--rp);
     background:rgba(148,163,184,.14);color:var(--mute)
   }
   .stTag.win{background:rgba(255,201,92,.17);color:var(--gold)}
-  .stTag.ko{background:rgba(255,99,140,.15);color:#FF9CB0}
+  .stTag.ko{background:rgba(255,107,139,.15);color:var(--cTaken)}
   .stHp{
-    flex:1 1 90px;max-width:160px;height:6px;border-radius:3px;
-    background:rgba(148,163,184,.16);overflow:hidden
+    position:relative;flex:1 1 90px;max-width:170px;height:7px;border-radius:4px;
+    background:rgba(148,163,184,.16)
   }
-  .stHp>i{display:block;height:100%;border-radius:3px;background:var(--c)}
+  .stHp>i{display:block;height:100%;border-radius:4px;background:var(--c)}
+  /* Vạch "máu thấp nhất chạm tới" — nửa còn lại của câu chuyện mà máu cuối trận không kể. */
+  .stLow{
+    position:absolute;top:-3px;width:2px;height:13px;border-radius:1px;
+    background:var(--cTaken);box-shadow:0 0 0 1px rgba(6,11,20,.8)
+  }
   .stHpN{font-size:10.5px;color:var(--mute);font-variant-numeric:tabular-nums}
-  .stKpis{
-    display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:11px
-  }
+  /* Đường tí hon neo TUYỆT ĐỐI ở góc trên phải thẻ, không thả vào dòng tiêu đề: thả vào
+     đó thì tên dài một nhịp là nó rớt xuống hàng dưới ở thẻ này mà vẫn nằm cùng hàng ở
+     thẻ kia — hai thẻ cạnh nhau lệch nhau, nhìn như lỗi. Neo cứng thì thẻ nào cũng
+     giống thẻ nào. Dòng tiêu đề chừa sẵn lề phải đúng bằng chỗ nó chiếm. */
+  .stSpark{display:block;width:128px;height:28px;opacity:.92}
+  .stSpark .spk{display:block;width:100%;height:100%}
+  .spkBase{stroke:rgba(137,156,190,.18);stroke-width:1;vector-effect:non-scaling-stroke}
+  .stKpis{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:11px}
   .stKpis>div{
-    padding:7px 8px;border-radius:var(--r1);background:rgba(8,13,22,.7);
+    padding:7px 9px;border-radius:var(--r1);background:rgba(8,13,22,.72);
     box-shadow:inset 0 0 0 1px rgba(137,156,190,.1)
   }
   .stKpis b{
     display:block;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;
     color:#E9EEF7;line-height:1.2
   }
-  .stKpis b.kDmg{color:#FFB199}
-  .stKpis b.kTake{color:#FF8FA8}
-  .stKpis b.kHeal{color:#7DEBAB}
-  .stKpis span{font-size:9.5px;color:var(--mute);letter-spacing:.04em}
+  .stKpis b.kDmg{color:var(--cDealt)}
+  .stKpis b.kTake{color:var(--cTaken)}
+  .stKpis b.kHeal{color:var(--cHeal)}
+  .stKpis b.kLow{color:var(--cTaken)}
+  .stKpis b.kOver{color:var(--gold)}
+  .stKpis span{display:block;margin-top:1px;font-size:9.5px;color:var(--mute);letter-spacing:.04em}
   .stSub{
-    margin:11px 0 5px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    margin:12px 0 6px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
     color:var(--mute);font-weight:700
   }
+  /* ---- thanh chồng 100%: khe hở 2px tô bằng MÀU NỀN, không kẻ viền quanh khúc ---- */
+  .chBar{
+    position:relative;height:16px;border-radius:5px;overflow:hidden;
+    background:rgba(148,163,184,.1)
+  }
+  .chBar>i{
+    position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;
+    box-shadow:2px 0 0 0 var(--chSurf)
+  }
+  .chBar>i:last-child{box-shadow:none}
+  /* Nhãn chỉ nằm TRONG khúc khi đủ chỗ (chStack chỉ in khi ≥17%), và không bao giờ bị
+     cắt cụt: khúc nào hẹp thì con số rơi xuống hàng chú giải ngay dưới. */
+  .chBar>i>b{font-size:9.5px;font-weight:700;color:rgba(5,9,16,.82);font-variant-numeric:tabular-nums}
+  .chKeys{display:flex;flex-wrap:wrap;gap:4px 13px;margin-top:6px;font-size:10.5px;color:var(--mute)}
+  .chKeys span{display:inline-flex;align-items:center;gap:5px}
+  .chKeys span i{width:8px;height:8px;border-radius:2px;flex:0 0 auto}
+  .chKeys span b{color:#C6D2E4;font-variant-numeric:tabular-nums}
+
   .stTab{width:100%;border-collapse:collapse;font-size:12px}
   .stTab th{
     text-align:right;padding:0 6px 5px;font-size:9.5px;letter-spacing:.07em;
@@ -2186,6 +2362,7 @@
     text-align:right;padding:5px 6px;font-variant-numeric:tabular-nums;
     border-top:1px solid rgba(148,163,184,.08);white-space:nowrap
   }
+  .stTab tbody tr:hover td{background:rgba(137,156,190,.06)}
   .stTab td.stNm{
     font-family:var(--fd);font-style:italic;font-weight:700;letter-spacing:.03em;
     color:var(--cyan);max-width:210px;overflow:hidden;text-overflow:ellipsis
@@ -2195,18 +2372,40 @@
   .stTab td.stPc{position:relative;min-width:74px}
   .stTab td.stPc>i{
     position:absolute;left:6px;top:50%;height:13px;transform:translateY(-50%);
-    border-radius:2px;opacity:.28
+    border-radius:3px;opacity:.3
   }
   .stTab td.stPc>b{position:relative;font-weight:600}
   .stEmpty{padding:7px 2px;color:var(--mute);font-size:11.5px}
+  @media (min-width:1000px){
+    .stGrid{grid-template-columns:1fr 1fr}
+    .stKpis{grid-template-columns:repeat(4,1fr)}
+  }
+  @media (min-width:861px){
+    .stSpark{position:absolute;top:12px;right:13px}
+    /* Lề phải chừa đúng bằng chỗ đường tí hon chiếm, và thanh máu co lại cho cả dòng
+       tiêu đề vừa MỘT hàng ở mọi thẻ — tên dài ngắn khác nhau mà thẻ nọ xuống dòng thẻ
+       kia không thì hai thẻ cạnh nhau lệch hẳn nhau. */
+    .stSpark{width:128px}
+    .stHead{padding-right:140px;min-height:30px;flex-wrap:nowrap}
+    .stName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+    .stTag{flex:0 0 auto}
+    .stHp{flex:1 1 52px;max-width:104px}
+    .stHpN{flex:0 0 auto;white-space:nowrap}
+  }
+  @media (max-width:860px){
+    .stCharts{grid-template-columns:1fr}
+    .stSpark{display:none}
+  }
   @media (max-width:760px){
     .stKpis{grid-template-columns:repeat(3,1fr)}
     .stTab{font-size:11px}
     .stTab td.stPc{min-width:62px}
+    .stKpi b{font-size:22px}
   }
   @media (max-width:460px){
     .stKpis{grid-template-columns:repeat(2,1fr)}
     .stTab th:nth-child(5),.stTab td:nth-child(5){display:none}
+    .dvHead,.dvRow{grid-template-columns:minmax(62px,88px) 1fr 58px;gap:7px}
   }
   /* Bảng thông số mở ra thì dải nút sau trận nhường chỗ — nó z-index 65, nằm trên .csel
      (60), nên không giấu là bốn cái nút nằm chình ình giữa bảng. Cùng lối #arcStage. */
@@ -2849,7 +3048,7 @@ const L={
     rcTitle:'TỔNG KẾT TRẬN', rcDur:'Thời lượng', rcWin:'Thắng',
     rcFighter:'Đấu thủ', rcHp:'Máu còn', rcDmg:'Sát thương', rcHeal:'Hồi máu',
     rcTop:'Chiêu chủ lực', rcBasic:'Đòn thường', rcNone:'chưa gây sát thương',
-    rcMore:'… và {n} đấu thủ nữa',
+    rcMore:'… và {n} đấu thủ nữa', rcFlow:'Diễn biến máu',
     /* ---------- bảng thông số trận ---------- */
     statsBtn:'📊 Thông số trận',
     statsH:'THÔNG SỐ <span>TRẬN ĐẤU</span>',
@@ -2860,6 +3059,15 @@ const L={
     stHits:'Số đòn trúng', stAvgHit:'TB mỗi đòn', stBig:'Đòn nặng nhất',
     stOutH:'Sát thương GÂY RA — từng chiêu',
     stInH:'Sát thương PHẢI CHỊU — từng chiêu',
+    /* ---- biểu đồ và mấy thước đo thêm ---- */
+    stPerSec:'{n} mỗi giây', stHitsN:'{n} đòn trúng', stWonBy:'{n} thắng',
+    stHealAll:'Tổng máu hồi', stOther:'Chiêu khác',
+    stFlowH:'Diễn biến trận', stFlowSub:'máu và sát thương theo thời gian',
+    stHpFlow:'Máu còn lại (%)', stDmgFlow:'Sát thương cộng dồn',
+    stTradeH:'Cán cân ăn miếng trả miếng', stTradeSub:'gây ra so với phải chịu, chung một thang đo',
+    stNet:'Chênh lệch', stCompH:'Sát thương gây ra đến từ đâu',
+    stLow:'Máu thấp nhất', stSurv:'Trụ được', stCc:'Bị khống chế',
+    stDist:'Quãng đường', stOver:'Đòn thừa',
     stMove:'Chiêu', stCnt:'Đòn', stSum:'Tổng', stShare:'Tỉ lệ', stAvg:'TB', stMax:'Cao nhất',
     stEmpty:'không có', stWin:'THẮNG', stKo:'BỊ HẠ', stAlive:'CÒN SỐNG',
     stClose:'✕ Đóng'
@@ -2981,7 +3189,7 @@ const L={
     rcTitle:'MATCH RECAP', rcDur:'Duration', rcWin:'Winner',
     rcFighter:'Fighter', rcHp:'HP left', rcDmg:'Damage', rcHeal:'Healed',
     rcTop:'Top move', rcBasic:'Basic Attack', rcNone:'no damage dealt',
-    rcMore:'… and {n} more fighter(s)',
+    rcMore:'… and {n} more fighter(s)', rcFlow:'HP over time',
     /* ---------- match stats board ---------- */
     statsBtn:'📊 Match stats',
     statsH:'MATCH <span>STATS</span>',
@@ -2992,6 +3200,15 @@ const L={
     stHits:'Hits landed', stAvgHit:'Avg per hit', stBig:'Biggest hit',
     stOutH:'Damage DEALT — move by move',
     stInH:'Damage TAKEN — move by move',
+    /* ---- charts and the extra metrics ---- */
+    stPerSec:'{n} per second', stHitsN:'{n} hits landed', stWonBy:'{n} won',
+    stHealAll:'Total healing', stOther:'Other moves',
+    stFlowH:'Battle flow', stFlowSub:'health and damage over time',
+    stHpFlow:'HP remaining (%)', stDmgFlow:'Cumulative damage',
+    stTradeH:'Trade balance', stTradeSub:'dealt against taken, one shared scale',
+    stNet:'Net', stCompH:'Where the damage came from',
+    stLow:'Lowest HP', stSurv:'Survived', stCc:'Time stunned',
+    stDist:'Distance run', stOver:'Overkill',
     stMove:'Move', stCnt:'Hits', stSum:'Total', stShare:'Share', stAvg:'Avg', stMax:'Biggest',
     stEmpty:'none', stWin:'WINNER', stKo:'DEFEATED', stAlive:'STANDING',
     stClose:'✕ Close'
@@ -6770,6 +6987,9 @@ function mk(o){
     dis:0, shrunk:0, szMul:1, hitMul:1, reachMul:1, kbTake:1, drCcRes:0, dmgDealt:0,
     /* Match Recap: máu hồi THẬT SỰ nhận vào, và sổ sát thương chia theo từng chiêu. */
     healGot:0, moves:null, taken:null, dmgTaken:0,
+    /* Match Recap — dòng thời gian và mấy thước đo phụ. Tất cả do `recapSample()` nuôi,
+       trừ `overkill` (ghi trong hurt) và `koAt` (ghi trong defeat). Xem mục 2j. */
+    hpLog:null, hpLogT:0, hpLogGap:0, hpLow:null, ccTime:0, dist:0, overkill:0, koAt:-1, lx:null, ly:null,
     copter:0, copCd:0, copAcDone:false, drNoHit:0, edCd:0, edT:0, edMoved:false, edSpeed:0, edFrom:null, edTo:null,
     fk:0,
     drEntry:null, drAim:null, drCombo:null, drCone:null, drHide:false, tm:null, tmDone:false,
@@ -7383,6 +7603,59 @@ function recapHit(cred,t,amt,crit,kind){
    Mọi cửa hồi máu trong game đều đã kẹp `min(maxHp-hp, …)` trước khi cộng, nên con số
    truyền vào đây không bao giờ là phần hồi tràn. */
 function recapHeal(f,v){ if(f&&v>0) f.healGot=(f.healGot||0)+v; }
+/* ---------- DÒNG THỜI GIAN — thứ nuôi mấy biểu đồ của bảng thông số ----------
+   Sổ chiêu ở trên nói được "bằng chiêu gì", nhưng không nói được "lúc nào". Mà câu hỏi
+   *vì sao thắng* thì phần lớn nằm ở dòng thời gian: ai dẫn trước, ai lật ngược, ai tụt
+   xuống sát đáy rồi bò lên. Vì vậy `recapSample()` chụp lại mỗi `RECAP_DT` giây TRONG
+   TRẬN một mẫu `[t, hp, dmg dồn]` cho từng đấu thủ chính.
+
+   Bốn luật của khu này:
+   1. **Gọi SAU khối `G.freeze` trong `step()`**, tức không lấy mẫu trong lúc diễn phân
+      cảnh — đóng băng thì máu ai cũng đứng yên, chụp thêm chỉ làm đường kẻ có một đoạn
+      nằm ngang giả. Khối freeze `return` sớm nên đặt sau nó là đủ, không phải gác thêm.
+   2. **Số mẫu CÓ TRẦN.** Trận phiêu lưu hay đánh tuần tự chạy rất dài; cứ 0.4 giây một
+      mẫu thì một trận 5 phút ra hơn 700 mẫu mỗi người. Chạm `RECAP_LOG_MAX` thì
+      `recapThin()` bỏ mẫu lẻ và nhân đôi bước lấy mẫu — đường cong vẫn đúng hình, chỉ
+      thưa hơn, và bộ nhớ đứng yên mãi mãi.
+   3. **Mỗi người một bước lấy mẫu riêng** (`f.hpLogGap`): người vào sân muộn ở chế độ
+      đánh tuần tự chưa đủ mẫu để phải làm thưa, đừng bắt họ thưa theo người khác.
+   4. **Chốt một mẫu CUỐI lúc ngã và lúc hết trận** — không có nó thì đường kẻ dừng ở
+      mẫu gần nhất và cú kết liễu biến mất khỏi biểu đồ.
+   Quãng đường đi và thời gian bị khống chế cũng cộng ở đây: cả hai đo bằng NHỊP nên
+   phải nằm trong một vòng chạy mỗi khung hình, và không cần biết ai gây ra. */
+const RECAP_DT=.4, RECAP_LOG_MAX=240;
+function recapThin(f){
+  const L=f.hpLog; if(!L||L.length<RECAP_LOG_MAX) return;
+  const out=[]; for(let i=0;i<L.length;i+=2) out.push(L[i]);
+  if(L.length&&out[out.length-1]!==L[L.length-1]) out.push(L[L.length-1]);
+  f.hpLog=out; f.hpLogGap*=2;
+}
+/* Một mẫu. `force` dùng cho mẫu chốt (lúc ngã / hết trận) — nó bỏ qua đồng hồ nhưng vẫn
+   không ghi trùng mốc thời gian, để hai mẫu cùng một giây không đẻ ra đoạn thẳng đứng. */
+function recapMark(f,force){
+  if(!f||f.summon) return;
+  if(!f.hpLog){ f.hpLog=[]; f.hpLogGap=RECAP_DT; }
+  const last=f.hpLog[f.hpLog.length-1];
+  if(force&&last&&Math.abs(last[0]-G.t)<1e-6){ last[1]=Math.max(0,Math.round(f.hp)); return; }
+  f.hpLog.push([+G.t.toFixed(2),Math.max(0,Math.round(f.hp)),Math.round(f.dmgDealt||0)]);
+  recapThin(f);
+}
+function recapSample(dt){
+  if(!G||G.over) return;
+  for(const f of G.fighters){
+    if(!f||f.summon) continue;
+    if(f.hpLow==null||f.hp<f.hpLow) f.hpLow=f.hp;
+    /* Bị khoá cứng: choáng, đóng băng, hay bị ghim chân bởi chiêu của người khác. Đo
+       bằng nhịp nên không phải biết ai gây ra — cùng lý do `stunFx()` không nhận `src`. */
+    if(f.alive&&(f.stun>0||f.frozen>0||(f.lock>0&&!f.summon))) f.ccTime+=dt;
+    if(f.lx!=null&&f.alive) f.dist+=Math.hypot(f.x-f.lx,f.y-f.ly);
+    f.lx=f.x; f.ly=f.y;
+    if(!f.alive) continue;
+    if(!f.hpLog){ recapMark(f); continue; }
+    f.hpLogT+=dt;
+    if(f.hpLogT>=f.hpLogGap){ f.hpLogT=0; recapMark(f); }
+  }
+}
 /* Một sổ đổ ra mảng, xếp NẶNG TRƯỚC. Bảng thông số đọc thẳng mảng này nên nó phải đã
    xếp sẵn — chụp lúc ngã thì không còn cơ hội tính lại. */
 function recapList(book){
@@ -7397,12 +7670,23 @@ function recapRow(f){
   if(!f||f.summon)return null;
   const mv=recapList(f.moves), tk=recapList(f.taken);
   const top=mv[0]||null;
+  const maxHp=Math.round(f.maxHp||1);
+  /* Máu thấp nhất chạm tới: chưa lấy mẫu lần nào (trận vừa mở) thì lấy máu hiện tại,
+     đừng để `null` lọt xuống mấy phép chia ở lớp vẽ. */
+  const low=Math.max(0,Math.round(f.hpLow==null?f.hp:f.hpLow));
   return {f, name:f.name, color:f.color||'#FFE100', team:f.team,
-    hp:Math.max(0,Math.round(f.hp)), maxHp:Math.round(f.maxHp||1),
+    hp:Math.max(0,Math.round(f.hp)), maxHp,
     dmg:Math.round(f.dmgDealt||0), taken:Math.round(f.dmgTaken||0),
     heal:Math.round(f.healGot||0),
     top:top?top.k:null, topDmg:top?top.d:0,
     hits:mv.reduce((n,m)=>n+m.n,0),
+    /* Thước đo phụ, xem `recapSample()`. `big` suy thẳng từ sổ chiêu — đòn nặng nhất
+       của cả trận là cái lớn nhất trong mấy cột `mx`, không phải nuôi thêm biến. */
+    big:mv.reduce((n,m)=>Math.max(n,m.mx),0),
+    low, lowPc:Math.round(low/Math.max(1,maxHp)*100),
+    cc:+(f.ccTime||0), dist:Math.round(f.dist||0), over:Math.round(f.overkill||0),
+    koAt:(f.koAt>=0?f.koAt:-1),
+    log:(f.hpLog||[]).slice(),
     mv, tk};
 }
 function recapFall(f){
@@ -7413,6 +7697,9 @@ function recapFall(f){
 }
 /* Gọi trong finish(), ngay cạnh compResult() — chỗ duy nhất còn đọc được đội hình vừa đánh. */
 function recapBuild(win){
+  /* Mẫu CHỐT cho người còn đứng: không có nó thì đường kẻ dừng ở mẫu gần nhất, hụt mất
+     tới 0.4 giây cuối — đúng quãng có cú kết liễu. Người đã ngã thì `defeat()` chốt rồi. */
+  for(const f of G.fighters) if(f&&!f.summon&&f.alive) recapMark(f,true);
   const rows=[];
   for(const f of G.fighters){ const r=recapRow(f); if(r&&!rows.some(x=>x.f===f)) rows.push(r); }
   for(const r of (G.recapDead||[])) if(r&&!rows.some(x=>x.f===r.f)) rows.push(r);
@@ -7446,15 +7733,24 @@ function recapPaint(){
        chứ đừng để trống một dòng. */
     const mv=r.top===null?t('rcNone')
       :`<b>${recapEsc(r.top==='\u0000basic'?t('rcBasic'):r.top)}</b> <span>${r.topDmg}</span>`;
+    /* Vạch máu thấp nhất: chỉ vẽ khi nó THẤP HƠN máu cuối trận, không thì nó trùng
+       đúng đầu mút thanh và chỉ làm rối. */
+    const low=(r.lowPc<pct)
+      ? `<u style="left:${r.lowPc}%" title="${recapEsc(t('stLow'))} ${r.lowPc}%"></u>`:'';
     return `<div class="${cls}" style="color:${recapEsc(r.color)}">`+
       `<div><div class="recapWho"><i class="recapDot" style="background:${recapEsc(r.color)}"></i>`+
       `<span class="recapNm">${recapEsc(r.name)}</span></div>`+
       `<div class="recapMv">${mv}</div></div>`+
-      `<div class="recapHp"><div class="recapBar"><i style="width:${pct}%"></i></div>`+
+      `<div class="recapHp"><div class="recapBar"><i style="width:${pct}%"></i>${low}</div>`+
       `<span class="recapHpN">${r.hp} / ${r.maxHp}</span></div>`+
       `<div class="recapN dmg${r.dmg?'':' zero'}">${r.dmg}</div>`+
       `<div class="recapN heal${r.heal?'':' zero'}">${r.heal}</div></div>`;
   }).join('');
+  /* Dải diễn biến — MỘT biểu đồ chung cho cả thẻ, không phải mỗi hàng một cái (xem ghi
+     chú CSS). Nó vẽ ĐỦ MỌI người, kể cả mấy người bị cắt khỏi trần bốn hàng: mục đích
+     của nó là so các đường với nhau. Không lưới, không trục — ở cỡ này chúng chỉ làm
+     bẩn; con số chính xác thì đã có ngay mấy cột bên trên và bảng 📊 bên dưới. */
+  const flow=recapFlow(R);
   box.innerHTML=
     `<div class="recapTop"><b>${t('rcTitle')}</b>`+
     `<span>${t('rcDur')} <i>${recapDur(R.dur)}</i></span>`+
@@ -7463,7 +7759,36 @@ function recapPaint(){
     `<div class="recapRow head"><div>${t('rcFighter')} · ${t('rcTop')}</div><div>${t('rcHp')}</div>`+
     `<div class="recapN">${t('rcDmg')}</div><div class="recapN">${t('rcHeal')}</div></div>`+
     html+
-    (du>0?`<div class="recapMore">${tf('rcMore',{n:du})}</div>`:'');
+    (du>0?`<div class="recapMore">${tf('rcMore',{n:du})}</div>`:'')+
+    flow;
+}
+/* Dải máu-theo-thời-gian của thẻ gọn. Cố ý trần trụi: chỉ có đường, dấu ✕ chỗ gục và
+   một cái nhãn bé. Thẻ này là cái liếc mắt ba giây — muốn đọc số thì bấm 📊. */
+function recapFlow(R){
+  const ser=R.rows.filter(r=>r.log&&r.log.length>1);
+  if(ser.length<1) return '';
+  const xMax=Math.max(.001,R.dur,...ser.map(r=>r.log[r.log.length-1][0]));
+  const W0=560,H0=54;
+  const X=t=>2+(W0-4)*Math.min(1,Math.max(0,t/xMax));
+  const Y=v=>3+(H0-6)*(1-Math.min(1,Math.max(0,v)));
+  let body='';
+  for(const r of ser){
+    const pts=r.log.map(p=>[p[0],p[1]/Math.max(1,r.maxHp)]);
+    body+=`<path class="chLn" d="${pts.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)).join(' ')}" `+
+      `stroke="${recapEsc(r.color)}" opacity="${r.koAt>=0?'.72':'1'}"/>`;
+    if(r.koAt>=0){
+      const kx=X(r.koAt), ky=Y(0);
+      body+=`<g class="chKo" stroke="${recapEsc(r.color)}">`+
+        `<line x1="${(kx-3.5).toFixed(1)}" y1="${(ky-3.5).toFixed(1)}" x2="${(kx+3.5).toFixed(1)}" y2="${(ky+3.5).toFixed(1)}"/>`+
+        `<line x1="${(kx+3.5).toFixed(1)}" y1="${(ky-3.5).toFixed(1)}" x2="${(kx-3.5).toFixed(1)}" y2="${(ky+3.5).toFixed(1)}"/></g>`;
+    }else{
+      const last=pts[pts.length-1];
+      body+=`<circle class="chEnd" cx="${X(last[0]).toFixed(1)}" cy="${Y(last[1]).toFixed(1)}" r="3.4" fill="${recapEsc(r.color)}"/>`;
+    }
+  }
+  return `<div class="recapFlow"><span class="recapFlowL">${t('rcFlow')}</span>`+
+    `<svg class="chSvg" viewBox="0 0 ${W0} ${H0}" preserveAspectRatio="none" `+
+    `role="img" aria-label="${recapEsc(t('rcFlow'))}">${body}</svg></div>`;
 }
 /* Bật / tắt thẻ. Chạy ở CẢ HAI trang (xưởng lẫn trang chơi) vì đây là thứ của người xem,
    không phải đồ nghề của thợ. Ba luật:
@@ -7516,17 +7841,237 @@ function stTable(list,tong,col){
     `<th>${t('stShare')}</th><th>${t('stAvg')}</th><th>${t('stMax')}</th>`+
     `</tr></thead><tbody>${rows}</tbody></table>`;
 }
+/* ---------- BIỂU ĐỒ — SVG thuần, không thư viện, không phụ thuộc gì ----------
+   Bốn dạng, mỗi dạng đúng một việc (chọn dạng theo VIỆC của dữ liệu, không theo gu):
+
+   | Việc người đọc phải làm | Dạng |
+   |---|---|
+   | máu ai tụt lúc nào, ai lật ngược thế trận | đường gấp khúc nhiều chuỗi (`chLine`) |
+   | ai dẫn về sát thương, dẫn từ lúc nào | đường gấp khúc, sát thương CỘNG DỒN |
+   | gây ra so với phải chịu, ai lời ai lỗ | thanh hai chiều quanh trục 0 (`chDiv`) |
+   | một người gây sát thương bằng những chiêu gì | thanh chồng 100% ngang (`chStack`) |
+   | hình dáng máu của MỘT người, liếc một cái | đường tí hon trong hàng (`chSpark`) |
+
+   Năm luật, vi phạm cái nào là biểu đồ nói dối hoặc không đọc được:
+
+   1. **MÀU ĐI THEO ĐẤU THỦ, không đi theo thứ hạng.** Mỗi người đã có `f.color` riêng
+      dùng khắp game (thanh máu, chấm, tên) — biểu đồ phải mượn ĐÚNG màu đó, nếu không
+      người đọc vừa học "Ginyu màu tím" ở thanh máu lại phải học lại ở biểu đồ. Vì vậy
+      KHÔNG có bảng màu phân loại riêng ở đây, và lọc bớt người thì người còn lại
+      **giữ nguyên màu**.
+   2. **MỘT TRỤC, không bao giờ hai.** Máu và sát thương cộng dồn khác đơn vị hẳn nhau
+      nên chúng là HAI biểu đồ đặt cạnh nhau, chung một dải thời gian và chung một chú
+      giải — đừng gộp vào một khung với hai thang đo, đó là cách nhanh nhất để bịa ra
+      một mối tương quan không có thật.
+   3. **Màu không bao giờ là kênh DUY NHẤT.** Chú giải luôn có; từ bốn người trở xuống
+      thì dán thẳng tên vào đầu mút đường kẻ. Đông hơn thì chú giải + tooltip lo.
+   4. **Nét mảnh, lưới chìm, KHÔNG nét đứt.** Lưới là hairline đúng một nấc sáng hơn
+      nền; nét đứt đọc ra "dự báo" hoặc "ngưỡng" trong khi nó chỉ là cái lưới.
+      `vector-effect:non-scaling-stroke` để nét không dày lên khi SVG co giãn.
+   5. **Không dán số lên từng điểm.** Chỉ dán ở đầu mút, ở chỗ gục, và trong tooltip.
+
+   Thang chồng của `chStack` là NGOẠI LỆ có chủ ý của luật 1: mấy khúc trong đó là
+   CHIÊU chứ không phải người, mà chúng đã xếp theo độ lớn nên là một thang CÓ THỨ TỰ —
+   đúng chỗ dùng một sắc độ đậm dần của chính màu người đó, không phải bảy màu khác nhau. */
+const CHS='#0B111D';                              // nền khung biểu đồ, dùng làm khe hở 2px
+/* Trộn một màu về phía nền để dựng thang đậm dần. `k`=1 là nguyên màu, 0 là chìm hẳn. */
+function chFade(hex,k){
+  const h=String(hex||'#888').replace('#','');
+  const v=h.length===3?h.split('').map(c=>c+c).join(''):h.padEnd(6,'8');
+  const n=parseInt(v.slice(0,6),16);
+  const r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  const br=11, bg=17, bb=29;                      // CHS
+  return `rgb(${Math.round(br+(r-br)*k)},${Math.round(bg+(g-bg)*k)},${Math.round(bb+(b-bb)*k)})`;
+}
+const chEsc=recapEsc;
+/* mm:ss cho trục thời gian. Nhận giây TRONG TRẬN, tự bọc rts() — đừng in thẳng (mục 1). */
+const chTime=sec=>recapDur(sec);
+/* Đường gấp khúc nhiều chuỗi.
+   `ser`: [{name,color,pts:[[giây,giá trị]…],ko:giây|-1}]
+   `o`  : {yMax, xMax, pct:true nếu trục dọc là phần trăm, id: khoá cho tooltip} */
+function chLine(ser,o){
+  const W0=560,H0=168,L=o.pct?36:44,R=14,T=12,B=22;
+  const pw=W0-L-R, ph=H0-T-B;
+  const xMax=Math.max(.001,o.xMax||1), yMax=Math.max(1,o.yMax||1);
+  const X=t=>L+pw*Math.min(1,Math.max(0,t/xMax));
+  const Y=v=>T+ph*(1-Math.min(1,Math.max(0,v/yMax)));
+  /* Lưới: bốn nấc, hairline liền nét. Nhãn trục dọc dùng chữ chìm, không dùng màu chuỗi. */
+  let g='';
+  for(let i=0;i<=4;i++){
+    const v=yMax*i/4, y=Y(v);
+    g+=`<line class="chGrid" x1="${L}" y1="${y.toFixed(1)}" x2="${W0-R}" y2="${y.toFixed(1)}"/>`+
+       `<text class="chAx chAxY" x="${L-7}" y="${(y+3.5).toFixed(1)}">${o.pct?Math.round(v)+'%':stNum(v)}</text>`;
+  }
+  for(let i=0;i<=2;i++){
+    const t=xMax*i/2, x=X(t);
+    g+=`<text class="chAx" x="${x.toFixed(1)}" y="${H0-6}" text-anchor="${i===0?'start':i===2?'end':'middle'}">${chTime(t)}</text>`;
+  }
+  /* Mỗi chuỗi một đường.
+     **KHÔNG dán tên vào đầu mút** — đã thử và bỏ: ở khổ này hai đường hay kết thúc sát
+     nhau (đo được: trong khung sát thương cộng dồn, hai tên chồng hẳn lên nhau và lên
+     cả mép phải), mà một cái nhãn bị đè hoặc bị cắt cụt còn tệ hơn là không có nhãn.
+     Danh tính vẫn KHÔNG BAO GIỜ chỉ nằm ở màu: chú giải nằm ngay một hàng phía trên cả
+     hai khung và luôn có mặt, cộng thêm tooltip gọi tên từng người khi rê chuột.
+     Muốn dựng lại nhãn đầu mút thì phải làm luôn phần đẩy nhau theo chiều dọc VÀ nới
+     lề phải đủ cho cái tên dài nhất — tên ở đây dài tới "Horikita Suzune II". */
+  let body='';
+  for(const s of ser){
+    if(!s.pts.length) continue;
+    const d=s.pts.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)).join(' ');
+    const last=s.pts[s.pts.length-1];
+    body+=`<path class="chLn" d="${d}" stroke="${chEsc(s.color)}"/>`;
+    /* Chỗ gục: một dấu ✕ nhỏ, vì "đường kẻ chạm đáy" và "đường kẻ kết thúc sớm" nhìn
+       giống hệt nhau nếu không đánh dấu. */
+    if(s.ko>=0){
+      const kx=X(s.ko), ky=Y(0);
+      body+=`<g class="chKo" stroke="${chEsc(s.color)}">`+
+        `<line x1="${(kx-4).toFixed(1)}" y1="${(ky-4).toFixed(1)}" x2="${(kx+4).toFixed(1)}" y2="${(ky+4).toFixed(1)}"/>`+
+        `<line x1="${(kx+4).toFixed(1)}" y1="${(ky-4).toFixed(1)}" x2="${(kx-4).toFixed(1)}" y2="${(ky+4).toFixed(1)}"/></g>`;
+    }else{
+      body+=`<circle class="chEnd" cx="${X(last[0]).toFixed(1)}" cy="${Y(last[1]).toFixed(1)}" r="4" fill="${chEsc(s.color)}"/>`;
+    }
+  }
+  /* Lớp rê chuột: một vạch dọc + một tooltip HTML bên ngoài SVG. Tooltip chỉ BỔ SUNG,
+     không phải cửa duy nhất đọc số — mấy ô KPI và bảng phía dưới vẫn nói đủ. */
+  return `<div class="chWrap" data-ch="${chEsc(JSON.stringify({ser:ser.map(s=>({n:s.short||s.name,c:s.color,p:s.pts})),xMax,yMax,pct:!!o.pct,L,R,T,B,W:W0,H:H0,u:o.unit||''}))}">`+
+    `<svg class="chSvg" viewBox="0 0 ${W0} ${H0}" role="img" aria-label="${chEsc(o.alt||'')}">`+
+    g+body+
+    `<line class="chCross" x1="0" y1="${T}" x2="0" y2="${T+ph}" style="display:none"/>`+
+    `<rect class="chHit" x="${L}" y="${T}" width="${pw}" height="${ph}"/>`+
+    `</svg><div class="chTip" style="display:none"></div></div>`;
+}
+/* Thanh CHỒNG 100% ngang — phần-trên-tổng. Khe hở 2px giữa hai khúc tô bằng MÀU NỀN
+   chứ không kẻ viền quanh khúc (viền làm mỗi khúc dày lên và đọc ra như một ô riêng).
+   Nhãn chỉ nằm TRONG khúc khi nó đủ chỗ; không đủ thì rơi xuống chú giải bên dưới. */
+function chStack(segs,col){
+  const tong=segs.reduce((n,x)=>n+x.v,0);
+  if(!(tong>0)) return '';
+  let off=0, bars='', keys='';
+  const n=Math.max(1,segs.length-1);
+  segs.forEach((x,i)=>{
+    const pc=x.v/tong*100;
+    /* Sàn của thang là .55 chứ không phải 0: trộn sâu hơn thế là mấy khúc cuối chìm hẳn
+       vào nền và cả nửa bên phải thanh đọc ra MỘT khối liền (đã đo mắt trên bản trước).
+       Mũ .85 để nấc đầu tách nhau rõ hơn nấc cuối — mấy khúc lớn mới là chỗ cần đọc. */
+    const c=x.color||chFade(col,1-.45*Math.pow(i/n,.85));
+    /* Khe hở 2px là khe THẬT (trừ vào bề ngang), không phải một cái bóng đổ chồng lên
+       khúc bên cạnh, và cũng không phải viền quanh khúc — viền làm mỗi khúc dày lên. */
+    bars+=`<i style="left:${off.toFixed(2)}%;width:calc(${pc.toFixed(2)}% - 2px);background:${chEsc(c)}" `+
+      `title="${chEsc(stMoveName(x.k))} · ${stNum(x.v)} (${Math.round(pc)}%)">`+
+      (pc>=17?`<b>${Math.round(pc)}%</b>`:'')+`</i>`;
+    keys+=`<span><i style="background:${chEsc(c)}"></i>${chEsc(stMoveName(x.k))} <b>${Math.round(pc)}%</b></span>`;
+    off+=pc;
+  });
+  return `<div class="chBar">${bars}</div><div class="chKeys">${keys}</div>`;
+}
+/* Thanh HAI CHIỀU quanh trục 0: phải chịu bên trái (tông nóng), gây ra bên phải (tông
+   lạnh), vạch 0 màu trung tính ở giữa. Hai cực phải đọc ra NGƯỢC NHAU — hai tông cùng
+   nóng thì mắt không tách được chiều nào là chiều nào. Chung một thang đo cho mọi
+   người, nếu không thì so hàng nọ với hàng kia là so bừa. */
+function chDiv(rows){
+  const mx=Math.max(1,...rows.map(r=>Math.max(r.dmg,r.taken)));
+  const line=rows.map(r=>{
+    const dw=r.dmg/mx*50, tw=r.taken/mx*50, net=r.dmg-r.taken;
+    return `<div class="dvRow">`+
+      `<span class="dvNm" style="color:${chEsc(r.color)}">${chEsc(r.name)}</span>`+
+      `<span class="dvTrack">`+
+        `<i class="dvL" style="width:${tw.toFixed(2)}%;right:50%"></i>`+
+        `<i class="dvR" style="width:${dw.toFixed(2)}%;left:50%"></i>`+
+        `<u class="dvZero"></u>`+
+      `</span>`+
+      `<span class="dvNet ${net>=0?'up':'dn'}">${net>=0?'+':'−'}${stNum(Math.abs(net))}</span>`+
+    `</div>`;
+  }).join('');
+  return `<div class="dvWrap">`+
+    `<div class="dvHead"><span></span><span class="dvScale">`+
+      `<b class="dvKt">${t('stTaken')} ◂</b><b class="dvKz">0</b><b class="dvKd">▸ ${t('stDealt')}</b>`+
+    `</span><span class="dvNetH">${t('stNet')}</span></div>`+
+    line+`</div>`;
+}
+/* Đường tí hon trong một hàng: MỘT chuỗi nên không cần chú giải, cái nhãn bên cạnh đã
+   nói nó là của ai.
+   **Không tô vạt bên dưới** — đã thử và bỏ: ai giữ được máu gần đầy suốt trận thì vạt
+   tô phủ gần kín ô và đọc ra một KHỐI ĐẶC chứ không ra một đường, đúng cái lỗi "mảng
+   màu dày" mà nét mảnh sinh ra để tránh. Chỉ còn nét, cộng một vạch đáy chìm để biết
+   đâu là mốc 0. */
+function chSpark(pts,color,maxHp,w,h){
+  if(!pts||pts.length<2) return '';
+  const xm=Math.max(.001,pts[pts.length-1][0]-pts[0][0]), t0=pts[0][0];
+  const X=t=>((t-t0)/xm)*(w-2)+1, Y=v=>h-1.5-(Math.min(1,Math.max(0,v/Math.max(1,maxHp))))*(h-3);
+  const d=pts.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)).join(' ');
+  return `<svg class="spk" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">`+
+    `<line class="spkBase" x1="0" y1="${h-.5}" x2="${w}" y2="${h-.5}"/>`+
+    `<path d="${d}" fill="none" stroke="${chEsc(color)}" stroke-width="1.8" `+
+    `stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
+}
+/* Gom mấy dòng chiêu thành khúc cho thanh chồng: quá `n` dòng thì phần đuôi dồn vào một
+   khúc "khác". Đẻ thêm màu cho khúc thứ chín là chắc chắn trùng với một khúc đã có. */
+function chTop(list,n){
+  if(list.length<=n) return list.map(m=>({k:m.k,v:m.d}));
+  const head=list.slice(0,n-1).map(m=>({k:m.k,v:m.d}));
+  const rest=list.slice(n-1).reduce((s,m)=>s+m.d,0);
+  head.push({k:t('stOther'),v:rest});
+  return head;
+}
+/* Thời gian trụ được: người còn sống thì tính tới hết trận. In ra mm:ss theo giây
+   NGƯỜI CHƠI như mọi con số thời gian khác. */
+function stAlive(r,dur){ return recapDur(r.koAt>=0?r.koAt:dur); }
 function statsHtml(){
   const R=G&&G.recap;
   if(!R||!R.rows.length) return `<div class="stNone">${t('statsNone')}</div>`;
   const giay=+rts(R.dur)||0;                       // giây NGƯỜI CHƠI, đừng in thẳng G.t
   const tong=R.rows.reduce((n,r)=>n+r.dmg,0);
-  const head=
-    `<div class="stTop">`+
-    `<div class="stKpi"><b>${stNum(tong)}</b><span>${t('stTotal')}</span></div>`+
-    `<div class="stKpi"><b>${recapDur(R.dur)}</b><span>${t('stDur')}</span></div>`+
-    `<div class="stKpi"><b>${R.rows.length}</b><span>${t('stFighters')}</span></div>`+
+  const donThang=R.rows.reduce((n,r)=>n+r.hits,0);
+  const bigRow=R.rows.reduce((a,r)=>(!a||r.big>a.big)?r:a,null);
+  const hoi=R.rows.reduce((n,r)=>n+r.heal,0);
+  /* ---- DÒNG ĐẦU: mấy con số dẫn dắt. Một con số thì là Ô SỐ, không phải biểu đồ
+     một cột — đây đúng chỗ dùng ô số. Con số lớn để chữ số TỈ LỆ THƯỜNG (không
+     tabular-nums): chữ số đều bề ngang ở cỡ to làm "121" nhìn rời rạc. ---- */
+  const kpi=(v,l,sub,cls)=>`<div class="stKpi${cls?' '+cls:''}"><b>${v}</b><span>${l}</span>`+
+    (sub?`<em>${sub}</em>`:'')+`</div>`;
+  const head=`<div class="stTop">`+
+    kpi(stNum(tong),t('stTotal'),tf('stPerSec',{n:giay>0?(tong/giay).toFixed(1):'0'}),'lead')+
+    kpi(recapDur(R.dur),t('stDur'),tf('stHitsN',{n:donThang}))+
+    kpi(R.rows.length,t('stFighters'),R.win?tf('stWonBy',{n:stEsc(R.win)}):'')+
+    kpi(stNum(bigRow?bigRow.big:0),t('stBig'),bigRow&&bigRow.big?stEsc(bigRow.name):'')+
+    (hoi>0?kpi(stNum(hoi),t('stHealAll'),''):'')+
     `</div>`;
+
+  /* ---- DÒNG THỜI GIAN: hai biểu đồ, MỘT trục mỗi cái, CHUNG một chú giải ----
+     Máu (%) và sát thương cộng dồn khác đơn vị hẳn nhau nên chúng không bao giờ được
+     chồng lên một khung với hai thang đo — xem luật 2 ở khối biểu đồ. */
+  const coLog=R.rows.some(r=>r.log&&r.log.length>1);
+  let flow='';
+  if(coLog){
+    const xMax=Math.max(R.dur,...R.rows.map(r=>r.log.length?r.log[r.log.length-1][0]:0));
+    const hpSer=R.rows.filter(r=>r.log&&r.log.length>1).map(r=>({
+      name:r.name, short:r.name, color:r.color, ko:r.koAt,
+      pts:r.log.map(p=>[p[0],p[1]/Math.max(1,r.maxHp)*100])}));
+    const dmSer=R.rows.filter(r=>r.log&&r.log.length>1).map(r=>({
+      name:r.name, short:r.name, color:r.color, ko:-1,
+      pts:r.log.map(p=>[p[0],p[2]])}));
+    const dmMax=Math.max(1,...R.rows.map(r=>r.dmg));
+    /* Chú giải nằm MỘT HÀNG phía trên cả hai biểu đồ, không nhét vào trong từng khung:
+       hai biểu đồ dùng chung đúng một bộ chuỗi nên hai chú giải là thừa và dễ lệch. */
+    const legend=`<div class="chLeg">`+R.rows.map(r=>
+      `<span class="chChip${r.koAt>=0?' ko':''}"><i style="background:${stEsc(r.color)}"></i>`+
+      `${stEsc(r.name)}</span>`).join('')+`</div>`;
+    flow=`<section class="stSec"><h3 class="stSecH">${t('stFlowH')}<em>${t('stFlowSub')}</em></h3>`+
+      legend+
+      `<div class="stCharts">`+
+      `<figure class="chFig"><figcaption>${t('stHpFlow')}</figcaption>`+
+      chLine(hpSer,{xMax,yMax:100,pct:true,unit:'%',alt:t('stHpFlow')})+`</figure>`+
+      `<figure class="chFig"><figcaption>${t('stDmgFlow')}</figcaption>`+
+      chLine(dmSer,{xMax,yMax:dmMax,alt:t('stDmgFlow')})+`</figure>`+
+      `</div></section>`;
+  }
+
+  /* ---- CÁN CÂN: gây ra so với phải chịu, chung một thang đo cho mọi người ---- */
+  const trade=R.rows.length?
+    `<section class="stSec"><h3 class="stSecH">${t('stTradeH')}<em>${t('stTradeSub')}</em></h3>`+
+    chDiv(R.rows)+`</section>`:'';
+
+  /* ---- TỪNG ĐẤU THỦ ---- */
   const body=R.rows.map(r=>{
     const pct=Math.max(0,Math.min(100,Math.round(r.hp/Math.max(1,r.maxHp)*100)));
     const dps=giay>0?r.dmg/giay:0;
@@ -7534,11 +8079,19 @@ function statsHtml(){
     const tag=r.hp<=0?`<i class="stTag ko">${t('stKo')}</i>`
       :(R.win&&r.name===R.win?`<i class="stTag win">${t('stWin')}</i>`
       :`<i class="stTag">${t('stAlive')}</i>`);
+    /* Máu thấp nhất chạm tới, vẽ thành một vạch trên chính thanh máu: "thắng nhưng có
+       lúc chỉ còn 6%" là nửa còn lại của câu chuyện mà con số máu cuối không kể được. */
+    const lowMark=r.lowPc<pct
+      ? `<u class="stLow" style="left:${r.lowPc}%" title="${stEsc(t('stLow'))} ${r.lowPc}%"></u>`:'';
+    const spark=chSpark(r.log,r.color,r.maxHp,150,30);
+    const comp=r.mv.length?chStack(chTop(r.mv,6),r.color):'';
     return `<section class="stCard" style="--c:${stEsc(r.color)}">`+
       `<header class="stHead"><i class="stDot"></i>`+
       `<b class="stName">${stEsc(r.name)}</b>${tag}`+
-      `<span class="stHp"><i style="width:${pct}%"></i></span>`+
-      `<span class="stHpN">${stNum(r.hp)} / ${stNum(r.maxHp)}</span></header>`+
+      `<span class="stHp"><i style="width:${pct}%"></i>${lowMark}</span>`+
+      `<span class="stHpN">${stNum(r.hp)} / ${stNum(r.maxHp)}</span>`+
+      (spark?`<span class="stSpark" title="${stEsc(t('stHpFlow'))}">${spark}</span>`:'')+
+      `</header>`+
       `<div class="stKpis">`+
       `<div><b class="kDmg">${stNum(r.dmg)}</b><span>${t('stDealt')}</span></div>`+
       `<div><b class="kTake">${stNum(r.taken)}</b><span>${t('stTaken')}</span></div>`+
@@ -7546,17 +8099,67 @@ function statsHtml(){
       `<div><b>${dps.toFixed(1)}</b><span>${t('stDps')}</span></div>`+
       `<div><b>${r.hits}</b><span>${t('stHits')}</span></div>`+
       `<div><b>${r.hits?stNum(r.dmg/r.hits):0}</b><span>${t('stAvgHit')}</span></div>`+
+      `<div><b>${stNum(r.big)}</b><span>${t('stBig')}</span></div>`+
+      `<div><b class="kLow">${r.lowPc}%</b><span>${t('stLow')}</span></div>`+
+      `<div><b>${stAlive(r,R.dur)}</b><span>${t('stSurv')}</span></div>`+
+      `<div><b>${(+rts(r.cc)).toFixed(1)}s</b><span>${t('stCc')}</span></div>`+
+      `<div><b>${stNum(r.dist)}</b><span>${t('stDist')}</span></div>`+
+      `<div><b class="${r.over?'kOver':''}">${stNum(r.over)}</b><span>${t('stOver')}</span></div>`+
       `</div>`+
+      (comp?`<h4 class="stSub">${t('stCompH')}</h4>${comp}`:'')+
       `<h4 class="stSub">${t('stOutH')}</h4>${stTable(r.mv,r.dmg,r.color)}`+
-      `<h4 class="stSub">${t('stInH')}</h4>${stTable(r.tk,tkTong,'#FF7A7A')}`+
+      `<h4 class="stSub">${t('stInH')}</h4>${stTable(r.tk,tkTong,'#FF6B8B')}`+
       `</section>`;
   }).join('');
-  return head+body;
+  return head+flow+trade+`<div class="stGrid">${body}</div>`;
+}
+/* ---------- Lớp rê chuột của biểu đồ đường ----------
+   Tooltip chỉ BỔ SUNG chứ không phải cửa duy nhất đọc số: mọi giá trị đều đã có ở ô KPI
+   và ở mấy bảng bên dưới. Gắn một lần sau mỗi lượt vẽ, và gắn THẲNG vào `.chWrap` chứ
+   đừng nghe ở `document` — bảng đóng mở liên tục, để lại listener trên document là rò. */
+function chBind(root){
+  for(const w of root.querySelectorAll('.chWrap')){
+    let D=null;
+    try{ D=JSON.parse(w.dataset.ch||'null'); }catch(e){ D=null; }
+    if(!D) continue;
+    const svg=w.querySelector('.chSvg'), cross=w.querySelector('.chCross'), tip=w.querySelector('.chTip');
+    const pw=D.W-D.L-D.R;
+    const off=()=>{ cross.style.display='none'; tip.style.display='none'; };
+    const on=ev=>{
+      const b=svg.getBoundingClientRect();
+      if(!b.width) return;
+      /* Quy toạ độ màn hình về hệ của viewBox rồi mới về giây — SVG co giãn nên đừng
+         lấy thẳng pixel màn hình làm đơn vị. */
+      const vx=(ev.clientX-b.left)/b.width*D.W;
+      const k=Math.min(1,Math.max(0,(vx-D.L)/pw)), tt=k*D.xMax;
+      cross.setAttribute('x1',(D.L+k*pw).toFixed(1));
+      cross.setAttribute('x2',(D.L+k*pw).toFixed(1));
+      cross.style.display='';
+      const hang=D.ser.map(sr=>{
+        if(!sr.p.length) return null;
+        let best=sr.p[0];
+        for(const pt of sr.p){ if(Math.abs(pt[0]-tt)<Math.abs(best[0]-tt)) best=pt; }
+        return {n:sr.n,c:sr.c,v:best[1]};
+      }).filter(Boolean).sort((a,b)=>b.v-a.v);
+      tip.innerHTML=`<b>${chTime(tt)}</b>`+hang.map(h=>
+        `<span><i style="background:${chEsc(h.c)}"></i>${chEsc(h.n)}`+
+        `<em>${D.pct?Math.round(h.v)+'%':stNum(h.v)}</em></span>`).join('');
+      tip.style.display='';
+      /* Giữ tooltip trong lòng khung: sát mép phải thì lật sang trái con trỏ. */
+      const px=b.left===0?0:(ev.clientX-w.getBoundingClientRect().left);
+      const tw=tip.offsetWidth||140, ww=w.clientWidth||D.W;
+      tip.style.left=Math.max(4,Math.min(ww-tw-4,px-tw/2))+'px';
+    };
+    w.addEventListener('pointermove',on);
+    w.addEventListener('pointerleave',off);
+    w.addEventListener('pointercancel',off);
+  }
 }
 function statsPaint(){
   const box=document.getElementById('statsBody');
   if(!box) return;
   box.innerHTML=statsHtml();
+  chBind(box);                            // lớp rê chuột phải gắn LẠI sau mỗi lượt vẽ
   const h=document.getElementById('statsTitle'), sub=document.getElementById('statsSub');
   if(h) h.innerHTML=t('statsH');
   if(sub) sub.textContent=t('statsSub');
@@ -7677,6 +8280,10 @@ function hurt(t,amt,src,crit,kind,tint,raw,accuracyMul){
   {
     const got=Math.min(amt,t.hp);
     if(cred&&!cred.summon) cred.dmgDealt=(cred.dmgDealt||0)+got;
+    /* Phần đòn thừa lúc kết liễu. `dmgDealt` cố ý KHÔNG tính nó (nếu không thì một cú
+       ultimate vào người còn 5 máu cũng cộng cả trăm điểm hiệu số của giải), nhưng nó
+       vẫn là một con số đáng đọc: bổ quá tay bao nhiêu thì bấy nhiêu sát thương đổ đi. */
+    if(cred&&!cred.summon&&amt>got) cred.overkill=(cred.overkill||0)+(amt-got);
     /* Sổ của Match Recap — cùng một con số, cùng một cửa, nên tổng sổ chiêu luôn khớp
        `dmgDealt`. Đừng ghi ở chỗ nào khác. */
     recapHit(cred&&!cred.summon?cred:null,t,got,crit,kind);
@@ -7810,7 +8417,9 @@ function defeat(t,src){
   if(!t||!t.alive)return;
   t.alive=false; t.hp=0;
   /* Chụp hàng của Match Recap NGAY lúc ngã: đánh tuần tự gỡ hẳn cái xác khỏi G.fighters
-     và finish() gỡ đồng minh, đọc ngược sau trận là mất hàng. */
+     và finish() gỡ đồng minh, đọc ngược sau trận là mất hàng. Mốc gục và mẫu CUỐI của
+     dòng thời gian phải ghi TRƯỚC `recapFall()` — hàng chụp xong là không sửa được nữa. */
+  t.koAt=G.t; t.hpLow=0; recapMark(t,true);
   recapFall(t);
   /* Phiêu lưu: ăn điểm NGAY lúc con đó gục, không đợi hết màn — thua giữa màn vẫn giữ được
      phần đã farm, nên đánh lại không mất trắng. */
@@ -15821,6 +16430,9 @@ function step(dt){
     G.cam.x+=(W/2-G.cam.x)*Math.min(1,dt*3);
     G.cam.y+=(H/2-G.cam.y)*Math.min(1,dt*3);
   }
+  /* Dòng thời gian của Match Recap. Đặt SAU khối `G.freeze` ở trên (khối đó return sớm)
+     nên phân cảnh không sinh ra mẫu giả. */
+  recapSample(dt);
 
   for(const f of G.fighters){
     if(f.key==='sakura'&&!f.summon&&f.alive&&!f.swapAs) sakuraTick(f,dt);
