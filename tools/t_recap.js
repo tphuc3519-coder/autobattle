@@ -162,6 +162,22 @@ const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if 
     ok(r.pe === 'none', 'cả khối pointer-events:none — không chặn dải nút bên dưới');
     ok(r.z < 65, `z-index ${r.z} nằm DƯỚI dải nút (.arcOver = 65)`);
     ok(r.anim === '1', 'cú hiện ra chạy đúng MỘT lần, không animation lặp mãi (mục 9)');
+
+    /* Dải diễn biến của thẻ gọn: MỘT biểu đồ chung, không phải mỗi hàng một cái. Gắn
+       vào từng hàng thì thẻ cao thêm chừng 12px mỗi hàng, mà cái đáng đọc lại là so
+       các đường VỚI NHAU. */
+    const fl = await page.evaluate(() => {
+      const box = document.getElementById('recapCard');
+      return {
+        strip: box.querySelectorAll('.recapFlow').length,
+        svg: box.querySelectorAll('.recapFlow .chSvg').length,
+        paths: box.querySelectorAll('.recapFlow .chLn').length,
+        h: box.getBoundingClientRect().height
+      };
+    });
+    ok(fl.strip === 1 && fl.svg === 1, 'thẻ gọn có ĐÚNG MỘT dải diễn biến chung cho cả thẻ');
+    ok(fl.paths >= 1, `dải đó vẽ ra đường thật (${fl.paths})`);
+    ok(fl.h < 320, `thêm dải mà thẻ vẫn GỌN: ${Math.round(fl.h)}px`);
   }
 
   // 8. Đổi ngôn ngữ thì nhãn đổi, TÊN CHIÊU giữ nguyên (luật TÊN RIÊNG, mục 2f).
@@ -236,6 +252,50 @@ const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if 
     // Tên chiêu phải ĐỌC RA ĐƯỢC, không phải một đống 'undefined' hay khoá rỗng
     const xau = r.some(x => x.mv.some(m => !m[0] || m[0] === 'undefined' || m[0] === 'null'));
     ok(!xau, 'không có tên chiêu nào ra undefined / rỗng');
+
+    /* ---- DÒNG THỜI GIAN nuôi mấy biểu đồ: đo trong một trận THẬT ---- */
+    const tl = await page.evaluate(() => {
+      const G = window.__G(), M = G.fighters.filter(f => !f.summon);
+      return {
+        t: G.t, gap: window.__RECAP_DT, cap: window.__RECAP_LOG_MAX,
+        f: M.map(f => ({
+          n: f.name, len: (f.hpLog || []).length,
+          t0: f.hpLog && f.hpLog.length ? f.hpLog[0][0] : -1,
+          tz: f.hpLog && f.hpLog.length ? f.hpLog[f.hpLog.length - 1][0] : -1,
+          /* mốc thời gian phải TĂNG DẦN và máu không bao giờ âm hay vượt trần */
+          tang: (f.hpLog || []).every((p, i, A) => i === 0 || p[0] >= A[i - 1][0]),
+          hpOk: (f.hpLog || []).every(p => p[1] >= 0 && p[1] <= f.maxHp),
+          /* sát thương cộng dồn thì chỉ được TĂNG, không bao giờ tụt */
+          dmgTang: (f.hpLog || []).every((p, i, A) => i === 0 || p[2] >= A[i - 1][2]),
+          low: f.hpLow, hp: f.hp, cc: f.ccTime, dist: f.dist
+        }))
+      };
+    });
+    for (const f of tl.f) {
+      ok(f.len > 3, `${f.n}: có chụp dòng thời gian (${f.len} mẫu trong ${tl.t.toFixed(1)}s trong trận)`);
+      ok(f.len <= tl.cap + 2, `${f.n}: số mẫu có TRẦN (${f.len} ≤ ${tl.cap}) — trận dài không phình bộ nhớ`);
+      ok(f.tang, `${f.n}: mốc thời gian tăng dần`);
+      ok(f.hpOk, `${f.n}: máu trong mẫu không âm, không vượt trần`);
+      ok(f.dmgTang, `${f.n}: sát thương cộng dồn chỉ tăng, không bao giờ tụt`);
+      ok(f.tz > 0 && Math.abs(f.tz - tl.t) < 2,
+        `${f.n}: mẫu cuối bám sát hiện tại (${f.tz.toFixed(1)} / ${tl.t.toFixed(1)})`);
+      ok(f.low != null && f.low <= f.hp + 1,
+        `${f.n}: máu thấp nhất (${Math.round(f.low)}) không cao hơn máu hiện tại (${Math.round(f.hp)})`);
+      ok(f.dist > 0, `${f.n}: có đo quãng đường đi (${Math.round(f.dist)}px)`);
+      ok(f.cc >= 0, `${f.n}: thời gian bị khống chế đọc ra được (${f.cc.toFixed(2)}s)`);
+    }
+    /* Làm thưa: nhồi quá trần thì mảng phải CO LẠI và bước lấy mẫu nhân đôi, chứ không
+       cắt cụt mất đoạn đầu — đoạn đầu chính là lúc trận còn đang mở. */
+    const thin = await page.evaluate(() => {
+      const G = window.__G(), f = G.fighters.find(x => !x.summon);
+      const cap = window.__RECAP_LOG_MAX;
+      const t0 = f.hpLog[0][0], gap0 = f.hpLogGap;
+      for (let i = 0; i < cap + 40; i++) { G.t += .4; window.__recapMark(f); }
+      return { len: f.hpLog.length, cap, gap0, gap: f.hpLogGap, t0, keptT0: f.hpLog[0][0] };
+    });
+    ok(thin.len <= thin.cap, `nhồi quá trần thì mảng co lại (${thin.len} ≤ ${thin.cap})`);
+    ok(thin.gap > thin.gap0, `bước lấy mẫu nhân lên theo (${thin.gap0} → ${thin.gap})`);
+    ok(Math.abs(thin.keptT0 - thin.t0) < .01, 'và vẫn giữ mẫu ĐẦU TIÊN — đoạn mở trận không bị cắt');
   }
   ok(errors.length === 0, `trận 2 không lỗi trang (${errors.length})`);
   await browser.close();
@@ -289,8 +349,15 @@ const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if 
       for (let i = 0; i < 4; i++) hurt(k, 30, c, false);              // ChiChi đấm lại
       hurt(k, 45, c, 'FLYING KICK!', 'big');
       window.__recapHeal(k, 60);
-      G.t = 40; G.k.hp = 512; G.c.hp = 0;
-      window.__finish(G.k);
+      /* Dòng thời gian: chạy TAY recapSample() qua mấy mốc thay vì ghim thẳng hp rồi
+         gọi finish(). Ghim thẳng thì sổ không có mẫu nào và mấy phép đo bên dưới (vạch
+         máu thấp nhất, dấu ✕ chỗ gục) đo phải một trận chưa từng diễn ra. */
+      for (const [tt, ka, kb] of [[0, 800, 800], [9, 700, 540], [18, 600, 300],
+                                  [27, 470, 140], [36, 512, 60]]) {
+        G.t = tt; k.hp = ka; c.hp = kb; window.__recapSample(.4);
+      }
+      G.t = 40; k.hp = 512; c.hp = 0;
+      window.__defeat(c, k);            // qua ĐÚNG cửa thật: đặt koAt, chốt mẫu cuối, rồi finish()
     });
     const r = await page.evaluate(() => {
       const R = window.__G().recap, a = R.rows[0], b = R.rows[1];
@@ -332,19 +399,77 @@ const ok = (dk, msg) => { console.log(`${dk ? ' dat  ' : ' HONG '} ${msg}`); if 
         tabs: box.querySelectorAll('.stTab').length,
         lines: box.querySelectorAll('.stTab tbody tr').length,
         kpi: box.querySelectorAll('.stTop .stKpi').length,
+        lead: box.querySelectorAll('.stTop .stKpi.lead').length,
+        // biểu đồ: hai đường (máu · sát thương cộng dồn) + thanh hai chiều + thanh chồng
+        lines: 0,
+        svg: box.querySelectorAll('.chFig .chSvg').length,
+        paths: box.querySelectorAll('.chFig .chLn').length,
+        ko: box.querySelectorAll('.chFig .chKo').length,
+        leg: box.querySelectorAll('.chLeg .chChip').length,
+        dv: box.querySelectorAll('.dvRow').length,
+        dvZero: box.querySelectorAll('.dvRow .dvZero').length,
+        stack: box.querySelectorAll('.chBar').length,
+        spark: box.querySelectorAll('.stSpark .spk').length,
+        lowMk: box.querySelectorAll('.stHp .stLow').length,
+        dash: [...box.querySelectorAll('.chFig line,.chFig path')]
+          .some(e => (e.getAttribute('stroke-dasharray') || '') !== ''),
         txt: box.textContent.replace(/\s+/g, ' ')
       };
     });
+    v.lines = await page.evaluate(() =>
+      document.getElementById('statsBoard').querySelectorAll('.stTab tbody tr').length);
     ok(v.on, 'statsOpen() mở bảng ra');
     ok(v.rows === 2, `mỗi đấu thủ một khối (${v.rows})`);
     ok(v.tabs === 4, `mỗi người hai bảng: gây ra và phải chịu (${v.tabs})`);
     ok(v.lines === 10, `đủ mọi dòng chiêu của cả hai chiều (${v.lines})`);
-    ok(v.kpi === 3, `dòng tổng quan có ${v.kpi} ô (tổng dmg · thời lượng · số đấu thủ)`);
+    ok(v.kpi === 5, `dòng tổng quan có ${v.kpi} ô (tổng · thời lượng · đấu thủ · đòn nặng nhất · tổng hồi)`);
+    ok(v.lead === 1, 'đúng MỘT ô được nhấn làm ô dẫn dắt, không phải ô nào cũng vàng');
     ok(/498/.test(v.txt), 'in ra TỔNG sát thương cả trận (333 + 165 = 498)');
     ok(/RASENGAN/.test(v.txt) && /Basic Attack|Đòn thường/.test(v.txt),
       'tên chiêu in ra, đòn thường thì dịch');
     ok(/0:40/.test(v.txt), 'thời lượng bọc rts() — 0:40');
     ok(/8\.3/.test(v.txt) && /4\.1/.test(v.txt), 'có cột sát thương mỗi giây (333/40 và 165/40)');
+
+    // 13b. BIỂU ĐỒ — có vẽ ra thật, và vẽ đúng dạng cho đúng việc
+    ok(v.svg === 2, `dòng thời gian là HAI khung riêng (${v.svg}) — máu và sát thương `
+      + 'khác đơn vị nên không bao giờ chung một khung hai thang đo');
+    ok(v.paths >= 4, `đủ đường cho cả hai người ở cả hai khung (${v.paths})`);
+    ok(v.ko >= 1, `người gục có dấu ✕ trên đường kẻ (${v.ko}) — "chạm đáy" và "kết thúc sớm" `
+      + 'nhìn giống hệt nhau nếu không đánh dấu');
+    ok(v.leg === 2, `chú giải MỘT hàng dùng chung cho cả hai khung (${v.leg} chip)`);
+    ok(!v.dash, 'lưới và trục là nét LIỀN, không nét đứt');
+    ok(v.dv === 2, `thanh hai chiều: mỗi người một hàng (${v.dv})`);
+    ok(v.dvZero === 2, 'mỗi hàng có vạch 0 ở giữa để đọc được chiều nào là chiều nào');
+    ok(v.stack === 2, `mỗi người một thanh chồng "sát thương đến từ đâu" (${v.stack})`);
+    ok(v.spark === 2, `mỗi thẻ đấu thủ có một đường tí hon (${v.spark})`);
+    ok(v.lowMk >= 1, `thanh máu có vạch "thấp nhất chạm tới" (${v.lowMk})`);
+
+    // 13c. mấy thước đo MỚI có in ra
+    const th = await page.evaluate(() => {
+      const box = document.getElementById('statsBoard');
+      const lab = [...box.querySelectorAll('.stKpis span')].map(e => e.textContent);
+      return { lab, n: box.querySelectorAll('.stCard:first-child .stKpis>div').length };
+    });
+    ok(th.n === 12, `mỗi đấu thủ có ${th.n} ô số`);
+    for (const k of ['Biggest hit', 'Lowest HP', 'Survived', 'Time stunned', 'Distance run', 'Overkill'])
+      ok(th.lab.includes(k), `ô số mới: ${k}`);
+
+    // 13d. rê chuột lên biểu đồ thì ra vạch dọc + tooltip, và nó BỎ SUNG chứ không
+    //      phải cửa duy nhất đọc số (mấy ô KPI ở trên vẫn nói đủ)
+    const hv = await page.evaluate(async () => {
+      const w = document.querySelector('#statsBoard .chWrap');
+      const b = w.getBoundingClientRect();
+      w.dispatchEvent(new PointerEvent('pointermove',
+        { clientX: b.left + b.width * .5, clientY: b.top + b.height * .5, bubbles: true }));
+      const tip = w.querySelector('.chTip'), cross = w.querySelector('.chCross');
+      const hien = tip.style.display !== 'none' && cross.style.display !== 'none';
+      const txt = tip.textContent;
+      w.dispatchEvent(new PointerEvent('pointerleave', { bubbles: true }));
+      return { hien, txt, tat: tip.style.display === 'none' };
+    });
+    ok(hv.hien, 'rê chuột: hiện vạch dọc và tooltip');
+    ok(/:/.test(hv.txt), `tooltip nói rõ mốc thời gian ("${hv.txt.slice(0, 28)}…")`);
+    ok(hv.tat, 'rời chuột ra thì tắt');
 
     // 14. đóng lại được, và thẻ gọn nhường chỗ lúc bảng đang mở
     const c = await page.evaluate(() => {

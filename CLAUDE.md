@@ -4158,7 +4158,7 @@ node tools/t_sakura.js # Haruno Sakura (93 mục): nội tại giảm 70% thời
 node tools/t_sak_balance.js  # cân bằng Sakura: đánh với cả 13 đối thủ, in tỉ lệ thắng kèm MÁU
                         # CÒN LẠI lúc thắng — con số thứ hai mới nói trận đó sát nút hay một
                         # chiều. Bản sao của t_bea_balance.js, chỉ đổi người được đo.
-node tools/t_recap.js   # MATCH RECAP: thẻ tổng kết sau trận. Suốt trận thẻ TẮT (sàn vẫn thoáng),
+node tools/t_recap.js   # MATCH RECAP (128 mục): thẻ tổng kết sau trận. Suốt trận thẻ TẮT (sàn vẫn thoáng),
                         # sổ chiêu cộng lại KHỚP dmgDealt cả trên số ghim lẫn trong trận thật,
                         # recapMove() tra đúng bốn nấc (nhãn băng-rôn > MOVE_TAG > kind > đòn
                         # thường, và crit=true không biến thành tên chiêu), hồi máu chỉ ghi
@@ -4171,7 +4171,17 @@ node tools/t_recap.js   # MATCH RECAP: thẻ tổng kết sau trận. Suốt tr�
                         # sổ PHẢI CHỊU soi gương sổ gây ra, bảng liệt kê ĐỦ MỌI chiêu xếp
                         # nặng trước (lõi và rìa cùng vụ nổ thì gộp, còn sát thương duy trì
                         # thì tách dòng riêng), nút 📊 nằm NGANG HÀNG với 🏠 trong dải nút
-                        # sau trận, bấm là mở và dải nút nhường chỗ, ✕ đóng lại
+                        # sau trận, bấm là mở và dải nút nhường chỗ, ✕ đóng lại;
+                        # DÒNG THỜI GIAN: đo trong trận THẬT — mốc tăng dần, máu không âm
+                        # không vượt trần, sát thương cộng dồn chỉ tăng, mẫu cuối bám sát
+                        # hiện tại, có đo quãng đường và thời gian bị khống chế, và nhồi
+                        # quá trần thì mảng CO LẠI + bước lấy mẫu nhân đôi mà vẫn giữ mẫu
+                        # đầu tiên; BIỂU ĐỒ: máu và sát thương là HAI khung riêng (không
+                        # bao giờ một khung hai thang đo), chú giải MỘT hàng dùng chung,
+                        # người gục có dấu ✕, lưới nét LIỀN, thanh hai chiều có vạch 0,
+                        # mỗi thẻ một thanh chồng + một đường tí hon, rê chuột ra vạch dọc
+                        # và tooltip gọi tên; và sáu ô số mới (đòn nặng nhất · máu thấp
+                        # nhất · trụ được · bị khống chế · quãng đường · đòn thừa)
 node tools/t_gin_balance.js  # cân bằng Captain Ginyu. Chỗ phải viết riêng: THẮNG THUA TÍNH
                         # THEO HỒN (`f.gnSoul||f.key`) — sau cú CHANGE thì object mang
                         # key:'ginyu' có thể đang do hồn đối thủ điều khiển, đọc f.key là đo
@@ -4560,6 +4570,157 @@ rồi **MỖI đấu thủ một khối** — không có trần hàng như thẻ
 - Nhãn đi qua `t()`, **tên chiêu giữ nguyên** ở cả hai ngôn ngữ; `applyLang()` vẽ lại bảng
   khi nó đang mở.
 
+### Dòng thời gian — thứ nuôi mấy biểu đồ
+
+Sổ chiêu nói được *"bằng chiêu gì"* nhưng không nói được *"lúc nào"*, mà câu hỏi **vì sao
+thắng** thì phần lớn nằm ở dòng thời gian: ai dẫn trước, ai lật ngược, ai tụt xuống sát đáy
+rồi bò lên. `recapSample(dt)` vì vậy chụp mỗi `RECAP_DT` = **0.4 giây TRONG TRẬN** một mẫu
+`[t, hp, dmg dồn]` cho từng đấu thủ chính, vào `f.hpLog`.
+
+| Ghi ở đâu | Ghi cái gì |
+|---|---|
+| `recapSample(dt)`, gọi trong `step()` **sau khối `G.freeze`** | mẫu dòng thời gian · `hpLow` · `ccTime` · `dist` |
+| `hurt()`, ngay dưới dòng cộng `dmgDealt` | `overkill` — phần đòn thừa lúc kết liễu |
+| `defeat()`, **TRƯỚC `recapFall()`** | `koAt` + mẫu CHỐT (`recapMark(t,true)`) |
+| `recapBuild()` | mẫu CHỐT cho người còn đứng |
+
+Bốn luật, đừng bỏ cái nào:
+
+1. **Gọi SAU khối `G.freeze` trong `step()`** — khối đó `return` sớm nên đặt sau nó là đủ,
+   không phải gác thêm. Lấy mẫu trong lúc diễn phân cảnh thì máu ai cũng đứng yên, chụp
+   thêm chỉ đẻ ra một đoạn nằm ngang giả trên biểu đồ.
+2. **Số mẫu CÓ TRẦN** (`RECAP_LOG_MAX` = 240). Trận phiêu lưu hay đánh tuần tự chạy rất
+   dài; cứ 0.4 giây một mẫu thì một trận năm phút ra hơn 700 mẫu **mỗi người**. Chạm trần
+   thì `recapThin()` bỏ mẫu lẻ và **nhân đôi bước lấy mẫu** — đường cong vẫn đúng hình,
+   chỉ thưa hơn, và bộ nhớ đứng yên mãi mãi. Nó **giữ mẫu ĐẦU TIÊN**, vì đoạn mở trận là
+   đoạn đáng đọc nhất.
+3. **Mỗi người một bước lấy mẫu riêng** (`f.hpLogGap`): người vào sân muộn ở chế độ đánh
+   tuần tự chưa đủ mẫu để phải làm thưa, đừng bắt họ thưa theo người khác.
+4. **Mẫu CHỐT lúc ngã và lúc hết trận.** Không có nó thì đường kẻ dừng ở mẫu gần nhất,
+   hụt tới 0.4 giây cuối — đúng quãng có cú kết liễu.
+
+`ccTime` và `dist` cũng cộng ở đây vì cả hai đo bằng NHỊP nên phải nằm trong một vòng chạy
+mỗi khung hình, và **không cần biết ai gây ra** — đó là lý do chúng không phải bọc hơn tám
+chục chỗ gọi như `recapHit()`.
+
+> **`koAt` và mẫu chốt phải ghi TRƯỚC `recapFall()`** — hàng chụp xong là không sửa được
+> nữa. Ghi sau thì biểu đồ mất dấu ✕ chỗ gục và vạch máu thấp nhất, mà không có gì báo lỗi.
+
+### Sáu thước đo phụ
+
+| Ô | Là gì | Lấy ở đâu |
+|---|---|---|
+| **Đòn nặng nhất** | cú đau nhất cả trận | suy từ cột `mx` của sổ chiêu, **không nuôi thêm biến** |
+| **Máu thấp nhất** | tụt sâu nhất tới đâu — nửa còn lại của câu chuyện mà máu cuối trận không kể | `f.hpLow` |
+| **Trụ được** | gục ở giây thứ mấy; còn sống thì tính tới hết trận | `f.koAt` |
+| **Bị khống chế** | tổng thời gian không cử động được (choáng · đóng băng · bị ghim chân) | `f.ccTime` |
+| **Quãng đường** | chạy bao nhiêu pixel — đọc ra ai đuổi ai, ai đứng ì | `f.dist` |
+| **Đòn thừa** | phần sát thương đổ đi vì bổ quá tay lúc kết liễu | `f.overkill` |
+
+> **`dmgDealt` cố ý KHÔNG tính đòn thừa** (nếu không thì một cú ultimate vào người còn 5
+> máu cũng cộng cả trăm điểm hiệu số của giải — luật cũ ở mục 2c-bis). `overkill` là một sổ
+> RIÊNG, đừng gộp lại.
+
+### Biểu đồ — SVG thuần, năm luật
+
+Bốn dạng, mỗi dạng đúng một việc. **Chọn dạng theo VIỆC của dữ liệu, không theo gu:**
+
+| Việc người đọc phải làm | Dạng | Ở đâu |
+|---|---|---|
+| máu ai tụt lúc nào, ai lật ngược thế trận | đường nhiều chuỗi (`chLine`) | bảng 📊 + dải dưới thẻ gọn |
+| ai dẫn về sát thương, dẫn từ lúc nào | đường nhiều chuỗi, sát thương CỘNG DỒN | bảng 📊 |
+| gây ra so với phải chịu, ai lời ai lỗ | thanh hai chiều quanh trục 0 (`chDiv`) | bảng 📊 |
+| một người gây sát thương bằng những chiêu gì | thanh chồng 100% ngang (`chStack`) | thẻ từng đấu thủ |
+| hình dáng máu của MỘT người, liếc một cái | đường tí hon (`chSpark`) | góc thẻ đấu thủ |
+
+1. **MÀU ĐI THEO ĐẤU THỦ, KHÔNG đi theo thứ hạng.** Mỗi người đã có `f.color` riêng dùng
+   khắp game (thanh máu, chấm, tên) — biểu đồ mượn ĐÚNG màu đó. Vì vậy **không có bảng màu
+   phân loại riêng** ở khu này, và lọc bớt người thì người còn lại **giữ nguyên màu**.
+   Ngoại lệ duy nhất là `chStack`: mấy khúc trong đó là CHIÊU chứ không phải người, mà
+   chúng đã xếp theo độ lớn nên là một thang CÓ THỨ TỰ — đúng chỗ dùng một sắc độ đậm dần
+   của chính màu người đó (`chFade`), không phải bảy màu khác nhau.
+2. **MỘT TRỤC, không bao giờ hai.** Máu và sát thương cộng dồn khác đơn vị hẳn nhau nên
+   chúng là **HAI khung đặt cạnh nhau**, chung dải thời gian và chung một chú giải. Nhét
+   vào một khung với hai thang đo là cách nhanh nhất để bịa ra một mối tương quan không có
+   thật — `t_recap.js` đếm thẳng số khung để chắc không ai gộp lại.
+3. **Màu không bao giờ là kênh DUY NHẤT.** Chú giải luôn có mặt, nằm **một hàng phía trên
+   cả hai khung** (chung một bộ chuỗi thì hai chú giải là thừa và dễ lệch), cộng tooltip
+   gọi tên từng người khi rê chuột. Người đã gục thì chip chú giải xám lại và mang dấu ✕.
+4. **Nét mảnh, lưới chìm, KHÔNG nét đứt**, `vector-effect:non-scaling-stroke` để nét không
+   dày lên khi SVG co giãn. Nét đứt đọc ra "dự báo" hoặc "ngưỡng" trong khi nó chỉ là lưới.
+5. **Không dán số lên từng điểm.** Chỉ ở đầu mút, ở chỗ gục (dấu ✕ — "chạm đáy" và "kết
+   thúc sớm" nhìn giống hệt nhau nếu không đánh dấu), và trong tooltip.
+
+> **KHÔNG dán tên vào đầu mút đường kẻ — đã thử và BỎ.** Ở khổ này hai đường hay kết thúc
+> sát nhau; đo được: trong khung *sát thương cộng dồn* của trận hai người, hai cái tên
+> **chồng hẳn lên nhau và lên cả mép phải**. Một cái nhãn bị đè hoặc bị cắt cụt còn tệ hơn
+> là không có nhãn, mà danh tính thì đã có chú giải ngay phía trên lo. Muốn dựng lại thì
+> phải làm luôn phần **đẩy nhau theo chiều dọc** VÀ nới lề phải đủ cho tên dài nhất — tên ở
+> đây dài tới `Horikita Suzune II`.
+
+> **Đường tí hon KHÔNG tô vạt bên dưới — đã thử và BỎ.** Ai giữ được máu gần đầy suốt trận
+> thì vạt tô phủ gần kín ô và đọc ra một **khối đặc** chứ không ra một đường (chụp được
+> đúng cảnh đó ở thẻ Konohamaru). Giờ chỉ còn nét, cộng một vạch đáy chìm để biết mốc 0.
+
+> **Thang của thanh chồng có SÀN `.55`, đừng hạ.** Trộn sâu hơn thế là mấy khúc cuối chìm
+> hẳn vào nền và cả nửa bên phải thanh đọc ra MỘT khối liền. Khe hở 2px giữa hai khúc là
+> khe **THẬT** (`width:calc(n% - 2px)`), không phải bóng đổ chồng lên khúc bên cạnh, và
+> càng không phải viền quanh khúc — viền làm mỗi khúc dày lên và đọc ra như một ô riêng.
+> Nhãn `%` chỉ in khi khúc rộng **từ 17%** trở lên; hẹp hơn thì con số rơi xuống hàng chú
+> giải ngay dưới, không bao giờ để nó bị cắt cụt trong khúc.
+
+> **Quá sáu chiêu thì phần đuôi dồn vào một khúc "khác"** (`chTop`). Đẻ thêm màu cho khúc
+> thứ chín là chắc chắn trùng với một khúc đã có.
+
+**Bốn màu NGHĨA** (`--cDealt` · `--cTaken` · `--cHeal`, cộng `--gold` làm màu dẫn dắt) khác
+hẳn màu phân loại: chúng **không bao giờ được mượn làm "chuỗi thứ tư"** của một biểu đồ, và
+màu riêng của đấu thủ cũng không bao giờ được mượn làm màu nghĩa. Đã chấm bằng bộ kiểm màu
+trên nền `#0B111D`: đủ chroma, đủ tương phản, cặp gần nhau nhất ở mắt thường ΔE 15.4 (đạt).
+Cặp **vàng ↔ lục ở mắt mù màu đỏ chỉ ΔE 6.9** — nằm trong dải chỉ hợp lệ KHI có kênh phụ,
+nên **mọi chỗ dùng bốn màu này đều phải có chữ nhãn đi kèm**; đừng bao giờ vẽ một khối chỉ
+tô màu mà không có chữ.
+
+> Cặp lục ↔ đỏ là cặp khó nhất với mắt mù màu, và ở đây nó **giữ nguyên là quy ước**: lục
+> là hồi máu, đỏ hồng là sát thương phải chịu. Đổi đi thì đúng phép đo nhưng sai với mọi
+> game khác người chơi đã biết — và hai màu đó không bao giờ đứng cạnh nhau trong cùng một
+> biểu đồ (hồi máu chỉ có ở ô số, mà ô số nào cũng có nhãn).
+
+> **Tooltip chỉ BỔ SUNG, không phải cửa duy nhất đọc số** — mọi giá trị đều đã có ở ô KPI
+> và ở mấy bảng bên dưới. `chBind()` gắn listener **thẳng vào `.chWrap`** sau mỗi lượt vẽ,
+> đừng nghe ở `document`: bảng đóng mở liên tục, để lại listener trên document là rò.
+> Nó quy toạ độ màn hình về hệ của **viewBox** rồi mới về giây — SVG co giãn nên đừng lấy
+> thẳng pixel màn hình làm đơn vị.
+
+### Dải diễn biến của thẻ gọn
+
+Thẻ gọn có thêm **MỘT** dải máu-theo-thời-gian chung cho cả thẻ (`recapFlow`), không phải
+mỗi hàng một cái: gắn vào từng hàng thì thẻ cao thêm chừng 12px **mỗi hàng**, mà cái đáng
+đọc lại là so các đường VỚI NHAU. Dải này vẽ **đủ mọi người**, kể cả mấy người bị cắt khỏi
+trần bốn hàng. Cố ý trần trụi — không lưới, không trục: ở cỡ này chúng chỉ làm bẩn, mà số
+chính xác thì đã có ngay mấy cột bên trên và bảng 📊 bên dưới. Đo được: thẻ sáu người vẫn
+**313px**, dưới trần 320px mà `t_recap.js` canh.
+
+> **Nhãn của dải nằm GÓC DƯỚI TRÁI, không phải góc trên.** Mọi đường đều BẮT ĐẦU ở 100%
+> máu, tức đúng góc trên trái — để nhãn ở đó là nó nằm ngay dưới gạch chân của cả đám
+> đường (chụp được đúng cảnh đó). Góc dưới trái thì trống, vì đầu trận chưa ai ở 0 máu.
+
+> **Nền thẻ gọn gần như ĐỤC HẲN (`.985`/`.99`), đừng hạ xuống dưới đó.** Thẻ nằm đè đúng
+> chỗ băng-rôn WINNER và pháo giấy đang sáng rực; để trong suốt một chút là chữ vàng phía
+> sau xuyên lên và cả dải diễn biến lẫn mấy con số đọc không ra.
+
+> **Vạch máu thấp nhất chỉ vẽ khi nó THẤP HƠN máu cuối trận** — bằng nhau thì nó trùng đúng
+> đầu mút thanh và chỉ làm rối.
+
+### Mấy chỗ bố cục đã sửa, đừng dựng lại
+
+- **Đường tí hon neo TUYỆT ĐỐI ở góc trên phải thẻ**, không thả vào dòng tiêu đề: thả vào
+  đó thì tên dài một nhịp là nó rớt xuống hàng dưới ở thẻ này mà vẫn nằm cùng hàng ở thẻ
+  kia — hai thẻ cạnh nhau lệch nhau, nhìn như lỗi. Dòng tiêu đề chừa sẵn lề phải đúng bằng
+  chỗ nó chiếm, và thanh máu co lại cho cả dòng vừa **một** hàng ở mọi thẻ.
+- **Con số lớn ở ô KPI dùng chữ số TỈ LỆ THƯỜNG**, không `tabular-nums`: chữ số đều bề
+  ngang ở cỡ 26px làm con số nhìn rời rạc. Bảng bên dưới thì vẫn `tabular-nums`, vì ở đó
+  các con số phải thẳng cột với nhau.
+
 ### Chỗ đã tự quyết, nói rõ để sau này khỏi cãi nhau
 
 - **Hồi máu ghi trên NGƯỜI ĐƯỢC HỒI**, không phải người ra tay — xem lý do ở trên.
@@ -4575,9 +4736,16 @@ rồi **MỖI đấu thủ một khối** — không có trần hàng như thẻ
   > 113 hồi − 5 còn lại`, tức sổ khớp tới từng điểm. Đó chính là câu chuyện bảng sinh ra
   > để kể: *gây nhiều sát thương hơn mà vẫn thua*, vì một phần đấm vào tấm chắn.
 - **Trần 4 hàng** (`RECAP_MAX`) là con số tôi chốt, người dùng chỉ nói "thẻ gọn". Muốn dài
-  hơn thì sửa đúng hằng đó.
+  hơn thì sửa đúng hằng đó. Dải diễn biến thì **không** theo trần này — nó vẽ đủ mọi người.
+- **Bước lấy mẫu 0.4 giây và trần 240 mẫu** là con số tôi chốt: 0.4 giây đủ mịn để thấy một
+  cú ultimate làm tụt máu, mà một trận 90 giây (trần của giải) vẫn chỉ tốn 225 mẫu nên
+  không bao giờ phải làm thưa.
+- **Thời gian bị khống chế đo trên NGƯỜI CHỊU, không đo "ai gây ra"** — `stunFx()` không
+  nhận `src`, mà bọc hơn bốn chục chỗ gây choáng để lấy nguồn thì chắc chắn lọt lưới với
+  nhân vật thêm về sau (đúng cái bẫy `gnHeal()` ở mục Captain Ginyu). Muốn có cột "gây
+  khống chế" thì phải thêm tham số `src` vào `stunFx()` trước.
 
-Kiểm bằng `node tools/t_recap.js` (83 mục).
+Kiểm bằng `node tools/t_recap.js` (128 mục).
 
 ## 2b. Khoảng cách khi cận chiến — đừng dán vào nhau
 
