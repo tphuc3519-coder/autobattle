@@ -22149,6 +22149,7 @@ if(ARCADE){
     closeCsel(); compBoardClose(); advClose();
     if (document.getElementById('arcStage')) document.getElementById('arcStage').classList.add('off');
     el('arcVs').classList.add('off'); vsOn=false; clearTimeout(vsTimer);
+    el('arcOver').classList.add('off');
     el('arcWho').classList.remove('off');
   }
   el('goHome').addEventListener('click', goHomeAction);
