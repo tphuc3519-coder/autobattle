@@ -2661,6 +2661,19 @@
   </div>
 </div>
 
+<div class="arc off" id="arcHazards" style="z-index:71">
+  <div style="width:100%;max-width:760px">
+    <h2 class="whoH" data-i18n="hazardsH">CHỌN <span>MÔI TRƯỜNG</span></h2>
+    <div class="whoRow">
+      <button class="whoCard" id="hazNormal" data-ico="⚔️" style="--mc:#4DE2FF" type="button">
+        <b data-i18n="hazNormal">Cơ bản</b><i data-i18n="hazNormalSub">Các sàn đấu chỉ thay đổi phông nền</i></button>
+      <button class="whoCard" id="hazOn" data-ico="🌋" style="--mc:#FFC542" type="button">
+        <b data-i18n="hazOn">Tương tác Môi trường</b><i data-i18n="hazOnSub">Mỗi sàn đấu mang lại buff và hiệu ứng riêng biệt</i></button>
+    </div>
+    <div style="margin-top:16px"><button type="button" data-lang-toggle title="Vietnamese / English">🌐 English</button></div>
+  </div>
+</div>
+
 <!-- Màn VS trước trận, kiểu Street Fighter: mặt hai bên rõ ràng rồi mới vào đánh.
      Chạm là vào ngay, không chạm thì tự vào sau VS_HOLD giây. Chỉ có ở TRANG CHƠI. -->
 <div class="arc off" id="arcVs" style="z-index:66">
@@ -2959,6 +2972,9 @@ const L={
     whoH:'CHỌN <span>CÁCH CHƠI</span>',
     whoAuto:'Xem máy đánh', whoAutoSub:'Máy vs máy — bản gốc, ngồi xem',
     whoHuman:'Tự cầm tay đánh', whoHumanSub:'WASD + nút chiêu · có chế độ Phiêu lưu',
+    hazardsH:'CHỌN <span>MÔI TRƯỜNG</span>',
+    hazNormal:'Cơ bản', hazNormalSub:'Các sàn đấu chỉ thay đổi phông nền',
+    hazOn:'Tương tác Môi trường', hazOnSub:'Mỗi sàn đấu mang lại buff và hiệu ứng riêng biệt',
     mAdv:'Phiêu lưu', mAdvSub:'1 người · farm quái lên cấp',
     subAdv:'Chọn nhân vật để đi phiêu lưu · {n} đấu thủ',
     advRelics:'RELIC & THỨC TỈNH', advCore:'Lõi tiến hoá:', advRelicPick:'Nhận món đồ cổ',
@@ -3106,6 +3122,9 @@ const L={
     whoH:'CHOOSE <span>HOW TO PLAY</span>',
     whoAuto:'Watch the AI', whoAutoSub:'CPU vs CPU — the original, sit back',
     whoHuman:'Play it yourself', whoHumanSub:'WASD + skill buttons · unlocks Adventure',
+    hazardsH:'CHOOSE <span>STAGE TYPE</span>',
+    hazNormal:'Normal', hazNormalSub:'Stages are just background images',
+    hazOn:'Stage Hazards', hazOnSub:'Stages grant unique buffs and environmental hazards',
     mAdv:'Adventure', mAdvSub:'1 player · farm monsters, level up',
     subAdv:'Pick a fighter for the run · {n} fighters',
     advRelics:'RELICS & AWAKENING', advCore:'Evolution Cores:', advRelicPick:'Take the artifact',
@@ -3296,6 +3315,7 @@ const STAGES=[
 const STAGE_KEYS=STAGES.map(s=>s.key);
 const stageOf=k=>STAGES.find(s=>s.key===(k||STAGE))||STAGES[0];
 let STAGE='dojo';                  // màn đang chọn, lưu chung khoá cfg_picks
+let STAGE_HAZARDS=false;           // cờ bật/tắt hiệu ứng màn chơi (chọn đầu game)
 
 const SETS=[
   {key:'sakura', name:'Haruno Sakura', poses:[['idle','Thủ thế'],['atk1','Ném shuriken'],['punch','Đấm chakra'],['kick','Đá chakra'],['burst','Cherry Blossom Burst (đập đất)'],['charge','Chakra-Enhanced Punch (lao tới)'],['heal','Medical Ninjutsu (kết ấn, đứng yên cả chiêu)'],['seal','Hundred Seal (khoảnh khắc mở dấu ấn)'],['byakugo','Byakugo (đứng tạo dáng trong Hundred Seal)'],['sealatk','Byakugo (ra đòn trong Hundred Seal)'],['hurt','Trúng đòn'],['injured','Tơi tả (<20% máu)'],['win','Ăn mừng'],['down','Gục ngã']]},
@@ -7400,6 +7420,24 @@ function newGame(){
   else                             say(`Trận đấu sẵn sàng. ${G.k.name} vs ${G.c.name}.`,'g');
   // ô màu / ô máu / nhãn chế độ điều khiển đọc theo đội hình vừa dựng
   applyColors(); applyHp();
+
+  if (STAGE && STAGE_HAZARDS) {
+    let msg = '';
+    if (STAGE === 'dojo') msg = 'DOJO: Melee fighters get +15% damage.';
+    else if (STAGE === 'snow') msg = 'SNOW: Everyone moves slower. Superman gets +15% damage.';
+    else if (STAGE === 'volcano') msg = 'VOLCANO: Slow cast speed. Fire fighters deal +15% dmg. Lava burns!';
+    else if (STAGE === 'forest') msg = 'FOREST: Shikamaru and Tsubasa get +15% speed and cast rate.';
+    else if (STAGE === 'space') msg = 'SPACE: Zero Gravity! +20% move speed for everyone.';
+    else if (STAGE === 'street') msg = 'STREET: Isagi and Conan deal +15% damage.';
+    else if (STAGE === 'stadium') msg = 'STADIUM: Tsubasa and Isagi get +15% speed and cast rate.';
+    else if (STAGE === 'roof') msg = 'ROOF: Suzune and Gojo deal +15% damage.';
+    else if (STAGE === 'temple') msg = 'TEMPLE: Beatrice and Gojo deal +15% damage.';
+    else if (STAGE === 'desert') msg = 'DESERT: Everyone gets slightly slower movement and cast rate.';
+    else if (STAGE === 'cavern') msg = 'CAVERN: Everyone takes +10% more damage.';
+    else if (STAGE === 'sakura') msg = 'SAKURA: Sakura deals +20% damage. Passive healing for others.';
+    if (msg) say(msg, 'm');
+  }
+
   /* Nút chiêu phải dựng lại theo nhân vật của trận NÀY — không thì đổi nhân vật xong nút
      vẫn ghi tên chiêu của người trước. Đặt ở đây để mọi cửa vào trận đều đi qua (đấu tay
      đôi, hỗn chiến, đánh đội, giải đấu, phiêu lưu). */
@@ -12690,7 +12728,71 @@ const drCanTime=f=>!!f&&f.key==='dora'&&!f.summon&&!f.swapAs&&!f.tmDone&&!f.tm;
 /* beaStatus() chạy CUỐI: gnStatus GÁN ĐÈ mấy hệ số nên phải nằm sau nó, và Murak
    Protection thì phải có tiếng nói cuối cùng — miễn khống chế 100% nghĩa là gạt sạch mọi
    thứ làm chậm mà mấy hàm trên vừa nhân vào. */
-function statusTick(f,dt){ gnStatus(f,dt); summonStatus(f,dt); drStatus(f,dt); supStatus(f,dt); beaStatus(f,dt); tanStatus(f,dt); gojoStatus(f,dt); conanStatus(f,dt); sakStatus(f,dt); }
+function stageStatus(f, dt) {
+  if (!STAGE_HAZARDS) return;
+  const stage = STAGE || 'dojo';
+
+  if (stage === 'dojo') {
+    if (f.key === 'chichi' || f.key === 'tanjiro' || f.key === 'kono') f.dmgOut *= 1.15;
+  } else if (stage === 'snow') {
+    f.moveMul *= 0.9;
+    if (f.key === 'superman') f.dmgOut *= 1.15;
+  } else if (stage === 'volcano') {
+    f.castMul *= 0.9;
+    if (f.key === 'ginyu' || f.key === 'sakura') f.dmgOut *= 1.15;
+
+    // Volcano random burn event
+    if (!f.summon && f.alive) {
+      f.stageT = (f.stageT || 0) + dt;
+      if (f.stageT >= 5.0) {
+        f.stageT = 0;
+        if (chance(0.3)) { // 30% chance every 5s to get burned
+          f.dots.push({left: 2, acc: 0, dps: 30, src: null, tint: 'red'});
+          G.floats.push({x: f.x, y: f.y - 80, txt: 'LAVA BURN', color: '#FF8A3D', life: 1, ml: 1, sc: 0.6});
+        }
+      }
+    }
+  } else if (stage === 'forest') {
+    if (f.key === 'shika' || f.key === 'tsubasa') {
+      f.moveMul *= 1.15;
+      f.castMul *= 1.15;
+    }
+  } else if (stage === 'space') {
+    f.moveMul *= 1.20;
+  } else if (stage === 'street') {
+    if (f.key === 'isagi' || f.key === 'conan') f.dmgOut *= 1.15;
+  } else if (stage === 'stadium') {
+    if (f.key === 'tsubasa' || f.key === 'isagi') {
+      f.moveMul *= 1.15;
+      f.castMul *= 1.15;
+    }
+  } else if (stage === 'roof') {
+    if (f.key === 'suzune' || f.key === 'gojo') f.dmgOut *= 1.15;
+  } else if (stage === 'temple') {
+    if (f.key === 'beatrice' || f.key === 'gojo') f.dmgOut *= 1.15;
+  } else if (stage === 'desert') {
+    f.moveMul *= 0.95;
+    f.castMul *= 0.95;
+  } else if (stage === 'cavern') {
+    f.dmgTake *= 1.10;
+  } else if (stage === 'sakura') {
+    if (f.key === 'sakura') f.dmgOut *= 1.20;
+
+    if (!f.summon && f.alive) {
+      f.stageT = (f.stageT || 0) + dt;
+      if (f.stageT >= 2.0) { // Every 2s heal
+        f.stageT = 0;
+        if (f.hp < f.maxHp && f.key !== 'sakura') {
+           const h = Math.round(f.maxHp * 0.02);
+           f.hp = Math.min(f.maxHp, f.hp + h);
+           pop(f.x, f.y, '+' + h, '#FFC2DC', false);
+        }
+      }
+    }
+  }
+}
+
+function statusTick(f,dt){ gnStatus(f,dt); summonStatus(f,dt); drStatus(f,dt); supStatus(f,dt); beaStatus(f,dt); tanStatus(f,dt); gojoStatus(f,dt); conanStatus(f,dt); sakStatus(f,dt); stageStatus(f, dt); }
 function gojoStatus(f,dt){
   let overloadEnded=false;
   if(f.infoOverload>0){
@@ -24220,22 +24322,35 @@ if(ARCADE){
   });
   /* Từ màn hỏi cách chơi đi tiếp. Hai nhánh chỉ khác nhau ở `setPlayKind()`; phần sau
      dùng chung, nên bản auto đi đúng đường cũ. */
+  let pendingPlayKind = 'auto';
   function whoGo(kind){
     sfx('ui_next');
-    setPlayKind(kind);
+    pendingPlayKind = kind;
     el('arcWho').classList.add('off');
+    el('arcHazards').classList.remove('off');
+  }
+
+  function hazardsGo(enabled){
+    sfx('ui_next');
+    STAGE_HAZARDS = enabled;
+    el('arcHazards').classList.add('off');
+    setPlayKind(pendingPlayKind);
+
     /* Còn giải đá dở (mở lại trang giữa chừng) thì vào thẳng bảng xếp hạng, đừng bắt
        người ta chọn lại dàn đấu thủ từ đầu. */
     if(COMP&&!compDone()){ compOpen(); return; }
     /* Không còn giải nào mà có bản sao vừa bị xoá nhầm thì hỏi lại đúng một lần. */
     if(!COMP&&compBak&&compBakAsk()){ compOpen(); return; }
     /* Bản người chơi mà còn hành trình đang đi dở thì về thẳng bảng hành trình. */
-    if(kind==='human'&&ADV&&!ADV.done){ PMODE='adv'; TMP.mode='adv'; TMP.a=ADV.key; advOpen(); return; }
-    if(kind!=='human'&&PMODE==='adv'){ PMODE='duel'; TMP.mode='duel'; }   // auto không có phiêu lưu
+    if(pendingPlayKind==='human'&&ADV&&!ADV.done){ PMODE='adv'; TMP.mode='adv'; TMP.a=ADV.key; advOpen(); return; }
+    if(pendingPlayKind!=='human'&&PMODE==='adv'){ PMODE='duel'; TMP.mode='duel'; }   // auto không có phiêu lưu
     cselPage=cselSteps()[0]; openCsel();
   }
+
   el('whoAuto').addEventListener('click',()=>whoGo('auto'));
   el('whoHuman').addEventListener('click',()=>whoGo('human'));
+  el('hazNormal').addEventListener('click',()=>hazardsGo(false));
+  el('hazOn').addEventListener('click',()=>hazardsGo(true));
   el('arcAdv').addEventListener('click',()=>advOpen());
   el('advGo').addEventListener('click',advPlay);
   el('advReroll').addEventListener('click',advRerollGo);
@@ -24259,6 +24374,7 @@ if(ARCADE){
     closeCsel(); compBoardClose(); advClose();
     if (document.getElementById('arcStage')) document.getElementById('arcStage').classList.add('off');
     el('arcVs').classList.add('off'); vsOn=false; clearTimeout(vsTimer);
+    el('arcOver').classList.add('off');
     el('arcWho').classList.remove('off');
   }
   el('goHome').addEventListener('click', goHomeAction);
