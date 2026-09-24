@@ -3644,6 +3644,101 @@ và *"tân trang sàn đấu luôn"*. Hai thứ đó nằm chung một chỗ.
 
 Kiểm bằng `node tools/t_stage.js`.
 
+## 2d-bis. STAGE HAZARDS — buff/nerf riêng của từng sàn đấu
+
+**Cơ chế này ĐÃ CHẠY THẬT trong code từ trước** (`stageStatus()` ở khoảng dòng 12731,
+thông báo trong `newGame()` ở khoảng dòng 7424) nhưng CLAUDE.md trước đó chưa ghi lại —
+đây là mục bù vào, đọc thẳng từ nguồn hiện có.
+
+### Bật/tắt ở đâu
+
+Chỉ có ở **TRANG CHƠI** (`window.ARCADE`), ngay sau màn "CHỌN CÁCH CHƠI"
+(`#arcWho`: Xem máy đánh / Tự cầm tay đánh). Trước khi vào tới bước chọn chế độ đấu hay
+chọn nhân vật, có thêm một màn riêng `#arcHazards` — "CHỌN MÔI TRƯỜNG":
+
+| Nút | Nhãn | Đặt `STAGE_HAZARDS` |
+|---|---|---|
+| `#hazNormal` | **Cơ bản** — "Các sàn đấu chỉ thay đổi phông nền" | `false` |
+| `#hazOn` | **Tương tác Môi trường** — "Mỗi sàn đấu mang lại buff và hiệu ứng riêng biệt" | `true` |
+
+- **`STAGE_HAZARDS` (mặc định `false`) KHÔNG lưu vào Store** — khác hẳn `LANG` / `STAGE` /
+  máu / lối xem skill: mỗi lần mở lại trang là phải chọn lại từ đầu, không nhớ lựa chọn cũ.
+- Hỏi **một lần cho cả phiên**, trước cả bước chọn chế độ đấu, nên áp dụng cho **mọi chế độ**:
+  1v1, hỗn chiến, đánh đội, đánh tuần tự, hai chế độ giải đấu, và Phiêu lưu.
+- **XƯỞNG (mở `index.html` trực tiếp, không qua `window.ARCADE`) không có màn này** — toàn
+  bộ khối nằm trong `if(ARCADE){...}`, nên `STAGE_HAZARDS` luôn đứng ở `false` mặc định khi
+  mở xưởng, tức hành xử y hệt chọn "Cơ bản".
+
+### Hệ số cộng dồn ở ĐÂU trong chuỗi status
+
+`stageStatus(f,dt)` là hàm **cuối cùng** trong chuỗi `statusTick()`:
+
+```
+gnStatus → summonStatus → drStatus → supStatus → beaStatus → tanStatus → gojoStatus
+→ conanStatus → sakStatus → stageStatus
+```
+
+`gnStatus()` **GÁN** (`=`) lại `moveMul`/`castMul`/`dmgTake` từ đầu mỗi nhịp, còn tám hàm
+sau đều **NHÂN CHỒNG** (`*=`) — `stageStatus()` đứng cuối nên hệ số của nó nhân lên trên
+tất cả (đúng luật đã ghi ở mục Doraemon/Ginyu: *"gnStatus() GÁN đè hệ số nên phải nằm sau
+nó, còn phải nằm trước … để cú nới hiệu ứng đọc được phần này"*). Hàm `return` ngay dòng
+đầu khi `!STAGE_HAZARDS`, nên tắt cờ là mọi nhân vật chạy đúng y hệt bản gốc, không mất
+một nhịp tính toán thừa nào.
+
+### Mười hai sàn — bảng chốt
+
+| Sàn | Buff sát thương (`dmgOut`) | Tốc chạy / tốc ra chiêu | Hiệu ứng vùng theo nhịp |
+|---|---|---|---|
+| **DOJO** | ChiChi · Tanjiro · Konohamaru **+15%** | — | — |
+| **NIGHT STREET** | Isagi · Conan **+15%** | — | — |
+| **STADIUM** | — | Tsubasa · Isagi **+15%** cả hai | — |
+| **FOREST** | — | Shikamaru · Tsubasa **+15%** cả hai | — |
+| **DEEP SPACE** | — | **Mọi người +20%** tốc chạy (Zero Gravity) | — |
+| **SUNSET ROOF** | Suzune · Gojo **+15%** | — | — |
+| **VOLCANO** | Ginyu · Sakura **+15%** | mọi người **−10%** tốc ra chiêu | mỗi 5s, **30%** cơ hội mỗi đấu thủ chính dính **LAVA BURN**: dot 30 dmg/s trong 2s (tổng 60 dmg qua 4 nhịp 0.5s) |
+| **SKY TEMPLE** | Beatrice · Gojo **+15%** | — | — |
+| **FROZEN PEAK** | Superman **+15%** | mọi người **−10%** tốc chạy | — |
+| **DESERT RUINS** | — | mọi người **−5%** tốc chạy & tốc ra chiêu | — |
+| **CRYSTAL CAVE** | — | — | mọi người **+10%** sát thương PHẢI NHẬN (`dmgTake`, không phải gây ra) |
+| **SAKURA GARDEN** | Sakura **+20%** | — | mỗi 2s, ai không phải Sakura và chưa đầy máu thì hồi **2% máu tối đa** |
+
+- Cột buff sát thương đi qua `f.dmgOut *= 1.15` (hoặc `1.20` với Sakura ở chính sân của cô) —
+  cùng trường `dmgOut` mà mọi hệ số sát thương khác trong game dùng (mục Ginyu / Beatrice),
+  nên nó **nhân chồng** với mọi buff/debuff khác chứ không ghi đè. Nhân vật trùng bản sao
+  (`DUP_SUFFIX`, ví dụ `Konohamaru II`) vẫn ăn buff vì so sánh theo `f.key`, không theo tên
+  hiển thị.
+- **Cavern áp `dmgTake` cho MỌI NGƯỜI, kể cả viện binh** — không có bộ lọc `!f.summon`.
+  Volcano / Desert / Snow / Space cũng vậy với `moveMul`/`castMul`: viện binh (Goku, Gohan,
+  phân thân, Ayanokouji) đứng trên mấy sàn đó vẫn nhanh hơn hay chậm hơn theo đúng hệ số.
+- **Hai hiệu ứng vùng theo nhịp (Volcano burn, Sakura heal) thì NGƯỢC LẠI, có gác
+  `!f.summon && f.alive`** — chỉ đấu thủ chính mới bị cháy dung nham hoặc được hồi máu định
+  kỳ; viện binh thuần và Ayanokouji đứng ngoài cả hai.
+- Cavern là sàn **duy nhất chỉnh sát thương PHẢI NHẬN** thay vì sát thương gây ra — đọc nhầm
+  cột này thành buff tấn công là sai hướng, nó là một cái nerf chung cho tất cả.
+
+> **Dòng thông báo lúc vào trận và bảng số thật trong `stageStatus()` là HAI CHỖ TÁCH RỜI,
+> KHÔNG đọc từ nhau.** `newGame()` (khoảng dòng 7424) in ra một dòng tiếng Anh tóm tắt hazard
+> của sàn đang chọn (`say(msg,'m')`, ví dụ `"VOLCANO: Slow cast speed. Fire fighters deal
+> +15% dmg. Lava burns!"`), còn con số THẬT nằm trong `stageStatus()` ở một hàm khác hẳn.
+> Sửa hệ số ở một bên mà quên bên kia thì dòng thông báo nói sai với cái đang thật sự chạy
+> trong trận — cùng họ với cái bẫy `PAD_CDS` / `gnHeal()` đã ghi ở chỗ khác trong tài liệu
+> này. **Đổi số ở sàn nào thì sửa cả hai chỗ, đừng chỉ sửa một.**
+
+### Còn thiếu
+
+- **Chưa có bộ test riêng.** `tools/t_stage.js` hiện tại chỉ soi phần **hình ảnh** của mười
+  hai sàn (tông màu trung bình, ảnh dán nền thắng hình vector, bóng đổ dưới chân) — không
+  đụng tới `STAGE_HAZARDS` hay `stageStatus()` một dòng nào. Chưa có `tools/t_hazard.js`
+  kiểm việc bật cờ có đúng nhân hệ số, có đúng người được buff, và hai hiệu ứng vùng
+  (Volcano burn / Sakura heal) có bắn ra theo đúng nhịp 5s / 2s hay không.
+- **Chưa thấy mô tả cho "Isagi" ở bất kỳ đâu trong tài liệu này**, dù `stageStatus()` đã
+  dùng thẳng khoá `f.key==='isagi'` (buff ở Street + Stadium) — có vẻ là một nhân vật đã
+  thêm vào `CHARS`/roster mà chưa ai viết mục riêng kiểu "### Isagi" như các nhân vật khác.
+  Chưa rõ bộ chiêu, vai trò, hay các con số cân bằng của nhân vật này.
+- Màn "CHỌN MÔI TRƯỜNG" chưa được nhắc tới trong mục 2e (luồng từng bước của trang chơi) —
+  thứ tự đầy đủ hiện tại là: tiêu đề → **CÁCH CHƠI** → **MÔI TRƯỜNG** → chế độ → nhân vật →
+  màn đấu → đánh. Nếu sửa lại luồng chọn thì nhớ cả bước này.
+
 ## 2e. Hai trang: XƯỞNG và TRANG CHƠI
 
 Người dùng: *"kiểu chia ra 2 web — 1 web tôi ở background add model, âm thanh, còn 1 web
@@ -5821,6 +5916,13 @@ lớp để anh vào sân), `#testSuz3` (ép anh rời sàn → form 3), `#testS
 ---
 
 ## 11. Còn treo
+
+> **Đã bù mô tả cho Stage Hazards** (mục 2d-bis) — cơ chế `STAGE_HAZARDS` / `stageStatus()`
+> vốn đã chạy thật trong code (màn "CHỌN MÔI TRƯỜNG" ở trang chơi, mười hai sàn mỗi sàn một
+> buff/nerf riêng) nhưng CLAUDE.md chưa từng ghi lại, tới giờ mới soi từ nguồn và chép vào.
+> Vẫn còn hai lỗ hổng: **chưa có `tools/t_hazard.js`** kiểm cơ chế này (chỉ có `t_stage.js`
+> soi phần hình ảnh của mười hai sàn), và **chưa có mục riêng cho nhân vật "Isagi"** dù
+> `stageStatus()` đã dùng khoá `'isagi'` — không rõ bộ chiêu/vai trò của nhân vật này ở đâu.
 
 > **Đã xong: hai file giọng Ginyu thiếu.** `ginyu_force.wav` / `ginyu_change.wav` từng
 > nằm trong `manifest.json` mà không có trong repo, nên `t_voice.js` chết với `ENOENT`.
